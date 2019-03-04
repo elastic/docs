@@ -142,7 +142,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
             @code_block_start = line
           end
         end
-        supported = 'added|coming|deprecated'
+        supported = 'added|beta|coming|deprecated|experimental'
         # First convert the "block" version of these macros. We convert them
         # to block macros because they are at the start of the line....
         line&.gsub!(/^(#{supported})\[([^\]]*)\]/, '\1::[\2]')

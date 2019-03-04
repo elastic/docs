@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'care_admonition/extension'
 require_relative 'change_admonition/extension'
 require_relative 'copy_images/extension'
 require_relative 'cramped_include/extension'
@@ -8,6 +9,7 @@ require_relative 'elastic_compat_tree_processor/extension'
 require_relative 'elastic_compat_preprocessor/extension'
 require_relative 'elastic_include_tagged/extension'
 
+Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
 Asciidoctor::Extensions.register do
   # Enable storing the source locations so we can look at them. This is required
