@@ -36,7 +36,12 @@ sub write {
     my $adoc_file = $dir->file('index.asciidoc');
     $adoc_file->spew( iomode => '>:utf8', $adoc );
 
-    build_single( $adoc_file, $dir, type => 'article', lang => $self->lang );
+    build_single( $adoc_file, $dir,
+            type      => 'article',
+            lang      => $self->lang,
+            root_dir  => '',
+            edit_urls => {'' => ''},
+    );
     $adoc_file->remove;
 }
 

@@ -137,16 +137,43 @@ sub _guess_opts_from_file {
 #===================================
     my $index = shift;
 
+    my %edit_urls = ();
+    my $doc_toplevel = _find_toplevel($index->parent);
+    if ( $doc_toplevel ) {
+        $Opts->{root_dir} = $doc_toplevel;
+        my $edit_url = _guess_edit_url($doc_toplevel);
+        @edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
+    } else {
+        $Opts->{root_dir} = $index->parent;
+    }
+    for my $resource ( @{ $Opts->{resource} } ) {
+        my $resource_toplevel = _find_toplevel($resource);
+        next unless $resource_toplevel;
+
+        my $resource_edit_url = _guess_edit_url($resource_toplevel);
+        @edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
+    }
+    $Opts->{edit_urls} = { %edit_urls };
+}
+
+#===================================
+sub _find_toplevel {
+#===================================
+    my $docpath = shift;
+
     my $original_pwd = Cwd::cwd();
-    chdir $index->parent;
+    chdir $docpath;
     my $toplevel = eval { run qw(git rev-parse --show-toplevel) };
     chdir $original_pwd;
-    unless ( $toplevel ) {
-        say "Couldn't find edit url because the document doesn't look like it is in git";
-        $Opts->{root_dir} = $index->parent;
-        return;
-    }
-    $Opts->{root_dir} = $toplevel;
+    say "Couldn't find repo toplevel for $docpath" unless $toplevel;
+    return $toplevel;
+}
+
+#===================================
+sub _guess_edit_url {
+#===================================
+    my $toplevel = shift;
+
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $remotes = eval { run qw(git remote -v) } || '';
     if ($remotes !~ m|\s+(\S+[/:]elastic/\S+)|) {
@@ -156,7 +183,7 @@ sub _guess_opts_from_file {
     }
     my $remote = $1;
     my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
-    $Opts->{edit_url} = ES::Repo::edit_url_for_url_and_branch($remote, $branch);
+    return ES::Repo::edit_url_for_url_and_branch($remote, $branch);
 }
 
 #===================================
