@@ -80,7 +80,7 @@ $Opts->{template} = ES::Template->new(
     %$template_urls,
     lenient  => $Opts->{lenient},
     force    => $Opts->{reload_template},
-    abs_urls => $Opts->{doc}
+    abs_urls => ! $running_in_standard_docker && $Opts->{doc},
 );
 
 $Opts->{doc}       ? build_local( $Opts->{doc} )
@@ -124,72 +124,8 @@ sub build_local {
     my $html = $dir->file('index.html');
 
     if ( $Opts->{open} ) {
-        if ( my $pid = fork ) {
-            # parent
-            $SIG{INT} = sub {
-                kill -9, $pid;
-            };
-            if ( $Opts->{open} && not $running_in_standard_docker ) {
-                sleep 1;
-                say "Opening: " . $html;
-                say "Press Ctrl-C to exit the web server";
-                open_browser('http://localhost:8000/index.html');
-            }
-
-            wait;
-            say "\nExiting";
-            exit;
-        }
-        else {
-            if ( $running_in_standard_docker ) {
-                # We use nginx to serve files instead of the python built in web server
-                # when we're running inside docker because the python web server performs
-                # badly there. nginx is fine.
-                open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
-                print $nginx_conf <<"CONF";
-daemon off;
-error_log /dev/stdout info;
-pid /run/nginx/nginx.pid;
-
-events {
-  worker_connections 64;
-}
-
-http {
-  error_log /dev/stdout crit;
-  log_format short '[\$time_local] "\$request" \$status';
-  access_log /dev/stdout short;
-  server {
-    listen 8000;
-    location / {
-      root $dir;
-      add_header 'Access-Control-Allow-Origin' '*';
-      if (\$request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
-      }
-    }
-    types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
-    }
-  }
-}
-CONF
-                close $nginx_conf;
-                close STDIN;
-                open( STDIN, "</dev/null" );
-                chdir $dir;
-                exec( 'nginx', '-c', '/tmp/docs.conf' );
-            } else {
-                my $http = dir( 'resources', 'http.py' )->absolute;
-                close STDIN;
-                open( STDIN, "</dev/null" );
-                chdir $dir;
-                exec( $http '8000' );
-            }
-        }
+        say "Opening: " . $html;
+        serve_and_open_browser( $dir, 'index.html' );
     }
     else {
         say "See: $html";
@@ -282,6 +218,7 @@ sub build_all {
         check_links($build_dir);
     }
     push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
+    serve_and_open_browser( $build_dir, '/' ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -734,6 +671,82 @@ sub pick_conf {
 }
 
 #===================================
+sub serve_and_open_browser {
+#===================================
+    my ( $dir, $open_path ) = @_;
+
+    if ( my $pid = fork ) {
+        # parent
+        $SIG{INT} = sub {
+            kill -9, $pid;
+        };
+        if ( not $running_in_standard_docker ) {
+            sleep 1;
+            say "Press Ctrl-C to exit the web server";
+            open_browser("http://localhost:8000/$open_path");
+        }
+
+        wait;
+        say "\nExiting";
+        exit;
+    }
+    else {
+        if ( $running_in_standard_docker ) {
+            # We use nginx to serve files instead of the python built in web server
+            # when we're running inside docker because the python web server performs
+            # badly there. nginx is fine.
+            open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
+            print $nginx_conf <<"CONF";
+daemon off;
+error_log /dev/stdout info;
+pid /run/nginx/nginx.pid;
+
+events {
+  worker_connections 64;
+}
+
+http {
+  error_log /dev/stdout crit;
+  log_format short '[\$time_local] "\$request" \$status';
+  access_log /dev/stdout short;
+  server {
+    listen 8000;
+    location / {
+      root $dir;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      text/html  html;
+      application/javascript  js;
+      text/css   css;
+    }
+    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
+    rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
+    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
+    rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
+    rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
+  }
+}
+CONF
+            close $nginx_conf;
+            close STDIN;
+            open( STDIN, "</dev/null" );
+            exec( 'nginx', '-c', '/tmp/docs.conf' );
+        } else {
+            my $http = dir( 'resources', 'http.py' )->absolute;
+            close STDIN;
+            open( STDIN, "</dev/null" );
+            chdir $dir;
+            exec( $http '8000' );
+        }
+    }
+}
+
+#===================================
 sub usage {
 #===================================
     my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
@@ -750,7 +763,6 @@ sub usage {
           --toc             Include a TOC at the beginning of the page.
           --out dest/dir/   Defaults to ./html_docs.
           --chunk 1         Also chunk sections into separate files
-          --open            Open the docs in a browser once built.
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
@@ -780,6 +792,7 @@ sub usage {
           --in_standard_docker
                             Specified by build_docs when running in its container
           --conf <ymlfile>  Use your own configuration file, defaults to the bundled conf.yaml
+          --open            Open the docs in a browser once built.
 
 USAGE
     if ( $Opts->{in_standard_docker} ) {
