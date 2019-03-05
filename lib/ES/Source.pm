@@ -37,14 +37,6 @@ sub first {
 }
 
 #===================================
-sub edit_url {
-#===================================
-    my $self   = shift;
-    my $branch = shift;
-    return $self->first->{repo}->edit_url($branch);
-}
-
-#===================================
 sub has_changed {
 #===================================
     my $self   = shift;
@@ -92,19 +84,22 @@ sub prepare {
     my $self   = shift;
     my $branch = shift;
 
-    my %entries;
-    my $dest = Path::Class::tempdir( DIR => $self->temp_dir );
+    my $checkout = Path::Class::tempdir( DIR => $self->temp_dir );
+    my %edit_urls = ();
+    my $first_path = 0;
 
     # need to handle repo name here, not in Repo
     for my $source ( $self->_sources_for_branch($branch) ) {
         my $repo   = $source->{repo};
         my $prefix = $source->{prefix};
         my $path   = $source->{path};
+        my $source_checkout = $checkout->subdir($prefix);
 
-        $repo->extract( $branch, $path, $dest->subdir($prefix) );
-
+        $repo->extract( $branch, $path, $source_checkout );
+        $edit_urls{ $source_checkout->absolute } = $repo->edit_url($branch);
+        $first_path = $source_checkout unless $first_path;
     }
-    return ( $dest, $dest->subdir( $self->first->{prefix} ) );
+    return ( $checkout, \%edit_urls, $first_path );
 }
 
 #===================================
