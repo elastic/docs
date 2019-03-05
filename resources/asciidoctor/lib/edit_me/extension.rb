@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'pathname'
+require 'csv'
 require_relative '../scaffold.rb'
 
 ##
@@ -12,32 +12,56 @@ class EditMe < TreeProcessorScaffold
 
   def process(document)
     logger.error("sourcemap is required") unless document.sourcemap
-    super if document.attributes['edit_url']
+    edit_urls_string = document.attributes['edit_urls']
+    return unless edit_urls_string
+
+    edit_urls = []
+    CSV.parse edit_urls_string do |toplevel, url|
+      unless toplevel
+        logger.error message_with_context "invalid edit_urls, no toplevel"
+        next
+      end
+      unless url
+        logger.error message_with_context "invalid edit_urls, no url"
+        next
+      end
+      url = url[0..-2] if url.end_with? '/'
+      edit_urls << { toplevel: toplevel, url: url }
+    end
+    document.attributes['edit_urls'] = edit_urls
+    super
   end
 
   def process_block(block)
     return unless %i[preamble section floating_title].include? block.context
 
     def block.title
-      path = source_path
-      url = @document.attributes['edit_url']
-      url += '/' unless url.end_with?('/')
-      repo_root = @document.attributes['repo_root']
-      if repo_root
-        repo_root = Pathname.new repo_root
-        base_dir = Pathname.new @document.base_dir
-        url += "#{base_dir.relative_path_from(repo_root)}/"
+      # || '<stdin>' allows us to not blow up when translating strings that
+      # aren't associated with any particular file. '<stdin>' is asciidoctor's
+      # standard name for such strings.
+      path = source_path || '<stdin>'
+
+      edit_urls = @document.attributes['edit_urls']
+      edit_url = edit_urls.find { |e| path.start_with? e[:toplevel] }
+      unless edit_url
+        logger.warn message_with_context "couldn't find edit url for #{path}", :source_location => source_location
+        return super
       end
-      url += path
+      url = edit_url[:url]
+      url += path[edit_url[:toplevel].length..-1]
       "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"
     end
     if block.context == :preamble
       def block.source_path
-        document.source_location.path
+        # source_location.path doesn't work for relative includes outside of
+        # the base_dir which we use when we build books from many repos.
+        document.source_location.file
       end
     else
       def block.source_path
-        source_location.path
+        # source_location.path doesn't work for relative includes outside of
+        # the base_dir which we use when we build books from many repos.
+        source_location.file
       end
     end
   end
