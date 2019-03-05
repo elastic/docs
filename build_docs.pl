@@ -53,14 +53,15 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rely_on_ssh_auth', 'rebuild', 'no_fetch', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
+    'conf=s',
 ) || exit usage();
 check_args();
 
-our $Conf = LoadFile('conf.yaml');
+our $Conf = LoadFile(pick_conf());
 # The script supports running outside of docker, in any docker container *and*
 # running in a docker container that we maintain. If we run in a docker
 # container that we maintain then the script will change how it functions
@@ -79,7 +80,7 @@ $Opts->{template} = ES::Template->new(
     %$template_urls,
     lenient  => $Opts->{lenient},
     force    => $Opts->{reload_template},
-    abs_urls => $Opts->{doc}
+    abs_urls => ! $running_in_standard_docker && $Opts->{doc},
 );
 
 $Opts->{doc}       ? build_local( $Opts->{doc} )
@@ -123,72 +124,8 @@ sub build_local {
     my $html = $dir->file('index.html');
 
     if ( $Opts->{open} ) {
-        if ( my $pid = fork ) {
-            # parent
-            $SIG{INT} = sub {
-                kill -9, $pid;
-            };
-            if ( $Opts->{open} && not $running_in_standard_docker ) {
-                sleep 1;
-                say "Opening: " . $html;
-                say "Press Ctrl-C to exit the web server";
-                open_browser('http://localhost:8000/index.html');
-            }
-
-            wait;
-            say "\nExiting";
-            exit;
-        }
-        else {
-            if ( $running_in_standard_docker ) {
-                # We use nginx to serve files instead of the python built in web server
-                # when we're running inside docker because the python web server performs
-                # badly there. nginx is fine.
-                open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
-                print $nginx_conf <<"CONF";
-daemon off;
-error_log /dev/stdout info;
-pid /run/nginx/nginx.pid;
-
-events {
-  worker_connections 64;
-}
-
-http {
-  error_log /dev/stdout crit;
-  log_format short '[\$time_local] "\$request" \$status';
-  access_log /dev/stdout short;
-  server {
-    listen 8000;
-    location / {
-      root $dir;
-      add_header 'Access-Control-Allow-Origin' '*';
-      if (\$request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
-      }
-    }
-    types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
-    }
-  }
-}
-CONF
-                close $nginx_conf;
-                close STDIN;
-                open( STDIN, "</dev/null" );
-                chdir $dir;
-                exec( 'nginx', '-c', '/tmp/docs.conf' );
-            } else {
-                my $http = dir( 'resources', 'http.py' )->absolute;
-                close STDIN;
-                open( STDIN, "</dev/null" );
-                chdir $dir;
-                exec( $http '8000' );
-            }
-        }
+        say "Opening: " . $html;
+        serve_and_open_browser( $dir, 'index.html' );
     }
     else {
         say "See: $html";
@@ -200,27 +137,53 @@ sub _guess_opts_from_file {
 #===================================
     my $index = shift;
 
-    my $dir = $index->parent;
-    while ($dir ne '/') {
-        $dir = $dir->parent;
-        my $git_dir = $dir->subdir('.git');
-        if (-d $git_dir) {
-            $Opts->{root_dir} = $dir;
-            local $ENV{GIT_DIR} = $git_dir;
-            my $remotes = eval { run qw(git remote -v) } || '';
-            if ($remotes !~ /\s+(\S+[\/:]elastic\/\S+)/) {
-                say "Couldn't find edit url because there isn't an Elastic clone";
-                say "$remotes";
-                return;
-            }
-            my $remote = $1;
-            my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
-            $Opts->{edit_url} = ES::Repo::edit_url_for_url_and_branch($remote, $branch);
-            return;
-        }
+    my %edit_urls = ();
+    my $doc_toplevel = _find_toplevel($index->parent);
+    if ( $doc_toplevel ) {
+        $Opts->{root_dir} = $doc_toplevel;
+        my $edit_url = _guess_edit_url($doc_toplevel);
+        @edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
+    } else {
+        $Opts->{root_dir} = $index->parent;
     }
-    say "Couldn't find edit url because the document doesn't look like it is in git";
-    $Opts->{root_dir} = $index->parent;
+    for my $resource ( @{ $Opts->{resource} } ) {
+        my $resource_toplevel = _find_toplevel($resource);
+        next unless $resource_toplevel;
+
+        my $resource_edit_url = _guess_edit_url($resource_toplevel);
+        @edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
+    }
+    $Opts->{edit_urls} = { %edit_urls };
+}
+
+#===================================
+sub _find_toplevel {
+#===================================
+    my $docpath = shift;
+
+    my $original_pwd = Cwd::cwd();
+    chdir $docpath;
+    my $toplevel = eval { run qw(git rev-parse --show-toplevel) };
+    chdir $original_pwd;
+    say "Couldn't find repo toplevel for $docpath" unless $toplevel;
+    return $toplevel;
+}
+
+#===================================
+sub _guess_edit_url {
+#===================================
+    my $toplevel = shift;
+
+    local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
+    my $remotes = eval { run qw(git remote -v) } || '';
+    if ($remotes !~ m|\s+(\S+[/:]elastic/\S+)|) {
+        say "Couldn't find edit url because there isn't an Elastic clone";
+        say "$remotes";
+        return;
+    }
+    my $remote = $1;
+    my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
+    return ES::Repo::edit_url_for_url_and_branch($remote, $branch);
 }
 
 #===================================
@@ -282,6 +245,7 @@ sub build_all {
         check_links($build_dir);
     }
     push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
+    serve_and_open_browser( $build_dir, '/' ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -294,7 +258,7 @@ sub check_links {
 
     $link_checker->check;
 
-    check_kibana_links( $build_dir, $link_checker );
+    check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     if ( $link_checker->has_bad ) {
         say $link_checker->report;
     }
@@ -706,7 +670,6 @@ sub check_args {
         die('--push not compatible with --doc') if $Opts->{push};
         die('--user not compatible with --doc') if $Opts->{user};
         die('--reference not compatible with --doc') if $Opts->{reference};
-        die('--rely_on_ssh_auth not compatible with --doc') if $Opts->{rely_on_ssh_auth};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
         die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
@@ -725,13 +688,100 @@ sub check_args {
 }
 
 #===================================
+sub pick_conf {
+#===================================
+    return 'conf.yaml' unless $Opts->{conf};
+
+    my $conf = dir($Old_Pwd)->file($Opts->{conf});
+    return $conf if -e $conf;
+    die $Opts->{conf} . " doesn't exist";
+}
+
+#===================================
+sub serve_and_open_browser {
+#===================================
+    my ( $dir, $open_path ) = @_;
+
+    if ( my $pid = fork ) {
+        # parent
+        $SIG{INT} = sub {
+            kill -9, $pid;
+        };
+        if ( not $running_in_standard_docker ) {
+            sleep 1;
+            say "Press Ctrl-C to exit the web server";
+            open_browser("http://localhost:8000/$open_path");
+        }
+
+        wait;
+        say "\nExiting";
+        exit;
+    }
+    else {
+        if ( $running_in_standard_docker ) {
+            # We use nginx to serve files instead of the python built in web server
+            # when we're running inside docker because the python web server performs
+            # badly there. nginx is fine.
+            open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
+            print $nginx_conf <<"CONF";
+daemon off;
+error_log /dev/stdout info;
+pid /run/nginx/nginx.pid;
+
+events {
+  worker_connections 64;
+}
+
+http {
+  error_log /dev/stdout crit;
+  log_format short '[\$time_local] "\$request" \$status';
+  access_log /dev/stdout short;
+  server {
+    listen 8000;
+    location / {
+      root $dir;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      text/html  html;
+      application/javascript  js;
+      text/css   css;
+    }
+    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
+    rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
+    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
+    rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
+    rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
+  }
+}
+CONF
+            close $nginx_conf;
+            close STDIN;
+            open( STDIN, "</dev/null" );
+            exec( 'nginx', '-c', '/tmp/docs.conf' );
+        } else {
+            my $http = dir( 'resources', 'http.py' )->absolute;
+            close STDIN;
+            open( STDIN, "</dev/null" );
+            chdir $dir;
+            exec( $http '8000' );
+        }
+    }
+}
+
+#===================================
 sub usage {
 #===================================
+    my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
     say <<USAGE;
 
     Build local docs:
 
-        $0 --doc path/to/index.asciidoc [opts]
+        $name --doc path/to/index.asciidoc [opts]
 
         Opts:
           --single          Generate a single HTML page, instead of
@@ -740,7 +790,6 @@ sub usage {
           --toc             Include a TOC at the beginning of the page.
           --out dest/dir/   Defaults to ./html_docs.
           --chunk 1         Also chunk sections into separate files
-          --open            Open the docs in a browser once built.
           --lenient         Ignore linking errors
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
@@ -750,7 +799,7 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        $0 --all --target_repo <target> [opts]
+        $name --all --target_repo <target> [opts]
 
         Opts:
           --target_repo     Repository to which to commit docs
@@ -759,8 +808,6 @@ sub usage {
           --reference       Directory of `--mirror` clones to use as a local cache
           --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
-          --rely_on_ssh_auth
-                            noop
           --rebuild         Rebuild all branches of every book regardless of what has changed
           --no_fetch        Skip fetching updates from source repos
 
@@ -771,6 +818,29 @@ sub usage {
           --verbose
           --in_standard_docker
                             Specified by build_docs when running in its container
+          --conf <ymlfile>  Use your own configuration file, defaults to the bundled conf.yaml
+          --open            Open the docs in a browser once built.
 
 USAGE
+    if ( $Opts->{in_standard_docker} ) {
+        say <<USAGE;
+    Self Test:
+
+        $name --self-test <args to pass to make>
+
+    `--self-test` is a wrapper around `make` which is used exclusively for
+    testing. Like `make`, the current directory selects the `Makefile` and
+    you can make specific targets. Some examples:
+
+    Execute all tests:
+        $name --self-test
+
+    Execute all of the tests for our extensions to Asciidoctor:
+        $name --self-test -C resources/asciidoctor
+
+    Run rubocop on our extensions to Asciidoctor:
+        $name --self-test -C resources/asciidoctor rubocop
+    
+USAGE
+    }
 }

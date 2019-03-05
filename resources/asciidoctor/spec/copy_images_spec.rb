@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'care_admonition/extension'
 require 'change_admonition/extension'
 require 'copy_images/extension'
 require 'fileutils'
@@ -9,6 +10,7 @@ RSpec.describe CopyImages::CopyImages do
   RSpec::Matchers.define_negated_matcher :not_match, :match
 
   before(:each) do
+    Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register do
       tree_processor CopyImages::CopyImages
@@ -415,6 +417,26 @@ RSpec.describe CopyImages::CopyImages do
       convert input, attributes, eq(expected_warnings.strip)
       expect(copied).to eq([
           ["images/icons/#{name}.png", "#{spec_dir}/resources/copy_images/images/icons/#{name}.png"],
+      ])
+    end
+  end
+
+  %w[beta experimental].each do |(name)|
+    it "copies images for the block formatted #{name} care admonition when requested" do
+      copied = []
+      attributes = copy_attributes copied
+      attributes['copy-admonition-images'] = 'png'
+      input = <<~ASCIIDOC
+        #{name}::[]
+      ASCIIDOC
+      # We can't get the location of the blocks because asciidoctor doesn't
+      # make it available to us here!
+      expected_warnings = <<~WARNINGS
+        INFO: <stdin>: line 1: copying #{spec_dir}/resources/copy_images/images/icons/warning.png
+      WARNINGS
+      convert input, attributes, eq(expected_warnings.strip)
+      expect(copied).to eq([
+          ["images/icons/warning.png", "#{spec_dir}/resources/copy_images/images/icons/warning.png"],
       ])
     end
   end
