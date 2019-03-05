@@ -93,6 +93,20 @@ def run_build_docs(args):
                 cwd=repo_search_path)
         repo_root = repo_root.decode('utf-8').strip()
         repo_name = basename(repo_root)
+        if 'x-pack-' in repo_name:
+            # x-pack-foo repositories expect to be mounted in the foo-extra
+            # directory so we should oblige them so they'll build. This
+            # information is sort of available in conf.yaml but it is
+            # mixed into each book even though it is a property of the
+            # repository. Thus we hard code it here. Sad, but much less
+            # complex than digging it out of conf.yaml. Prior to the build_docs
+            # folks had to check the repos out into a particular directory
+            # structure but build_docs is host-machine directory structure
+            # agnostic and we like it that way.
+            extra_name = repo_name.replace('x-pack-', '')
+            repo_mount = '/doc/%s-extra/%s' % (extra_name, repo_name)
+        else:
+            repo_mount = '/doc/' + repo_name
         if repo_root not in mounted_doc_repo_roots:
             if repo_name in mounted_doc_repo_names:
                 raise ArgError("Can't mount two repos with the same " +
@@ -101,10 +115,10 @@ def run_build_docs(args):
             mounted_doc_repo_names.add(repo_name)
             docker_args.extend([
                 '-v',
-                '%s:/doc/%s:ro,cached' % (repo_root, repo_name)
+                '%s:%s:ro,cached' % (repo_root, repo_mount)
             ])
         build_docs_args.append(
-                '/doc/' + repo_name + path.replace(repo_root, ''))
+                repo_mount + path.replace(repo_root, ''))
 
     open_browser = False
     args = Args(args)
