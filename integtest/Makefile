@@ -12,6 +12,8 @@ check: \
 	style \
 	minimal_expected_files minimal_same_files \
 	includes_expected_files includes_same_files \
+	beta_expected_files beta_same_files \
+	experimental_expected_files experimental_same_files \
 	readme_expected_files readme_same_files \
 	small_all_expected_files
 
@@ -41,6 +43,16 @@ readme_expected_files: /tmp/readme_asciidoc
 	[ -s $^/images/icons/callouts/2.png ]
 	[ -s $^/snippets/blocks/1.json ]
 
+.PHONY: experimental_expected_files
+beta_expected_files: /tmp/beta_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	[ -s $^/images/icons/warning.png ]
+
+.PHONY: experimental_expected_files
+experimental_expected_files: /tmp/experimental_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	[ -s $^/images/icons/warning.png ]
+
 .PHONY: %_expected_files
 %_expected_files: /tmp/%_asciidoc
 	$(STANDARD_EXPECTED_FILES)
@@ -54,7 +66,7 @@ readme_expected_files: /tmp/readme_asciidoc
 		<(cd /tmp/$*_asciidoctor && find * -type f | sort)
 	# The grep -v below are for known issues with asciidoctor
 	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html' \
-			| grep -v 'blocks\|changes\|experimental'); do \
+			| grep -v 'blocks'); do \
 		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
 	done
 
@@ -67,6 +79,11 @@ endef
 
 /tmp/readme_asciidoctor: /docs_build/README.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
+	# These are different when rendered by asciidoctor but they are
+	# correct for asciidoctor. So we're ok with it. It isn't perfect, but
+	# perfect is quite hard for this.
+	# sed -i -E 's/beta::?\[/beta\[/' /tmp/readme_asciidoctor/experimental.html
+	# sed -i -E 's/experimental::?\[/experimental\[/' /tmp/readme_asciidoctor/experimental.html
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.
