@@ -294,7 +294,7 @@ sub build_single {
 sub _check_build_error {
 #===================================
     my ( $output, $died, $lenient ) = @_;
-    my $warned = grep {/^(a2x|asciidoc(tor)?): (WARNING):/} split "\n", $output;
+    my $warned = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} split "\n", $output;
 
     return unless $died || $warned;
 

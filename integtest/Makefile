@@ -14,6 +14,7 @@ check: \
 	includes_expected_files includes_same_files \
 	beta_expected_files beta_same_files \
 	experimental_expected_files experimental_same_files \
+	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	readme_expected_files readme_same_files \
 	small_all_expected_files
 
@@ -70,9 +71,29 @@ experimental_expected_files: /tmp/experimental_asciidoc
 		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
 	done
 
+# Build the docs into the target
 define BD=
 /docs_build/build_docs.pl --in_standard_docker --out $@
 endef
+
+# Build the docs into a temporary directory
+define BD_DUMMY=
+/docs_build/build_docs.pl --in_standard_docker --out /tmp/dummy
+endef
+
+.PHONY: missing_include_fails_asciidoc
+missing_include_fails_asciidoc: missing_include.asciidoc
+	set +e; \
+		$(BD_DUMMY) --doc missing_include.asciidoc > /tmp/out 2>&1; \
+		test $$? -eq 255
+	$(call GREP,'WARNING: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
+
+.PHONY: missing_include_fails_asciidoctor
+missing_include_fails_asciidoctor: missing_include.asciidoc
+	set +e; \
+		$(BD_DUMMY) --asciidoctor --doc missing_include.asciidoc > /tmp/out 2>&1; \
+		test $$? -eq 255
+	$(call GREP,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
 
 /tmp/readme_asciidoc: /docs_build/README.asciidoc
 	$(BD) --doc /docs_build/README.asciidoc
@@ -126,3 +147,18 @@ small_all_expected_files: /tmp/small_all
 
 	# Check out the files we just built
 	git clone /tmp/small_all.git /tmp/small_all
+
+define GREP=
+	# grep for a string in a file, outputting the whole file if there isn't
+	# a match.
+	[ -e $(2) ] || { \
+		echo "can't find $(2)"; \
+		ls $$(dirname $(2)); \
+		false; \
+	}
+	grep $(1) $(2) > /dev/null || { \
+		echo "Couldn't find $(1) in $(2):"; \
+		cat $(2); \
+		false; \
+	}
+endef
