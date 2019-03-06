@@ -23,6 +23,7 @@ our @EXPORT_OK = qw(
     sha_for
     timestamp
     write_html_redirect
+    write_nginx_redirects
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -474,8 +475,25 @@ sub write_html_redirect {
 HTML
 
     $dir->file('index.html')->spew( iomode => '>:utf8', $html );
-
 }
+
+#===================================
+sub write_nginx_redirects {
+#===================================
+    my ( $dest ) = @_;
+
+    my $redirects = dir('resources')->file('legacy_redirects.conf')
+            ->slurp( iomode => "<:encoding(UTF-8)" );
+
+    # Today we just have a list of redirects built long ago that we include
+    # in the generated docs. In the future we'll generate the redirects from
+    # the docs *somehow*.
+
+    $redirects =~ s/^(#.+)?\n//gm;
+
+    $dest->spew( iomode => '>:utf8', $redirects );
+}
+
 #===================================
 sub run (@) {
 #===================================

@@ -36,6 +36,7 @@ use ES::Util qw(
     sha_for
     timestamp
     write_html_redirect
+    write_nginx_redirects
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -125,7 +126,7 @@ sub build_local {
 
     if ( $Opts->{open} ) {
         say "Opening: " . $html;
-        serve_and_open_browser( $dir );
+        serve_and_open_browser( $dir, 0 );
     }
     else {
         say "See: $html";
@@ -221,6 +222,7 @@ sub build_all {
         or die "Missing <contents> configuration section";
 
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
+    my $redirects = dir($target_repo_checkout)->file('redirects.conf');
 
     if ( $Opts->{linkcheckonly} ){
         say "Skipping documentation builds."
@@ -236,6 +238,8 @@ sub build_all {
             write_html_redirect( $build_dir->subdir( $_->{prefix} ),
                     $_->{redirect} );
         }
+
+        write_nginx_redirects( $redirects );
     }
     if ( $Opts->{skiplinkcheck} ) {
         say "Skipped Checking links";
@@ -245,7 +249,7 @@ sub build_all {
         check_links($build_dir);
     }
     push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
-    serve_and_open_browser( $build_dir ) if $Opts->{open};
+    serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -533,11 +537,11 @@ sub push_changes {
         ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
 
     say 'Preparing commit';
-    run qw( git add -A), $build_dir;
+    run qw(git add -A);
 
-    if ( run qw(git status -s -- ), $build_dir ) {
+    if ( run qw(git status -s -- ) ) {
         build_sitemap($build_dir);
-        run qw( git add -A), $build_dir;
+        run qw(git add -A);
         say "Commiting changes";
         run qw(git commit -m), 'Updated docs';
     }
@@ -700,7 +704,7 @@ sub pick_conf {
 #===================================
 sub serve_and_open_browser {
 #===================================
-    my ( $dir, $open_path ) = @_;
+    my ( $dir, $redirects_file ) = @_;
 
     if ( my $pid = fork ) {
         # parent
@@ -723,6 +727,8 @@ sub serve_and_open_browser {
             # when we're running inside docker because the python web server performs
             # badly there. nginx is fine.
             open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
+
+            my $redirects_line = $redirects_file ? "include $redirects_file;\n" : '';
             print $nginx_conf <<"CONF";
 daemon off;
 error_log /dev/stdout info;
@@ -736,6 +742,7 @@ http {
   error_log /dev/stdout crit;
   log_format short '[\$time_local] "\$request" \$status';
   access_log /dev/stdout short;
+
   server {
     listen 8000;
     location /guide {
@@ -756,6 +763,8 @@ http {
     rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
+    set \$guide_root "http://localhost:8000/guide";
+    $redirects_line
   }
 }
 CONF
