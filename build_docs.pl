@@ -226,6 +226,7 @@ sub build_all {
         say "Skipping documentation builds."
     }
     else {
+        say "Building docs";
         build_entries( $build_dir, $temp_dir, $toc, @$contents );
 
         say "Writing main TOC";
