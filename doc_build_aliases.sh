@@ -43,7 +43,7 @@ alias docbldstk='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-d
 
 alias docbldgls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
 
-alias docbldgs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
+alias docbldgs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
 alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
 
@@ -102,7 +102,7 @@ alias docblddg='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-defin
 
 
 # Elasticsearch Extras
-alias docbldres='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single'
+alias docbldres='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single'
 
 alias docbldpls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
 

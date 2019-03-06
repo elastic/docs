@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pathname'
 require 'edit_me/extension'
 
 RSpec.describe EditMe do
@@ -13,9 +14,33 @@ RSpec.describe EditMe do
     Asciidoctor::Extensions.unregister_all
   end
 
+  spec_dir = File.dirname(__FILE__)
+
+  it "has a nice error message if you are missing the edit url" do
+    attributes = {
+      'edit_urls' => '<stdin>',
+    }
+    warnings = <<~WARNINGS
+      ERROR: invalid edit_urls, no url
+      WARN: couldn't find edit url for <stdin>
+    WARNINGS
+    convert 'Words.', attributes, eq(warnings.strip)
+  end
+
+  it "has a nice error message if you are missing the toplevel" do
+    attributes = {
+      'edit_urls' => ',http://example.com',
+    }
+    warnings = <<~WARNINGS
+      ERROR: invalid edit_urls, no toplevel
+      WARN: couldn't find edit url for <stdin>
+    WARNINGS
+    convert 'Words.', attributes, eq(warnings.strip)
+  end
+
   it "adds a link to the preface" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => '<stdin>,www.example.com/docs',
     }
     input = <<~ASCIIDOC
       :preface-title: Preface
@@ -23,7 +48,7 @@ RSpec.describe EditMe do
     ASCIIDOC
     expected = <<~DOCBOOK
       <preface>
-      <title>Preface<ulink role="edit_me" url="www.example.com/docs/<stdin>">Edit me</ulink></title>
+      <title>Preface<ulink role="edit_me" url="www.example.com/docs">Edit me</ulink></title>
       <simpara>Words.</simpara>
       </preface>
     DOCBOOK
@@ -46,7 +71,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each chapter title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => "#{spec_dir},www.example.com/docs",
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/chapter1.adoc[]
@@ -60,29 +85,6 @@ RSpec.describe EditMe do
       </chapter>
       <chapter id="_chapter_2">
       <title>Chapter 2<ulink role="edit_me" url="www.example.com/docs/resources/edit_me/chapter2.adoc">Edit me</ulink></title>
-      <simpara>Words.</simpara>
-      </chapter>
-    DOCBOOK
-    expect(convert input, attributes).to eq(expected.strip)
-  end
-
-  it "respects the repo_root attribute" do
-    attributes = {
-      'edit_url' => 'www.example.com/docs/',
-      'repo_root' => File.dirname(File.dirname(__FILE__)),
-    }
-    input = <<~ASCIIDOC
-      include::resources/edit_me/chapter1.adoc[]
-
-      include::resources/edit_me/chapter2.adoc[]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_chapter_1">
-      <title>Chapter 1<ulink role="edit_me" url="www.example.com/docs/spec/resources/edit_me/chapter1.adoc">Edit me</ulink></title>
-      <simpara>Words.</simpara>
-      </chapter>
-      <chapter id="_chapter_2">
-      <title>Chapter 2<ulink role="edit_me" url="www.example.com/docs/spec/resources/edit_me/chapter2.adoc">Edit me</ulink></title>
       <simpara>Words.</simpara>
       </chapter>
     DOCBOOK
@@ -110,7 +112,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each section title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => "#{spec_dir},www.example.com/docs/",
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/section1.adoc[]
@@ -151,7 +153,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each appendix title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => "#{spec_dir},www.example.com/docs",
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/appendix1.adoc[]
@@ -192,7 +194,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each glossary title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => "#{spec_dir},www.example.com/docs",
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/glossary1.adoc[]
@@ -233,7 +235,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each bibliography title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => "#{spec_dir},www.example.com/docs",
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/bibliography1.adoc[]
@@ -274,7 +276,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each dedication title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => "#{spec_dir},www.example.com/docs",
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/dedication1.adoc[]
@@ -315,7 +317,7 @@ RSpec.describe EditMe do
 
   it "adds a link to each colophon title" do
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => "#{spec_dir},www.example.com/docs",
     }
     input = <<~ASCIIDOC
       include::resources/edit_me/colophon1.adoc[]
@@ -355,8 +357,12 @@ RSpec.describe EditMe do
   end
 
   it "adds a link to each floating title" do
+    edit_urls = <<~CSV
+      <stdin>,www.example.com/stdin
+      #{spec_dir},www.example.com/docs
+    CSV
     attributes = {
-      'edit_url' => 'www.example.com/docs/',
+      'edit_urls' => edit_urls,
     }
     input = <<~ASCIIDOC
       == Chapter
@@ -367,7 +373,7 @@ RSpec.describe EditMe do
     ASCIIDOC
     expected = <<~DOCBOOK
       <chapter id="_chapter">
-      <title>Chapter<ulink role="edit_me" url="www.example.com/docs/<stdin>">Edit me</ulink></title>
+      <title>Chapter<ulink role="edit_me" url="www.example.com/stdin">Edit me</ulink></title>
       <bridgehead id="_float_1" renderas="sect2">Float 1<ulink role="edit_me" url="www.example.com/docs/resources/edit_me/float1.adoc">Edit me</ulink></bridgehead>
       <simpara>Words.</simpara>
       <bridgehead id="_float_2" renderas="sect2">Float 2<ulink role="edit_me" url="www.example.com/docs/resources/edit_me/float2.adoc">Edit me</ulink></bridgehead>
@@ -395,5 +401,31 @@ RSpec.describe EditMe do
       </chapter>
     DOCBOOK
     expect(convert input).to eq(expected.strip)
+  end
+
+  it "can handle multiple edit urls" do
+    edit_urls = <<~CSV
+      #{spec_dir}/resources/edit_me/chapter1.adoc,www.example.com/1
+      #{spec_dir}/resources/edit_me/chapter2.adoc,www.example.com/2
+    CSV
+    attributes = {
+      'edit_urls' => edit_urls,
+    }
+    input = <<~ASCIIDOC
+      include::resources/edit_me/chapter1.adoc[]
+
+      include::resources/edit_me/chapter2.adoc[]
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_chapter_1">
+      <title>Chapter 1<ulink role="edit_me" url="www.example.com/1">Edit me</ulink></title>
+      <simpara>Words.</simpara>
+      </chapter>
+      <chapter id="_chapter_2">
+      <title>Chapter 2<ulink role="edit_me" url="www.example.com/2">Edit me</ulink></title>
+      <simpara>Words.</simpara>
+      </chapter>
+    DOCBOOK
+    expect(convert input, attributes).to eq(expected.strip)
   end
 end

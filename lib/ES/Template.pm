@@ -155,7 +155,7 @@ sub _init {
     }
 
     my $created = $1 || 0;
-    if ( not $force and time - $latest < 20 * 60 ) {
+    if ( not $force and time - $latest < 20 * 60) {
         $new = $old[-1];
     }
     else {

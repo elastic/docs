@@ -5,6 +5,12 @@ SHELL = /bin/bash -eux -o pipefail
 MAKEFLAGS += --silent
 
 .PHONY: check
-check:
+check: rspec rubocop
+
+.PHONY: rspec
+rspec:
 	rspec
+
+.PHONY: robucop
+rubocop:
 	rubocop --cache false

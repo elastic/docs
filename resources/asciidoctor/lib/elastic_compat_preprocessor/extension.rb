@@ -161,13 +161,14 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           end
         end
 
-        supported = 'added|coming|deprecated'
+        supported = 'added|beta|coming|deprecated|experimental'
         # First convert the "block" version of these macros. We convert them
         # to block macros because they are at the start of the line....
         line&.gsub!(/^(#{supported})\[([^\]]*)\]/, '\1::[\2]')
         # Then convert the "inline" version of these macros. We convert them
         # to inline macros because they are *not* at the start of the line....
         line&.gsub!(/(#{supported})\[([^\]]*)\]/, '\1:[\2]')
+
         # Transform Elastic's traditional comment based marking for
         # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
         # up during tree processing to turn the snippet into a marked up
