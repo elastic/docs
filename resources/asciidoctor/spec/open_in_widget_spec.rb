@@ -111,8 +111,8 @@ RSpec.describe OpenInWidget do
         </chapter>
       DOCBOOK
       warnings = <<~WARNINGS
-        WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
         INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.#{lang}
+        WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
       WARNINGS
       file_opts = []
       actual = convert input, stub_file_opts(file_opts), eq(warnings.strip)
@@ -120,6 +120,22 @@ RSpec.describe OpenInWidget do
       expect(file_opts).to eq([
         ["snippets/snippet.#{lang}", "#{spec_dir}/snippets/snippet.#{lang}"],
       ])
+    end
+
+    it "logs an error if override snippet is missing with #{lang} language" do
+      input = <<~ASCIIDOC
+        == Example
+        [source,#{lang},snippet=missing.#{lang}]
+        ----
+        GET /
+        ----
+      ASCIIDOC
+      warnings = <<~WARNINGS
+        ERROR: <stdin>: line 3: can't read snippet from #{spec_dir}/snippets/missing.#{lang}
+      WARNINGS
+      file_opts = []
+      convert input, stub_file_opts(file_opts), eq(warnings.strip)
+      expect(file_opts).to eq([])
     end
   end
 

@@ -49,15 +49,15 @@ class OpenInWidget < TreeProcessorScaffold
 
     snippet = block.attr 'snippet'
     if snippet
-      logger.warn message_with_context "reading snippets from a path makes the book harder to read", :source_location => block.source_location
       # If you specify the snippet path then we should copy it into the
       # destination directory so it is available for Kibana.
       snippet_path = "snippets/#{snippet}"
       normalized = block.normalize_system_path(snippet_path, block.document.base_dir)
       if File.readable? normalized
         copy_snippet block, normalized, snippet_path
+        logger.warn message_with_context "reading snippets from a path makes the book harder to read", :source_location => block.source_location
       else
-        logger.warn message_with_context "can't read snippet from #{normalized}", :source_location => block.source_location
+        logger.error message_with_context "can't read snippet from #{normalized}", :source_location => block.source_location
       end
     else
       # If you don't specify the snippet then we assign it a number and read
