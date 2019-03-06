@@ -235,8 +235,7 @@ sub _build_book {
            if -e $branch_dir
         && !$rebuild
         && !$template->md5_changed($branch_dir)
-        && !$source->has_changed( $self->title, $branch, $self->asciidoctor )
-        && $self->title ne 'Installation and Upgrade Guide';
+        && !$source->has_changed( $self->title, $branch, $self->asciidoctor );
 
     my ( $checkout, $edit_urls, $first_path ) = $source->prepare($branch);
 
