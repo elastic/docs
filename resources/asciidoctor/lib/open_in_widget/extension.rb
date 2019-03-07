@@ -61,8 +61,8 @@ class OpenInWidget < TreeProcessorScaffold
       end
     else
       # If you don't specify the snippet then we assign it a number and read
-      # if from the contents of the source listing, copying it to the
-      # destination directory so it is available for Kibana.
+      # the contents of the source listing, copying it to the destination
+      # directory so it is available for Kibana.
       snippet_number = block.document.attr 'snippet_number', 1
       snippet = "#{snippet_number}.#{lang}"
       block.document.set_attr 'snippet_number', snippet_number + 1
@@ -75,7 +75,7 @@ class OpenInWidget < TreeProcessorScaffold
     block.document.register :links, snippet_path
 
     def block.content
-      @attributes['snippet_link'] + super
+      "#{@attributes['snippet_link']}#{super}"
     end
   end
 

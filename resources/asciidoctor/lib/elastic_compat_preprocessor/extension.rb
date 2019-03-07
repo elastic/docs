@@ -113,6 +113,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/.freeze
   SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/.freeze
   CODE_BLOCK_RX = /^-----*$/.freeze
+  SNIPPET_RX = %r{//\s*(?:AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)}.freeze
 
   def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
@@ -175,7 +176,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
         # thing but we have thousands of them and it'll take us some time to
         # stop doing it.
-        line&.gsub!(%r{//\s*(?:AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)}, 'pass:[\0]')
+        line&.gsub!(SNIPPET_RX, 'pass:[\0]')
       end
     end
     reader
