@@ -325,7 +325,7 @@ RSpec.describe ElasticCompatPreprocessor do
       <screen>foo</screen>
       </chapter>
     DOCBOOK
-    actual = convert input, {}, match(/<stdin>: line 4: code block end doesn't match start/)
+    actual = convert input, {}, match(/WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/)
     expect(actual).to eq(expected.strip)
   end
 

@@ -46,6 +46,7 @@ sub build_chunked {
     my $noindex   = $opts{noindex}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
+    my $latest    = $opts{latest};
 
     $dest->rmtree;
     $dest->mkpath;
@@ -149,7 +150,7 @@ sub build_chunked {
         } or do { $output = $@; $died = 1; };
     }
 
-    _check_build_error( $output, $died, $lenient );
+    _check_build_error( $output, $died, $lenient, $latest );
 
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
         or die "Couldn't find chunk dir in <$dest>";
@@ -182,6 +183,7 @@ sub build_single {
     my $resources = $opts{resource}      || [];
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
+    my $latest    = $opts{latest};
 
     my %xsltopts = (
             "generate.toc"             => $toc,
@@ -276,7 +278,7 @@ sub build_single {
         } or do { $output = $@; $died = 1; };
     }
 
-    _check_build_error( $output, $died, $lenient );
+    _check_build_error( $output, $died, $lenient, $latest );
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
@@ -293,13 +295,15 @@ sub build_single {
 #===================================
 sub _check_build_error {
 #===================================
-    my ( $output, $died, $lenient ) = @_;
-    my $warned = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} split "\n", $output;
+    my ( $output, $died, $lenient, $latest ) = @_;
 
+    my @lines = split "\n", $output;
+    my @build_warnings = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} @lines;
+    @build_warnings = grep {!/MIGRATION:/} @build_warnings unless $latest;
+    my $warned = @build_warnings;
     return unless $died || $warned;
 
-    my @warn = grep { /(WARNING|ERROR):/ || !/^(a2x|asciidoc(tor)?): / } split "\n",
-        $output;
+    my @warn = grep { /(WARNING|ERROR):/ || !/^(a2x|asciidoc(tor)?): / } @lines;
 
     if ( $died || $warned && !$lenient ) {
         die join "\n", ( '', @warn, '' );

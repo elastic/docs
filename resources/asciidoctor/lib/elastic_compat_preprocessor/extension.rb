@@ -154,7 +154,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           if @code_block_start
             if line != @code_block_start
               line.replace(@code_block_start)
-              logger.warn message_with_context "code block end doesn't match start", :source_location => cursor
+              logger.warn message_with_context "MIGRATION: code block end doesn't match start", :source_location => cursor
             end
             @code_block_start = nil
           else

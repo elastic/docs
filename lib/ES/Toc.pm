@@ -41,6 +41,7 @@ sub write {
             lang      => $self->lang,
             root_dir  => '',
             edit_urls => {'' => ''},
+            latest    => 1,
     );
     $adoc_file->remove;
 }
