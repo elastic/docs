@@ -94,6 +94,20 @@ def run_build_docs(args):
                 cwd=repo_search_path)
         repo_root = repo_root.decode('utf-8').strip()
         repo_name = basename(repo_root)
+        if 'x-pack-' in repo_name:
+            # x-pack-foo repositories expect to be mounted in the foo-extra
+            # directory so we should oblige them so they'll build. This
+            # information is sort of available in conf.yaml but it is
+            # mixed into each book even though it is a property of the
+            # repository. Thus we hard code it here. Sad, but much less
+            # complex than digging it out of conf.yaml. Prior to the build_docs
+            # folks had to check the repos out into a particular directory
+            # structure but build_docs is host-machine directory structure
+            # agnostic and we like it that way.
+            extra_name = repo_name.replace('x-pack-', '')
+            repo_mount = '/doc/%s-extra/%s' % (extra_name, repo_name)
+        else:
+            repo_mount = '/doc/' + repo_name
         if repo_root not in mounted_doc_repo_roots:
             if repo_name in mounted_doc_repo_names:
                 raise ArgError("Can't mount two repos with the same " +
@@ -102,9 +116,9 @@ def run_build_docs(args):
             mounted_doc_repo_names.add(repo_name)
             docker_args.extend([
                 '-v',
-                '%s:/doc/%s:ro,cached' % (repo_root, repo_name)
+                '%s:%s:ro,cached' % (repo_root, repo_mount)
             ])
-        return '/doc/' + repo_name + path.replace(repo_root, '')
+        return repo_mount + path.replace(repo_root, '')
 
     open_browser = False
     args = Args(args)
@@ -233,7 +247,8 @@ def run_build_docs(args):
                 # is weird. If we tell it that the browser's name is `open`
                 # we'll get whatever the user set as their default browser.
                 environ['BROWSER'] = 'open'
-            webbrowser.open('http://localhost:8000', new=1, autoraise=False)
+            webbrowser.open('http://localhost:8000/guide',
+                            new=1, autoraise=False)
         if should_forward_ssh_auth_into_container:
             match = re.match('Waiting for ssh auth to be forwarded to (.+)',
                              line)

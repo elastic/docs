@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'care_admonition/extension'
 require 'change_admonition/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_include_tagged/extension'
@@ -7,6 +8,7 @@ require 'shared_examples/does_not_break_line_numbers'
 
 RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
+    Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register do
       preprocessor ElasticCompatPreprocessor
@@ -57,21 +59,71 @@ RSpec.describe ElasticCompatPreprocessor do
     end
 
     it "doesn't mind skipped #{name} block macros" do
-    actual = convert <<~ASCIIDOC
-      == Example
+      actual = convert <<~ASCIIDOC
+        == Example
 
-      ifeval::["true" == "false"]
-      #{name}[some_version]
-      #endif::[]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
+        ifeval::["true" == "false"]
+        #{name}[some_version]
+        #endif::[]
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
 
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
   end
+
+  %w[beta experimental].each do |name|
+    it "invokes the #{name} block macro when #{name}[] starts a line" do
+      actual = convert <<~ASCIIDOC
+        == Example
+        #{name}[]
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+        <warning role="#{name}">
+        <simpara></simpara>
+        </warning>
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
+
+    it "invokes the #{name} inline macro when #{name}[version] is otherwise on the line" do
+      actual = convert <<~ASCIIDOC
+        == Example
+        words #{name}[]
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+        <simpara>words <phrase role="#{name}"/>
+        </simpara>
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
+
+    it "doesn't mind skipped #{name} block macros" do
+      actual = convert <<~ASCIIDOC
+        == Example
+
+        ifeval::["true" == "false"]
+        #{name}[]
+        #endif::[]
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
   end
 
   it "invokes include-tagged::" do

@@ -39,7 +39,7 @@ alias docbldls=docbldlsx
 alias docbldlsold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash-extra/x-pack-logstash/docs/ --chunk 1'
 
 # Stack
-alias docbldstk='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/'
+alias docbldstk='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/'
 
 alias docbldgls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
 
@@ -102,7 +102,7 @@ alias docblddg='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-defin
 
 
 # Elasticsearch Extras
-alias docbldres='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single'
+alias docbldres='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single'
 
 alias docbldpls='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
 

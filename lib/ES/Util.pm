@@ -37,8 +37,8 @@ sub build_chunked {
     my $multi     = $opts{multi}         || 0;
     my $lenient   = $opts{lenient}       || '';
     my $lang      = $opts{lang}          || 'en';
-    my $edit_url  = $opts{edit_url}      || '';
-    my $root_dir  = $opts{root_dir}      || '';
+    my $edit_urls = $opts{edit_urls};
+    my $root_dir  = $opts{root_dir};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
@@ -90,11 +90,11 @@ sub build_chunked {
                 '-d' => 'book',
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'repo_root=' . $root_dir,
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
-                $private ? () : ( '-a' => "edit_url=$edit_url" ),
+                $private ? () : ( '-a' => "edit_urls=" .
+                    edit_urls_for_asciidoctor($edit_urls) ),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -121,6 +121,7 @@ sub build_chunked {
         } or do { $output = $@; $died = 1; };
     }
     else {
+        my $edit_url = $edit_urls->{$root_dir};
         eval {
             $output = run(
                 'a2x', '-v',    #'--keep',
@@ -172,8 +173,8 @@ sub build_single {
     my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lang      = $opts{lang}          || 'en';
-    my $edit_url  = $opts{edit_url}      || '';
-    my $root_dir  = $opts{root_dir}      || '';
+    my $edit_urls = $opts{edit_urls};
+    my $root_dir  = $opts{root_dir};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
@@ -222,8 +223,8 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                '-a' => 'repo_root=' . $root_dir,
-                $private ? () : ( '-a' => "edit_url=$edit_url" ),
+                $private ? () : ( '-a' => "edit_urls=" .
+                    edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
                 '-a' => 'copy-callout-images=png',
@@ -250,6 +251,7 @@ sub build_single {
         } or do { $output = $@; $died = 1; };
     }
     else {
+        my $edit_url = $edit_urls->{$root_dir};
         eval {
             $output = run(
                 'a2x', '-v',
@@ -292,7 +294,7 @@ sub build_single {
 sub _check_build_error {
 #===================================
     my ( $output, $died, $lenient ) = @_;
-    my $warned = grep {/^(a2x|asciidoc(tor)?): (WARNING):/} split "\n", $output;
+    my $warned = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} split "\n", $output;
 
     return unless $died || $warned;
 
@@ -443,6 +445,17 @@ sub rawxsltopts {
     }
     return @opts;
 }
+
+#===================================
+sub edit_urls_for_asciidoctor {
+#===================================
+    my $edit_urls = shift;
+
+    # We'd be better off using a csv library for this but we don't want to add
+    # more dependencies to the pl until we go docker-only.
+    return join("\n", map { "$_,$edit_urls->{$_}" } keys %{$edit_urls});
+}
+
 
 #===================================
 sub write_html_redirect {

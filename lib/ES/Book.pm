@@ -227,7 +227,6 @@ sub _build_book {
     my $index         = $self->index;
     my $section_title = $self->section_title($branch);
     my $subject       = $self->subject;
-    my $edit_url      = $self->source->edit_url($branch);
     my $lang          = $self->lang;
 
     return
@@ -236,7 +235,7 @@ sub _build_book {
         && !$template->md5_changed($branch_dir)
         && !$source->has_changed( $self->title, $branch, $self->asciidoctor );
 
-    my ( $checkout, $first_path ) = $source->prepare($self->title, $branch);
+    my ( $checkout, $edit_urls, $first_path ) = $source->prepare($self->title, $branch);
 
     $pm->start($branch) and return;
     say " - Branch: $branch - Building...";
@@ -249,7 +248,7 @@ sub _build_book {
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,
-                edit_url      => $edit_url,
+                edit_urls     => $edit_urls,
                 root_dir      => $first_path,
                 private       => $self->private,
                 noindex       => $self->noindex,
@@ -269,7 +268,7 @@ sub _build_book {
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,
-                edit_url      => $edit_url,
+                edit_urls     => $edit_urls,
                 root_dir      => $first_path,
                 private       => $self->private,
                 noindex       => $self->noindex,
