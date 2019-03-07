@@ -37,6 +37,7 @@ use ES::Util qw(
     timestamp
     write_html_redirect
     write_nginx_redirects
+    write_nginx_test_config
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -239,7 +240,8 @@ sub build_all {
                     $_->{redirect} );
         }
 
-        write_nginx_redirects( $redirects );
+        say "Writing nginx redirects";
+        write_nginx_redirects( $redirects, $build_dir, $temp_dir );
     }
     if ( $Opts->{skiplinkcheck} ) {
         say "Skipped Checking links";
@@ -539,7 +541,7 @@ sub push_changes {
     say 'Preparing commit';
     run qw(git add -A);
 
-    if ( run qw(git status -s -- ) ) {
+    if ( run qw(git status -s --) ) {
         build_sitemap($build_dir);
         run qw(git add -A);
         say "Commiting changes";
@@ -704,7 +706,7 @@ sub pick_conf {
 #===================================
 sub serve_and_open_browser {
 #===================================
-    my ( $dir, $redirects_file ) = @_;
+    my ( $docs_dir, $redirects_file ) = @_;
 
     if ( my $pid = fork ) {
         # parent
@@ -726,57 +728,16 @@ sub serve_and_open_browser {
             # We use nginx to serve files instead of the python built in web server
             # when we're running inside docker because the python web server performs
             # badly there. nginx is fine.
-            open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
-
-            my $redirects_line = $redirects_file ? "include $redirects_file;\n" : '';
-            print $nginx_conf <<"CONF";
-daemon off;
-error_log /dev/stdout info;
-pid /run/nginx/nginx.pid;
-
-events {
-  worker_connections 64;
-}
-
-http {
-  error_log /dev/stdout crit;
-  log_format short '[\$time_local] "\$request" \$status';
-  access_log /dev/stdout short;
-
-  server {
-    listen 8000;
-    location /guide {
-      alias $dir;
-      add_header 'Access-Control-Allow-Origin' '*';
-      if (\$request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
-      }
-    }
-    types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
-    }
-    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
-    rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
-    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
-    rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
-    rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
-    set \$guide_root "http://localhost:8000/guide";
-    $redirects_line
-  }
-}
-CONF
-            close $nginx_conf;
+            my $nginx_config = file('/tmp/nginx.conf');
+            write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
             close STDIN;
             open( STDIN, "</dev/null" );
-            exec( 'nginx', '-c', '/tmp/docs.conf' );
+            exec( qw(nginx -c), $nginx_config );
         } else {
             my $http = dir( 'resources', 'http.py' )->absolute;
             close STDIN;
             open( STDIN, "</dev/null" );
-            chdir $dir;
+            chdir $docs_dir;
             exec( $http '8000' );
         }
     }
