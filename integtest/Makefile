@@ -12,6 +12,7 @@ check: \
 	style \
 	minimal_expected_files minimal_same_files \
 	includes_expected_files includes_same_files \
+	emdash_expected_files emdash_same_files \
 	beta_expected_files beta_same_files \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
