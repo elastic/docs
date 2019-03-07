@@ -63,14 +63,15 @@ experimental_expected_files: /tmp/experimental_asciidoc
 %_same_files: /tmp/%_asciidoc /tmp/%_asciidoctor
 	diff \
 		<(cd /tmp/$*_asciidoc    && find * -type f | sort \
-			| grep -v snippets/blocks \
+			| grep -v 'snippets/' \
 		) \
-		<(cd /tmp/$*_asciidoctor && find * -type f | sort)
-	# The grep -v below are for known issues with asciidoctor
-	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html' \
-			| grep -v 'blocks'); do \
+		<(cd /tmp/$*_asciidoctor && find * -type f | sort \
+			| grep -v 'snippets/' \
+		)
+	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html'); do \
 		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
 	done
+	# TODO validate the snippets have the same contents even if the files aren't the same
 
 # Build the docs into the target
 define BD=

@@ -71,4 +71,29 @@ RSpec.describe ElasticCompatTreeProcessor do
     DOCBOOK
     expect(actual).to eq(expected.strip)
   end
+
+  [
+    %w[CONSOLE console],
+    %w[AUTOSENSE sense],
+    %w[KIBANA kibana],
+    %w[SENSE:path/to/snippet.sense sense],
+  ].each do |command, lang|
+    it "transforms legacy // #{command} commands into the #{lang} language" do
+      actual = convert <<~ASCIIDOC
+        == Example
+        [source,js]
+        ----
+        GET /
+        ----
+        pass:[// #{command}]
+      ASCIIDOC
+      expected = <<~DOCBOOK
+        <chapter id="_example">
+        <title>Example</title>
+        <programlisting language="#{lang}" linenumbering="unnumbered">GET /</programlisting>
+        </chapter>
+      DOCBOOK
+      expect(actual).to eq(expected.strip)
+    end
+  end
 end
