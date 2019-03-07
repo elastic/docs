@@ -102,11 +102,6 @@ missing_include_fails_asciidoctor: missing_include.asciidoc
 
 /tmp/readme_asciidoctor: /docs_build/README.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
-	# These are different when rendered by asciidoctor but they are
-	# correct for asciidoctor. So we're ok with it. It isn't perfect, but
-	# perfect is quite hard for this.
-	# sed -i -E 's/beta::?\[/beta\[/' /tmp/readme_asciidoctor/experimental.html
-	# sed -i -E 's/experimental::?\[/experimental\[/' /tmp/readme_asciidoctor/experimental.html
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.
