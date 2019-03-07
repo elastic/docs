@@ -269,8 +269,6 @@ define INIT_REPO_WITH_FILE=
 		git add . && \
 		git commit -m 'init'
 endef
-	# Check out the files we just built
-	git clone /tmp/small_all.git /tmp/small_all
 
 define GREP=
 	# grep for a string in a file, outputting the whole file if there isn't
