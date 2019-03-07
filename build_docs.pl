@@ -125,7 +125,7 @@ sub build_local {
 
     if ( $Opts->{open} ) {
         say "Opening: " . $html;
-        serve_and_open_browser( $dir, 'index.html' );
+        serve_and_open_browser( $dir );
     }
     else {
         say "See: $html";
@@ -245,7 +245,7 @@ sub build_all {
         check_links($build_dir);
     }
     push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
-    serve_and_open_browser( $build_dir, '/' ) if $Opts->{open};
+    serve_and_open_browser( $build_dir ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -710,7 +710,7 @@ sub serve_and_open_browser {
         if ( not $running_in_standard_docker ) {
             sleep 1;
             say "Press Ctrl-C to exit the web server";
-            open_browser("http://localhost:8000/$open_path");
+            open_browser("http://localhost:8000/");
         }
 
         wait;
@@ -738,8 +738,8 @@ http {
   access_log /dev/stdout short;
   server {
     listen 8000;
-    location / {
-      root $dir;
+    location /guide {
+      alias $dir;
       add_header 'Access-Control-Allow-Origin' '*';
       if (\$request_method = 'OPTIONS') {
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
