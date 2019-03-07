@@ -96,4 +96,20 @@ RSpec.describe ElasticCompatTreeProcessor do
       expect(actual).to eq(expected.strip)
     end
   end
+
+  it "doesn't mind when the snippet inside a definition list" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      Term::
+      Definition
+      +
+      --
+      [source,js]
+      ----
+      GET /
+      ----
+      --
+    ASCIIDOC
+    expect(actual).to match(%r{<programlisting language="js" linenumbering="unnumbered">GET /</programlisting>})
+  end
 end
