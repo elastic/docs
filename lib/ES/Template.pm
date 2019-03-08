@@ -3,12 +3,9 @@ package ES::Template;
 use strict;
 use warnings;
 use v5.10;
-use Data::Dumper qw(Dumper);
-use Encode qw(decode_utf8 encode_utf8);
+use Encode qw(encode_utf8);
 use Digest::MD5 qw(md5_hex);
-use Path::Class qw(dir);
-use ES::Util qw(get_url);
-use YAML qw(LoadFile DumpFile);
+use Path::Class qw(file);
 use File::Copy::Recursive qw(fcopy);
 
 #===================================
@@ -16,29 +13,11 @@ sub new {
 #===================================
     my ( $class, %args ) = @_;
 
-    my $path = $args{path}
-        or die "No <path> specified: " . Dumper( \%args );
-    $path = dir($path);
-    $path->mkpath;
-
-    my $base_url = $args{base_url}
-        or die "No <base_url> specified: " . Dumper( \%args );
-
-    my $template_url = $args{template_url}
-        or die "No <template_url> specified: " . Dumper( \%args );
-
-    my $defaults = $args{defaults} || {};
-    my $lenient  = $args{lenient}  || 0;
-
     my $self = bless {
-        path         => $path,
-        base_url     => $base_url,
-        template_url => $template_url,
-        defaults     => $defaults,
-        lenient      => $args{lenient} || 0,
+        defaults     => $args{defaults},
         abs_urls     => $args{abs_urls} || 0,
     }, $class;
-    $self->_init( $args{force} );
+    $self->_init;
 }
 
 #===================================
@@ -49,7 +28,7 @@ sub apply {
     my $lang = shift || die "No lang specified";
     my $asciidoctor = shift;
 
-    my $map = $self->_map;
+    my $map = $self->{map};
 
     for my $file ( $dir->children ) {
         next if $file->is_dir or $file->basename !~ /\.html$/;
@@ -65,7 +44,7 @@ sub apply {
         $contents = $self->_autosense_snippets( $file, $contents ) unless $asciidoctor;
 
         # Fill in template
-        my @parts  = @{ $self->_parts };
+        my @parts  = @{ $self->{parts} };
         my ($head) = ( $contents =~ m{<head>(.+?)</head>}s );
         my ($body) = ( $contents =~ m{<body>(.+?)</body>}s );
         $parts[ $map->{PREHEAD} ] = $head;
@@ -84,7 +63,7 @@ sub apply {
     fcopy( 'resources/web/docs.js', $dir )
         or die "Couldn't copy <docs.js> to <$dir>: $!";
 
-    $dir->file('template.md5')->spew( $self->md5 );
+    $dir->file('template.md5')->spew( $self->{md5} );
 }
 
 my $Autosense_RE = qr{
@@ -134,55 +113,18 @@ sub md5_changed {
     my $self = shift;
     my $dir  = shift;
     my $file = $dir->file('template.md5');
-    return !eval { $file->slurp eq $self->md5; };
+    return !eval { $file->slurp eq $self->{md5}; };
 }
 
 #===================================
 sub _init {
 #===================================
-    my ( $self, $force ) = @_;
-
-    my $prefix = $self->template_url;
-    $prefix =~ s/\W//g;
-
-    my $new = $self->path->file( "$prefix-" . time . ".html" );
-    my @old = sort grep {/(^|\/)${prefix}-\d+\.html$/}
-        $self->path->children( no_hidden => 1 );
-
-    my $latest = 0;
-    if ( @old && $old[-1] =~ /-(\d+)\.html/ ) {
-        $latest = $1;
-    }
-
-    my $created = $1 || 0;
-    if ( not $force and time - $latest < 20 * 60) {
-        $new = $old[-1];
-    }
-    else {
-        my $template = eval { $self->_update_template() };
-        if ($template) {
-            $_->remove for @old;
-            $new->spew( iomode => '>:utf8', $template );
-        }
-        elsif ( $self->lenient && @old ) {
-            print "$@Reusing existing template\n";
-            $new = $old[-1];
-        }
-        else {
-            die $@;
-        }
-    }
-    $self->_load_template($new);
-    return $self;
-}
-
-#===================================
-sub _update_template {
-#===================================
     my $self = shift;
+
+    my $template = file("resources/web/template.html");
     my $content;
     eval {
-        $content = $self->_fetch_template;
+        $content = $template->slurp( iomode => '<:encoding(UTF-8)' );;
 
         # remove title
         $content =~ s{<title>.*</title>}{}s
@@ -233,68 +175,10 @@ sub _update_template {
         }xs;
 
         1;
-    } or die "Unable to update template: $@";
-    return $content;
-}
-
-#===================================
-sub _fetch_template {
-#===================================
-    my $self = shift;
-
-    my $content;
-    my $cred = $self->_creds_for_url();
-
-    eval { $content = get_url( $self->template_url, $cred ) }
-        and return $content;
-
-    die $@ unless $@ =~ m/401 Unauthorized|error: 401/;
-
-    say
-        "The docs template is password protected. Please enter your credentials:";
-
-    $|++;
-    print "Username: ";
-    my $user = <STDIN>;
-    chomp $user;
-    exit(1) unless $user;
-
-    print "Password: ";
-    my $pass = <STDIN>;
-    chomp $pass;
-    exit(1) unless $pass;
-
-    $self->_add_creds_for_url("$user:$pass");
-    return $self->_fetch_template;
-}
-
-#===================================
-sub _creds_for_url {
-#===================================
-    my $self = shift;
-    my $creds = eval { LoadFile $self->creds_file } || {};
-    return $creds->{ $self->template_url };
-}
-
-#===================================
-sub _add_creds_for_url {
-#===================================
-    my ( $self, $cred ) = @_;
-    my $creds = eval { LoadFile $self->creds_file } || {};
-    $creds->{ $self->template_url } = $cred;
-    DumpFile( $self->creds_file, $creds );
-}
-
-#===================================
-sub _load_template {
-#===================================
-    my ( $self, $template ) = @_;
-    my $html = $template->slurp( iomode => '<:encoding(UTF-8)' );
-
-    my @parts = split /<!-- (DOCS \w+) -->/, $html;
-
-    my $defaults = $self->defaults;
-    my $abs = $self->abs_urls ? $self->base_url : '';
+    } or die "Unable to load template: $@";
+    my @parts = split /<!-- (DOCS \w+) -->/, $content;
+    my $defaults = $self->{defaults};
+    my $abs = $self->{abs_urls} ? 'https://www.elastic.co/' : '';
     my %map;
 
     for my $i ( 0 .. @parts - 1 ) {
@@ -313,20 +197,7 @@ sub _load_template {
     $self->{map}   = \%map;
     $self->{parts} = \@parts;
     $self->{md5}   = md5_hex( join "", map { encode_utf8 $_} @parts );
-
+    return $self;
 }
-
-#===================================
-sub path         { shift->{path} }
-sub base_url     { shift->{base_url} }
-sub template_url { shift->{template_url} }
-sub lenient      { shift->{lenient} }
-sub defaults     { shift->{defaults} }
-sub abs_urls     { shift->{abs_urls} }
-sub md5          { shift->{md5} }
-sub _map         { shift->{map} }
-sub _parts       { shift->{parts} }
-sub creds_file   { shift->path->file('creds.yml') }
-#===================================
 
 1;

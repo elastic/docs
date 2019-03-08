@@ -55,7 +55,7 @@ GetOptions(
     $Opts,    #
     'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i', 'suppress_migration_warnings',
-    'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
+    'open',    'skiplinkcheck', 'linkcheckonly', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
     'conf=s',
 ) || exit usage();
@@ -72,14 +72,8 @@ our $running_in_standard_docker = $Opts->{in_standard_docker};
 
 init_env();
 
-my $template_urls
-    = $Conf->{template}{branch}{ $Opts->{staging} ? 'staging' : 'default' };
-
 $Opts->{template} = ES::Template->new(
     %{ $Conf->{template} },
-    %$template_urls,
-    lenient  => $Opts->{lenient},
-    force    => $Opts->{reload_template},
     abs_urls => ! $running_in_standard_docker && $Opts->{doc},
 );
 
@@ -820,7 +814,6 @@ sub usage {
           --no_fetch        Skip fetching updates from source repos
 
     General Opts:
-          --staging         Use the template from the staging website
           --reload_template Force retrieving the latest web template
           --procs           Number of processes to run in parallel, defaults to 3
           --verbose
