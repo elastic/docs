@@ -453,8 +453,11 @@ sub init_repos {
         user      => $Opts->{user},
         url       => $Opts->{target_repo},
         reference => $reference_dir,
+        # We can't keep the hash of the target repo because it is what stores
+        # the hashes in the first place!
         keep_hash => 0,
-        # intentionally not passing the tracker because we don't want to use it
+        # Intentionally not passing the tracker because we need to build the
+        # tracker from information in this repo.
     );
     delete $child_dirs{ $target_repo->git_dir->absolute };
     my $target_repo_checkout = "$temp_dir/target_repo";
