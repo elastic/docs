@@ -223,7 +223,7 @@ sub build_all {
         or die "Missing <contents> configuration section";
 
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
-    my $redirects = dir($target_repo_checkout)->file('redirects.conf');
+    my $redirects = dir( $target_repo_checkout )->file( 'redirects.conf' );
 
     if ( $Opts->{linkcheckonly} ){
         say "Skipping documentation builds."
