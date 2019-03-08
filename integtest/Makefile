@@ -18,10 +18,11 @@ check: \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	readme_expected_files readme_same_files \
-	simple_all_expected_files \
-	keep_hash_expected_files \
-	sub_dir_expected_files \
-	keep_hash_and_sub_dir_expected_files
+	simple_all \
+	relative_conf_file \
+	keep_hash \
+	sub_dir \
+	keep_hash_and_sub_dir
 
 .PHONY: style
 style: html_diff
@@ -117,15 +118,26 @@ missing_include_fails_asciidoctor: missing_include.asciidoc
 /tmp/%_asciidoctor:
 	$(BD) --asciidoctor --doc $*.asciidoc
 
-.PHONY: simple_all_expected_files
-simple_all_expected_files:
+.PHONY: simple_all
+simple_all:
 	# Test the simplest possible `--all` invocation
 	rm -rf $(TMP)
 	$(BUILD_MINIMAL_ALL)
 	$(MINIMAL_ALL_EXPECTED_FILES)
 
-.PHONY: keep_hash_expected_files
-keep_hash_expected_files:
+.PHONY: relative_conf_file
+relative_conf_file:
+	# Make sure that using a relative referece to the --conf file works.
+	rm -rf $(TMP)
+	$(SETUP_MINIMAL_ALL)
+	cd $(TMP) && \
+		/docs_build/build_docs.pl --in_standard_docker --all --push \
+			--target_repo $(TMP)/dest.git \
+			--conf conf.yaml
+	$(MINIMAL_ALL_EXPECTED_FILES)
+
+.PHONY: keep_hash
+keep_hash:
 	# Test that `--all --keep_hash` doesn't pull new updates
 	rm -rf $(TMP)
 	$(BUILD_MINIMAL_ALL)
@@ -147,8 +159,8 @@ keep_hash_expected_files:
 	# make shouldn't be included
 	$(MINIMAL_ALL_EXPECTED_FILES)
 
-.PHONY: sub_dir_expected_file
-sub_dir_expected_files:
+.PHONY: sub_dir
+sub_dir:
 	# Test that `--all --sub_dir` substitutes a directory for a branch of
 	# a repo.
 	rm -rf $(TMP)
@@ -171,8 +183,8 @@ sub_dir_expected_files:
 
 	$(MINIMAL_ALL_EXPECTED_FILES)
 
-.PHONY: keep_hash_and_sub_dir_expected_files
-keep_hash_and_sub_dir_expected_files:
+.PHONY: keep_hash_and_sub_dir
+keep_hash_and_sub_dir:
 	# Test that `--all --keep_hash --sub_dir` keeps hashes the same for repos
 	# not specified by --sub_dir but forces rebuilding all books that include
 	# --sub_dir.
@@ -228,9 +240,7 @@ define GREP=
 	}
 endef
 
-define BUILD_MINIMAL_ALL=
-	# Builds `--all` docs using a "minimal" source file
-
+define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.
 	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,index.asciidoc)
 
@@ -241,6 +251,11 @@ define BUILD_MINIMAL_ALL=
 
 	# Actually build the docs
 	sed 's|--tmp--|$(TMP)|' small_conf.yaml > $(TMP)/conf.yaml
+endef
+
+define BUILD_MINIMAL_ALL=
+	# Builds `--all` docs using a "minimal" source file
+	$(SETUP_MINIMAL_ALL)
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml
