@@ -17,6 +17,7 @@ check: \
 	beta_expected_files beta_same_files \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
+	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
 	relative_conf_file \
@@ -101,6 +102,14 @@ missing_include_fails_asciidoctor: missing_include.asciidoc
 		$(BD_DUMMY) --asciidoctor --doc missing_include.asciidoc > /tmp/out 2>&1; \
 		test $$? -eq 255
 	$(call GREP,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
+
+.PHONY: migration_warnings
+migration_warnings: migration_warnings.asciidoc
+	set +e; \
+		$(BD_DUMMY) --asciidoctor --doc migration_warnings.asciidoc > /tmp/out 2>&1; \
+		test $$? -eq 255
+	$(call GREP,"WARNING: migration_warnings.asciidoc: line 7: MIGRATION: code block end doesn't match start",/tmp/out)
+	$(BD_DUMMY) --asciidoctor --doc migration_warnings.asciidoc --suppress_migration_warnings
 
 /tmp/readme_asciidoc: /docs_build/README.asciidoc
 	$(BD) --doc /docs_build/README.asciidoc
@@ -265,6 +274,7 @@ define MINIMAL_ALL_EXPECTED_FILES=
 	# Checks that $(1).git contains the expected result of building the
 	# "minimal" source file
 	git clone $(TMP)/dest.git $(TMP)/dest
+	[ -s $(TMP)/dest/redirects.conf ]
 	[ -s $(TMP)/dest/html/branches.yaml ]
 	$(call GREP,'<a class="ulink" href="test/current/index.html" target="_top">Test book</a>',$(TMP)/dest/html/index.html)
 	$(call GREP,'<meta http-equiv="refresh" content="0; url=current/index.html">',$(TMP)/dest/html/test/index.html)
@@ -291,7 +301,7 @@ define GREP=
 		false; \
 	}
 	grep $(1) $(2) > /dev/null || { \
-		echo "Couldn't find $(1) in $(2):"; \
+		echo "Couldn't" find $(1) in $(2):; \
 		cat $(2); \
 		false; \
 	}

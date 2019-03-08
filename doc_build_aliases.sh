@@ -118,13 +118,13 @@ alias docbldegr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs
 
 alias docbldnet='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
 
-alias docbldphp='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-php/docs/index.asciidoc'
+alias docbldphp='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-php/docs/index.asciidoc'
 
 alias docbldepl='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/perl/index.asciidoc --single'
 
 alias docbldepy='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/python/index.asciidoc --single 1'
 
-alias docblderb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/ruby/index.asciidoc'
+alias docblderb='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/ruby/index.asciidoc'
 
 alias docbldecc='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single 1'
 
