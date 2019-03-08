@@ -23,6 +23,8 @@ our @EXPORT_OK = qw(
     sha_for
     timestamp
     write_html_redirect
+    write_nginx_redirects
+    write_nginx_test_config
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -478,8 +480,91 @@ sub write_html_redirect {
 HTML
 
     $dir->file('index.html')->spew( iomode => '>:utf8', $html );
-
 }
+
+#===================================
+# Write the redirects managed by nginx and run a basic self test on them.
+#
+# dest        - file to which to write the redirecs : Path::Class::file
+# docs_dir    - directory containing generated docs : Path::Class::dir
+# temp_dir    - directory for writing temporary files : Path::Class::file
+#===================================
+sub write_nginx_redirects {
+#===================================
+    my ( $dest, $docs_dir, $temp_dir ) = @_;
+
+    my $redirects = dir('resources')->file('legacy_redirects.conf')
+            ->slurp( iomode => "<:encoding(UTF-8)" );
+
+    # Today we just have a list of redirects built long ago that we include
+    # in the generated docs. In the future we'll generate the redirects from
+    # the docs *somehow*.
+
+    $redirects =~ s/^(#.+)?\n//gm;
+
+    $dest->spew( iomode => '>:utf8', $redirects );
+
+    my $test_nginx_conf = $temp_dir->file( 'nginx.conf' );
+    write_nginx_test_config( $test_nginx_conf, $docs_dir, $dest );
+    run( qw(nginx -t -c), $test_nginx_conf );
+}
+
+#===================================
+# Build an nginx config file useful for serving the docs locally or running
+# a self test on the redirects.
+#
+# dest            - file to which to write the test config : Path::Class::file
+# docs_dir        - directory containing generated docs : Path::Class::dir
+# redirects_file  - file containing redirects or 0 if there aren't
+#                 - any redirects : Path::Class::file||0
+#===================================
+sub write_nginx_test_config {
+#===================================
+    my ( $dest, $docs_dir, $redirects_file ) = @_;
+
+    my $redirects_line = $redirects_file ? "include $redirects_file;\n" : '';
+    my $nginx_conf = <<"CONF";
+daemon off;
+error_log /dev/stdout info;
+pid /run/nginx/nginx.pid;
+
+events {
+  worker_connections 64;
+}
+
+http {
+  error_log /dev/stdout crit;
+  log_format short '[\$time_local] "\$request" \$status';
+  access_log /dev/stdout short;
+
+  server {
+    listen 8000;
+    location /guide {
+      alias $docs_dir;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      text/html  html;
+      application/javascript  js;
+      text/css   css;
+    }
+    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
+    rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
+    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
+    rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
+    rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
+    set \$guide_root "http://localhost:8000/guide";
+    $redirects_line
+  }
+}
+CONF
+    $dest->spew( iomode => '>:utf8', $nginx_conf );
+}
+
 #===================================
 sub run (@) {
 #===================================

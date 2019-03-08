@@ -124,6 +124,7 @@ migration_warnings: migration_warnings.asciidoc
 
 .PHONY: small_all_expected_files
 small_all_expected_files: /tmp/small_all
+	[ -s $^/redirects.conf ]
 	[ -s $^/html/branches.yaml ]
 	grep '<a class="ulink" href="test/current/index.html" target="_top">Test book</a>' $^/html/index.html > /dev/null
 	grep '<meta http-equiv="refresh" content="0; url=current/index.html">' $^/html/test/index.html > /dev/null
