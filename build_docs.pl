@@ -704,6 +704,12 @@ sub pick_conf {
 }
 
 #===================================
+# Serve the documentation that we just built and open a browser to look at it.
+#
+# docs_dir        - directory containing generated docs : Path::Class::dir
+# redirects_file  - file containing redirects or 0 if there aren't
+#                 - any redirects : Path::Class::file||0
+#===================================
 sub serve_and_open_browser {
 #===================================
     my ( $docs_dir, $redirects_file ) = @_;

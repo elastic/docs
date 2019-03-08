@@ -478,7 +478,12 @@ HTML
     $dir->file('index.html')->spew( iomode => '>:utf8', $html );
 }
 
+#===================================
 # Write the redirects managed by nginx and run a basic self test on them.
+#
+# dest        - file to which to write the redirecs : Path::Class::file
+# docs_dir    - directory containing generated docs : Path::Class::dir
+# temp_dir    - directory for writing temporary files : Path::Class::file
 #===================================
 sub write_nginx_redirects {
 #===================================
@@ -500,8 +505,14 @@ sub write_nginx_redirects {
     run( qw(nginx -t -c), $test_nginx_conf );
 }
 
+#===================================
 # Build an nginx config file useful for serving the docs locally or running
 # a self test on the redirects.
+#
+# dest            - file to which to write the test config : Path::Class::file
+# docs_dir        - directory containing generated docs : Path::Class::dir
+# redirects_file  - file containing redirects or 0 if there aren't
+#                 - any redirects : Path::Class::file||0
 #===================================
 sub write_nginx_test_config {
 #===================================
