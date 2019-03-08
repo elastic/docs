@@ -1,5 +1,6 @@
 SHELL = /bin/bash -eux -o pipefail
 MAKEFLAGS += --silent
+TMP = /tmp/docs_integtest/$@
 
 # Used by the test for --all
 export GIT_AUTHOR_NAME=Test
@@ -119,97 +120,98 @@ missing_include_fails_asciidoctor: missing_include.asciidoc
 .PHONY: simple_all_expected_files
 simple_all_expected_files:
 	# Test the simplest possible `--all` invocation
-	$(call BUILD_MINIMAL_ALL,/tmp/simple_all)
-	$(call MINIMAL_ALL_EXPECTED_FILES,/tmp/simple_all)
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
+	$(MINIMAL_ALL_EXPECTED_FILES)
 
 .PHONY: keep_hash_expected_files
 keep_hash_expected_files:
 	# Test that `--all --keep_hash` doesn't pull new updates
-	$(call BUILD_MINIMAL_ALL,/tmp/keep_hash)
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
 
 	# REPLACE the minimal documentation in the source repo
-	cp ../README.asciidoc /tmp/source/index.asciidoc
-	cd /tmp/source && \
+	cp ../README.asciidoc $(TMP)/source/index.asciidoc
+	cd $(TMP)/source && \
 		git add . && \
 		git commit -m 'README'
 
 	# Rebuild the docs with --keep_hash which should ignore the replacement
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo /tmp/keep_hash.git \
-		--conf small_conf.yaml \
-		--keep_hash | tee /tmp/out
-	$(call GREP,'No changes to push',/tmp/out)
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash | tee $(TMP)/out
+	$(call GREP,'No changes to push',$(TMP)/out)
 
 	# We expact the same files as the minimal because we the changes that we
 	# make shouldn't be included
-	$(call MINIMAL_ALL_EXPECTED_FILES,/tmp/keep_hash)
+	$(MINIMAL_ALL_EXPECTED_FILES)
 
 .PHONY: sub_dir_expected_file
 sub_dir_expected_files:
 	# Test that `--all --sub_dir` substitutes a directory for a branch of
 	# a repo.
+	rm -rf $(TMP)
 
 	# We still need to build the source repo because the script wants to fetch
 	# it just in case we need another branch.
-	rm -rf /tmp/source
-	git init /tmp/source
-	cd /tmp/source && git commit --allow-empty -m "empty"
+	git init $(TMP)/source
+	cd $(TMP)/source && git commit --allow-empty -m "empty"
 
 	# Setup the directory we'd like to substitute
-	rm -rf /tmp/to_sub
-	mkdir /tmp/to_sub
-	cp minimal.asciidoc /tmp/to_sub/index.asciidoc
+	mkdir $(TMP)/to_sub
+	cp minimal.asciidoc $(TMP)/to_sub/index.asciidoc
 
-	rm -rf /tmp/sub_dir.git
-	git init --bare /tmp/sub_dir.git
+	git init --bare $(TMP)/dest.git
+	sed -e 's|--tmp--|$(TMP)|' small_conf.yaml > $(TMP)/conf.yaml
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo /tmp/sub_dir.git \
-		--conf small_conf.yaml \
-		--sub_dir source:master:/tmp/to_sub
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--sub_dir source:master:$(TMP)/to_sub
 
-	$(call MINIMAL_ALL_EXPECTED_FILES,/tmp/sub_dir)
+	$(MINIMAL_ALL_EXPECTED_FILES)
 
+.PHONY: keep_hash_and_sub_dir_expected_files
 keep_hash_and_sub_dir_expected_files:
 	# Test that `--all --keep_hash --sub_dir` keeps hashes the same for repos
 	# not specified by --sub_dir but forces rebuilding all books that include
 	# --sub_dir.
 
-	$(call INIT_REPO_WITH_FILE,/tmp/source1,includes_source2.asciidoc,docs/index.asciidoc)
-	$(call INIT_REPO_WITH_FILE,/tmp/source2,included.asciidoc,index.asciidoc)
-	rm -rf /tmp/keep_hash_and_sub_dir.git
-	git init --bare /tmp/keep_hash_and_sub_dir.git
+	rm -rf $(TMP)
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source1,includes_source2.asciidoc,docs/index.asciidoc)
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source2,included.asciidoc,index.asciidoc)
+	git init --bare $(TMP)/dest.git
 
+	sed 's|--tmp--|$(TMP)|' two_repos_conf.yaml > $(TMP)/conf.yaml
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo /tmp/keep_hash_and_sub_dir.git \
-		--conf two_repos_conf.yaml
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml
 
 	# Move a "bad" file into source2 so we can be sure we're not picking it up
-	cp ../README.asciidoc /tmp/source2/index.asciidoc
-	cd /tmp/source2 && \
+	cp ../README.asciidoc $(TMP)/source2/index.asciidoc
+	cd $(TMP)/source2 && \
 		git add . && \
 		git commit -m 'README'
 
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo /tmp/keep_hash_and_sub_dir.git \
-		--conf two_repos_conf.yaml \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
 		--keep_hash | tee /tmp/out
 	$(call GREP,'No changes to push',/tmp/out)
 
 	# Setup the directory we'd like to substitute
-	rm -rf /tmp/to_sub
-	mkdir -p /tmp/to_sub/docs
-	cp includes_source2.asciidoc /tmp/to_sub/docs/index.asciidoc
-	echo "extra extra extra" >> /tmp/to_sub/docs/index.asciidoc
+	mkdir -p $(TMP)/to_sub/docs
+	cp includes_source2.asciidoc $(TMP)/to_sub/docs/index.asciidoc
+	echo "extra extra extra" >> $(TMP)/to_sub/docs/index.asciidoc
 
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo /tmp/keep_hash_and_sub_dir.git \
-		--conf two_repos_conf.yaml \
-		--keep_hash --sub_dir source1:master:/tmp/to_sub | tee /tmp/out
-	$(call GREP,'Pushing changes',/tmp/out)
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash --sub_dir source1:master:$(TMP)/to_sub | tee $(TMP)/out
+	$(call GREP,'Pushing changes',$(TMP)/out)
 
-	git clone /tmp/keep_hash_and_sub_dir.git /tmp/keep_hash_and_sub_dir
-	$(call GREP,'extra extra extra',/tmp/keep_hash_and_sub_dir/html/test/current/_chapter.html)
-
+	git clone $(TMP)/dest.git $(TMP)/dest
+	$(call GREP,'extra extra extra',$(TMP)/dest/html/test/current/_chapter.html)
 
 define GREP=
 	# grep for a string in a file, outputting the whole file if there isn't
@@ -230,34 +232,33 @@ define BUILD_MINIMAL_ALL=
 	# Builds `--all` docs using a "minimal" source file
 
 	# First build a repository to use as the source.
-	$(call INIT_REPO_WITH_FILE,/tmp/source,minimal.asciidoc,index.asciidoc)
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,index.asciidoc)
 
 	# Initialize a bare repository that the docs build process can use as a
 	# remote. It is used to pushing to github but it can push to a remote on
 	# the filesystem just fine.
-	rm -rf $(1).git
-	git init --bare $(1).git
+	git init --bare $(TMP)/dest.git
 
 	# Actually build the docs
+	sed 's|--tmp--|$(TMP)|' small_conf.yaml > $(TMP)/conf.yaml
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo $(1).git \
-		--conf small_conf.yaml
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml
 endef
 
 define MINIMAL_ALL_EXPECTED_FILES=
 	# Checks that $(1).git contains the expected result of building the
 	# "minimal" source file
-	git clone $(1).git $(1)
-	[ -s $(1)/html/branches.yaml ]
-	$(call GREP,'<a class="ulink" href="test/current/index.html" target="_top">Test book</a>',$(1)/html/index.html)
-	$(call GREP,'<meta http-equiv="refresh" content="0; url=current/index.html">',$(1)/html/test/index.html)
-	[ -s $(1)/html/test/current/index.html ]
+	git clone $(TMP)/dest.git $(TMP)/dest
+	[ -s $(TMP)/dest/html/branches.yaml ]
+	$(call GREP,'<a class="ulink" href="test/current/index.html" target="_top">Test book</a>',$(TMP)/dest/html/index.html)
+	$(call GREP,'<meta http-equiv="refresh" content="0; url=current/index.html">',$(TMP)/dest/html/test/index.html)
+	[ -s $(TMP)/dest/html/test/current/index.html ]
 endef
 
 define INIT_REPO_WITH_FILE=
 	# Initializes the repo at $(1) and commits the file in $(2) with the
 	# name $(3)
-	rm -rf $(1)
 	git init $(1)
 	mkdir -p $$(dirname $(1)/$(3))
 	cp $(2) $(1)/$(3)

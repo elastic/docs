@@ -708,9 +708,10 @@ sub pick_conf {
 #===================================
     return 'conf.yaml' unless $Opts->{conf};
 
-    my $conf = dir($Old_Pwd)->file($Opts->{conf});
+    my $conf = file($Opts->{conf});
+    $conf = dir($Old_Pwd)->file($Opts->{conf}) if $conf->is_relative;
     return $conf if -e $conf;
-    die $Opts->{conf} . " doesn't exist";
+    die "$conf doesn't exist";
 }
 
 #===================================
