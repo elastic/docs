@@ -172,8 +172,10 @@ sub build {
         }
     );
 
+    my $latest = 1;
     for my $branch ( @{ $self->branches } ) {
-        $self->_build_book( $branch, $pm, $rebuild );
+        $self->_build_book( $branch, $pm, $rebuild, $latest );
+        $latest = 0;
 
         my $branch_title = $self->branch_title($branch);
         if ( $branch eq $self->current ) {
@@ -219,7 +221,7 @@ sub build {
 #===================================
 sub _build_book {
 #===================================
-    my ( $self, $branch, $pm, $rebuild ) = @_;
+    my ( $self, $branch, $pm, $rebuild, $latest ) = @_;
 
     my $branch_dir    = $self->dir->subdir($branch);
     my $source        = $self->source;
@@ -260,6 +262,7 @@ sub _build_book {
                 template      => $template,
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
+                latest        => $latest,
             );
         }
         else {
@@ -280,6 +283,7 @@ sub _build_book {
                 template      => $template,
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
+                latest        => $latest,
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }

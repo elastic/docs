@@ -54,7 +54,7 @@ use ES::Template();
 GetOptions(
     $Opts,    #
     'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
-    'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
+    'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i', 'suppress_migration_warnings',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
     'conf=s',
@@ -110,13 +110,18 @@ sub build_local {
         die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
     }
 
+    my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
-        build_single( $index, $dir, %$Opts );
+        build_single( $index, $dir, %$Opts,
+                latest => $latest
+        );
     }
     else {
-        build_chunked( $index, $dir, %$Opts );
+        build_chunked( $index, $dir, %$Opts,
+                latest => $latest
+        );
     }
 
     say "Done";
@@ -794,6 +799,9 @@ sub usage {
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
           --asciidoctor     Use asciidoctor instead of asciidoc.
+          --suppress_migration_warnings
+                            Suppress warnings about Asciidoctor migration
+                            issues. Use this when building "old" branches.
 
         WARNING: Anything in the `out` dir will be deleted!
 
