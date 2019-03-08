@@ -126,7 +126,7 @@ alias docbldepy='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs
 
 alias docblderb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/ruby/index.asciidoc'
 
-alias docbldecc='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single 1'
+alias docbldecc='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single'
 
 alias docbldesh='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
