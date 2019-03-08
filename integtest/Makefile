@@ -12,6 +12,7 @@ check: \
 	style \
 	minimal_expected_files minimal_same_files \
 	includes_expected_files includes_same_files \
+	emdash_expected_files emdash_same_files \
 	beta_expected_files beta_same_files \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
@@ -62,14 +63,15 @@ experimental_expected_files: /tmp/experimental_asciidoc
 %_same_files: /tmp/%_asciidoc /tmp/%_asciidoctor
 	diff \
 		<(cd /tmp/$*_asciidoc    && find * -type f | sort \
-			| grep -v snippets/blocks \
+			| grep -v 'snippets/' \
 		) \
-		<(cd /tmp/$*_asciidoctor && find * -type f | sort)
-	# The grep -v below are for known issues with asciidoctor
-	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html' \
-			| grep -v 'blocks'); do \
+		<(cd /tmp/$*_asciidoctor && find * -type f | sort \
+			| grep -v 'snippets/' \
+		)
+	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html'); do \
 		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
 	done
+	# TODO validate the snippets have the same contents even if the files aren't the same
 
 # Build the docs into the target
 define BD=
@@ -100,11 +102,6 @@ missing_include_fails_asciidoctor: missing_include.asciidoc
 
 /tmp/readme_asciidoctor: /docs_build/README.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
-	# These are different when rendered by asciidoctor but they are
-	# correct for asciidoctor. So we're ok with it. It isn't perfect, but
-	# perfect is quite hard for this.
-	# sed -i -E 's/beta::?\[/beta\[/' /tmp/readme_asciidoctor/experimental.html
-	# sed -i -E 's/experimental::?\[/experimental\[/' /tmp/readme_asciidoctor/experimental.html
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.

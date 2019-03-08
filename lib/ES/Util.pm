@@ -156,7 +156,7 @@ sub build_chunked {
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
         or die "Couldn't find chunk dir in <$dest>";
 
-    finish_build( $index->parent, $chunk_dir, $lang );
+    finish_build( $index->parent, $chunk_dir, $lang, $asciidoctor );
     extract_toc_from_index($chunk_dir);
     for ( $chunk_dir->children ) {
         run( 'mv', $_, $dest );
@@ -289,7 +289,7 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    finish_build( $index->parent, $dest, $lang );
+    finish_build( $index->parent, $dest, $lang, $asciidoctor );
 }
 
 #===================================
@@ -371,10 +371,10 @@ sub build_pdf {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $dest, $lang ) = @_;
+    my ( $source, $dest, $lang, $asciidoctor ) = @_;
 
     # Apply template to HTML files
-    $Opts->{template}->apply( $dest, $lang );
+    $Opts->{template}->apply( $dest, $lang, $asciidoctor );
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
