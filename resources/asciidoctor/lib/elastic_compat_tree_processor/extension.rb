@@ -23,14 +23,62 @@ require_relative '../scaffold.rb'
 #   <1> The count of categories that were matched
 #   <2> The categories retrieved
 #
+# Turns
+#   [source,js]
+#   --------------------------------------------------
+#   GET / <1>
+#   --------------------------------------------------
+#   pass:[// CONSOLE]
+#   <1> The count of categories that were matched
+#   <2> The categories retrieved
+#
+# Into
+#   [source,console]
+#   --------------------------------------------------
+#   GET / <1>
+#   --------------------------------------------------
+#   <1> The count of categories that were matched
+#   <2> The categories retrieved
+#
 class ElasticCompatTreeProcessor < TreeProcessorScaffold
+  include Asciidoctor::Logging
+
   def process_block(block)
-    if block.context == :listing && block.style == "source" &&
-          block.subs.include?(:specialcharacters) == false
-      # callouts have to come *after* special characters
-      had_callouts = block.subs.delete(:callouts)
-      block.subs << :specialcharacters
-      block.subs << :callouts if had_callouts
-    end
+    return unless block.context == :listing && block.style == 'source'
+
+    process_subs block
+    process_lang_override block
+  end
+
+  def process_subs(block)
+    return if block.subs.include? :specialcharacters
+
+    # callouts have to come *after* special characters
+    had_callouts = block.subs.delete(:callouts)
+    block.subs << :specialcharacters
+    block.subs << :callouts if had_callouts
+  end
+
+  LANG_MAPPING = {
+    'AUTOSENSE' => 'sense',
+    'CONSOLE' => 'console',
+    'KIBANA' => 'kibana',
+    'SENSE' => 'sense',
+  }.freeze
+
+  def process_lang_override(block)
+    next_block = block.next_adjacent_block
+    return unless next_block && next_block.context == :paragraph
+    return unless next_block.source =~ %r{pass:\[//\s*([^:\]]+)(?::\s*([^\]]+))?\]}
+
+    lang = LANG_MAPPING[$1]
+    snippet = $2
+    return unless lang # Not a language we handle
+
+    block.set_attr 'language', lang
+    block.set_attr 'snippet', snippet
+
+    block.parent.blocks.delete next_block
+    block.parent.reindex_sections
   end
 end
