@@ -330,7 +330,7 @@ sub all_repo_branches {
                 $msg = 'local changes';
             } else {
                 my $log = run( qw(git log --oneline -1), $sha );
-                $msg = $log =~ /^\w+\s+([^\n]+)/;
+                ( $msg ) = $log =~ /^\w+\s+([^\n]+)/;
             } 
             push @out, sprintf "  %-35s %s   %s", $branch,
                 substr( $shas->{$branch}, 0, 8 ), $msg;

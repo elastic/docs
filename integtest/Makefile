@@ -132,7 +132,7 @@ simple_all:
 	# Test the simplest possible `--all` invocation
 	rm -rf $(TMP)
 	$(BUILD_MINIMAL_ALL)
-	$(MINIMAL_ALL_EXPECTED_FILES)
+	$(call MINIMAL_ALL_EXPECTED_FILES,init)
 
 .PHONY: relative_conf_file
 relative_conf_file:
@@ -143,7 +143,7 @@ relative_conf_file:
 		/docs_build/build_docs.pl --in_standard_docker --all --push \
 			--target_repo $(TMP)/dest.git \
 			--conf conf.yaml
-	$(MINIMAL_ALL_EXPECTED_FILES)
+	$(call MINIMAL_ALL_EXPECTED_FILES,init)
 
 .PHONY: keep_hash
 keep_hash:
@@ -166,7 +166,7 @@ keep_hash:
 
 	# We expact the same files as the minimal because we the changes that we
 	# make shouldn't be included
-	$(MINIMAL_ALL_EXPECTED_FILES)
+	$(call MINIMAL_ALL_EXPECTED_FILES,init)
 
 .PHONY: sub_dir
 sub_dir:
@@ -190,7 +190,7 @@ sub_dir:
 		--conf $(TMP)/conf.yaml \
 		--sub_dir source:master:$(TMP)/to_sub
 
-	$(MINIMAL_ALL_EXPECTED_FILES)
+	$(call MINIMAL_ALL_EXPECTED_FILES,'local changes')
 
 .PHONY: keep_hash_and_sub_dir
 keep_hash_and_sub_dir:
@@ -271,11 +271,13 @@ define BUILD_MINIMAL_ALL=
 endef
 
 define MINIMAL_ALL_EXPECTED_FILES=
-	# Checks that $(1).git contains the expected result of building the
-	# "minimal" source file
+	# Checks that $(TMP)/dest contains the expected result of building the
+	# "minimal" source file. $(1) is the commit message that shuold be in
+	# revision.txt
 	git clone $(TMP)/dest.git $(TMP)/dest
 	[ -s $(TMP)/dest/redirects.conf ]
 	[ -s $(TMP)/dest/html/branches.yaml ]
+	$(call GREP,$(1),$(TMP)/dest/html/revision.txt)
 	$(call GREP,'<a class="ulink" href="test/current/index.html" target="_top">Test book</a>',$(TMP)/dest/html/index.html)
 	$(call GREP,'<meta http-equiv="refresh" content="0; url=current/index.html">',$(TMP)/dest/html/test/index.html)
 	[ -s $(TMP)/dest/html/test/current/index.html ]
