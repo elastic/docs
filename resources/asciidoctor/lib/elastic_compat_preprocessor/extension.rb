@@ -89,12 +89,31 @@ require 'asciidoctor/extensions'
 # Because Asciidoc permits these mismatches but asciidoctor does not. We'll
 # emit a warning because, permitted or not, they are bad style.
 #
+# With the help of ElasticCompatTreeProcessor turns
+#   [source,js]
+#   ----
+#   foo
+#   ----
+#   // CONSOLE
+#
+# Into
+#   [source,console]
+#   ----
+#   foo
+#   ----
+# Because Elastic has thousands of these constructs but Asciidoctor feels
+# strongly that comments should not convey meaning. This is a totally
+# reasonable stance and we should migrate away from these comments in new
+# docs when it is possible. But for now we have to support the comments as
+# well.
+#
 class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   include Asciidoctor::Logging
 
   INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/.freeze
   SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/.freeze
   CODE_BLOCK_RX = /^-----*$/.freeze
+  SNIPPET_RX = %r{//\s*(?:AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)}.freeze
 
   def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
@@ -135,13 +154,14 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           if @code_block_start
             if line != @code_block_start
               line.replace(@code_block_start)
-              logger.warn message_with_context "code block end doesn't match start", :source_location => cursor
+              logger.warn message_with_context "MIGRATION: code block end doesn't match start", :source_location => cursor
             end
             @code_block_start = nil
           else
             @code_block_start = line
           end
         end
+
         supported = 'added|beta|coming|deprecated|experimental'
         # First convert the "block" version of these macros. We convert them
         # to block macros because they are at the start of the line....
@@ -149,6 +169,14 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         # Then convert the "inline" version of these macros. We convert them
         # to inline macros because they are *not* at the start of the line....
         line&.gsub!(/(#{supported})\[([^\]]*)\]/, '\1:[\2]')
+
+        # Transform Elastic's traditional comment based marking for
+        # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
+        # up during tree processing to turn the snippet into a marked up
+        # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
+        # thing but we have thousands of them and it'll take us some time to
+        # stop doing it.
+        line&.gsub!(SNIPPET_RX, 'pass:[\0]')
       end
     end
     reader

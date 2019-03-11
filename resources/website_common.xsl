@@ -134,8 +134,19 @@
 
   <xsl:template match="programlisting">
     <div class="pre_wrapper">
-        <xsl:apply-imports />
+      <xsl:apply-imports />
     </div>
+    <!-- Asciidoctor's CONSOLE widget -->
+    <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana'">
+      <div
+        class="{@language}_widget"
+        data-snippet="{ulink[@type='snippet']/@url}"/>
+    </xsl:if>
+  </xsl:template>
+
+  <!-- Asciidoctor's CONSOLE widget -->
+  <xsl:template match="programlisting/ulink[@type='snippet']">
+    <!-- Throw away the link by not copying it. -->
   </xsl:template>
 
   <!-- Make callouts non-selectable -->
@@ -331,7 +342,7 @@
       <xsl:apply-templates/>
     </xsl:template>
 
-    <!-- Sense widget -->
+    <!-- AsciiDoc's CONSOLE widget -->
     <xsl:template match="remark[parent::answer|parent::appendix|parent::article|parent::bibliodiv|                                 parent::bibliography|parent::blockquote|parent::caution|parent::chapter|                                 parent::glossary|parent::glossdiv|parent::important|parent::index|                                 parent::indexdiv|parent::listitem|parent::note|parent::orderedlist|                                 parent::partintro|parent::preface|parent::procedure|parent::qandadiv|                                 parent::qandaset|parent::question|parent::refentry|parent::refnamediv|                                 parent::refsect1|parent::refsect2|parent::refsect3|parent::refsection|                                 parent::refsynopsisdiv|parent::sect1|parent::sect2|parent::sect3|parent::sect4|                                 parent::sect5|parent::section|parent::setindex|parent::sidebar|                                 parent::simplesect|parent::taskprerequisites|parent::taskrelated|                                 parent::tasksummary|parent::warning|parent::topic]">
       <xsl:if test="$show.comments != 0">
         <xsl:choose>
@@ -353,6 +364,7 @@
       </xsl:if>
     </xsl:template>
 
+    <!-- AsciiDoc's CONSOLE widget -->
     <xsl:template match="comment|remark">
       <xsl:if test="$show.comments != 0">
         <xsl:choose>

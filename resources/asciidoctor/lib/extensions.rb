@@ -8,6 +8,7 @@ require_relative 'edit_me/extension'
 require_relative 'elastic_compat_tree_processor/extension'
 require_relative 'elastic_compat_preprocessor/extension'
 require_relative 'elastic_include_tagged/extension'
+require_relative 'open_in_widget/extension'
 
 Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
@@ -20,5 +21,6 @@ Asciidoctor::Extensions.register do
   treeprocessor CopyImages::CopyImages
   treeprocessor EditMe
   treeprocessor ElasticCompatTreeProcessor
+  treeprocessor OpenInWidget
   include_processor ElasticIncludeTagged
 end

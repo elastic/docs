@@ -36,6 +36,8 @@ use ES::Util qw(
     sha_for
     timestamp
     write_html_redirect
+    write_nginx_redirects
+    write_nginx_test_config
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -53,8 +55,8 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
-    'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i',
+    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'keep_hash', 'sub_dir=s@',
+    'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i', 'suppress_migration_warnings',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
     'conf=s',
@@ -110,13 +112,18 @@ sub build_local {
         die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
     }
 
+    my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
-        build_single( $index, $dir, %$Opts );
+        build_single( $index, $dir, %$Opts,
+                latest => $latest
+        );
     }
     else {
-        build_chunked( $index, $dir, %$Opts );
+        build_chunked( $index, $dir, %$Opts,
+                latest => $latest
+        );
     }
 
     say "Done";
@@ -125,7 +132,7 @@ sub build_local {
 
     if ( $Opts->{open} ) {
         say "Opening: " . $html;
-        serve_and_open_browser( $dir, 'index.html' );
+        serve_and_open_browser( $dir, 0 );
     }
     else {
         say "See: $html";
@@ -221,6 +228,7 @@ sub build_all {
         or die "Missing <contents> configuration section";
 
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
+    my $redirects = dir( $target_repo_checkout )->file( 'redirects.conf' );
 
     if ( $Opts->{linkcheckonly} ){
         say "Skipping documentation builds."
@@ -237,6 +245,9 @@ sub build_all {
             write_html_redirect( $build_dir->subdir( $_->{prefix} ),
                     $_->{redirect} );
         }
+
+        say "Writing nginx redirects";
+        write_nginx_redirects( $redirects, $build_dir, $temp_dir );
     }
     if ( $Opts->{skiplinkcheck} ) {
         say "Skipped Checking links";
@@ -246,7 +257,7 @@ sub build_all {
         check_links($build_dir);
     }
     push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
-    serve_and_open_browser( $build_dir, '/' ) if $Opts->{open};
+    serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -454,7 +465,11 @@ sub init_repos {
         user      => $Opts->{user},
         url       => $Opts->{target_repo},
         reference => $reference_dir,
-        # intentionally not passing the tracker because we don't want to use it
+        # We can't keep the hash of the target repo because it is what stores
+        # the hashes in the first place!
+        keep_hash => 0,
+        # Intentionally not passing the tracker because we need to build the
+        # tracker from information in this repo.
     );
     delete $child_dirs{ $target_repo->git_dir->absolute };
     my $target_repo_checkout = "$temp_dir/target_repo";
@@ -488,6 +503,7 @@ sub init_repos {
             user      => $Opts->{user},
             url       => $url,
             reference => $reference_dir,
+            keep_hash => $Opts->{keep_hash},
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
@@ -497,7 +513,7 @@ sub init_repos {
         else {
             $pm->start($name) and next;
             eval {
-                $repo->update_from_remote() unless $Opts->{no_fetch};
+                $repo->update_from_remote();
                 1;
             } or do {
                 # If creds are invalid, explicitly reject them to try to clear the cache
@@ -511,6 +527,16 @@ sub init_repos {
         }
     }
     $pm->wait_all_children;
+
+    # Parse the --sub_dir options and attach the to the repo
+    my %sub_dirs = ();
+    foreach (@{ $Opts->{sub_dir} }) {
+        die "invalid --sub_dir $_"
+            unless /(?<repo>[^:]+):(?<branch>[^:]+):(?<dir>.+)/;
+        my $dir = dir($+{dir})->absolute;
+        die "--sub_dir $dir doesn't exist" unless -e $dir;
+        ES::Repo->get_repo($+{repo})->add_sub_dir($+{branch}, $dir);
+    }
 
     for ( keys %child_dirs ) {
         my $dir = dir($_);
@@ -534,11 +560,11 @@ sub push_changes {
         ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
 
     say 'Preparing commit';
-    run qw( git add -A), $build_dir;
+    run qw(git add -A);
 
-    if ( run qw(git status -s -- ), $build_dir ) {
+    if ( run qw(git status -s --) ) {
         build_sitemap($build_dir);
-        run qw( git add -A), $build_dir;
+        run qw(git add -A);
         say "Commiting changes";
         run qw(git commit -m), 'Updated docs';
     }
@@ -672,7 +698,8 @@ sub check_args {
         die('--user not compatible with --doc') if $Opts->{user};
         die('--reference not compatible with --doc') if $Opts->{reference};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
-        die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
+        die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
+        die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
         die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
     } else {
@@ -693,15 +720,22 @@ sub pick_conf {
 #===================================
     return 'conf.yaml' unless $Opts->{conf};
 
-    my $conf = dir($Old_Pwd)->file($Opts->{conf});
+    my $conf = file($Opts->{conf});
+    $conf = dir($Old_Pwd)->file($Opts->{conf}) if $conf->is_relative;
     return $conf if -e $conf;
-    die $Opts->{conf} . " doesn't exist";
+    die "$conf doesn't exist";
 }
 
 #===================================
+# Serve the documentation that we just built and open a browser to look at it.
+#
+# docs_dir        - directory containing generated docs : Path::Class::dir
+# redirects_file  - file containing redirects or 0 if there aren't
+#                 - any redirects : Path::Class::file||0
+#===================================
 sub serve_and_open_browser {
 #===================================
-    my ( $dir, $open_path ) = @_;
+    my ( $docs_dir, $redirects_file ) = @_;
 
     if ( my $pid = fork ) {
         # parent
@@ -711,7 +745,7 @@ sub serve_and_open_browser {
         if ( not $running_in_standard_docker ) {
             sleep 1;
             say "Press Ctrl-C to exit the web server";
-            open_browser("http://localhost:8000/$open_path");
+            open_browser("http://localhost:8000/");
         }
 
         wait;
@@ -723,52 +757,16 @@ sub serve_and_open_browser {
             # We use nginx to serve files instead of the python built in web server
             # when we're running inside docker because the python web server performs
             # badly there. nginx is fine.
-            open(my $nginx_conf, '>', '/tmp/docs.conf') or dir("Couldn't write nginx conf to /tmp/docs/.conf");
-            print $nginx_conf <<"CONF";
-daemon off;
-error_log /dev/stdout info;
-pid /run/nginx/nginx.pid;
-
-events {
-  worker_connections 64;
-}
-
-http {
-  error_log /dev/stdout crit;
-  log_format short '[\$time_local] "\$request" \$status';
-  access_log /dev/stdout short;
-  server {
-    listen 8000;
-    location / {
-      root $dir;
-      add_header 'Access-Control-Allow-Origin' '*';
-      if (\$request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
-      }
-    }
-    types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
-    }
-    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
-    rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
-    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
-    rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
-    rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
-  }
-}
-CONF
-            close $nginx_conf;
+            my $nginx_config = file('/tmp/nginx.conf');
+            write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
             close STDIN;
             open( STDIN, "</dev/null" );
-            exec( 'nginx', '-c', '/tmp/docs.conf' );
+            exec( qw(nginx -c), $nginx_config );
         } else {
             my $http = dir( 'resources', 'http.py' )->absolute;
             close STDIN;
             open( STDIN, "</dev/null" );
-            chdir $dir;
+            chdir $docs_dir;
             exec( $http '8000' );
         }
     }
@@ -795,6 +793,9 @@ sub usage {
           --lang            Defaults to 'en'
           --resource        Path to image dir - may be repeated
           --asciidoctor     Use asciidoctor instead of asciidoc.
+          --suppress_migration_warnings
+                            Suppress warnings about Asciidoctor migration
+                            issues. Use this when building "old" branches.
 
         WARNING: Anything in the `out` dir will be deleted!
 
@@ -810,7 +811,9 @@ sub usage {
           --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
           --rebuild         Rebuild all branches of every book regardless of what has changed
-          --no_fetch        Skip fetching updates from source repos
+          --keep_hash       Build docs from the same commit hash as last time
+          --sub_dir         Use a directory as a branch of some repo
+                            (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
 
     General Opts:
           --staging         Use the template from the staging website
