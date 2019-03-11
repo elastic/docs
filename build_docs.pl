@@ -55,7 +55,7 @@ use ES::Template();
 
 GetOptions(
     $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'no_fetch', #
+    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'keep_hash', 'sub_dir=s@',
     'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i', 'suppress_migration_warnings',
     'open',    'skiplinkcheck', 'linkcheckonly', 'staging', 'procs=i',         'user=s', 'lang=s',
     'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
@@ -464,7 +464,11 @@ sub init_repos {
         user      => $Opts->{user},
         url       => $Opts->{target_repo},
         reference => $reference_dir,
-        # intentionally not passing the tracker because we don't want to use it
+        # We can't keep the hash of the target repo because it is what stores
+        # the hashes in the first place!
+        keep_hash => 0,
+        # Intentionally not passing the tracker because we need to build the
+        # tracker from information in this repo.
     );
     delete $child_dirs{ $target_repo->git_dir->absolute };
     my $target_repo_checkout = "$temp_dir/target_repo";
@@ -498,6 +502,7 @@ sub init_repos {
             user      => $Opts->{user},
             url       => $url,
             reference => $reference_dir,
+            keep_hash => $Opts->{keep_hash},
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
@@ -507,7 +512,7 @@ sub init_repos {
         else {
             $pm->start($name) and next;
             eval {
-                $repo->update_from_remote() unless $Opts->{no_fetch};
+                $repo->update_from_remote();
                 1;
             } or do {
                 # If creds are invalid, explicitly reject them to try to clear the cache
@@ -521,6 +526,16 @@ sub init_repos {
         }
     }
     $pm->wait_all_children;
+
+    # Parse the --sub_dir options and attach the to the repo
+    my %sub_dirs = ();
+    foreach (@{ $Opts->{sub_dir} }) {
+        die "invalid --sub_dir $_"
+            unless /(?<repo>[^:]+):(?<branch>[^:]+):(?<dir>.+)/;
+        my $dir = dir($+{dir})->absolute;
+        die "--sub_dir $dir doesn't exist" unless -e $dir;
+        ES::Repo->get_repo($+{repo})->add_sub_dir($+{branch}, $dir);
+    }
 
     for ( keys %child_dirs ) {
         my $dir = dir($_);
@@ -682,7 +697,8 @@ sub check_args {
         die('--user not compatible with --doc') if $Opts->{user};
         die('--reference not compatible with --doc') if $Opts->{reference};
         die('--rebuild not compatible with --doc') if $Opts->{rebuild};
-        die('--no_fetch not compatible with --doc') if $Opts->{no_fetch};
+        die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
+        die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
         die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
     } else {
@@ -703,9 +719,10 @@ sub pick_conf {
 #===================================
     return 'conf.yaml' unless $Opts->{conf};
 
-    my $conf = dir($Old_Pwd)->file($Opts->{conf});
+    my $conf = file($Opts->{conf});
+    $conf = dir($Old_Pwd)->file($Opts->{conf}) if $conf->is_relative;
     return $conf if -e $conf;
-    die $Opts->{conf} . " doesn't exist";
+    die "$conf doesn't exist";
 }
 
 #===================================
@@ -793,7 +810,9 @@ sub usage {
           --skiplinkcheck   Omit the step that checks for broken links
           --linkcheckonly   Skips the documentation builds. Checks links only.
           --rebuild         Rebuild all branches of every book regardless of what has changed
-          --no_fetch        Skip fetching updates from source repos
+          --keep_hash       Build docs from the same commit hash as last time
+          --sub_dir         Use a directory as a branch of some repo
+                            (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
 
     General Opts:
           --staging         Use the template from the staging website

@@ -1,5 +1,6 @@
 SHELL = /bin/bash -eux -o pipefail
 MAKEFLAGS += --silent
+TMP = /tmp/docs_integtest/$@
 
 # Used by the test for --all
 export GIT_AUTHOR_NAME=Test
@@ -18,7 +19,11 @@ check: \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	migration_warnings \
 	readme_expected_files readme_same_files \
-	small_all_expected_files
+	simple_all \
+	relative_conf_file \
+	keep_hash \
+	sub_dir \
+	keep_hash_and_sub_dir
 
 .PHONY: style
 style: html_diff
@@ -122,38 +127,170 @@ migration_warnings: migration_warnings.asciidoc
 /tmp/%_asciidoctor:
 	$(BD) --asciidoctor --doc $*.asciidoc
 
-.PHONY: small_all_expected_files
-small_all_expected_files: /tmp/small_all
-	[ -s $^/redirects.conf ]
-	[ -s $^/html/branches.yaml ]
-	grep '<a class="ulink" href="test/current/index.html" target="_top">Test book</a>' $^/html/index.html > /dev/null
-	grep '<meta http-equiv="refresh" content="0; url=current/index.html">' $^/html/test/index.html > /dev/null
-	[ -s $^/html/test/current/index.html ]
+.PHONY: simple_all
+simple_all:
+	# Test the simplest possible `--all` invocation
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
+	$(MINIMAL_ALL_EXPECTED_FILES)
 
-.PRECIOUS: /tmp/small_all
-/tmp/small_all:
-	# Builds "--all" documentation specified by by the "small_conf.yaml" file.
+.PHONY: relative_conf_file
+relative_conf_file:
+	# Make sure that using a relative referece to the --conf file works.
+	rm -rf $(TMP)
+	$(SETUP_MINIMAL_ALL)
+	cd $(TMP) && \
+		/docs_build/build_docs.pl --in_standard_docker --all --push \
+			--target_repo $(TMP)/dest.git \
+			--conf conf.yaml
+	$(MINIMAL_ALL_EXPECTED_FILES)
 
-	# First build a repository to use as the source.
-	rm -rf /tmp/source
-	git init /tmp/source
-	cp minimal.asciidoc /tmp/source/
-	cd /tmp/source && \
+.PHONY: keep_hash
+keep_hash:
+	# Test that `--all --keep_hash` doesn't pull new updates
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
+
+	# REPLACE the minimal documentation in the source repo
+	cp ../README.asciidoc $(TMP)/source/index.asciidoc
+	cd $(TMP)/source && \
 		git add . && \
-		git commit -m 'minimal'
+		git commit -m 'README'
+
+	# Rebuild the docs with --keep_hash which should ignore the replacement
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash | tee $(TMP)/out
+	$(call GREP,'No changes to push',$(TMP)/out)
+
+	# We expact the same files as the minimal because we the changes that we
+	# make shouldn't be included
+	$(MINIMAL_ALL_EXPECTED_FILES)
+
+.PHONY: sub_dir
+sub_dir:
+	# Test that `--all --sub_dir` substitutes a directory for a branch of
+	# a repo.
+	rm -rf $(TMP)
+
+	# We still need to build the source repo because the script wants to fetch
+	# it just in case we need another branch.
+	git init $(TMP)/source
+	cd $(TMP)/source && git commit --allow-empty -m "empty"
+
+	# Setup the directory we'd like to substitute
+	mkdir $(TMP)/to_sub
+	cp minimal.asciidoc $(TMP)/to_sub/index.asciidoc
+
+	git init --bare $(TMP)/dest.git
+	sed -e 's|--tmp--|$(TMP)|' small_conf.yaml > $(TMP)/conf.yaml
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--sub_dir source:master:$(TMP)/to_sub
+
+	$(MINIMAL_ALL_EXPECTED_FILES)
+
+.PHONY: keep_hash_and_sub_dir
+keep_hash_and_sub_dir:
+	# Test that `--all --keep_hash --sub_dir` keeps hashes the same for repos
+	# not specified by --sub_dir but forces rebuilding all books that include
+	# --sub_dir.
+
+	rm -rf $(TMP)
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source1,includes_source2.asciidoc,docs/index.asciidoc)
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source2,included.asciidoc,index.asciidoc)
+	git init --bare $(TMP)/dest.git
+
+	sed 's|--tmp--|$(TMP)|' two_repos_conf.yaml > $(TMP)/conf.yaml
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml
+
+	# Move a "bad" file into source2 so we can be sure we're not picking it up
+	cp ../README.asciidoc $(TMP)/source2/index.asciidoc
+	cd $(TMP)/source2 && \
+		git add . && \
+		git commit -m 'README'
+
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash | tee /tmp/out
+	$(call GREP,'No changes to push',/tmp/out)
+
+	# Setup the directory we'd like to substitute
+	mkdir -p $(TMP)/to_sub/docs
+	cp includes_source2.asciidoc $(TMP)/to_sub/docs/index.asciidoc
+	echo "extra extra extra" >> $(TMP)/to_sub/docs/index.asciidoc
+
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash --sub_dir source1:master:$(TMP)/to_sub | tee $(TMP)/out
+	$(call GREP,'Pushing changes',$(TMP)/out)
+
+	git clone $(TMP)/dest.git $(TMP)/dest
+	$(call GREP,'extra extra extra',$(TMP)/dest/html/test/current/_chapter.html)
+
+define GREP=
+	# grep for a string in a file, outputting the whole file if there isn't
+	# a match.
+	[ -e $(2) ] || { \
+		echo "can't find $(2)"; \
+		ls $$(dirname $(2)); \
+		false; \
+	}
+	grep $(1) $(2) > /dev/null || { \
+		echo "Couldn't find $(1) in $(2):"; \
+		cat $(2); \
+		false; \
+	}
+endef
+
+define SETUP_MINIMAL_ALL=
+	# First build a repository to use as the source.
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,index.asciidoc)
 
 	# Initialize a bare repository that the docs build process can use as a
 	# remote. It is used to pushing to github but it can push to a remote on
 	# the filesystem just fine.
-	git init --bare /tmp/small_all.git
+	git init --bare $(TMP)/dest.git
 
 	# Actually build the docs
-	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo /tmp/small_all.git \
-		--conf small_conf.yaml
+	sed 's|--tmp--|$(TMP)|' small_conf.yaml > $(TMP)/conf.yaml
+endef
 
-	# Check out the files we just built
-	git clone /tmp/small_all.git /tmp/small_all
+define BUILD_MINIMAL_ALL=
+	# Builds `--all` docs using a "minimal" source file
+	$(SETUP_MINIMAL_ALL)
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml
+endef
+
+define MINIMAL_ALL_EXPECTED_FILES=
+	# Checks that $(1).git contains the expected result of building the
+	# "minimal" source file
+	git clone $(TMP)/dest.git $(TMP)/dest
+	[ -s $(TMP)/dest/redirects.conf ]
+	[ -s $(TMP)/dest/html/branches.yaml ]
+	$(call GREP,'<a class="ulink" href="test/current/index.html" target="_top">Test book</a>',$(TMP)/dest/html/index.html)
+	$(call GREP,'<meta http-equiv="refresh" content="0; url=current/index.html">',$(TMP)/dest/html/test/index.html)
+	[ -s $(TMP)/dest/html/test/current/index.html ]
+endef
+
+define INIT_REPO_WITH_FILE=
+	# Initializes the repo at $(1) and commits the file in $(2) with the
+	# name $(3)
+	git init $(1)
+	mkdir -p $$(dirname $(1)/$(3))
+	cp $(2) $(1)/$(3)
+	cd $(1) && \
+		git add . && \
+		git commit -m 'init'
+endef
 
 define GREP=
 	# grep for a string in a file, outputting the whole file if there isn't

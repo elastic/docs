@@ -40,6 +40,8 @@ sub new {
         url           => $url,
         tracker       => $args{tracker},
         reference_dir => $reference_dir,
+        keep_hash     => $args{keep_hash},
+        sub_dirs      => {},
     }, $class;
     if ( $self->tracker ) {
         # Only track repos that have a tracker. Other repos are for things like
@@ -129,24 +131,35 @@ sub _reference_args {
 }
 
 #===================================
+sub add_sub_dir {
+#===================================
+    my ( $self, $branch, $dir ) = @_;
+    $self->{sub_dirs}->{$branch} = $dir;
+    return ();
+}
+
+#===================================
 sub has_changed {
 #===================================
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
-    my $old
-        = $self->tracker->sha_for_branch( $self->name,
-        $self->_tracker_branch(@_) )
-        or return 1;
+    return 1 if exists $self->{sub_dirs}->{$branch};
 
     local $ENV{GIT_DIR} = $self->git_dir;
+    my $old = $self->_last_commit_info(@_) or return 1;
 
-    my $new = sha_for($branch)
-        or die "Remote branch <origin/$branch> doesn't exist "
-        . "in repo "
-        . $self->name;
+    my $new;
+    if ( $self->keep_hash ) {
+        $new = $self->_last_commit(@_);
+    } else {
+        $new = sha_for($branch) or die(
+                "Remote branch <origin/$branch> doesn't exist in repo "
+                . $self->name);
+    }
     $new .= '|asciidoctor' if $asciidoctor;
 
+    return $old ne $new if $self->keep_hash;
     return if $old eq $new;
 
     my $changed;
@@ -165,42 +178,50 @@ sub mark_done {
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
-    local $ENV{GIT_DIR} = $self->git_dir;
-
-    my $new = sha_for($branch);
+    my $new;
+    if ( exists $self->{sub_dirs}->{$branch} ) {
+        $new = 'local';
+    } elsif ( $self->keep_hash ) {
+        $new = $self->_last_commit($title, $branch, $path);
+    } else {
+        local $ENV{GIT_DIR} = $self->git_dir;
+        $new = sha_for($branch);
+    }
     $new .= '|asciidoctor' if $asciidoctor;
+
     $self->tracker->set_sha_for_branch( $self->name,
         $self->_tracker_branch(@_), $new );
-
-}
-
-#===================================
-sub tree {
-#===================================
-    my $self = shift;
-    my ( $branch, $path ) = @_;
-
-    local $ENV{GIT_DIR} = $self->git_dir;
-
-    my @files;
-    eval {
-        @files = map { Path::Class::file($_) } split /\0/,
-            run( qw(git ls-tree -r --name-only -z), $branch, '--', $path );
-        1;
-    } or do {
-        my $error = $@;
-        die "Unknown branch <$branch> in repo <" . $self->name . ">"
-            if $error =~ /Not a valid object name/;
-        die $@;
-    };
-    return @files;
 }
 
 #===================================
 sub extract {
 #===================================
     my $self = shift;
-    my ( $branch, $path, $dest ) = @_;
+    my ( $title, $branch, $path, $dest ) = @_;
+
+    if ( exists $self->{sub_dirs}->{$branch} ) {
+        # Copies the $path from the subsitution diretory. It is tempting to
+        # just symlink the substitution directoriy into the destionation and
+        # call it a day and that *almost* works! The trouble is that we often
+        # use relative paths to include asciidoc files from other repositories
+        # and those relative paths don't work at all with symlinks.
+        my $realpath = $self->{sub_dirs}->{$branch}->subdir($path);
+        my $realdest = $dest->subdir($path)->parent;
+        die "Can't find $realpath" unless -e $realpath;
+        $realdest->mkpath;
+        eval {
+            run qw(cp -r), $realpath, $realdest;
+            1;
+        } or die "Error copying from $realpath: $@";
+        return;
+    }
+
+    if ( $self->keep_hash ) {
+        $branch = $self->_last_commit(@_);
+        die "--keep_hash can't be performed for new repos" unless $branch;
+        die "--keep_hash can't build on top of --sub_dir" if $branch eq 'local';
+    }
+
     local $ENV{GIT_DIR} = $self->git_dir;
 
     $dest->mkpath;
@@ -256,11 +277,16 @@ sub edit_url_for_url_and_branch {
 sub dump_recent_commits {
 #===================================
     my ( $self, $title, $branch, $src_path ) = @_;
-    local $ENV{GIT_DIR} = $self->git_dir;
 
-    my $start = $self->tracker->sha_for_branch( $self->name,
-        $self->_tracker_branch( $title, $branch, $src_path ) );
-    my $rev_range = "$start...$branch";
+    my $description = $self->name . "/$title:$branch:$src_path";
+    if ( exists $self->{sub_dirs}->{$branch} ) {
+        return "Used " . $self->{sub_dirs}->{$branch} .
+                " for $description\n";
+    }
+
+    local $ENV{GIT_DIR} = $self->git_dir;
+    my $start = $self->_last_commit( $title, $branch, $src_path );
+    my $rev_range = $self->keep_hash ? $start : "$start...$branch";
 
     my $commits = eval {
         decode_utf8 run( 'git', 'log', $rev_range,
@@ -275,8 +301,7 @@ sub dump_recent_commits {
             '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
     }
 
-    my $header
-        = "Recent commits in " . $self->name . "/$title:$branch:$src_path:";
+    my $header = "Recent commits in $description";
     return
           $header . "\n"
         . ( '-' x length($header) ) . "\n"
@@ -300,8 +325,13 @@ sub all_repo_branches {
         for my $branch ( sort keys %$shas ) {
             my $sha = $shas->{$branch};
             $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
-            my $log = run( qw(git log --oneline -1), $sha );
-            my ($msg) = ( $log =~ /^\w+\s+([^\n]+)/ );
+            my $msg;
+            if ( $sha eq 'local' ) {
+                $msg = 'local changes';
+            } else {
+                my $log = run( qw(git log --oneline -1), $sha );
+                $msg = $log =~ /^\w+\s+([^\n]+)/;
+            } 
             push @out, sprintf "  %-35s %s   %s", $branch,
                 substr( $shas->{$branch}, 0, 8 ), $msg;
         }
@@ -316,6 +346,7 @@ sub checkout_to {
 #===================================
     my ( $self, $destination ) = @_;
 
+    die 'sub_dir not supported with checkout_to' if %{ $self->{sub_dirs}};
     my $name = $self->name;
     eval {
         run qw(git clone), $self->git_dir, $destination;
@@ -325,11 +356,34 @@ sub checkout_to {
 }
 
 #===================================
+# Information about the last commit, *not* including flags like `asciidoctor.`
+#===================================
+sub _last_commit {
+#===================================
+    my $self = shift;
+    my $sha = $self->_last_commit_info(@_);
+    $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
+    return $sha;
+}
+
+#===================================
+# Information about the last commit, including flags like `asciidoctor.`
+#===================================
+sub _last_commit_info {
+#===================================
+    my $self = shift;
+    my $tracker_branch = $self->_tracker_branch(@_);
+    my $sha = $self->tracker->sha_for_branch($self->name, $tracker_branch);
+    return $sha;
+}
+
+#===================================
 sub name          { shift->{name} }
 sub git_dir       { shift->{git_dir} }
 sub url           { shift->{url} }
 sub tracker       { shift->{tracker} }
 sub reference_dir { shift->{reference_dir} }
+sub keep_hash     { shift->{keep_hash} }
 #===================================
 
 1
