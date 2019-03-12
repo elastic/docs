@@ -94,7 +94,7 @@ alias docbldamjs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-js-base
 
 alias docbldamgo='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-go/docs/index.asciidoc --chunk 1'
 
-alias docbldamnet='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-dotnet/docs/index.asciidoc --chunk 1'
+alias docbldamnet='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-dotnet/docs/index.asciidoc --chunk 1'
 
 
 # Definitive Guide
