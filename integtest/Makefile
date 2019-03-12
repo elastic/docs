@@ -17,6 +17,7 @@ check: \
 	beta_expected_files beta_same_files \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
+	adoc_expected_files adoc_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
@@ -116,6 +117,12 @@ migration_warnings: migration_warnings.asciidoc
 
 /tmp/readme_asciidoctor: /docs_build/README.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
+
+/tmp/adoc_asciidoc: minimal.adoc
+	$(BD) --doc $^
+
+/tmp/adoc_asciidoctor: minimal.adoc
+	$(BD) --asciidoctor --doc $^
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.

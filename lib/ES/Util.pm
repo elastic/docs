@@ -68,7 +68,7 @@ sub build_chunked {
     my ( $output, $died );
     if ( $asciidoctor ) {
         my $dest_xml = $index->basename;
-        $dest_xml =~ s/\.asciidoc$/\.xml/;
+        $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
@@ -201,7 +201,7 @@ sub build_single {
     my ( $output, $died );
     if ( $asciidoctor ) {
         my $dest_xml = $index->basename;
-        $dest_xml =~ s/\.asciidoc$/\.xml/;
+        $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
