@@ -70,10 +70,10 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
     # Check if the next block is a marker for the language
     # We don't want block.next_adjacent_block because that'll go "too far"
     # and it has trouble with definition lists.
-    next_block_index = block.parent.blocks.find_index block
-    return if next_block_index.nil?
+    my_index = block.parent.blocks.find_index block
+    return unless my_index
 
-    next_block = block.parent.blocks[next_block_index + 1]
+    next_block = block.parent.blocks[my_index + 1]
     return unless next_block && next_block.context == :paragraph
     return unless next_block.source =~ %r{pass:\[//\s*([^:\]]+)(?::\s*([^\]]+))?\]}
 
