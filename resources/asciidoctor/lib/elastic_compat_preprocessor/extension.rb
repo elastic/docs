@@ -114,6 +114,9 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/.freeze
   CODE_BLOCK_RX = /^-----*$/.freeze
   SNIPPET_RX = %r{//\s*(?:AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)}.freeze
+  LEGACY_MACROS = 'added|beta|coming|deprecated|experimental'
+  LEGACY_BLOCK_MACRO_RX = /^(#{LEGACY_MACROS})\[([^\]]*)\]/.freeze
+  LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[([^\]]*)\]/.freeze
 
   def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
@@ -154,7 +157,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           if @code_block_start
             if line != @code_block_start
               line.replace(@code_block_start)
-              logger.warn message_with_context "code block end doesn't match start", :source_location => cursor
+              logger.warn message_with_context "MIGRATION: code block end doesn't match start", :source_location => cursor
             end
             @code_block_start = nil
           else
@@ -162,13 +165,12 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           end
         end
 
-        supported = 'added|beta|coming|deprecated|experimental'
         # First convert the "block" version of these macros. We convert them
         # to block macros because they are at the start of the line....
-        line&.gsub!(/^(#{supported})\[([^\]]*)\]/, '\1::[\2]')
+        line&.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
         # Then convert the "inline" version of these macros. We convert them
         # to inline macros because they are *not* at the start of the line....
-        line&.gsub!(/(#{supported})\[([^\]]*)\]/, '\1:[\2]')
+        line&.gsub!(LEGACY_INLINE_MACRO_RX, '\1:[\2]')
 
         # Transform Elastic's traditional comment based marking for
         # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick

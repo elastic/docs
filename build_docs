@@ -29,7 +29,8 @@ from __future__ import print_function
 
 import logging
 from os import environ, getgid, getuid
-from os.path import basename, dirname, exists, isdir, join, realpath
+from os.path import basename, dirname, exists, expanduser, isdir
+from os.path import join, realpath
 import re
 import subprocess
 from sys import platform, version_info
@@ -117,8 +118,7 @@ def run_build_docs(args):
                 '-v',
                 '%s:%s:ro,cached' % (repo_root, repo_mount)
             ])
-        build_docs_args.append(
-                repo_mount + path.replace(repo_root, ''))
+        return repo_mount + path.replace(repo_root, '')
 
     open_browser = False
     args = Args(args)
@@ -164,18 +164,11 @@ def run_build_docs(args):
             doc_file = realpath(args.next_arg_or_err())
             if not exists(doc_file):
                 raise ArgError("Can't find --doc %s" % doc_file)
-            mount_docs_repo_and_dockerify_path(dirname(doc_file), doc_file)
+            build_docs_args.append(mount_docs_repo_and_dockerify_path(
+                    dirname(doc_file), doc_file))
             saw_doc = True
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
-            # Ritual to make nginx run on the readonly filesystem
-            docker_args.extend(['--tmpfs', '/run/nginx',
-                                '--tmpfs', '/var/log/nginx',
-                                '--tmpfs', '/var/lib/nginx/body',
-                                '--tmpfs', '/var/lib/nginx/fastcgi',
-                                '--tmpfs', '/var/lib/nginx/proxy',
-                                '--tmpfs', '/var/lib/nginx/uwsgi',
-                                '--tmpfs', '/var/lib/nginx/scgi'])
             open_browser = True
         elif arg == '--out':
             out_dir = realpath(args.next_arg_or_err())
@@ -208,7 +201,19 @@ def run_build_docs(args):
             resource_dir = realpath(args.next_arg_or_err())
             if not isdir(resource_dir):
                 raise ArgError("Can't find --resource %s" % resource_dir)
-            mount_docs_repo_and_dockerify_path(resource_dir, resource_dir)
+            build_docs_args.append(mount_docs_repo_and_dockerify_path(
+                    resource_dir, resource_dir))
+        elif arg == '--sub_dir':
+            sub = args.next_arg_or_err()
+            m = re.match('(?P<repo>[^:]+):(?P<branch>[^:]+):(?P<dir>.+)', sub)
+            if not m:
+                raise ArgError("Invalid --sub_dir %s" % sub)
+            sub_dir = realpath(expanduser(m.group('dir')))
+            if not exists(sub_dir):
+                raise ArgError("Can't find --sub_dir %s" % sub_dir)
+            mounted_path = mount_docs_repo_and_dockerify_path(sub_dir, sub_dir)
+            build_docs_args.append("%s:%s:%s" % (
+                    m.group('repo'), m.group('branch'), mounted_path))
         arg = args.next_arg()
 
     if saw_doc and not saw_out:
@@ -448,6 +453,14 @@ def standard_docker_args():
     # Keep stdin open so the docs build can use closing it as a signal that
     # it needs to die.
     docker_args.append('-i')
+    # Ritual to make nginx run (even with -t) as the mapped user
+    docker_args.extend(['--tmpfs', '/run/nginx',
+                        '--tmpfs', '/var/log/nginx',
+                        '--tmpfs', '/var/lib/nginx/body',
+                        '--tmpfs', '/var/lib/nginx/fastcgi',
+                        '--tmpfs', '/var/lib/nginx/proxy',
+                        '--tmpfs', '/var/lib/nginx/uwsgi',
+                        '--tmpfs', '/var/lib/nginx/scgi'])
     return docker_args
 
 
