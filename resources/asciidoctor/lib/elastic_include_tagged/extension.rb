@@ -25,8 +25,8 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
       return target
     end
     tag = attrs[1]
-    start_match = /^(\s*).+tag::#{tag}\b/.freeze
-    end_match = /end::#{tag}\b/.freeze
+    start_match = /^(\s*).+tag::#{tag}\b/
+    end_match = /end::#{tag}\b/
 
     path, target_type, relpath = reader.resolve_include_path target, attrs, attrs
     # resolve_include_path returns a nil target_type if it can't find the file
@@ -57,7 +57,7 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
           next unless start_match_data
 
           found_tag = true
-          indentation = /^#{start_match_data[1]}/.freeze
+          indentation = /^#{start_match_data[1]}/
           start_of_include = lineno
         end
       end
