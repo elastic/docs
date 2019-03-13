@@ -82,6 +82,7 @@ sub dump_recent_commits {
 sub prepare {
 #===================================
     my $self   = shift;
+    my $title  = shift;
     my $branch = shift;
 
     my $checkout = Path::Class::tempdir( DIR => $self->temp_dir );
@@ -95,7 +96,7 @@ sub prepare {
         my $path   = $source->{path};
         my $source_checkout = $checkout->subdir($prefix);
 
-        $repo->extract( $branch, $path, $source_checkout );
+        $repo->extract( $title, $branch, $path, $source_checkout );
         $edit_urls{ $source_checkout->absolute } = $repo->edit_url($branch);
         $first_path = $source_checkout unless $first_path;
     }

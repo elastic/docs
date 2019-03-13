@@ -237,7 +237,7 @@ sub _build_book {
         && !$template->md5_changed($branch_dir)
         && !$source->has_changed( $self->title, $branch, $self->asciidoctor );
 
-    my ( $checkout, $edit_urls, $first_path ) = $source->prepare($branch);
+    my ( $checkout, $edit_urls, $first_path ) = $source->prepare($self->title, $branch);
 
     $pm->start($branch) and return;
     say " - Branch: $branch - Building...";
