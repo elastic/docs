@@ -5,6 +5,7 @@ require 'change_admonition/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_compat_tree_processor/extension'
 require 'elastic_include_tagged/extension'
+require 'lang_override/extension'
 require 'open_in_widget/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
@@ -13,6 +14,7 @@ RSpec.describe ElasticCompatPreprocessor do
     Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register do
+      block_macro LangOverride
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged
       treeprocessor ElasticCompatTreeProcessor

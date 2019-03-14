@@ -74,11 +74,13 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
     return unless my_index
 
     next_block = block.parent.blocks[my_index + 1]
-    return unless next_block && next_block.context == :paragraph
-    return unless next_block.source =~ %r{pass:\[//\s*([^:\]]+)(?::\s*([^\]]+))?\]}
+    return unless next_block && next_block.context == :pass
 
-    lang = LANG_MAPPING[$1]
-    snippet = $2
+    m = %r{^//\s*([^:\]]+)(?::\s*([^\]]+))?$}.match(next_block.source)
+    return unless m
+
+    lang = LANG_MAPPING[m[1]]
+    snippet = m[2]
     return unless lang # Not a language we handle
 
     block.set_attr 'language', lang
