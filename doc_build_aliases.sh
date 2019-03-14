@@ -90,7 +90,7 @@ alias docbldamry='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-ag
 
 alias docbldamj='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-java/docs/index.asciidoc --chunk 1'
 
-alias docbldamjs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-rum-js/docs/index.asciidoc --chunk 1'
+alias docbldamjs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-rum-js/docs/index.asciidoc --chunk 1'
 
 alias docbldamgo='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-go/docs/index.asciidoc --chunk 1'
 
