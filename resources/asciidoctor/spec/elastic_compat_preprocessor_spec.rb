@@ -380,7 +380,7 @@ RSpec.describe ElasticCompatPreprocessor do
     }
   end
 
-  shared_context 'snippet conversion' do |lang, override|
+  shared_context 'general snippet' do |lang, override|
     let(:snippet) do
       snippet = <<~ASCIIDOC
         [source,js]
@@ -401,52 +401,60 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
   end
-  shared_examples 'snippet language' do |override, lang, path,
-      expected_warnings = "INFO: <stdin>: line 3: writing snippet snippets/1.#{lang}"|
-    name = override ? " the #{override} lang override" : 'out a lang override'
-    context "for a snippet with#{name}" do
-      let(:has_link_to_path) { %r{<ulink type="snippet" url="#{path}"/>} }
-      let(:converted) do
-        convert input, stub_file_opts, eq(expected_warnings.strip)
+  shared_examples 'linked snippet' do |override, lang, path|
+    let(:has_link_to_path) { %r{<ulink type="snippet" url="#{path}"/>} }
+    let(:converted) do
+      convert input, stub_file_opts, eq(expected_warnings.strip)
+    end
+    shared_examples 'converted with override' do
+      it "has the #{lang} language" do
+        expect(converted).to match(has_lang)
       end
-      shared_examples 'converted with override' do
-        it "has the #{lang} language" do
-          expect(converted).to match(has_lang)
-        end
-        it "have a link to the snippet" do
-          expect(converted).to match(has_link_to_path)
-        end
-      end
-
-      context 'when there is a space after //' do
-        include_context 'snippet conversion', lang, "// #{override}"
-        include_examples 'converted with override'
-      end
-      context 'when there is not a space after //' do
-        include_context 'snippet conversion', lang, "//#{override}"
-        include_examples 'converted with override'
-      end
-      context 'when there is a space after the override command' do
-        include_context 'snippet conversion', lang, "// #{override} "
-        include_examples 'converted with override'
+      it "have a link to the snippet" do
+        expect(converted).to match(has_link_to_path)
       end
     end
+
+    context 'when there is a space after //' do
+      include_context 'general snippet', lang, "// #{override}"
+      include_examples 'converted with override'
+    end
+    context 'when there is not a space after //' do
+      include_context 'general snippet', lang, "//#{override}"
+      include_examples 'converted with override'
+    end
+    context 'when there is a space after the override command' do
+      include_context 'general snippet', lang, "// #{override} "
+      include_examples 'converted with override'
+    end
   end
-  include_examples 'snippet language', 'CONSOLE', 'console', 'snippets/1.console'
-  include_examples 'snippet language', 'AUTOSENSE', 'sense', 'snippets/1.sense'
-  include_examples 'snippet language', 'KIBANA', 'kibana', 'snippets/1.kibana'
-  include_examples(
-      'snippet language',
-      'SENSE: snippet.sense',
-      'sense',
-      'snippets/snippet.sense',
+  shared_examples 'extracted linked snippet' do |override, lang|
+    context "for a snippet with the #{override} lang override" do
+      let(:expected_warnings) do
+        "INFO: <stdin>: line 3: writing snippet snippets/1.#{lang}"
+      end
+      include_examples 'linked snippet', override, lang, "snippets/1.#{lang}"
+    end
+  end
+  include_examples 'extracted linked snippet', 'CONSOLE', 'console'
+  include_examples 'extracted linked snippet', 'AUTOSENSE', 'sense'
+  include_examples 'extracted linked snippet', 'KIBANA', 'kibana'
+  context 'for a snippet with the SENSE override pointing to a specific path' do
+    let(:expected_warnings) do
       <<~WARNINGS
-        INFO: <stdin>: line 3: copying snippet /docs_build/resources/asciidoctor/spec/snippets/snippet.sense
+        INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
         WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
       WARNINGS
-  )
-  context "for a snippet without an override" do
-    include_context 'snippet conversion', 'js', nil
+    end
+    include_examples(
+      'linked snippet',
+      'SENSE: snippet.sense',
+      'sense',
+      'snippets/snippet.sense'
+    )
+  end
+  context 'for a snippet without an override' do
+    include_context 'general snippet', 'js', nil
     let(:has_any_link) { /<ulink type="snippet"/ }
     let(:converted) do
       convert input, stub_file_opts
