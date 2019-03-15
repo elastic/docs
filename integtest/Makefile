@@ -18,6 +18,7 @@ check: \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	adoc_expected_files adoc_same_files \
+	empty_table_cell_expected_files empty_table_cell_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
