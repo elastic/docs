@@ -96,4 +96,27 @@ RSpec.describe ElasticCompatTreeProcessor do
       expect(actual).to eq(expected.strip)
     end
   end
+
+  context 'a snippet is inside of a definition list' do
+    let(:converted) do
+      convert <<~ASCIIDOC
+        == Example
+        Term::
+        Definition
+        +
+        --
+        [source,js]
+        ----
+        GET /
+        ----
+        --
+      ASCIIDOC
+    end
+    let(:has_original_language) do
+      %r{<programlisting language="js" linenumbering="unnumbered">GET /</programlisting>}
+    end
+    it "doesn't break" do
+      expect(converted).to match(has_original_language)
+    end
+  end
 end

@@ -49,7 +49,7 @@ alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/
 
 alias docbldaz='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
-alias docbldinf='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
+alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
@@ -86,15 +86,15 @@ alias docbldamn='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-nodejs/d
 
 alias docbldamp='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-python/docs/index.asciidoc --chunk 1'
 
-alias docbldamry='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-ruby/docs/index.asciidoc --chunk 1'
+alias docbldamry='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-ruby/docs/index.asciidoc --chunk 1'
 
-alias docbldamj='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-java/docs/index.asciidoc --chunk 1'
+alias docbldamj='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-java/docs/index.asciidoc --chunk 1'
 
-alias docbldamjs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-js-base/docs/index.asciidoc --chunk 1'
+alias docbldamjs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-rum-js/docs/index.asciidoc --chunk 1'
 
-alias docbldamgo='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-go/docs/index.asciidoc --chunk 1'
+alias docbldamgo='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-go/docs/index.asciidoc --chunk 1'
 
-alias docbldamnet='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-dotnet/docs/index.asciidoc --chunk 1'
+alias docbldamnet='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-dotnet/docs/index.asciidoc --chunk 1'
 
 
 # Definitive Guide
@@ -114,7 +114,7 @@ alias docbldejv='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs
 
 alias docbldejs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
-alias docbldegr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
+alias docbldegr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
 alias docbldnet='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
 
@@ -122,7 +122,7 @@ alias docbldphp='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elastic
 
 alias docbldepl='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/perl/index.asciidoc --single'
 
-alias docbldepy='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/python/index.asciidoc --single 1'
+alias docbldepy='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/python/index.asciidoc --single'
 
 alias docblderb='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/ruby/index.asciidoc'
 
