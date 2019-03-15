@@ -341,21 +341,6 @@ open_all:
 	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
 	kill -QUIT $$(cat /run/nginx/nginx.pid)
 
-define GREP=
-	# grep for a string in a file, outputting the whole file if there isn't
-	# a match.
-	[ -e $(2) ] || { \
-		echo "can't find $(2)"; \
-		ls $$(dirname $(2)); \
-		false; \
-	}
-	grep $(1) $(2) > /dev/null || { \
-		echo "Couldn't find $(1) in $(2):"; \
-		cat $(2); \
-		false; \
-	}
-endef
-
 define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.
 	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,index.asciidoc)
@@ -413,7 +398,7 @@ define GREP=
 		ls $$(dirname $(2)); \
 		false; \
 	}
-	grep $(1) $(2) > /dev/null || { \
+	grep -q $(1) $(2) || { \
 		echo "Couldn't" find \'$(1)\' in \'$(2)\':; \
 		cat $(2); \
 		false; \
@@ -428,7 +413,7 @@ define GREP_V=
 		ls $$(dirname $(2)); \
 		false; \
 	}
-	grep -v $(1) $(2) > /dev/null || { \
+	grep -qv $(1) $(2) || { \
 		echo Found \'$(1)\' in \'$(2)\':; \
 		cat $(2); \
 		false; \
