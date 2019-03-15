@@ -2,7 +2,7 @@
 
 ##
 # Block macro that exists entirely to mark language overrides in a clean way
-# without additing additional lines to the input file which would throw off
+# without adding additional lines to the input file which would throw off
 # line numbers.
 #
 class LangOverride < Asciidoctor::Extensions::BlockMacroProcessor
