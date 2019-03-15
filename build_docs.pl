@@ -24,9 +24,6 @@ BEGIN {
 }
 
 use lib 'lib';
-use Proc::PID::File;
-die "$0 already running\n"
-    if Proc::PID::File->running( dir => '.run' );
 
 use ES::Util qw(
     run $Opts

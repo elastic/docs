@@ -150,8 +150,12 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         line = super
         return nil if line.nil?
 
-        if SOURCE_WITH_SUBS_RX =~ line
-          line.sub! "subs=\"#{$1}\"", "subs=\"#{$1},callouts\"" unless $1.include? 'callouts'
+        SOURCE_WITH_SUBS_RX.match(line) do |m|
+          # AsciiDoc would automatically add `subs` to every source block but
+          # Asciidoctor does not and we have thousands of blocks that rely on
+          # this behavior.
+          old_subs = m[1]
+          line.sub! "subs=\"#{old_subs}\"", "subs=\"#{old_subs},callouts\"" unless old_subs.include? 'callouts'
         end
         if CODE_BLOCK_RX =~ line
           if @code_block_start

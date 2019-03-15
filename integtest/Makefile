@@ -17,13 +17,15 @@ check: \
 	beta_expected_files beta_same_files \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
+	adoc_expected_files adoc_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
 	relative_conf_file \
 	keep_hash \
 	sub_dir \
-	keep_hash_and_sub_dir
+	keep_hash_and_sub_dir \
+	open_all
 
 .PHONY: style
 style: html_diff
@@ -116,6 +118,12 @@ migration_warnings: migration_warnings.asciidoc
 
 /tmp/readme_asciidoctor: /docs_build/README.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
+
+/tmp/adoc_asciidoc: minimal.adoc
+	$(BD) --doc $^
+
+/tmp/adoc_asciidoctor: minimal.adoc
+	$(BD) --asciidoctor --doc $^
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.
@@ -234,6 +242,23 @@ keep_hash_and_sub_dir:
 	git clone $(TMP)/dest.git $(TMP)/dest
 	$(call GREP,'extra extra extra',$(TMP)/dest/html/test/current/_chapter.html)
 
+.PHONY: open_all
+open_all:
+	# Test that `--all --open` starts nginx in a usable way.
+	rm -rf $(TMP)
+	$(SETUP_MINIMAL_ALL)
+	/docs_build/build_docs.pl --in_standard_docker --all \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml --open | tee $(TMP)/out &
+	curl -I --retry 10 --retry-connrefused http://127.0.0.1:8000/guide/
+	mkdir $(TMP)/guide
+	curl -sS http://127.0.0.1:8000/guide/ > $(TMP)/guide/index.html
+	$(call GREP,'Test book',$(TMP)/guide/index.html)
+	curl -sSI http://127.0.0.1:8000/guide/reference/setup > $(TMP)/guide/rdir
+	$(call GREP,'301 Moved Permanently',$(TMP)/guide/rdir)
+	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
+	kill -QUIT $$(cat /run/nginx/nginx.pid)
+
 define GREP=
 	# grep for a string in a file, outputting the whole file if there isn't
 	# a match.
@@ -258,7 +283,7 @@ define SETUP_MINIMAL_ALL=
 	# the filesystem just fine.
 	git init --bare $(TMP)/dest.git
 
-	# Actually build the docs
+	# Setup the config
 	sed 's|--tmp--|$(TMP)|' small_conf.yaml > $(TMP)/conf.yaml
 endef
 

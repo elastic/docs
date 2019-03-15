@@ -25,6 +25,7 @@ module CopyImages
       'changed' => 'note',
       'deleted' => 'warning',
     }.freeze
+    CALLOUT_RX = /CO\d+-(\d+)/
 
     def initialize(name)
       super
@@ -54,8 +55,8 @@ module CopyImages
       coids = block.attr('coids')
       return unless coids
 
-      coids.scan(/CO(?:\d+)-(\d+)/) do
-        @copier.copy_image block, "images/icons/callouts/#{$1}.#{callout_extension}"
+      coids.scan(CALLOUT_RX) do |(index)|
+        @copier.copy_image block, "images/icons/callouts/#{index}.#{callout_extension}"
       end
     end
 
