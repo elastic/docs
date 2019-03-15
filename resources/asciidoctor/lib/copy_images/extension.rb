@@ -25,7 +25,7 @@ module CopyImages
       'changed' => 'note',
       'deleted' => 'warning',
     }.freeze
-    CALLOUT_RX = /CO\d+-(\d+)/.freeze
+    CALLOUT_RX = /CO\d+-(\d+)/
 
     def initialize(name)
       super
