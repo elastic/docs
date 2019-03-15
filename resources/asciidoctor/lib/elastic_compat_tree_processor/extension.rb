@@ -67,7 +67,13 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
   }.freeze
 
   def process_lang_override(block)
-    next_block = block.next_adjacent_block
+    # Check if the next block is a marker for the language
+    # We don't want block.next_adjacent_block because that'll go "too far"
+    # and it has trouble with definition lists.
+    my_index = block.parent.blocks.find_index block
+    return unless my_index
+
+    next_block = block.parent.blocks[my_index + 1]
     return unless next_block && next_block.context == :paragraph
     return unless next_block.source =~ %r{pass:\[//\s*([^:\]]+)(?::\s*([^\]]+))?\]}
 

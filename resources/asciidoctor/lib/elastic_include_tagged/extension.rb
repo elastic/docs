@@ -49,14 +49,15 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
             break
           end
           if found_tag
-            line = line[indentation..-1]
+            line = line.sub(indentation, '')
             included_lines << line if line
             next
           end
-          next unless start_match =~ line
+          start_match_data = start_match.match(line)
+          next unless start_match_data
 
           found_tag = true
-          indentation = $1.size
+          indentation = /^#{start_match_data[1]}/
           start_of_include = lineno
         end
       end

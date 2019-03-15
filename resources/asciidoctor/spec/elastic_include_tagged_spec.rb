@@ -84,6 +84,25 @@ RSpec.describe ElasticIncludeTagged do
     expect(actual).to eq(expected.strip)
   end
 
+  it "preserves empty lines" do
+    actual = convert <<~ASCIIDOC
+      == Example
+      ["source","java",subs="attributes,callouts,macros"]
+      ----
+      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[empty_line]
+      ----
+    ASCIIDOC
+    expected = <<~DOCBOOK
+      <chapter id="_example">
+      <title>Example</title>
+      <programlisting language="java" linenumbering="unnumbered">System.err.println("empty list after this one");
+
+      System.err.println("and before this one");</programlisting>
+      </chapter>
+    DOCBOOK
+    expect(actual).to eq(expected.strip)
+  end
+
   it "warns if the file doesn't exist" do
     input = <<~ASCIIDOC
       include::elastic-include-tagged:resources/elastic_include_tagged/DoesNotExist.java[doesn't-matter]
@@ -113,7 +132,9 @@ RSpec.describe ElasticIncludeTagged do
     expected = <<~DOCBOOK
       <preface>
       <title></title>
-      <simpara>System.err.println("this tag doesn&#8217;t have any end");</simpara>
+      <simpara>System.err.println("this tag doesn&#8217;t have any end");
+          }
+      }</simpara>
       </preface>
     DOCBOOK
     actual = convert input, {}, match(%r{resources/elastic_include_tagged/Example.java: line \d+: elastic-include-tagged missing end tag \[missing-end\]})

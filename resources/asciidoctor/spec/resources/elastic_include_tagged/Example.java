@@ -19,6 +19,12 @@ public class Example {
         System.err.println("no leading space");
         //end::no_leading_space
 
+        // tag::empty_line
+        System.err.println("empty list after this one");
+
+        System.err.println("and before this one");
+        // end::empty_line
+
         // end::missing-start
 
         // tag::missing-end
