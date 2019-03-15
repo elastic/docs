@@ -82,7 +82,7 @@ alias docbldamg='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-server/docs/gu
 
 alias docbldamr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
 
-alias docbldamn='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1'
+alias docbldamn='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1'
 
 alias docbldamp='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-agent-python/docs/index.asciidoc --chunk 1'
 
