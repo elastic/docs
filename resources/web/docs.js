@@ -313,7 +313,12 @@ jQuery(function() {
           curlText += comment + '\n';
         } else {
           path = path.replace(/^\//, '').replace(/\s+$/,'');
-          curlText += 'curl -X ' + method + ' "' + host + '/' + path + '"';
+          if (method === "HEAD") {
+            curlText += 'curl -I ';
+          } else {
+            curlText += 'curl -X ' + method + ' ';
+          }
+          curlText += '"' + host + '/' + path + '"';
 
           if (div.data('kibana')) {
             curlText += " -H 'kbn-xsrf: true'";
