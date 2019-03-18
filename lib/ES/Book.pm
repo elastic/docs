@@ -221,6 +221,17 @@ sub build {
 }
 
 #===================================
+# Fork a process to build the book if it needs to be built. Returns 0
+# immediately if the book doesn't have to be built. Forks and then returns 1
+# immediately if the book *does* have to be built. To get the success or
+# failure of the build you must wait on the $pm argument for the children to
+# join the parent process.
+#
+# branch  - The branch being built
+# pm      - ProcessManager for forking
+# rebuild - if truthy then we rebuild the book regardless of changes.
+# latest  - is this the latest branch of the book?
+#===================================
 sub _build_book {
 #===================================
     my ( $self, $branch, $pm, $rebuild, $latest ) = @_;
@@ -294,6 +305,9 @@ sub _build_book {
 
         1;
     } && $pm->finish;
+    # NOTE: This method is about a screen up with $pm->start so it doesn't
+    # return *anything* here. It just dies if there was a failure so we can
+    # pick that up in the parent process.
 
     my $error = $@;
     die "\nERROR building "
