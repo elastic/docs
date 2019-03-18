@@ -78,7 +78,7 @@ alias docbldab='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/auditbeat/doc
 alias docbldabx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/auditbeat/docs/index.asciidoc --resource=$GIT_HOME/beats/x-pack/auditbeat --chunk 1'
 
 # APM
-alias docbldamg='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
+alias docbldamg='$GIT_HOME/docs/build_docs --asciidoc --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
 
 alias docbldamr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
 
