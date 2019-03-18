@@ -18,7 +18,6 @@ our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    get_url
     git_creds
     sha_for
     timestamp
@@ -588,21 +587,6 @@ sub run (@) {
         unless $ok;
 
     return $combined;
-}
-
-#===================================
-sub get_url {
-#===================================
-    my ( $url, $cred ) = @_;
-
-    my @cmd = qw(curl -s -S -f -A http://search.elastic.co);
-    push @cmd, ( '--user', $cred ) if $cred;
-
-    my $res;
-    eval { $res = run( @cmd, $url ); die $res if $res =~ /^Moved/; 1 }
-        && return $res;
-
-    die "URL ($url) failed with $@\n";
 }
 
 #===================================
