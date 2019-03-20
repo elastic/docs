@@ -26,6 +26,7 @@ module CopyImages
       'deleted' => 'warning',
     }.freeze
     CALLOUT_RX = /CO\d+-(\d+)/
+    INLINE_IMAGE_RX = /(\\)?image:([^:\s\[](?:[^\n\[]*[^\s\[])?)\[/m
 
     def initialize(name)
       super
@@ -33,15 +34,42 @@ module CopyImages
     end
 
     def process_block(block)
-      process_image block
+      process_inline_image block
+      process_block_image block
       process_callout block
       process_admonition block
     end
 
-    def process_image(block)
+    def process_block_image(block)
       return unless block.context == :image
 
       uri = block.image_uri(block.attr 'target')
+      process_image block, uri
+    end
+
+    def process_inline_image(block)
+      return unless block.content_model == :simple
+
+      # One day Asciidoc will parse inline things into the AST and we can
+      # get at them nicely. Today, we have to scrape them from the source
+      # of the node.
+      block.source.scan(INLINE_IMAGE_RX) do |(escape, target)|
+        next if escape
+
+        # We have to resolve attributes inside the target. But there is a
+        # "funny" ritual for that because attribute substitution is always
+        # against the document. We have to play the block's attributes against
+        # the document, then clear them on the way out.
+        block.document.playback_attributes block.attributes
+        target = block.sub_attributes target
+        block.document.clear_playback_attributes block.attributes
+        uri = block.image_uri target
+        process_image block, uri
+      end
+    end
+
+    def process_image(block, uri)
+      return if uri == ''
       return if Asciidoctor::Helpers.uriish? uri # Skip external images
 
       @copier.copy_image block, uri

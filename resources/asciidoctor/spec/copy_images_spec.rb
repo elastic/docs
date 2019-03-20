@@ -6,7 +6,7 @@ require 'copy_images/extension'
 require 'fileutils'
 require 'tmpdir'
 
-RSpec.describe CopyImages::CopyImages do
+RSpec.describe CopyImages do
   RSpec::Matchers.define_negated_matcher :not_match, :match
 
   before(:each) do
@@ -31,46 +31,94 @@ RSpec.describe CopyImages::CopyImages do
 
   spec_dir = File.dirname(__FILE__)
 
-  it "copies a file when directly referenced" do
-    copied = []
-    attributes = copy_attributes copied
-    input = <<~ASCIIDOC
-      == Example
-      image::resources/copy_images/example1.png[]
-    ASCIIDOC
-    convert input, attributes,
-        eq("INFO: <stdin>: line 2: copying #{spec_dir}\/resources\/copy_images\/example1.png")
-    expect(copied).to eq([
-        ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
-    ])
+  shared_context 'convert' do
+    let(:result) do
+      copied = []
+      attributes = copy_attributes copied
+      result = convert_with_logs input, attributes
+      result.push copied
+      result
+    end
+    let(:logs)   { result[1] }
+    let(:copied) { result[2] }
+  end
+  shared_examples 'copies the image' do
+    include_context 'convert'
+    it 'copies the image' do
+      expect(copied).to eq([
+          [image_uri, "#{spec_dir}/resources/copy_images/example1.png"],
+      ])
+    end
+    it 'logs that it copied the image' do
+      expect(logs).to eq("INFO: <stdin>: line #{include_line}: copying #{spec_dir}\/resources\/copy_images\/example1.png")
+    end
+  end
+  shared_examples 'copies images' do
+    let(:input) do
+      <<~ASCIIDOC
+        == Example
+        #{image_command}
+      ASCIIDOC
+    end
+    let(:include_line) { 2 }
+    # NOCOMMIT rename image_ref and image_uri. target and resolved?
+    context 'when the image ref matches that path exactly' do
+      let(:image_ref) { 'resources/copy_images/example1.png' }
+      let(:image_uri) { 'resources/copy_images/example1.png' }
+      include_examples 'copies the image'
+    end
+    context 'when the image ref is just the name of the image' do
+      let(:image_ref) { 'example1.png' }
+      let(:image_uri) { 'example1.png' }
+      include_examples 'copies the image'
+    end
+    context 'when the image ref matches the end of the path' do
+      let(:image_ref) { 'copy_images/example1.png' }
+      let(:image_uri) { 'copy_images/example1.png' }
+      include_examples 'copies the image'
+    end
+    context 'when the image contains attributes' do
+      let(:image_ref) { 'example1.{ext}' }
+      let(:image_uri) { 'example1.png' }
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          :ext: png
+
+          #{image_command}
+        ASCIIDOC
+      end
+      let(:include_line) { 4 }
+      include_examples 'copies the image'
+    end
   end
 
-  it "copies a file when it can be found in a sub tree" do
-    copied = []
-    attributes = copy_attributes copied
-    input = <<~ASCIIDOC
-      == Example
-      image::example1.png[]
-    ASCIIDOC
-    convert input, attributes,
-        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
-    expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
-    ])
+  context 'for the image block macro' do
+    let(:image_command) { "image::#{image_ref}[]" }
+    include_examples 'copies images'
   end
-
-  it "copies a path when it can be found in a sub tree" do
-    copied = []
-    attributes = copy_attributes copied
-    input = <<~ASCIIDOC
-      == Example
-      image::copy_images/example1.png[]
-    ASCIIDOC
-    convert input, attributes,
-        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
-    expect(copied).to eq([
-        ["copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
-    ])
+  context 'for the image inline macro' do
+    # NOCMOMIT rename image_ref to target
+    # NOCOMMIT replace parameters with let
+    let(:image_command) { "Words image:#{image_ref}[] words" }
+    include_examples 'copies images'
+    context 'when the macro is escaped' do
+      let(:image_ref) { 'example1.jpg' }
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          "Words \\image:#{image_ref}[] words"
+        ASCIIDOC
+      end
+      include_context 'convert'
+      it "doesn't log about copying the image" do
+        expect(logs).to eq('')
+      end
+      it "doesn't copy the image" do
+        expect(copied).to eq([])
+      end
+    end
+    # NOCOMMIT multiple images in one line
   end
 
   it "warns when it can't find a file" do

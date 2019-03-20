@@ -36,3 +36,24 @@ def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
   expect(warnings_string).to warnings_matcher
   result
 end
+
+##
+# Convert an asciidoc string into docbook returning the result and any warnings.
+def convert_with_logs(input, extra_attributes = {})
+  logger = Asciidoctor::MemoryLogger.new
+  attributes = {
+    'docdir' => File.dirname(__FILE__),
+  }
+  attributes.merge! extra_attributes
+  converted = Asciidoctor.convert input,
+      :safe       => :unsafe,  # Used to include "funny" files.
+      :backend    => :docbook45,
+      :logger     => logger,
+      :doctype    => :book,
+      :attributes => attributes,
+      :sourcemap  => true
+  logs = logger.messages
+      .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
+      .join("\n")
+  [converted, logs]
+end
