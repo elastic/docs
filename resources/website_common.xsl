@@ -115,6 +115,52 @@
         </xsl:if>
     </xsl:template>
 
+  <!-- XPack Bug in the Title for xpack pages -->
+  <xsl:template name="section.title">
+    <!-- This is mostly copied from docbook with an Elastic addition -->
+    <!-- the context node should be the title of a section when called -->
+    <xsl:variable name="section" select="(ancestor::section                                         |ancestor::simplesect                                         |ancestor::sect1                                         |ancestor::sect2                                         |ancestor::sect3                                         |ancestor::sect4                                         |ancestor::sect5)[last()]"/>
+
+    <xsl:variable name="renderas">
+      <xsl:choose>
+        <xsl:when test="$section/@renderas = 'sect1'">1</xsl:when>
+        <xsl:when test="$section/@renderas = 'sect2'">2</xsl:when>
+        <xsl:when test="$section/@renderas = 'sect3'">3</xsl:when>
+        <xsl:when test="$section/@renderas = 'sect4'">4</xsl:when>
+        <xsl:when test="$section/@renderas = 'sect5'">5</xsl:when>
+        <xsl:otherwise><xsl:value-of select="''"/></xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <xsl:variable name="level">
+      <xsl:choose>
+        <xsl:when test="$renderas != ''">
+          <xsl:value-of select="$renderas"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:call-template name="section.level">
+            <xsl:with-param name="node" select="$section"/>
+          </xsl:call-template>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <xsl:call-template name="section.heading">
+      <xsl:with-param name="section" select="$section"/>
+      <xsl:with-param name="level" select="$level"/>
+      <xsl:with-param name="title">
+        <xsl:apply-templates select="$section" mode="object.title.markup">
+          <xsl:with-param name="allow-anchors" select="1"/>
+        </xsl:apply-templates>
+        <!-- The Elastic addition -->
+        <xsl:if test="(ancestor::section|ancestor::simplesect|ancestor::sect1|ancestor::sect2|ancestor::sect3|ancestor::sect4|ancestor::sect5)[@role='xpack']">
+          <a class="xpack_tag" href="/subscriptions" />
+        </xsl:if>
+      </xsl:with-param>
+    </xsl:call-template>
+  </xsl:template>
+
+
   <!-- add prettyprint classes to code blocks -->
   <xsl:template match="programlisting" mode="common.html.attributes">
     <xsl:param name="class">
