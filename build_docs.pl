@@ -66,7 +66,10 @@ init_env();
 
 $Opts->{template} = ES::Template->new(
     %{ $Conf->{template} },
-    abs_urls => ! $running_in_standard_docker && $Opts->{doc},
+    # We'd like to remove abs_urls entirely but we need it to support
+    # --open without docker and we need it to support sharing docs over
+    # firebase. Both of those are coming, but not here yet!
+    abs_urls => $Opts->{doc},
 );
 
 $Opts->{doc}       ? build_local( $Opts->{doc} )
