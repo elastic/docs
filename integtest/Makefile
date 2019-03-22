@@ -19,7 +19,8 @@ check: \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	adoc_expected_files adoc_same_files \
 	empty_table_cell_expected_files empty_table_cell_same_files \
-	xpack_expected_files xpack_same_files \
+	xpack_chapter_expected_files xpack_chapter_same_files \
+	xpack_section_expected_files xpack_section_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
@@ -66,10 +67,15 @@ experimental_expected_files: /tmp/experimental_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	[ -s $^/images/icons/warning.png ]
 
-.PHONY: xpack_expected_files
-xpack_expected_files: /tmp/xpack_asciidoc
+.PHONY: xpack_chapter_expected_files
+xpack_chapter_expected_files: /tmp/xpack_chapter_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+
+.PHONY: xpack_section_expected_files
+xpack_section_expected_files: /tmp/xpack_section_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_section.html)
 
 .PHONY: %_expected_files
 %_expected_files: /tmp/%_asciidoc
@@ -128,20 +134,20 @@ migration_warnings: migration_warnings.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
 
 /tmp/adoc_asciidoc: minimal.adoc
-	$(BD) --doc $^
+	$(BD) --chunk 1 --doc $^
 
 /tmp/adoc_asciidoctor: minimal.adoc
-	$(BD) --asciidoctor --doc $^
+	$(BD) --chunk 1 --asciidoctor --doc $^
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.
 .PRECIOUS: /tmp/%_asciidoc     # don't try to remove the directory. you can't
 /tmp/%_asciidoc:
-	$(BD) --doc $*.asciidoc
+	$(BD) --chunk 1 --doc $*.asciidoc
 
 .PRECIOUS: /tmp/%_asciidoctor  # don't try to remove the directory. you can't
 /tmp/%_asciidoctor:
-	$(BD) --asciidoctor --doc $*.asciidoc
+	$(BD) --chunk 1 --asciidoctor --doc $*.asciidoc
 
 .PHONY: simple_all
 simple_all:

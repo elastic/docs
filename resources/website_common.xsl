@@ -160,6 +160,46 @@
     </xsl:call-template>
   </xsl:template>
 
+  <xsl:template name="component.title">
+    <!-- This is mostly copied from docbook with an Elastic addition -->
+    <xsl:param name="node" select="."/>
+
+    <!-- This handles the case where a component (bibliography, for example)
+        occurs inside a section; will we need parameters for this? -->
+
+    <!-- This "level" is a section level.  To compute <h> level, add 1. -->
+    <xsl:variable name="level">
+      <xsl:choose>
+        <!-- chapters and other book children should get <h1> -->
+        <xsl:when test="$node/parent::book">0</xsl:when>
+        <xsl:when test="ancestor::section">
+          <xsl:value-of select="count(ancestor::section)+1"/>
+        </xsl:when>
+        <xsl:when test="ancestor::sect5">6</xsl:when>
+        <xsl:when test="ancestor::sect4">5</xsl:when>
+        <xsl:when test="ancestor::sect3">4</xsl:when>
+        <xsl:when test="ancestor::sect2">3</xsl:when>
+        <xsl:when test="ancestor::sect1">2</xsl:when>
+        <xsl:otherwise>1</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <xsl:element name="h{$level+1}" namespace="http://www.w3.org/1999/xhtml">
+      <xsl:attribute name="class">title</xsl:attribute>
+      <xsl:call-template name="anchor">
+        <xsl:with-param name="node" select="$node"/>
+        <xsl:with-param name="conditional" select="0"/>
+      </xsl:call-template>
+      <xsl:apply-templates select="$node" mode="object.title.markup">
+        <xsl:with-param name="allow-anchors" select="1"/>
+      </xsl:apply-templates>
+      <!-- The Elastic addition -->
+      <xsl:if test="$node[@role='xpack']">
+        <a class="xpack_tag" href="/subscriptions" />
+      </xsl:if>
+    </xsl:element>
+  </xsl:template>
+
 
   <!-- add prettyprint classes to code blocks -->
   <xsl:template match="programlisting" mode="common.html.attributes">
