@@ -19,6 +19,7 @@ check: \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	adoc_expected_files adoc_same_files \
 	empty_table_cell_expected_files empty_table_cell_same_files \
+	xpack_expected_files xpack_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
@@ -64,6 +65,11 @@ beta_expected_files: /tmp/beta_asciidoc
 experimental_expected_files: /tmp/experimental_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	[ -s $^/images/icons/warning.png ]
+
+.PHONY: xpack_expected_files
+xpack_expected_files: /tmp/xpack_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
 
 .PHONY: %_expected_files
 %_expected_files: /tmp/%_asciidoc
