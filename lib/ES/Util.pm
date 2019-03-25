@@ -49,6 +49,8 @@ sub build_chunked {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
 
+    die "Can't find index [$index]" unless -f $index;
+
     $dest->rmtree;
     $dest->mkpath;
 
@@ -185,6 +187,8 @@ sub build_single {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
+
+    die "Can't find index [$index]" unless -f $index;
 
     my %xsltopts = (
             "generate.toc"             => $toc,
