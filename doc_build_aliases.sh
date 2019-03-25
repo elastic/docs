@@ -77,6 +77,10 @@ alias docbldhb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/heartbeat/doc
 alias docbldab='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/auditbeat/docs/index.asciidoc --chunk 1'
 alias docbldabx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/auditbeat/docs/index.asciidoc --resource=$GIT_HOME/beats/x-pack/auditbeat --chunk 1'
 
+alias docbldfnb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/x-pack/functionbeat/docs/index.asciidoc --chunk 1'
+
+alias docbldjb='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
+
 # APM
 alias docbldamg='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
 
@@ -135,3 +139,6 @@ alias docbldesh='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-hado
 # X-Pack Reference 5.4 to 6.2
 
 alias docbldx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
+
+# ECS
+alias docbldecs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
