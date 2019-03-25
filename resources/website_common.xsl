@@ -200,6 +200,24 @@
     </xsl:element>
   </xsl:template>
 
+  <xsl:template name="division.title">
+    <!-- This is mostly copied from docbook with an Elastic addition -->
+    <xsl:param name="node" select="."/>
+    <h1>
+      <xsl:attribute name="class">title</xsl:attribute>
+      <xsl:call-template name="anchor">
+        <xsl:with-param name="node" select="$node"/>
+        <xsl:with-param name="conditional" select="0"/>
+      </xsl:call-template>
+      <xsl:apply-templates select="$node" mode="object.title.markup">
+        <xsl:with-param name="allow-anchors" select="1"/>
+      </xsl:apply-templates>
+      <!-- The Elastic addition -->
+      <xsl:if test="$node[@role='xpack']">
+        <a class="xpack_tag" href="/subscriptions" />
+      </xsl:if>
+    </h1>
+  </xsl:template>
 
   <!-- add prettyprint classes to code blocks -->
   <xsl:template match="programlisting" mode="common.html.attributes">

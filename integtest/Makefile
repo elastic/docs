@@ -20,6 +20,7 @@ check: \
 	adoc_expected_files adoc_same_files \
 	empty_table_cell_expected_files empty_table_cell_same_files \
 	xpack_chapter_expected_files xpack_chapter_same_files \
+	xpack_part_expected_files xpack_part_same_files \
 	xpack_section_expected_files xpack_section_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
@@ -71,6 +72,11 @@ experimental_expected_files: /tmp/experimental_asciidoc
 xpack_chapter_expected_files: /tmp/xpack_chapter_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+
+.PHONY: xpack_part_expected_files
+xpack_part_expected_files: /tmp/xpack_part_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_part.html)
 
 .PHONY: xpack_section_expected_files
 xpack_section_expected_files: /tmp/xpack_section_asciidoc
