@@ -22,6 +22,7 @@ check: \
 	xpack_chapter_expected_files xpack_chapter_same_files \
 	xpack_part_expected_files xpack_part_same_files \
 	xpack_section_expected_files xpack_section_same_files \
+	xpack_float_expected_files xpack_float_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
@@ -71,17 +72,25 @@ experimental_expected_files: /tmp/experimental_asciidoc
 .PHONY: xpack_chapter_expected_files
 xpack_chapter_expected_files: /tmp/xpack_chapter_asciidoc
 	$(STANDARD_EXPECTED_FILES)
-	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+	$(call GREP,'Chapter<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+	$(call GREP,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
 
 .PHONY: xpack_part_expected_files
 xpack_part_expected_files: /tmp/xpack_part_asciidoc
 	$(STANDARD_EXPECTED_FILES)
-	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_part.html)
+	$(call GREP,'Part<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_part.html)
+	$(call GREP,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
 
 .PHONY: xpack_section_expected_files
 xpack_section_expected_files: /tmp/xpack_section_asciidoc
 	$(STANDARD_EXPECTED_FILES)
-	$(call GREP,'<a class="xpack_tag" href="/subscriptions">',$^/_section.html)
+	$(call GREP,'Section<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
+	$(call GREP,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
+
+.PHONY: xpack_float_expected_files
+xpack_float_expected_files: /tmp/xpack_float_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'Floater</span><a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
 
 .PHONY: %_expected_files
 %_expected_files: /tmp/%_asciidoc
