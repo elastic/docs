@@ -50,15 +50,8 @@ use ES::Toc();
 use ES::LinkCheck();
 use ES::Template();
 
-GetOptions(
-    $Opts,    #
-    'all', 'push', 'target_repo=s', 'reference=s', 'rebuild', 'keep_hash', 'sub_dir=s@',
-    'single',  'pdf',     'doc=s',           'out=s',  'toc', 'chunk=i', 'suppress_migration_warnings',
-    'open',    'skiplinkcheck', 'linkcheckonly', 'procs=i',         'user=s', 'lang=s',
-    'lenient', 'verbose', 'reload_template', 'resource=s@', 'asciidoctor', 'in_standard_docker',
-    'conf=s',
-) || exit usage();
-check_args();
+GetOptions($Opts, @{ command_line_opts() }) || exit usage();
+check_opts();
 
 our $Conf = LoadFile(pick_conf());
 # The script supports running outside of docker, in any docker container *and*
@@ -73,7 +66,10 @@ init_env();
 
 $Opts->{template} = ES::Template->new(
     %{ $Conf->{template} },
-    abs_urls => ! $running_in_standard_docker && $Opts->{doc},
+    # We'd like to remove abs_urls entirely but we need it to support
+    # --open without docker and we need it to support sharing docs over
+    # firebase. Both of those are coming, but not here yet!
+    abs_urls => $Opts->{doc},
 );
 
 $Opts->{doc}       ? build_local( $Opts->{doc} )
@@ -681,32 +677,6 @@ sub init_env {
 }
 
 #===================================
-sub check_args {
-#===================================
-    if ( $Opts->{doc} ) {
-        die('--target_repo not compatible with --doc') if $Opts->{target_repo};
-        die('--push not compatible with --doc') if $Opts->{push};
-        die('--user not compatible with --doc') if $Opts->{user};
-        die('--reference not compatible with --doc') if $Opts->{reference};
-        die('--rebuild not compatible with --doc') if $Opts->{rebuild};
-        die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
-        die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
-        die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
-        die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
-    } else {
-        die('--single not compatible with --all') if $Opts->{single};
-        die('--pdf not compatible with --all') if $Opts->{pdf};
-        die('--toc not compatible with --all') if $Opts->{toc};
-        die('--out not compatible with --all') if $Opts->{out};
-        die('--chunk not compatible with --all') if $Opts->{chunk};
-        die('--lenient not compatible with --all') if $Opts->{lenient};
-        # Lang will be 'en' even if it isn't specified so we don't check it.
-        die('--resource not compatible with --all') if $Opts->{resource};
-        die('--asciidoctor not compatible with --all') if $Opts->{asciidoctor};
-    }
-}
-
-#===================================
 sub pick_conf {
 #===================================
     return 'conf.yaml' unless $Opts->{conf};
@@ -764,6 +734,42 @@ sub serve_and_open_browser {
 }
 
 #===================================
+sub command_line_opts {
+#===================================
+    return [
+        # Options only compatible with --doc
+        'doc=s',
+        'asciidoctor',
+        'chunk=i',
+        'lang=s',
+        'lenient',
+        'out=s',
+        'pdf',
+        'resource=s@',
+        'single',
+        'suppress_migration_warnings',
+        'toc',
+        # Options only compatible with --all
+        'all',
+        'target_repo=s',
+        'keep_hash',
+        'linkcheckonly',
+        'push',
+        'rebuild',
+        'reference=s',
+        'skiplinkcheck',
+        'sub_dir=s@',
+        'user=s',
+        # Options that do *something* for either --doc or --all
+        'conf=s',
+        'in_standard_docker',
+        'open',
+        'procs=i',
+        'verbose',
+    ];
+}
+
+#===================================
 sub usage {
 #===================================
     my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
@@ -774,20 +780,19 @@ sub usage {
         $name --doc path/to/index.asciidoc [opts]
 
         Opts:
+          --asciidoctor     Use asciidoctor instead of asciidoc.
+          --chunk 1         Also chunk sections into separate files
+          --lang            Defaults to 'en'
+          --lenient         Ignore linking errors
+          --out dest/dir/   Defaults to ./html_docs.
+          --pdf             Generate a PDF file instead of HTML
+          --resource        Path to image dir - may be repeated
           --single          Generate a single HTML page, instead of
                             a chunking into a file per chapter
-          --pdf             Generate a PDF file instead of HTML
-          --toc             Include a TOC at the beginning of the page.
-          --out dest/dir/   Defaults to ./html_docs.
-          --chunk 1         Also chunk sections into separate files
-          --lenient         Ignore linking errors
-          --lang            Defaults to 'en'
-          --resource        Path to image dir - may be repeated
-          --asciidoctor     Use asciidoctor instead of asciidoc.
           --suppress_migration_warnings
                             Suppress warnings about Asciidoctor migration
                             issues. Use this when building "old" branches.
-
+          --toc             Include a TOC at the beginning of the page.
         WARNING: Anything in the `out` dir will be deleted!
 
     Build docs from all repos in conf.yaml:
@@ -795,25 +800,29 @@ sub usage {
         $name --all --target_repo <target> [opts]
 
         Opts:
-          --target_repo     Repository to which to commit docs
-          --push            Commit the updated docs and push to origin
-          --user            Specify which GitHub user to use, if not your own
-          --reference       Directory of `--mirror` clones to use as a local cache
-          --skiplinkcheck   Omit the step that checks for broken links
-          --linkcheckonly   Skips the documentation builds. Checks links only.
-          --rebuild         Rebuild all branches of every book regardless of what has changed
           --keep_hash       Build docs from the same commit hash as last time
+          --linkcheckonly   Skips the documentation builds. Checks links only.
+          --push            Commit the updated docs and push to origin
+          --rebuild         Rebuild all branches of every book regardless of
+                            what has changed
+          --reference       Directory of `--mirror` clones to use as a
+                            local cache
+          --skiplinkcheck   Omit the step that checks for broken links
           --sub_dir         Use a directory as a branch of some repo
                             (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
+          --target_repo     Repository to which to commit docs
+          --user            Specify which GitHub user to use, if not your own
 
     General Opts:
-          --reload_template Force retrieving the latest web template
-          --procs           Number of processes to run in parallel, defaults to 3
-          --verbose
+          --conf <ymlfile>  Use your own configuration file, defaults to the
+                            bundled conf.yaml
           --in_standard_docker
-                            Specified by build_docs when running in its container
-          --conf <ymlfile>  Use your own configuration file, defaults to the bundled conf.yaml
+                            Specified by build_docs when running in
+                            its container
           --open            Open the docs in a browser once built.
+          --procs           Number of processes to run in parallel, defaults
+                            to 3
+          --verbose         Output more logs
 
 USAGE
     if ( $Opts->{in_standard_docker} ) {
@@ -836,5 +845,31 @@ USAGE
         $name --self-test -C resources/asciidoctor rubocop
     
 USAGE
+    }
+}
+
+#===================================
+sub check_opts {
+#===================================
+    if ( $Opts->{doc} ) {
+        die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
+        die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
+        die('--push not compatible with --doc') if $Opts->{push};
+        die('--rebuild not compatible with --doc') if $Opts->{rebuild};
+        die('--reference not compatible with --doc') if $Opts->{reference};
+        die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
+        die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
+        die('--target_repo not compatible with --doc') if $Opts->{target_repo};
+        die('--user not compatible with --doc') if $Opts->{user};
+    } else {
+        die('--asciidoctor not compatible with --all') if $Opts->{asciidoctor};
+        die('--chunk not compatible with --all') if $Opts->{chunk};
+        # Lang will be 'en' even if it isn't specified so we don't check it.
+        die('--lenient not compatible with --all') if $Opts->{lenient};
+        die('--out not compatible with --all') if $Opts->{out};
+        die('--pdf not compatible with --all') if $Opts->{pdf};
+        die('--resource not compatible with --all') if $Opts->{resource};
+        die('--single not compatible with --all') if $Opts->{single};
+        die('--toc not compatible with --all') if $Opts->{toc};
     }
 }

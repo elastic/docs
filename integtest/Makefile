@@ -18,6 +18,7 @@ check: \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	adoc_expected_files adoc_same_files \
+	empty_table_cell_expected_files empty_table_cell_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
@@ -26,7 +27,8 @@ check: \
 	sub_dir \
 	keep_hash_and_sub_dir \
 	multi_branch \
-	open_all
+	open_all \
+	missing_index
 
 .PHONY: style
 style: html_diff
@@ -340,6 +342,24 @@ open_all:
 	$(call GREP,'301 Moved Permanently',$(TMP)/guide/rdir)
 	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
 	kill -QUIT $$(cat /run/nginx/nginx.pid)
+
+.PHONY: missing_index
+missing_index:
+	rm -rf $(TMP)
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,docs/not_the_index.asciidoc)
+	git init --bare $(TMP)/dest.git
+	sed -e 's|--tmp--|$(TMP)|' \
+		-e 's|path:   index.asciidoc|path:   docs|' \
+		-e 's|index:      index.asciidoc|index:      foo/index.asciidoc|' \
+		small_conf.yaml > $(TMP)/conf.yaml
+	set +e; /docs_build/build_docs.pl --in_standard_docker --all \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml > $(TMP)/out 2>&1; \
+		\
+		test $$? -eq 2
+	$(call GREP,'Can'"'"'t find index',$(TMP)/out)
+	$(call GREP,'foo/index.asciidoc',$(TMP)/out)
+
 
 define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.
