@@ -73,19 +73,20 @@ experimental_expected_files: /tmp/experimental_asciidoc
 xpack_chapter_expected_files: /tmp/xpack_chapter_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	$(call GREP,'Chapter<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
-	$(call GREP,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+	$(call NOT_CONTAIN,'Section<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
 
 .PHONY: xpack_part_expected_files
 xpack_part_expected_files: /tmp/xpack_part_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	$(call GREP,'Part<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_part.html)
-	$(call GREP,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
 
 .PHONY: xpack_section_expected_files
 xpack_section_expected_files: /tmp/xpack_section_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	$(call GREP,'Section<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
-	$(call GREP,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
+	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
 
 .PHONY: xpack_float_expected_files
 xpack_float_expected_files: /tmp/xpack_float_asciidoc
@@ -199,7 +200,7 @@ keep_hash:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml \
 		--keep_hash | tee $(TMP)/out
-	$(call GREP_V,'Test book',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
 	$(call GREP,'No changes to push',$(TMP)/out)
 
 	# We expact the same files as the minimal because we the changes that we
@@ -262,7 +263,7 @@ keep_hash_and_sub_dir:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml \
 		--keep_hash | tee $(TMP)/out
-	$(call GREP_V,'Test book',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
 	$(call GREP,'No changes to push',$(TMP)/out)
 
 	# Setup the directory we'd like to substitute
@@ -326,11 +327,11 @@ multi_branch:
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml | tee $(TMP)/out
-	$(call GREP_V,'Test book: Building master...',$(TMP)/out)
-	$(call GREP_V,'Test book: Finished master',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Building master...',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Finished master',$(TMP)/out)
 	$(call GREP,'Test book: Building prev...',$(TMP)/out)
 	$(call GREP,'Test book: Finished prev',$(TMP)/out)
-	$(call GREP_V,'Test book: Copying master to current',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Copying master to current',$(TMP)/out)
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
 
@@ -346,8 +347,8 @@ multi_branch:
 		--conf $(TMP)/conf.yaml | tee $(TMP)/out
 	$(call GREP,'Test book: Building master...',$(TMP)/out)
 	$(call GREP,'Test book: Finished master',$(TMP)/out)
-	$(call GREP_V,'Test book: Building prev...',$(TMP)/out)
-	$(call GREP_V,'Test book: Finished prev',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Building prev...',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Finished prev',$(TMP)/out)
 	$(call GREP,'Test book: Copying master to current',$(TMP)/out)
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
@@ -433,7 +434,7 @@ define GREP=
 	}
 endef
 
-define GREP_V=
+define NOT_CONTAIN=
 	# grep for a string in a file, outputting the whole file if there *is*
 	# a match.
 	[ -e $(2) ] || { \
@@ -441,9 +442,9 @@ define GREP_V=
 		ls $$(dirname $(2)); \
 		false; \
 	}
-	grep -qv $(1) $(2) || { \
+	set +e; grep -q $(1) $(2); test $$? -ne 0 || { \
 		echo Found \'$(1)\' in \'$(2)\':; \
-		cat $(2); \
+		grep --color $(1) $(2); \
 		false; \
 	}
 endef

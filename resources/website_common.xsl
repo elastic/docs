@@ -153,7 +153,7 @@
           <xsl:with-param name="allow-anchors" select="1"/>
         </xsl:apply-templates>
         <!-- The Elastic addition -->
-        <xsl:if test="(ancestor::section|ancestor::simplesect|ancestor::sect1|ancestor::sect2|ancestor::sect3|ancestor::sect4|ancestor::sect5)[@role='xpack']">
+        <xsl:if test="$section[@role='xpack']">
           <a class="xpack_tag" href="/subscriptions" />
         </xsl:if>
       </xsl:with-param>
@@ -264,7 +264,7 @@
       </xsl:call-template>
       <xsl:apply-templates/>
       <!-- The Elastic addition -->
-      <xsl:if test="(node()|ancestor::part|ancestor::appendix|ancestor::article|ancestor::bibliography|ancestor::chapter|ancestor::glossary|ancestor::glossdiv|ancestor::index|ancestor::partintro|ancestor::preface|ancestor::refsect1|ancestor::refsect2|ancestor::refsect3|ancestor::sect1|ancestor::sect2|ancestor::sect3|ancestor::sect4|ancestor::sect5|ancestor::section|ancestor::setindex|ancestor::simplesect)[@role='xpack'] ">
+      <xsl:if test="node()[@role='xpack']">
         <a class="xpack_tag" href="/subscriptions" />
       </xsl:if>
     </xsl:element>
