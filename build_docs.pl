@@ -355,7 +355,7 @@ sub build_entries {
             temp_dir => $temp_dir,
             %$entry
         );
-        $toc->add_entry( $book->build($Opts->{rebuild}) );
+        $toc->add_entry( $book->build( $Opts->{rebuild} , $Opts->{keep_hash} ) );
     }
 
     return $toc;
@@ -550,6 +550,7 @@ sub push_changes {
     run qw(git add -A);
 
     if ( run qw(git status -s --) ) {
+        # say "ASDFDSF " . run qw(git diff --cached);   # NOCOMMIT
         build_sitemap($build_dir);
         run qw(git add -A);
         say "Commiting changes";

@@ -147,12 +147,22 @@ sub has_changed {
     return 1 if exists $self->{sub_dirs}->{$branch};
 
     local $ENV{GIT_DIR} = $self->git_dir;
-    my $old = $self->_last_commit_info(@_) or return 1;
+    my $old = $self->_last_commit_info(@_);
 
     my $new;
     if ( $self->keep_hash ) {
+        # If we're keeping the hash from the last build but there *isn't* a
+        # hash that means that the branch wasn't used the last time we built
+        # this book. That means we'll skip it entirely when building the book
+        # anyway so we should consider the book not to have changed.
+        return 0 unless $old;
+
         $new = $self->_last_commit(@_);
     } else {
+        # If we aren't keeping the hash from the last build and there *isn't*
+        # a hash that means that this is a new repo so we should build it.
+        return 1 unless $old;
+
         $new = sha_for($branch) or die(
                 "Remote branch <origin/$branch> doesn't exist in repo "
                 . $self->name);
@@ -183,6 +193,7 @@ sub mark_done {
         $new = 'local';
     } elsif ( $self->keep_hash ) {
         $new = $self->_last_commit($title, $branch, $path);
+        return unless $new; # Skipped if nil
     } else {
         local $ENV{GIT_DIR} = $self->git_dir;
         $new = sha_for($branch);
@@ -218,7 +229,10 @@ sub extract {
 
     if ( $self->keep_hash ) {
         $branch = $self->_last_commit(@_);
-        die "--keep_hash can't be performed for new repos" unless $branch;
+        unless ( $branch ) {
+            printf(" - %40.40s: %s is new. Skipping\n", $title, $self->{name});
+            return;
+        }
         die "--keep_hash can't build on top of --sub_dir" if $branch eq 'local';
     }
 
@@ -315,12 +329,14 @@ sub all_repo_branches {
     my @out;
     for ( sort keys %Repos ) {
         my $repo = $Repos{$_};
+        my $shas = $repo->tracker->shas_for_repo( $repo->name );
+
+        next unless %$shas;
 
         push @out, "Repo: " . $repo->name;
         push @out, '-' x 80;
 
         local $ENV{GIT_DIR} = $repo->git_dir;
-        my $shas = $repo->tracker->shas_for_repo( $repo->name );
 
         for my $branch ( sort keys %$shas ) {
             my $sha = $shas->{$branch};

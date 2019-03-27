@@ -7,6 +7,7 @@ use v5.10;
 use Path::Class();
 use ES::Util qw(run sha_for);
 use YAML qw(Dump Load);
+use Storable qw(dclone);
 
 my %Repos;
 
@@ -75,13 +76,21 @@ sub delete_branch {
 sub write {
 #===================================
     my $self = shift;
-    my $new  = Dump( $self->shas );
+    my $to_save = dclone( $self->shas );
+    # Empty hashes are caused by new repos that are unused which shouldn't
+    # force a commit.
+    for my $repo ( keys %{ $to_save } ) {
+        unless ( keys %{ $to_save->{$repo} } ) {
+            delete $to_save->{$repo};
+        }
+    }
+    my $new  = Dump( $to_save );
     return if $new eq $self->{yaml};
     $self->file->parent->mkpath;
     $self->file->spew( iomode => '>:utf8', $new );
     $self->{yaml} = $new;
-
 }
+
 #===================================
 sub file { shift->{file} }
 sub shas { shift->{shas} }
