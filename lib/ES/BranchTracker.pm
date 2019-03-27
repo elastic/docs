@@ -79,8 +79,8 @@ sub write {
     my $to_save = dclone( $self->shas );
     # Empty hashes are caused by new repos that are unused which shouldn't
     # force a commit.
-    for my $repo ( keys %{ $to_save } ) {
-        unless ( keys %{ $to_save->{$repo} } ) {
+    while (my ($repo, $branches) = each %{ $to_save } ) {
+        unless ( keys %{ $branches } ) {
             delete $to_save->{$repo};
         }
     }
