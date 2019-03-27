@@ -550,7 +550,6 @@ sub push_changes {
     run qw(git add -A);
 
     if ( run qw(git status -s --) ) {
-        # say "ASDFDSF " . run qw(git diff --cached);   # NOCOMMIT
         build_sitemap($build_dir);
         run qw(git add -A);
         say "Commiting changes";
