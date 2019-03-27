@@ -156,8 +156,6 @@ sub build {
 #===================================
     my ( $self, $rebuild ) = @_;
 
-    say "Book: " . $self->title;
-
     my $toc = ES::Toc->new( $self->title );
     my $dir = $self->dir;
     $dir->mkpath;
@@ -173,8 +171,11 @@ sub build {
     );
 
     my $latest = 1;
+    my $rebuilding_any_branch = 0;
+    my $rebuilding_current_branch = 0;
     for my $branch ( @{ $self->branches } ) {
-        $self->_build_book( $branch, $pm, $rebuild, $latest );
+        my $building = $self->_build_book( $branch, $pm, $rebuild, $latest );
+        $rebuilding_any_branch ||= $building;
         $latest = 0;
 
         my $branch_title = $self->branch_title($branch);
@@ -184,7 +185,7 @@ sub build {
                     url   => "current/index.html"
                 }
             );
-
+            $rebuilding_current_branch = $building;
         }
         else {
             $toc->add_entry(
@@ -195,12 +196,13 @@ sub build {
         }
     }
     $pm->wait_all_children();
-    $self->_copy_branch_to_current( $self->current );
+    $self->_copy_branch_to_current( $self->current ) if $rebuilding_current_branch;
     $self->remove_old_branches;
-
     if ( $self->is_multi_version ) {
-        say "   - Writing versions TOC";
-        $toc->write($dir);
+        if ( $rebuilding_any_branch ) {
+            printf(" - %40.40s: Writing versions TOC\n", $self->title);
+            $toc->write($dir);
+        }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
             url   => $self->prefix . '/current/index.html',
@@ -208,16 +210,27 @@ sub build {
             section_title => $self->section_title()
         };
     }
-
-    say "   - Writing redirect to current branch";
-    write_html_redirect( $dir, "current/index.html" );
-
+    if ( $rebuilding_any_branch ) {
+        printf(" - %40.40s: Writing redirect to current branch...\n", $self->title);
+        write_html_redirect( $dir, "current/index.html" );
+    }
     return {
         title => $title,
         url   => $self->prefix . '/current/index.html'
     };
 }
 
+#===================================
+# Fork a process to build the book if it needs to be built. Returns 0
+# immediately if the book doesn't have to be built. Forks and then returns 1
+# immediately if the book *does* have to be built. To get the success or
+# failure of the build you must wait on the $pm argument for the children to
+# join the parent process.
+#
+# branch  - The branch being built
+# pm      - ProcessManager for forking
+# rebuild - if truthy then we rebuild the book regardless of changes.
+# latest  - is this the latest branch of the book?
 #===================================
 sub _build_book {
 #===================================
@@ -231,7 +244,7 @@ sub _build_book {
     my $subject       = $self->subject;
     my $lang          = $self->lang;
 
-    return
+    return 0
            if -e $branch_dir
         && !$rebuild
         && !$template->md5_changed($branch_dir)
@@ -239,8 +252,8 @@ sub _build_book {
 
     my ( $checkout, $edit_urls, $first_path ) = $source->prepare($self->title, $branch);
 
-    $pm->start($branch) and return;
-    say " - Branch: $branch - Building...";
+    $pm->start($branch) and return 1;
+    printf(" - %40.40s: Building %s...\n", $self->title, $branch);
     eval {
         if ( $self->single ) {
             $branch_dir->rmtree;
@@ -288,10 +301,13 @@ sub _build_book {
             $self->_add_title_to_toc( $branch, $branch_dir );
         }
         $checkout->rmtree;
-        say " - Branch: $branch - Finished";
+        printf(" - %40.40s: Finished %s\n", $self->title, $branch);
 
         1;
     } && $pm->finish;
+    # NOTE: This method is about a screen up with $pm->start so it doesn't
+    # return *anything* here. It just dies if there was a failure so we can
+    # pick that up in the parent process.
 
     my $error = $@;
     die "\nERROR building "
@@ -332,7 +348,7 @@ sub _copy_branch_to_current {
 #===================================
     my ( $self, $branch ) = @_;
 
-    say "   - Copying $branch to current";
+    printf(" - %40.40s: Copying %s to current\n", $self->title, $branch);
 
     my $branch_dir  = $self->dir->subdir($branch);
     my $current_dir = $self->dir->subdir('current');
@@ -389,7 +405,7 @@ sub remove_old_branches {
         next unless $child->is_dir;
         my $version = $child->basename;
         next if $branches{$version};
-        say " - Deleting old branch: $version";
+        printf(" - %40.40s: Deleting old branch %s\n", $self->title, $version);
         $child->rmtree;
     }
 }

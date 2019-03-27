@@ -43,6 +43,8 @@ require_relative '../scaffold.rb'
 class ElasticCompatTreeProcessor < TreeProcessorScaffold
   include Asciidoctor::Logging
 
+  LANG_OVERRIDE_RX = %r{^//\s*([^:\]]+)(?::\s*([^\]]+))?$}
+
   def process_block(block)
     return unless block.context == :listing && block.style == 'source'
 
@@ -67,12 +69,20 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
   }.freeze
 
   def process_lang_override(block)
-    next_block = block.next_adjacent_block
-    return unless next_block && next_block.context == :paragraph
-    return unless next_block.source =~ %r{pass:\[//\s*([^:\]]+)(?::\s*([^\]]+))?\]}
+    # Check if the next block is a marker for the language
+    # We don't want block.next_adjacent_block because that'll go "too far"
+    # and it has trouble with definition lists.
+    my_index = block.parent.blocks.find_index block
+    return unless my_index
 
-    lang = LANG_MAPPING[$1]
-    snippet = $2
+    next_block = block.parent.blocks[my_index + 1]
+    return unless next_block && next_block.context == :pass
+
+    match = LANG_OVERRIDE_RX.match(next_block.source)
+    return unless match
+
+    lang = LANG_MAPPING[match[1]]
+    snippet = match[2]
     return unless lang # Not a language we handle
 
     block.set_attr 'language', lang

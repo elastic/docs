@@ -26,6 +26,12 @@ def normalize_html(html):
                 crunched = NavigableString(re.sub(r'\s+', ' ', part))
                 if crunched != part:
                     part.replace_with(crunched)
+    # Remove empty paragraph tags inside of table cells. AsciiDoc fills empty
+    # table cells with these empty tags. Asciidoctor doesn't. Either way
+    # is fine.
+    for e in soup.select('td>p'):
+        if e.contents == []:
+            e.extract()
     # Format the html with indentation so we can *see* things
     html = soup.prettify()
     # Remove the zero width space that asciidoctor adds after each horizontal
@@ -41,8 +47,6 @@ def normalize_html(html):
                         '"programlisting prettyprint lang-console"')
     # The URL for the console snippets has changed
     html = re.sub(r'data-snippet="[^"]+"', 'data-snippet="snippet"', html)
-    # Temporary work around for known issue
-    html = html.replace('\\&lt;1&gt;', '&lt;1&gt;')
     return html
 
 

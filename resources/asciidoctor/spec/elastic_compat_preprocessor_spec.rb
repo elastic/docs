@@ -5,6 +5,7 @@ require 'change_admonition/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_compat_tree_processor/extension'
 require 'elastic_include_tagged/extension'
+require 'lang_override/extension'
 require 'open_in_widget/extension'
 require 'shared_examples/does_not_break_line_numbers'
 
@@ -13,6 +14,7 @@ RSpec.describe ElasticCompatPreprocessor do
     Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register do
+      block_macro LangOverride
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged
       treeprocessor ElasticCompatTreeProcessor
@@ -378,53 +380,91 @@ RSpec.describe ElasticCompatPreprocessor do
     }
   end
 
-  [
-      %w[CONSOLE console],
-      %w[AUTOSENSE sense],
-      %w[KIBANA kibana],
-  ].each do |name, lang|
-    it "transforms #{name} comments into a listing with the #{lang} language" do
-      input = <<~ASCIIDOC
-        == Example
+  shared_context 'general snippet' do |lang, override|
+    let(:snippet) do
+      snippet = <<~ASCIIDOC
         [source,js]
         ----
-        foo
+        GET / <1>
         ----
-        // #{name}
       ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-        <programlisting language="#{lang}" linenumbering="unnumbered"><ulink type="snippet" url="snippets/1.#{lang}"/>foo</programlisting>
-        </chapter>
-      DOCBOOK
-      actual = convert input, stub_file_opts, eq(
-        "INFO: <stdin>: line 3: writing snippet snippets/1.#{lang}"
-      )
-      expect(actual).to eq(expected.strip)
+      snippet += override if override
+      snippet
+    end
+    let(:has_lang) do
+      /<programlisting language="#{lang}" linenumbering="unnumbered">/
+    end
+    let(:input) do
+      <<~ASCIIDOC
+        == Example
+        #{snippet}
+      ASCIIDOC
     end
   end
+  shared_examples 'linked snippet' do |override, lang, path|
+    let(:has_link_to_path) { %r{<ulink type="snippet" url="#{path}"/>} }
+    let(:converted) do
+      convert input, stub_file_opts, eq(expected_warnings.strip)
+    end
+    shared_examples 'converted with override' do
+      it "has the #{lang} language" do
+        expect(converted).to match(has_lang)
+      end
+      it "have a link to the snippet" do
+        expect(converted).to match(has_link_to_path)
+      end
+    end
 
-  it "transforms SENSE comments into a listing with the SENSE language and a path" do
-  input = <<~ASCIIDOC
-    == Example
-    [source,js]
-    ----
-    foo
-    ----
-    // SENSE: snippet.sense
-  ASCIIDOC
-  expected = <<~DOCBOOK
-    <chapter id="_example">
-    <title>Example</title>
-    <programlisting language="sense" linenumbering="unnumbered"><ulink type="snippet" url="snippets/snippet.sense"/>foo</programlisting>
-    </chapter>
-  DOCBOOK
-  warnings = <<~WARNINGS
-    INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
-    WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
-  WARNINGS
-  actual = convert input, stub_file_opts, eq(warnings.strip)
-  expect(actual).to eq(expected.strip)
-end
+    context 'when there is a space after //' do
+      include_context 'general snippet', lang, "// #{override}"
+      include_examples 'converted with override'
+    end
+    context 'when there is not a space after //' do
+      include_context 'general snippet', lang, "//#{override}"
+      include_examples 'converted with override'
+    end
+    context 'when there is a space after the override command' do
+      include_context 'general snippet', lang, "// #{override} "
+      include_examples 'converted with override'
+    end
+  end
+  shared_examples 'extracted linked snippet' do |override, lang|
+    context "for a snippet with the #{override} lang override" do
+      let(:expected_warnings) do
+        "INFO: <stdin>: line 3: writing snippet snippets/1.#{lang}"
+      end
+      include_examples 'linked snippet', override, lang, "snippets/1.#{lang}"
+    end
+  end
+  include_examples 'extracted linked snippet', 'CONSOLE', 'console'
+  include_examples 'extracted linked snippet', 'AUTOSENSE', 'sense'
+  include_examples 'extracted linked snippet', 'KIBANA', 'kibana'
+  context 'for a snippet with the SENSE override pointing to a specific path' do
+    let(:expected_warnings) do
+      <<~WARNINGS
+        INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
+        WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
+      WARNINGS
+    end
+    include_examples(
+      'linked snippet',
+      'SENSE: snippet.sense',
+      'sense',
+      'snippets/snippet.sense'
+    )
+  end
+  context 'for a snippet without an override' do
+    include_context 'general snippet', 'js', nil
+    let(:has_any_link) { /<ulink type="snippet"/ }
+    let(:converted) do
+      convert input, stub_file_opts
+    end
+
+    it "has the js language" do
+      expect(converted).to match(has_lang)
+    end
+    it "not have a link to any snippet" do
+      expect(converted).not_to match(has_any_link)
+    end
+  end
 end

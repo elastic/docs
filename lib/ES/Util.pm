@@ -18,7 +18,6 @@ our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    get_url
     git_creds
     sha_for
     timestamp
@@ -50,6 +49,8 @@ sub build_chunked {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
 
+    die "Can't find index [$index]" unless -f $index;
+
     $dest->rmtree;
     $dest->mkpath;
 
@@ -68,7 +69,7 @@ sub build_chunked {
     my ( $output, $died );
     if ( $asciidoctor ) {
         my $dest_xml = $index->basename;
-        $dest_xml =~ s/\.asciidoc$/\.xml/;
+        $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
@@ -187,6 +188,8 @@ sub build_single {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
 
+    die "Can't find index [$index]" unless -f $index;
+
     my %xsltopts = (
             "generate.toc"             => $toc,
             "toc.section.depth"        => 0,
@@ -201,7 +204,7 @@ sub build_single {
     my ( $output, $died );
     if ( $asciidoctor ) {
         my $dest_xml = $index->basename;
-        $dest_xml =~ s/\.asciidoc$/\.xml/;
+        $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
@@ -588,21 +591,6 @@ sub run (@) {
         unless $ok;
 
     return $combined;
-}
-
-#===================================
-sub get_url {
-#===================================
-    my ( $url, $cred ) = @_;
-
-    my @cmd = qw(curl -s -S -f -A http://search.elastic.co);
-    push @cmd, ( '--user', $cred ) if $cred;
-
-    my $res;
-    eval { $res = run( @cmd, $url ); die $res if $res =~ /^Moved/; 1 }
-        && return $res;
-
-    die "URL ($url) failed with $@\n";
 }
 
 #===================================

@@ -110,10 +110,13 @@ require 'asciidoctor/extensions'
 class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   include Asciidoctor::Logging
 
-  INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/.freeze
-  SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/.freeze
-  CODE_BLOCK_RX = /^-----*$/.freeze
-  SNIPPET_RX = %r{//\s*(?:AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)}.freeze
+  INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/
+  SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
+  CODE_BLOCK_RX = /^-----*$/
+  SNIPPET_RX = %r{^//\s*(AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)$}
+  LEGACY_MACROS = 'added|beta|coming|deprecated|experimental'
+  LEGACY_BLOCK_MACRO_RX = /^(#{LEGACY_MACROS})\[([^\]]*)\]/
+  LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[([^\]]*)\]/
 
   def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
@@ -147,8 +150,12 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         line = super
         return nil if line.nil?
 
-        if SOURCE_WITH_SUBS_RX =~ line
-          line.sub! "subs=\"#{$1}\"", "subs=\"#{$1},callouts\"" unless $1.include? 'callouts'
+        SOURCE_WITH_SUBS_RX.match(line) do |m|
+          # AsciiDoc would automatically add `subs` to every source block but
+          # Asciidoctor does not and we have thousands of blocks that rely on
+          # this behavior.
+          old_subs = m[1]
+          line.sub! "subs=\"#{old_subs}\"", "subs=\"#{old_subs},callouts\"" unless old_subs.include? 'callouts'
         end
         if CODE_BLOCK_RX =~ line
           if @code_block_start
@@ -162,13 +169,12 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           end
         end
 
-        supported = 'added|beta|coming|deprecated|experimental'
         # First convert the "block" version of these macros. We convert them
         # to block macros because they are at the start of the line....
-        line&.gsub!(/^(#{supported})\[([^\]]*)\]/, '\1::[\2]')
+        line&.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
         # Then convert the "inline" version of these macros. We convert them
         # to inline macros because they are *not* at the start of the line....
-        line&.gsub!(/(#{supported})\[([^\]]*)\]/, '\1:[\2]')
+        line&.gsub!(LEGACY_INLINE_MACRO_RX, '\1:[\2]')
 
         # Transform Elastic's traditional comment based marking for
         # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
@@ -176,7 +182,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
         # thing but we have thousands of them and it'll take us some time to
         # stop doing it.
-        line&.gsub!(SNIPPET_RX, 'pass:[\0]')
+        line&.gsub!(SNIPPET_RX, 'lang_override::[\1]')
       end
     end
     reader
