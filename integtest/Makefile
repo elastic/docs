@@ -210,7 +210,7 @@ new_repo:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml | tee $(TMP)/out
 	$(call GREP,'Test book',$(TMP)/out)
-	$(call GREP_V,'No changes to push',$(TMP)/out)
+	$(call NOT_CONTAIN,'No changes to push',$(TMP)/out)
 
 	git clone $(TMP)/dest.git $(TMP)/dest
 	$(call GREP,'I am tiny.',$(TMP)/dest/html/test/current/_chapter.html)
@@ -240,7 +240,7 @@ new_book:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml | tee $(TMP)/out
 	$(call GREP,'Test book 2',$(TMP)/out)
-	$(call GREP_V,'No changes to push',$(TMP)/out)
+	$(call NOT_CONTAIN,'No changes to push',$(TMP)/out)
 
 	git clone $(TMP)/dest.git $(TMP)/dest
 	$(call GREP,'minimal viable asciidoc',$(TMP)/dest/html/test2/current/_chapter.html)
@@ -287,7 +287,7 @@ keep_hash_new_repo:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml \
 		--keep_hash | tee $(TMP)/out
-	$(call GREP_V,'Test book',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
 	$(call GREP,'No changes to push',$(TMP)/out)
 
 	# We expact the same files as the minimal because we didn't make
@@ -320,7 +320,7 @@ keep_hash_new_book:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml \
 		--keep_hash | tee $(TMP)/out
-	$(call GREP_V,'Test book 2',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book 2',$(TMP)/out)
 	# But we *will* rebuild the table of contents so we get the book in the
 	# list. That is unfortunate but isn't too big a deal.
 	$(call GREP,'Pushing changes',$(TMP)/out)
@@ -417,7 +417,7 @@ keep_hash_and_sub_dir:
 	$(call GREP,'Test book: Copying master to current',$(TMP)/out)
 	# Except git will pick up that we didn't change anything, so we won't push.
 	$(call GREP,'No changes to push',$(TMP)/out)
-	$(call GREP_V,'Pushing changes',$(TMP)/out)
+	$(call NOT_CONTAIN,'Pushing changes',$(TMP)/out)
 
 .PHONY: multi_branch
 multi_branch:
