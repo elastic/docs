@@ -19,6 +19,10 @@ check: \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	adoc_expected_files adoc_same_files \
 	empty_table_cell_expected_files empty_table_cell_same_files \
+	xpack_chapter_expected_files xpack_chapter_same_files \
+	xpack_part_expected_files xpack_part_same_files \
+	xpack_section_expected_files xpack_section_same_files \
+	xpack_float_expected_files xpack_float_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
 	simple_all \
@@ -65,6 +69,30 @@ beta_expected_files: /tmp/beta_asciidoc
 experimental_expected_files: /tmp/experimental_asciidoc
 	$(STANDARD_EXPECTED_FILES)
 	[ -s $^/images/icons/warning.png ]
+
+.PHONY: xpack_chapter_expected_files
+xpack_chapter_expected_files: /tmp/xpack_chapter_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'Chapter<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+	$(call NOT_CONTAIN,'Section<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
+
+.PHONY: xpack_part_expected_files
+xpack_part_expected_files: /tmp/xpack_part_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'Part<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_part.html)
+	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
+
+.PHONY: xpack_section_expected_files
+xpack_section_expected_files: /tmp/xpack_section_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'Section<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
+	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
+
+.PHONY: xpack_float_expected_files
+xpack_float_expected_files: /tmp/xpack_float_asciidoc
+	$(STANDARD_EXPECTED_FILES)
+	$(call GREP,'Floater</span><a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
 
 .PHONY: %_expected_files
 %_expected_files: /tmp/%_asciidoc
@@ -123,20 +151,20 @@ migration_warnings: migration_warnings.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
 
 /tmp/adoc_asciidoc: minimal.adoc
-	$(BD) --doc $^
+	$(BD) --chunk 1 --doc $^
 
 /tmp/adoc_asciidoctor: minimal.adoc
-	$(BD) --asciidoctor --doc $^
+	$(BD) --chunk 1 --asciidoctor --doc $^
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.
 .PRECIOUS: /tmp/%_asciidoc     # don't try to remove the directory. you can't
 /tmp/%_asciidoc:
-	$(BD) --doc $*.asciidoc
+	$(BD) --chunk 1 --doc $*.asciidoc
 
 .PRECIOUS: /tmp/%_asciidoctor  # don't try to remove the directory. you can't
 /tmp/%_asciidoctor:
-	$(BD) --asciidoctor --doc $*.asciidoc
+	$(BD) --chunk 1 --asciidoctor --doc $*.asciidoc
 
 .PHONY: simple_all
 simple_all:
@@ -173,7 +201,7 @@ keep_hash:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml \
 		--keep_hash | tee $(TMP)/out
-	$(call GREP_V,'Test book',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
 	$(call GREP,'No changes to push',$(TMP)/out)
 
 	# We expact the same files as the minimal because we the changes that we
@@ -236,7 +264,7 @@ keep_hash_and_sub_dir:
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml \
 		--keep_hash | tee $(TMP)/out
-	$(call GREP_V,'Test book',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
 	$(call GREP,'No changes to push',$(TMP)/out)
 
 	# Setup the directory we'd like to substitute
@@ -300,11 +328,11 @@ multi_branch:
 	/docs_build/build_docs.pl --in_standard_docker --all --push \
 		--target_repo $(TMP)/dest.git \
 		--conf $(TMP)/conf.yaml | tee $(TMP)/out
-	$(call GREP_V,'Test book: Building master...',$(TMP)/out)
-	$(call GREP_V,'Test book: Finished master',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Building master...',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Finished master',$(TMP)/out)
 	$(call GREP,'Test book: Building prev...',$(TMP)/out)
 	$(call GREP,'Test book: Finished prev',$(TMP)/out)
-	$(call GREP_V,'Test book: Copying master to current',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Copying master to current',$(TMP)/out)
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
 
@@ -320,8 +348,8 @@ multi_branch:
 		--conf $(TMP)/conf.yaml | tee $(TMP)/out
 	$(call GREP,'Test book: Building master...',$(TMP)/out)
 	$(call GREP,'Test book: Finished master',$(TMP)/out)
-	$(call GREP_V,'Test book: Building prev...',$(TMP)/out)
-	$(call GREP_V,'Test book: Finished prev',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Building prev...',$(TMP)/out)
+	$(call NOT_CONTAIN,'Test book: Finished prev',$(TMP)/out)
 	$(call GREP,'Test book: Copying master to current',$(TMP)/out)
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
@@ -425,7 +453,7 @@ define GREP=
 	}
 endef
 
-define GREP_V=
+define NOT_CONTAIN=
 	# grep for a string in a file, outputting the whole file if there *is*
 	# a match.
 	[ -e $(2) ] || { \
@@ -433,9 +461,9 @@ define GREP_V=
 		ls $$(dirname $(2)); \
 		false; \
 	}
-	grep -qv $(1) $(2) || { \
+	set +e; grep -q $(1) $(2); test $$? -ne 0 || { \
 		echo Found \'$(1)\' in \'$(2)\':; \
-		cat $(2); \
+		grep --color $(1) $(2); \
 		false; \
 	}
 endef
