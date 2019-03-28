@@ -27,9 +27,9 @@ check: \
 	readme_expected_files readme_same_files \
 	simple_all \
 	relative_conf_file \
-	keep_hash \
-	sub_dir \
-	keep_hash_and_sub_dir \
+	new_repo new_book \
+	keep_hash keep_hash_new_repo keep_hash_new_book \
+	sub_dir keep_hash_and_sub_dir \
 	multi_branch \
 	open_all \
 	missing_index
@@ -184,6 +184,67 @@ relative_conf_file:
 			--conf conf.yaml
 	$(call MINIMAL_ALL_EXPECTED_FILES,init)
 
+.PHONY: new_repo
+new_repo:
+	# Test that `--all` works when you add a new repo to a book that used to
+	# only have a single repo
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
+
+	# Replace the minimal documentation in the source repo with one that
+	# references the second repo
+	sed -e 's|../||' includes_source2.asciidoc > $(TMP)/source/index.asciidoc
+	cat $(TMP)/source/index.asciidoc
+	cd $(TMP)/source && \
+		git add . && \
+		git commit -m 'includes source2'
+	# Add new repo to conf file
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source2,included.asciidoc,index.asciidoc)
+	sed -riE 's|^(\s+)source:|\1source2: $(TMP)/source2\n\1source:|' $(TMP)/conf.yaml
+	echo "            -"                          >> $(TMP)/conf.yaml
+	echo "                repo:   source2"        >> $(TMP)/conf.yaml
+	echo "                path:   index.asciidoc" >> $(TMP)/conf.yaml
+
+	# Build the book wit hthe new repo
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml | tee $(TMP)/out
+	$(call GREP,'Test book',$(TMP)/out)
+	$(call NOT_CONTAIN,'No changes to push',$(TMP)/out)
+
+	git clone $(TMP)/dest.git $(TMP)/dest
+	$(call GREP,'I am tiny.',$(TMP)/dest/html/test/current/_chapter.html)
+
+.PHONY: new_book
+new_book:
+	# Test that `--all` works when you add a new book to the list
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
+
+	# Add a new book
+	echo "    -"                                  >> $(TMP)/conf.yaml
+	echo "        title:      Test book 2"        >> $(TMP)/conf.yaml
+	echo "        prefix:     test2"              >> $(TMP)/conf.yaml
+	echo "        current:    master"             >> $(TMP)/conf.yaml
+	echo "        branches:   [ master ]"         >> $(TMP)/conf.yaml
+	echo "        index:      index.asciidoc"     >> $(TMP)/conf.yaml
+	echo "        tags:       test tag"           >> $(TMP)/conf.yaml
+	echo "        subject:    Test"               >> $(TMP)/conf.yaml
+	echo "        sources:"                       >> $(TMP)/conf.yaml
+	echo "            -"                          >> $(TMP)/conf.yaml
+	echo "                repo:   source"         >> $(TMP)/conf.yaml
+	echo "                path:   index.asciidoc" >> $(TMP)/conf.yaml
+
+	# Adding a new book should cause that book to build
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml | tee $(TMP)/out
+	$(call GREP,'Test book 2',$(TMP)/out)
+	$(call NOT_CONTAIN,'No changes to push',$(TMP)/out)
+
+	git clone $(TMP)/dest.git $(TMP)/dest
+	$(call GREP,'minimal viable asciidoc',$(TMP)/dest/html/test2/current/_chapter.html)
+
 .PHONY: keep_hash
 keep_hash:
 	# Test that `--all --keep_hash` doesn't pull new updates
@@ -204,9 +265,65 @@ keep_hash:
 	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
 	$(call GREP,'No changes to push',$(TMP)/out)
 
-	# We expact the same files as the minimal because we the changes that we
-	# make shouldn't be included
+	# We expact the same files as the minimal because the changes that we
+	# made shouldn't be included
 	$(call MINIMAL_ALL_EXPECTED_FILES,init)
+
+.PHONY: keep_hash_new_repo
+keep_hash_new_repo:
+	# Test that `--all --keep_hash` doesn't pull new updates
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
+
+	# Add new repo to conf file
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source2,minimal.asciidoc,totally_not_used.asciidoc)
+	sed -riE 's|^(\s+)source:|\1source2: $(TMP)/source2\n\1source:|' $(TMP)/conf.yaml
+	echo "            -"                          >> $(TMP)/conf.yaml
+	echo "                repo:   source2"        >> $(TMP)/conf.yaml
+	echo "                path:   not_used.asciidoc" >> $(TMP)/conf.yaml
+
+	# Rebuild the docs with --keep_hash which should ignore the new repo
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash | tee $(TMP)/out
+	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
+	$(call GREP,'No changes to push',$(TMP)/out)
+
+	# We expact the same files as the minimal because we didn't make
+	# any changes
+	$(call MINIMAL_ALL_EXPECTED_FILES,init)
+
+.PHONY: keep_hash_new_book
+keep_hash_new_book:
+	# Test that `--all --keep_hash` doesn't pull new updates
+	rm -rf $(TMP)
+	$(BUILD_MINIMAL_ALL)
+
+	# Add a new book
+	echo "    -"                                  >> $(TMP)/conf.yaml
+	echo "        title:      Test book 2"        >> $(TMP)/conf.yaml
+	echo "        prefix:     test2"              >> $(TMP)/conf.yaml
+	echo "        current:    master"             >> $(TMP)/conf.yaml
+	echo "        branches:   [ master ]"         >> $(TMP)/conf.yaml
+	echo "        index:      index.asciidoc"     >> $(TMP)/conf.yaml
+	echo "        tags:       test tag"           >> $(TMP)/conf.yaml
+	echo "        subject:    Test"               >> $(TMP)/conf.yaml
+	echo "        sources:"                       >> $(TMP)/conf.yaml
+	echo "            -"                          >> $(TMP)/conf.yaml
+	echo "                repo:   source"         >> $(TMP)/conf.yaml
+	echo "                path:   index.asciidoc" >> $(TMP)/conf.yaml
+
+	# If we build the all the books with --keep_hash we shouldn't rebuild
+	# any books because the new book wasn't built last time.
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash | tee $(TMP)/out
+	$(call NOT_CONTAIN,'Test book 2',$(TMP)/out)
+	# But we *will* rebuild the table of contents so we get the book in the
+	# list. That is unfortunate but isn't too big a deal.
+	$(call GREP,'Pushing changes',$(TMP)/out)
 
 .PHONY: sub_dir
 sub_dir:
@@ -283,6 +400,24 @@ keep_hash_and_sub_dir:
 
 	git clone $(TMP)/dest.git $(TMP)/dest
 	$(call GREP,'extra extra extra',$(TMP)/dest/html/test/current/_chapter.html)
+
+	# Add new repo to conf file and rebuild. We shouldn't use the repo but
+	# should still get a forced rebuild.
+	$(call INIT_REPO_WITH_FILE,$(TMP)/source3,minimal.asciidoc,totally_not_used.asciidoc)
+	sed -riE 's|^(\s+)source2:|\1source3: $(TMP)/source3\n\1source2:|' $(TMP)/conf.yaml
+	echo "            -"                          >> $(TMP)/conf.yaml
+	echo "                repo:   source3"        >> $(TMP)/conf.yaml
+	echo "                path:   not_used.asciidoc" >> $(TMP)/conf.yaml
+	/docs_build/build_docs.pl --in_standard_docker --all --push \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml \
+		--keep_hash --sub_dir source1:master:$(TMP)/to_sub | tee $(TMP)/out
+	$(call GREP,'Test book: Building master...',$(TMP)/out)
+	$(call GREP,'Test book: Finished master',$(TMP)/out)
+	$(call GREP,'Test book: Copying master to current',$(TMP)/out)
+	# Except git will pick up that we didn't change anything, so we won't push.
+	$(call GREP,'No changes to push',$(TMP)/out)
+	$(call NOT_CONTAIN,'Pushing changes',$(TMP)/out)
 
 .PHONY: multi_branch
 multi_branch:
