@@ -25,7 +25,7 @@ alias docbldkbx='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/
 
 alias docbldkb=docbldkbx
 
-# Kibana 6.2 and earlier
+# Kibana 6.2 to 5.3
 
 alias docbldkbold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
