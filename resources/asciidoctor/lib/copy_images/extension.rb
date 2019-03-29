@@ -69,7 +69,7 @@ module CopyImages
     end
 
     def process_image(block, uri)
-      return if uri == ''
+      return unless uri
       return if Asciidoctor::Helpers.uriish? uri # Skip external images
 
       @copier.copy_image block, uri

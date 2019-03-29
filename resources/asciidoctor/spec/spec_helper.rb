@@ -38,22 +38,33 @@ def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
 end
 
 ##
-# Convert an asciidoc string into docbook returning the result and any warnings.
-def convert_with_logs(input, extra_attributes = {})
-  logger = Asciidoctor::MemoryLogger.new
-  attributes = {
-    'docdir' => File.dirname(__FILE__),
-  }
-  attributes.merge! extra_attributes
-  converted = Asciidoctor.convert input,
-      :safe       => :unsafe,  # Used to include "funny" files.
-      :backend    => :docbook45,
-      :logger     => logger,
-      :doctype    => :book,
-      :attributes => attributes,
-      :sourcemap  => true
-  logs = logger.messages
+# Converts asciidoc to docbook
+#
+# In:
+#   input            - asciidoc text to convert
+#   extra_attributes - attributes added to the conversion - defaults to {}
+#
+# Out:
+#   converted        - converted docbook text
+#   logs             - lines logged
+RSpec.shared_context 'convert' do
+  let(:convert_logger) { Asciidoctor::MemoryLogger.new }
+  let!(:converted) do
+    attributes = {
+      'docdir' => File.dirname(__FILE__),
+    }
+    attributes.merge! convert_attributes if defined?(convert_attributes)
+    Asciidoctor.convert input,
+        :safe       => :unsafe,  # Used to include "funny" files.
+        :backend    => :docbook45,
+        :logger     => convert_logger,
+        :doctype    => :book,
+        :attributes => attributes,
+        :sourcemap  => true
+  end
+  let(:logs) do
+    convert_logger.messages
       .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
       .join("\n")
-  [converted, logs]
+  end
 end

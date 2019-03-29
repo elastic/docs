@@ -31,29 +31,25 @@ RSpec.describe CopyImages do
 
   spec_dir = File.dirname(__FILE__)
 
-  shared_context 'convert' do
-    let(:result) do
-      copied = []
-      attributes = copy_attributes copied
-      result = convert_with_logs input, attributes
-      result.push copied
-      result
-    end
-    let(:logs)   { result[1] }
-    let(:copied) { result[2] }
-  end
-  shared_examples 'copies the image' do
+  ##
+  # Like the 'convert' shared context, but also captures any images that
+  # would be copied by the conversion process to the `convert` array. That
+  # array contains tuples of the form
+  # [image_path_from_asciidoc_file, image_path_on_disk] and is in the order
+  # that the images source be copied.
+  shared_context 'convert intercepting images' do
     include_context 'convert'
-    it 'copies the image' do
-      expect(copied).to eq([
-          [resolved, "#{spec_dir}/resources/copy_images/example1.png"],
-      ])
-    end
-    it 'logs that it copied the image' do
-      expect(logs).to eq("INFO: <stdin>: line #{include_line}: copying #{spec_dir}/resources/copy_images/example1.png")
-    end
+
+    # [] is the initial value but it is mutated by the conversion
+    let(:copied) { [].dup }
+    let(:convert_attributes) { copy_attributes(copied) }
   end
-  shared_examples 'copies images' do
+
+  ##
+  # Asserts that a particular `image_command` copies the appropriate image
+  # when the image is referred to in many ways. The `image_command` should
+  # read `target` for the location of the image.
+  shared_examples 'copies images with various paths' do
     let(:input) do
       <<~ASCIIDOC
         == Example
@@ -61,20 +57,36 @@ RSpec.describe CopyImages do
       ASCIIDOC
     end
     let(:include_line) { 2 }
+    ##
+    # Asserts that some `input` causes just the `example1.png` image to be copied.
+    shared_examples 'copies example1' do
+      include_context 'convert intercepting images'
+      let(:expected_logs) do
+        "INFO: <stdin>: line #{include_line}: copying #{spec_dir}/resources/copy_images/example1.png"
+      end
+      it 'copies the image' do
+        expect(copied).to eq([
+            [resolved, "#{spec_dir}/resources/copy_images/example1.png"],
+        ])
+      end
+      it 'logs that it copied the image' do
+        expect(logs).to eq(expected_logs)
+      end
+    end
     context 'when the image ref matches that path exactly' do
       let(:target)   { 'resources/copy_images/example1.png' }
       let(:resolved) { 'resources/copy_images/example1.png' }
-      include_examples 'copies the image'
+      include_examples 'copies example1'
     end
     context 'when the image ref is just the name of the image' do
       let(:target)   { 'example1.png' }
       let(:resolved) { 'example1.png' }
-      include_examples 'copies the image'
+      include_examples 'copies example1'
     end
     context 'when the image ref matches the end of the path' do
       let(:target)   { 'copy_images/example1.png' }
       let(:resolved) { 'copy_images/example1.png' }
-      include_examples 'copies the image'
+      include_examples 'copies example1'
     end
     context 'when the image contains attributes' do
       let(:target)   { 'example1.{ext}' }
@@ -88,17 +100,17 @@ RSpec.describe CopyImages do
         ASCIIDOC
       end
       let(:include_line) { 4 }
-      include_examples 'copies the image'
+      include_examples 'copies example1'
     end
   end
 
   context 'for the image block macro' do
     let(:image_command) { "image::#{target}[]" }
-    include_examples 'copies images'
+    include_examples 'copies images with various paths'
   end
   context 'for the image inline macro' do
     let(:image_command) { "Words image:#{target}[] words" }
-    include_examples 'copies images'
+    include_examples 'copies images with various paths'
     context 'when the macro is escaped' do
       let(:target) { 'example1.jpg' }
       let(:input) do
@@ -107,8 +119,8 @@ RSpec.describe CopyImages do
           "Words \\image:#{target}[] words"
         ASCIIDOC
       end
-      include_context 'convert'
-      it "doesn't log about copying the image" do
+      include_context 'convert intercepting images'
+      it "doesn't log anything" do
         expect(logs).to eq('')
       end
       it "doesn't copy the image" do
@@ -123,21 +135,21 @@ RSpec.describe CopyImages do
           words image:example1.png[] words words image:example2.png[] words
         ASCIIDOC
       end
-      let(:expected_warnings) do
-        <<~WARNINGS
+      let(:expected_logs) do
+        <<~LOGS
           INFO: <stdin>: line 3: copying #{spec_dir}/resources/copy_images/example1.png
           INFO: <stdin>: line 3: copying #{spec_dir}/resources/copy_images/example2.png
-        WARNINGS
+        LOGS
       end
-      include_context 'convert'
-      it 'copies the image' do
+      include_context 'convert intercepting images'
+      it 'copies the images' do
         expect(copied).to eq([
             ['example1.png', "#{spec_dir}/resources/copy_images/example1.png"],
             ['example2.png', "#{spec_dir}/resources/copy_images/example2.png"],
         ])
       end
       it 'logs that it copied the image' do
-        expect(logs).to eq(expected_warnings.strip)
+        expect(logs).to eq(expected_logs.strip)
       end
     end
   end
