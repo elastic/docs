@@ -63,7 +63,7 @@ RUN pip3 install \
   pycodestyle==2.5.0
 
 # Install ruby deps with bundler to make things more standard for Ruby folks.
-RUN gem install bundler
+RUN gem install bundler:2.0.1
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 RUN bundle install --binstubs --system
