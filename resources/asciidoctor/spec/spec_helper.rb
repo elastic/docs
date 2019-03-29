@@ -50,6 +50,7 @@ end
 RSpec.shared_context 'convert' do
   let(:convert_logger) { Asciidoctor::MemoryLogger.new }
   let!(:converted) do
+    # We use let! here to force the conversion because it populates the logger
     attributes = {
       'docdir' => File.dirname(__FILE__),
     }
