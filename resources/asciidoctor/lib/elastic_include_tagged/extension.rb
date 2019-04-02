@@ -20,7 +20,6 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
   def process(_doc, reader, target, attrs)
     target = target.sub(/^elastic-include-tagged:/, '')
     if attrs.size != 1
-      # NOCOMMIT test this
       logger.warn message_with_context %(elastic-include-tagged expects only a tag but got: #{attrs}), :source_location => reader.cursor
       return target
     end
