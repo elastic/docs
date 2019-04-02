@@ -129,8 +129,12 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
 
         @in_attribute_only_block = false
         line.clear
-      elsif INCLUDE_TAGGED_DIRECTIVE_RX =~ line
-        return nil if preprocess_include_directive "elastic-include-tagged:#{$1}", $2
+      elsif (match = INCLUDE_TAGGED_DIRECTIVE_RX.match line)
+        target = match[1]
+        tag = match[2]
+        return nil if preprocess_include_directive(
+          "elastic-include-tagged:#{target}", tag
+        )
 
         # the line was not a valid include line and we've logged a warning
         # about it so we should do the asciidoctor standard thing and keep
