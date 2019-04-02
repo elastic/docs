@@ -43,6 +43,8 @@ end
 # In:
 #   input            - asciidoc text to convert
 #   extra_attributes - attributes added to the conversion - defaults to {}
+#   assert_no_logs   - should we assert that nothing was logged as part of the
+#                      conversion? - defaults to true
 #
 # Out:
 #   converted        - converted docbook text
@@ -55,13 +57,21 @@ RSpec.shared_context 'convert' do
       'docdir' => File.dirname(__FILE__),
     }
     attributes.merge! convert_attributes if defined?(convert_attributes)
-    Asciidoctor.convert input,
+    converted = Asciidoctor.convert input,
         :safe       => :unsafe,  # Used to include "funny" files.
         :backend    => :docbook45,
         :logger     => convert_logger,
         :doctype    => :book,
         :attributes => attributes,
         :sourcemap  => true
+    should_assert_logs = defined?(assert_no_logs) ? assert_no_logs : true
+    if should_assert_logs && convert_logger.messages.empty? == false
+      raise "Expected no logs but got:\n" +
+        convert_logger.messages
+          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
+          .join("\n")
+    end
+    converted
   end
   let(:logs) do
     convert_logger.messages
