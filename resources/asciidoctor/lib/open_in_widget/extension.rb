@@ -48,30 +48,14 @@ class OpenInWidget < TreeProcessorScaffold
     return unless %w[console sense kibana].include? lang
 
     snippet = block.attr 'snippet'
-    if snippet
-      # If you specify the snippet path then we should copy it into the
-      # destination directory so it is available for Kibana.
-      snippet_path = "snippets/#{snippet}"
-      normalized = block.normalize_system_path(snippet_path, block.document.base_dir)
-      if File.readable? normalized
-        copy_snippet block, normalized, snippet_path
-        logger.warn message_with_context "reading snippets from a path makes the book harder to read", :source_location => block.source_location
+    snippet_path =
+      if snippet
+        handle_override_snippet block, snippet
       else
-        logger.error message_with_context "can't read snippet from #{normalized}", :source_location => block.source_location
+        handle_implicit_snippet block, lang
       end
-    else
-      # If you don't specify the snippet then we assign it a number and read
-      # the contents of the source listing, copying it to the destination
-      # directory so it is available for Kibana.
-      snippet_number = block.document.attr 'snippet_number', 1
-      snippet = "#{snippet_number}.#{lang}"
-      block.document.set_attr 'snippet_number', snippet_number + 1
-
-      snippet_path = "snippets/#{snippet}"
-      source = block.source.gsub(CALLOUT_SCAN_RX, '') + "\n"
-      write_snippet block, source, snippet_path
-    end
-    block.set_attr 'snippet_link', "<ulink type=\"snippet\" url=\"#{snippet_path}\"/>"
+    block.set_attr 'snippet_link',
+      "<ulink type=\"snippet\" url=\"#{snippet_path}\"/>"
     block.document.register :links, snippet_path
 
     def block.content
@@ -79,8 +63,44 @@ class OpenInWidget < TreeProcessorScaffold
     end
   end
 
-  def copy_snippet(block, source, uri)
-    logger.info message_with_context "copying snippet #{source}", :source_location => block.source_location
+  ##
+  # Copy explicitly configured snippets to the right path so kibana can pick
+  # them up and warn the user that they are lame.
+  def handle_override_snippet(block, snippet)
+    snippet_path = "snippets/#{snippet}"
+    normalized = block.normalize_system_path(snippet_path,
+      block.document.base_dir)
+    if File.readable? normalized
+      copy_override_snippet block, normalized, snippet_path
+      message = "reading snippets from a path makes the book harder to read"
+      logger.warn message_with_context message,
+        source_location: block.source_location
+    else
+      logger.error message_with_context "can't read snippet from #{normalized}",
+        source_location: block.source_location
+    end
+    return snippet_path
+  end
+
+  ##
+  # Handles non-override snippets by assigning them a number and copying them
+  # some place that kibana can read them.
+  def handle_implicit_snippet(block, lang)
+    snippet_number = block.document.attr 'snippet_number', 1
+    snippet = "#{snippet_number}.#{lang}"
+    block.document.set_attr 'snippet_number', snippet_number + 1
+
+    snippet_path = "snippets/#{snippet}"
+    source = block.source.gsub(CALLOUT_SCAN_RX, '') + "\n"
+    write_snippet block, source, snippet_path
+    return snippet_path
+  end
+
+  ##
+  # Copies an override snippet from the filesystem into the snippets directory.
+  def copy_override_snippet(block, source, uri)
+    logger.info message_with_context "copying snippet #{source}",
+      source_location: block.source_location
     copy_proc = block.document.attr 'copy_snippet'
     if copy_proc
       # Delegate to a proc for copying if one is defined. Used for testing.
@@ -93,8 +113,12 @@ class OpenInWidget < TreeProcessorScaffold
     end
   end
 
+  ##
+  # Writes a snippet extracted from the asciidoc file into the
+  # snippets directory.
   def write_snippet(block, snippet, uri)
-    logger.info message_with_context "writing snippet #{uri}", :source_location => block.source_location
+    logger.info message_with_context "writing snippet #{uri}",
+      source_location: block.source_location
     write_proc = block.document.attr 'write_snippet'
     if write_proc
       # Delegate to a proc for copying if one is defined. Used for testing.
