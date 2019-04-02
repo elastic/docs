@@ -116,7 +116,7 @@ alias docbldjvr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs
 
 alias docbldejv='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
 
-alias docbldejs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
+alias docbldejs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
 alias docbldegr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
