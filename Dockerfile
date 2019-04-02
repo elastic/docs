@@ -66,4 +66,4 @@ RUN pip3 install \
 RUN gem install bundler:2.0.1
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
-RUN bundle install --binstubs --system
+RUN bundle install --binstubs --system --frozen
