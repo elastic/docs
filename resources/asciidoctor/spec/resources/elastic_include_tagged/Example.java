@@ -25,9 +25,9 @@ public class Example {
         System.err.println("and before this one");
         // end::empty_line
 
-        // end::missing-start
+        // end::missing_start
 
-        // tag::missing-end
+        // tag::missing_end
         System.err.println("this tag doesn't have any end");
     }
 }
