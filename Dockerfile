@@ -67,3 +67,8 @@ RUN gem install bundler:2.0.1
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 RUN bundle install --binstubs --system --frozen
+# --frozen forces us to regenerate Gemfile.lock locally before using it in
+# docker which is important because we need Gemfile.lock to lock the gems to a
+# consistent version and we can't rely on running bundler in docker to update
+# it because we can't copy from the image to the host machine while building
+# the image.
