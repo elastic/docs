@@ -24,7 +24,7 @@ def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
   }
   attributes.merge! extra_attributes
   result = Asciidoctor.convert input,
-      safe:       :unsafe,  # Used to include "funny" files.
+      safe:       :unsafe, # Used to include "funny" files.
       backend:    :docbook45,
       logger:     logger,
       doctype:    :book,
@@ -56,7 +56,7 @@ RSpec.shared_context 'convert' do
     }
     attributes.merge! convert_attributes if defined?(convert_attributes)
     Asciidoctor.convert input,
-        safe:       :unsafe,  # Used to include "funny" files.
+        safe:       :unsafe, # Used to include "funny" files.
         backend:    :docbook45,
         logger:     convert_logger,
         doctype:    :book,
