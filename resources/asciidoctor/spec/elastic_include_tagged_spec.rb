@@ -84,7 +84,7 @@ RSpec.describe ElasticIncludeTagged do
   end
   context "when including a file that doesn't exist" do
     let(:include_file) { 'resources/elastic_include_tagged/DoesNotExist.java' }
-    let(:tag)          { "doesn't-matter"                                     }
+    let(:tag) { "doesn't-matter" }
     let(:expected_log) do
       absolute_path = "#{__dir__}/#{include_file}"
       "ERROR: <stdin>: line 5: include file not found: #{absolute_path}"
@@ -99,8 +99,8 @@ RSpec.describe ElasticIncludeTagged do
     end
   end
   context "when including a tag that doesn't have a start tag" do
-    let(:tag)              { 'missing_start' }
-    let(:expected_include) { ''              }
+    let(:tag) { 'missing_start' }
+    let(:expected_include) { '' }
     it "doesn't include anything" do
       expect(converted).to eq(expected)
     end
@@ -147,7 +147,7 @@ RSpec.describe ElasticIncludeTagged do
     end
   end
   context 'when called without any parameters' do
-    let(:tag)              { '' }
+    let(:tag) { '' }
     let(:expected_include) { '' }
     it 'logs a warning about the missing tag' do
       expect(logs).to eq(
@@ -160,8 +160,8 @@ RSpec.describe ElasticIncludeTagged do
     end
   end
   context 'when called more than one parameter' do
-    let(:tag)              { 'tag,otherparam' }
-    let(:expected_include) { ''               }
+    let(:tag) { 'tag,otherparam' }
+    let(:expected_include) { '' }
     it 'logs a warning about the missing tag' do
       expect(logs).to eq(
         'WARN: <stdin>: line 5: elastic-include-tagged expects only a tag ' \
