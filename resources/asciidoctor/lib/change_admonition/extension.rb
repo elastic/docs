@@ -44,14 +44,16 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       # We can *almost* go through the standard :admonition conversion but
       # that won't render the revisionflag or the revision. So we have to
       # go with this funny compound pass thing.
-      admon = Asciidoctor::Block.new(parent, :pass, :content_model => :compound)
+      admon = Asciidoctor::Block.new(parent, :pass, content_model: :compound)
       admon << Asciidoctor::Block.new(admon, :pass,
-          :source => "<#{@tag} revisionflag=\"#{@revisionflag}\" revision=\"#{version}\">",
-          :attributes => { 'revisionflag' => @revisionflag })
+        attributes: { 'revisionflag' => @revisionflag },
+        source: "<#{@tag} " \
+                "revisionflag=\"#{@revisionflag}\" " \
+                "revision=\"#{version}\">")
       admon << Asciidoctor::Block.new(admon, :paragraph,
-          :source => attrs[:passtext],
-          :subs => Asciidoctor::Substitutors::NORMAL_SUBS)
-      admon << Asciidoctor::Block.new(admon, :pass, :source => "</#{@tag}>")
+        source: attrs[:passtext],
+        subs: Asciidoctor::Substitutors::NORMAL_SUBS)
+      admon << Asciidoctor::Block.new(admon, :pass, source: "</#{@tag}>")
     end
   end
 
