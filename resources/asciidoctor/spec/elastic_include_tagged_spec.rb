@@ -13,148 +13,163 @@ RSpec.describe ElasticIncludeTagged do
     Asciidoctor::Extensions.unregister_all
   end
 
-  it "includes a tag" do
-    actual = convert <<~ASCIIDOC
+  let(:include_file) { 'resources/elastic_include_tagged/Example.java' }
+  let(:input) do
+    <<~ASCIIDOC
       == Example
       [source,java]
       ----
-      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[t1]
+      include::elastic-include-tagged:#{include_file}[#{tag}]
       ----
     ASCIIDOC
-    expected = <<~DOCBOOK
+  end
+  include_context 'convert'
+  let(:expected) do
+    asciidoc = <<~ASCIIDOC
       <chapter id="_example">
       <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">System.err.println("I'm an example");
-      for (int i = 0; i &lt; 10; i++) {
-          System.err.println(i); <co id="CO1-1"/>
-      }</programlisting>
+      <programlisting language="java" linenumbering="unnumbered">#{expected_include.strip}</programlisting>
       </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+    ASCIIDOC
+    asciidoc.strip
   end
 
-  it "includes a different tag" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      ["source","java",subs="attributes,callouts,macros"]
-      ----
-      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[t2]
-      ----
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">System.err.println("I'm another example");</programlisting>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context 'when including a tag' do
+    let(:tag) { 't1' }
+    let(:expected_include) do
+      <<~JAVA
+        System.err.println("I'm an example");
+        for (int i = 0; i &lt; 10; i++) {
+            System.err.println(i); <co id="CO1-1"/>
+        }
+      JAVA
+    end
+    it 'that part of the document if included' do
+      expect(converted).to eq(expected)
+    end
   end
-
-  it "empty tags are supported" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      ["source","java",subs="attributes,callouts,macros"]
-      ----
-      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[empty]
-      ----
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered"></programlisting>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context 'when including a different tag' do
+    let(:tag) { 't2' }
+    let(:expected_include) { 'System.err.println("I\'m another example");' }
+    it 'that part of the document if included' do
+      expect(converted).to eq(expected)
+    end
   end
-
-  it "tags without leading spaces are ugly but supported" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      ["source","java",subs="attributes,callouts,macros"]
-      ----
-      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[no_leading_space]
-      ----
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">System.err.println("no leading space");</programlisting>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context 'when including an empty tag' do
+    let(:tag) { 'empty' }
+    let(:expected_include) { '' }
+    it 'includes nothing' do
+      expect(converted).to eq(expected)
+    end
   end
-
-  it "preserves empty lines" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      ["source","java",subs="attributes,callouts,macros"]
-      ----
-      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[empty_line]
-      ----
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">System.err.println("empty list after this one");
-
-      System.err.println("and before this one");</programlisting>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context "when including a tag that doesn't have a space in it in the file" do
+    let(:tag) { 'no_leading_space' }
+    let(:expected_include) { 'System.err.println("no leading space");' }
+    it 'includes the contents of the tag even though it is ugly' do
+      expect(converted).to eq(expected)
+    end
   end
+  context 'when including a tag that contains empty lines' do
+    let(:tag) { 'empty_line' }
+    let(:expected_include) do
+      <<~JAVA
+        System.err.println(\"empty list after this one\");
 
-  it "warns if the file doesn't exist" do
-    input = <<~ASCIIDOC
-      include::elastic-include-tagged:resources/elastic_include_tagged/DoesNotExist.java[doesn't-matter]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <preface>
-      <title></title>
-      <simpara>Unresolved directive in &lt;stdin&gt; - include::resources/elastic_include_tagged/DoesNotExist.java[{1&#8658;"doesn&#8217;t-matter"}]</simpara>
-      </preface>
-    DOCBOOK
-    actual = convert input, {}, match(/<stdin>: line 2: include file not found/)
-    expect(actual).to eq(expected.strip)
+        System.err.println("and before this one");
+      JAVA
+    end
+    it 'includes the empty lines' do
+      expect(converted).to eq(expected)
+    end
   end
-
-  it "warns if the start tag is missing" do
-    input = <<~ASCIIDOC
-      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[missing-start]
-    ASCIIDOC
-    actual = convert input, {}, match(/<stdin>: line 2: elastic-include-tagged missing start tag \[missing-start\]/)
-    expect(actual).to eq('')
+  context "when including a file that doesn't exist" do
+    let(:include_file) { 'resources/elastic_include_tagged/DoesNotExist.java' }
+    let(:tag) { "doesn't-matter" }
+    let(:expected_log) do
+      absolute_path = "#{__dir__}/#{include_file}"
+      "ERROR: <stdin>: line 5: include file not found: #{absolute_path}"
+    end
+    it 'the conversion contains a warning about unresolved directives' do
+      expect(converted).to include(
+        "Unresolved directive in &lt;stdin&gt; - include::#{include_file}"
+      )
+    end
+    it 'logs a warning about the missing file' do
+      expect(logs).to include(expected_log)
+    end
   end
-
-  it "warns if the end tag is missing" do
-    input = <<~ASCIIDOC
-      include::elastic-include-tagged:resources/elastic_include_tagged/Example.java[missing-end]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <preface>
-      <title></title>
-      <simpara>System.err.println("this tag doesn&#8217;t have any end");
-          }
-      }</simpara>
-      </preface>
-    DOCBOOK
-    actual = convert input, {}, match(%r{resources/elastic_include_tagged/Example.java: line \d+: elastic-include-tagged missing end tag \[missing-end\]})
-    expect(actual).to eq(expected.strip)
+  context "when including a tag that doesn't have a start tag" do
+    let(:tag) { 'missing_start' }
+    let(:expected_include) { '' }
+    it "doesn't include anything" do
+      expect(converted).to eq(expected)
+    end
+    it 'logs a warning about the missing tag' do
+      expect(logs).to eq(
+        'WARN: <stdin>: line 5: elastic-include-tagged missing ' \
+        'start tag [missing_start]'
+      )
+    end
   end
-
-  it "isn't invoked by include-tagged::" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      ["source","java",subs="attributes,callouts,macros"]
-      ----
-      include-tagged::resources/elastic_include_tagged/Example.java[t1]
-      ----
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">include-tagged::resources/elastic_include_tagged/Example.java[t1]</programlisting>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context "when including a tag that doesn't have a end tag" do
+    let(:tag) { 'missing_end' }
+    let(:expected_include) do
+      <<~JAVA
+        System.err.println("this tag doesn't have any end");
+            }
+        }
+      JAVA
+    end
+    it 'includes the rest of the file' do
+      expect(converted).to eq(expected)
+    end
+    it 'logs a warning about the missing tag' do
+      expect(logs).to eq(
+        "WARN: #{include_file}: line 30: elastic-include-tagged missing " \
+        'end tag [missing_end]'
+      )
+    end
+  end
+  context 'when it is written in AsciiDoc form' do
+    let(:input) do
+      <<~ASCIIDOC
+        == Example
+        ["source","java",subs="attributes,callouts,macros"]
+        ----
+        include-tagged::#{include_file}[t1]
+        ----
+      ASCIIDOC
+    end
+    it 'is not invoked' do
+      expect(converted).to include(
+        "include-tagged::#{include_file}[t1]"
+      )
+    end
+  end
+  context 'when called without any parameters' do
+    let(:tag) { '' }
+    let(:expected_include) { '' }
+    it 'logs a warning about the missing tag' do
+      expect(logs).to eq(
+        'WARN: <stdin>: line 5: elastic-include-tagged expects only a tag ' \
+        'but got: {}'
+      )
+    end
+    it 'includes nothing' do
+      expect(converted).to eq(expected)
+    end
+  end
+  context 'when called more than one parameter' do
+    let(:tag) { 'tag,otherparam' }
+    let(:expected_include) { '' }
+    it 'logs a warning about the missing tag' do
+      expect(logs).to eq(
+        'WARN: <stdin>: line 5: elastic-include-tagged expects only a tag ' \
+        'but got: {1=>"tag", 2=>"otherparam"}'
+      )
+    end
+    it 'includes nothing' do
+      expect(converted).to eq(expected)
+    end
   end
 end
