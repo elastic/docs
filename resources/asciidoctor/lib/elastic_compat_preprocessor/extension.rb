@@ -132,7 +132,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
       elsif (match = INCLUDE_TAGGED_DIRECTIVE_RX.match line)
         target = match[1]
         tag = match[2]
-        return nil if preprocess_include_directive(
+        return if preprocess_include_directive(
           "elastic-include-tagged:#{target}", tag
         )
 
@@ -152,7 +152,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         line.clear
       else
         line = super
-        return nil if line.nil?
+        return if line.nil?
 
         SOURCE_WITH_SUBS_RX.match(line) do |m|
           # AsciiDoc would automatically add `subs` to every source block but
