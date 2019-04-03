@@ -77,7 +77,6 @@ RSpec.shared_context 'convert with logs' do
   end
 end
 
-
 ##
 # Converts asciidoc to docbook, asserting that nothing is logged during the
 # conversion.
