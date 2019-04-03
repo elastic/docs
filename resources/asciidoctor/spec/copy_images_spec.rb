@@ -39,7 +39,7 @@ RSpec.describe CopyImages do
   # that the images source be copied.
   shared_context 'convert intercepting images' do
     let(:assert_no_logs) { false }
-    include_context 'convert'
+    include_context 'convert with logs'
 
     # [] is the initial value but it is mutated by the conversion
     let(:copied) { [].dup }

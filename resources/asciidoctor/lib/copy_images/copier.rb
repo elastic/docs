@@ -36,22 +36,11 @@ module CopyImages
 
     ##
     # Does a breadth first search starting at the base_dir of the document and
-    # any referenced resources. This isn't super efficient but it is how a2x works
-    # and we strive for compatibility.
-    #
+    # any referenced resources. This isn't super efficient but it is how a2x
+    # works and we strive for compatibility.
     def find_source(block, uri)
-      to_check = [block.document.base_dir]
+      to_check = roots_to_check block
       checked = []
-
-      resources = block.document.attr 'resources'
-      if resources && !resources.empty?
-        begin
-          to_check += CSV.parse_line(resources)
-        rescue CSV::MalformedCSVError => error
-          logger.error message_with_context "Error loading [resources]: #{error}",
-              :source_location => block.source_location
-        end
-      end
 
       while (dir = to_check.shift)
         checked << block.normalize_system_path(uri, dir)
@@ -66,8 +55,32 @@ module CopyImages
         end
       end
 
-      # We'll skip images we can't find but we should log something about it so
-      # we can fix them.
+      log_missing(block, checked)
+      nil
+    end
+
+    ##
+    # The directory roots to check for the file to copy
+    def roots_to_check(block)
+      to_check = [block.document.base_dir]
+
+      resources = block.document.attr 'resources'
+      return to_check unless resources
+      return to_check if resources.empty?
+
+      to_check + CSV.parse_line(resources)
+    rescue CSV::MalformedCSVError => error
+      logger.error message_with_context "Error loading [resources]: #{error}",
+          :source_location => block.source_location
+      to_check
+    end
+
+    ##
+    # Log a warning for files that we couldn't find.
+    def log_missing(block, checked)
+      # Sort the list of directories we did check so it is consistent from
+      # machine to machine. This is mostly useful for testing, but it nice
+      # if you happen to want to compare CI to a local machine.
       checked.sort! do |lhs, rhs|
         by_depth = lhs.scan(%r{/}).count <=> rhs.scan(%r{/}).count
         if by_depth != 0
@@ -76,8 +89,8 @@ module CopyImages
           lhs <=> rhs
         end
       end
-      logger.warn message_with_context "can't read image at any of #{checked}", :source_location => block.source_location
-      nil
+      logger.warn message_with_context "can't read image at any of #{checked}",
+        :source_location => block.source_location
     end
   end
 end

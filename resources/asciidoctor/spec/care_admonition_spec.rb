@@ -12,7 +12,7 @@ RSpec.describe CareAdmonition do
   end
 
   shared_context 'care admonition' do
-    include_context 'convert'
+    include_context 'convert no logs'
     context 'block version' do
       let(:input) do
         <<~ASCIIDOC
