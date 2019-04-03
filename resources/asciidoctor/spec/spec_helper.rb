@@ -24,12 +24,12 @@ def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
   }
   attributes.merge! extra_attributes
   result = Asciidoctor.convert input,
-      :safe       => :unsafe,  # Used to include "funny" files.
-      :backend    => :docbook45,
-      :logger     => logger,
-      :doctype    => :book,
-      :attributes => attributes,
-      :sourcemap  => true
+      safe:       :unsafe,  # Used to include "funny" files.
+      backend:    :docbook45,
+      logger:     logger,
+      doctype:    :book,
+      attributes: attributes,
+      sourcemap:  true
   warnings_string = logger.messages
         .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
         .join("\n")
@@ -56,12 +56,12 @@ RSpec.shared_context 'convert' do
     }
     attributes.merge! convert_attributes if defined?(convert_attributes)
     Asciidoctor.convert input,
-        :safe       => :unsafe,  # Used to include "funny" files.
-        :backend    => :docbook45,
-        :logger     => convert_logger,
-        :doctype    => :book,
-        :attributes => attributes,
-        :sourcemap  => true
+        safe:       :unsafe,  # Used to include "funny" files.
+        backend:    :docbook45,
+        logger:     convert_logger,
+        doctype:    :book,
+        attributes: attributes,
+        sourcemap:  true
   end
   let(:logs) do
     convert_logger.messages

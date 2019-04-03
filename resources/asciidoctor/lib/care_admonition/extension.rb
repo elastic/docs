@@ -36,8 +36,8 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
     def process(parent, _target, attrs)
       Asciidoctor::Block.new(parent, :admonition,
-          :source => attrs[:passtext],
-          :attributes => {
+          source: attrs[:passtext],
+          attributes: {
             'role' => @role,
             'name' => 'warning',
             'style' => 'warning',
