@@ -44,7 +44,8 @@ class EditMe < TreeProcessorScaffold
       edit_urls = @document.attributes['edit_urls']
       edit_url = edit_urls.find { |e| path.start_with? e[:toplevel] }
       unless edit_url
-        logger.warn message_with_context "couldn't find edit url for #{path}", :source_location => source_location
+        logger.warn message_with_context "couldn't find edit url for #{path}",
+          source_location: source_location
         return super
       end
       url = edit_url[:url]
