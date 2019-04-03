@@ -68,13 +68,11 @@ module CopyImages
       return to_check unless resources
       return to_check if resources.empty?
 
-      begin
-        to_check + CSV.parse_line(resources)
-      rescue CSV::MalformedCSVError => error
-        logger.error message_with_context "Error loading [resources]: #{error}",
-            :source_location => block.source_location
-        to_check
-      end
+      to_check + CSV.parse_line(resources)
+    rescue CSV::MalformedCSVError => error
+      logger.error message_with_context "Error loading [resources]: #{error}",
+          :source_location => block.source_location
+      to_check
     end
 
     ##
