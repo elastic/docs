@@ -24,7 +24,7 @@ def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
   }
   attributes.merge! extra_attributes
   result = Asciidoctor.convert input,
-      safe:       :unsafe,  # Used to include "funny" files.
+      safe:       :unsafe, # Used to include "funny" files.
       backend:    :docbook45,
       logger:     logger,
       doctype:    :book,
