@@ -8,7 +8,6 @@ RSpec.describe CrampedInclude do
   before(:each) do
     Asciidoctor::Extensions.register do
       preprocessor CrampedInclude
-      preprocessor ElasticCompatPreprocessor
     end
   end
 
@@ -17,60 +16,40 @@ RSpec.describe CrampedInclude do
   end
 
   include_examples "doesn't break line numbers"
+  include_context 'convert without logs'
 
-  it "allows cramped includes of callout lists" do
-    actual = convert <<~ASCIIDOC
-      = Test
+  context 'when including callout lists without a blank line between them' do
+    let(:input) do
+      <<~ASCIIDOC
+        = Test
 
-      == Test
+        == Test
 
-      include::resources/cramped_include/colist1.adoc[]
-      include::resources/cramped_include/colist2.adoc[]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_test">
-      <title>Test</title>
-      <section id="P1">
-      <title>P1</title>
-      <section id="P1_1">
-      <title>P1.1</title>
-      <programlisting language="java" linenumbering="unnumbered">words <1> <2></programlisting>
-      <calloutlist>
-      <callout arearefs="CO1-1">
-      <para>foo</para>
-      </callout>
-      </calloutlist>
-      </section>
-      </section>
-      <section id="P2">
-      <title>P2</title>
-      <section id="P2_1">
-      <title>P2.1</title>
-      <programlisting language="java" linenumbering="unnumbered">words <1> <2></programlisting>
-      <calloutlist>
-      <callout arearefs="CO2-1">
-      <para>foo</para>
-      </callout>
-      </calloutlist>
-      </section>
-      </section>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        include::resources/cramped_include/colist1.adoc[]
+        include::resources/cramped_include/colist2.adoc[]
+      ASCIIDOC
+    end
+    it 'renders both callout lists' do
+      expect(converted).to include('<callout arearefs="CO1-1">')
+        .and(include('<callout arearefs="CO2-1">'))
+    end
+    it 'renders the sections that contain the lists' do
+      expect(converted).to include('<title>P1</title>')
+        .and(include('<title>P2</title>'))
+    end
   end
 
-  it "doesn't break includes of non-asciidoc files" do
-    actual = convert <<~ASCIIDOC
-      ----
-      include::resources/cramped_include/Example.java[]
-      ----
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <preface>
-      <title></title>
-      <screen>public class Example {}</screen>
-      </preface>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context 'when including non-asciidoc files' do
+    let(:input) do
+      <<~ASCIIDOC
+        ----
+        include::resources/cramped_include/Example.java[]
+        ----
+      ASCIIDOC
+    end
+    it "doesn't add an extra newline" do
+      expect(converted).to include('<screen>public class Example {}</screen>')
+      # If it did add an extra new line it'd be here --------------^
+    end
   end
 end
