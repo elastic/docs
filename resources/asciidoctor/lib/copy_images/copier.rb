@@ -21,7 +21,8 @@ module CopyImages
       source = find_source block, uri
       return unless source                # Skip images we can't find
 
-      logger.info message_with_context "copying #{source}", :source_location => block.source_location
+      logger.info message_with_context "copying #{source}",
+        source_location: block.source_location
       copy_image_proc = block.document.attr 'copy_image'
       if copy_image_proc
         # Delegate to a proc for copying if one is defined. Used for testing.
@@ -71,7 +72,7 @@ module CopyImages
       to_check + CSV.parse_line(resources)
     rescue CSV::MalformedCSVError => error
       logger.error message_with_context "Error loading [resources]: #{error}",
-          :source_location => block.source_location
+          source_location: block.source_location
       to_check
     end
 
@@ -90,7 +91,7 @@ module CopyImages
         end
       end
       logger.warn message_with_context "can't read image at any of #{checked}",
-        :source_location => block.source_location
+        source_location: block.source_location
     end
   end
 end
