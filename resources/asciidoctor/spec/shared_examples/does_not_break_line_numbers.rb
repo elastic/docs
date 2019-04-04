@@ -2,7 +2,7 @@
 
 RSpec.shared_examples "doesn't break line numbers" do
   context "doesn't break line numbers" do
-    include_context 'convert'
+    include_context 'convert with logs'
     context 'when there is an error in the main asciidoc file' do
       let(:input) do
         <<~ASCIIDOC

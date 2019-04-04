@@ -45,7 +45,7 @@ def internal_convert(input, convert_logger, extra_attributes)
   }
   attributes.merge! extra_attributes
   Asciidoctor.convert input,
-      safe:       :unsafe,  # Used to include "funny" files.
+      safe:       :unsafe, # Used to include "funny" files.
       backend:    :docbook45,
       logger:     convert_logger,
       doctype:    :book,
@@ -87,7 +87,7 @@ end
 #
 # Out:
 #   converted        - converted docbook text
-RSpec.shared_context 'convert no logs' do
+RSpec.shared_context 'convert without logs' do
   let(:converted) do
     convert_logger = Asciidoctor::MemoryLogger.new
     extra_attributes = defined?(convert_attributes) ? convert_attributes : {}
