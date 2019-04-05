@@ -23,7 +23,7 @@ RSpec.describe ElasticIncludeTagged do
       ----
     ASCIIDOC
   end
-  include_context 'convert'
+  include_context 'convert with logs'
   let(:expected) do
     asciidoc = <<~ASCIIDOC
       <chapter id="_example">
@@ -47,6 +47,9 @@ RSpec.describe ElasticIncludeTagged do
     it 'that part of the document if included' do
       expect(converted).to eq(expected)
     end
+    it "didn't log anything" do
+      expect(logs).to eq('')
+    end
   end
   context 'when including a different tag' do
     let(:tag) { 't2' }
@@ -54,12 +57,18 @@ RSpec.describe ElasticIncludeTagged do
     it 'that part of the document if included' do
       expect(converted).to eq(expected)
     end
+    it "didn't log anything" do
+      expect(logs).to eq('')
+    end
   end
   context 'when including an empty tag' do
     let(:tag) { 'empty' }
     let(:expected_include) { '' }
     it 'includes nothing' do
       expect(converted).to eq(expected)
+    end
+    it "didn't log anything" do
+      expect(logs).to eq('')
     end
   end
   context "when including a tag that doesn't have a space in it in the file" do
@@ -80,6 +89,9 @@ RSpec.describe ElasticIncludeTagged do
     end
     it 'includes the empty lines' do
       expect(converted).to eq(expected)
+    end
+    it "didn't log anything" do
+      expect(logs).to eq('')
     end
   end
   context "when including a file that doesn't exist" do
@@ -144,6 +156,9 @@ RSpec.describe ElasticIncludeTagged do
       expect(converted).to include(
         "include-tagged::#{include_file}[t1]"
       )
+    end
+    it "didn't log anything" do
+      expect(logs).to eq('')
     end
   end
   context 'when called without any parameters' do
