@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require 'dsl'
+require_relative 'helper/dsl'
+require_relative 'helper/sh'
 
 require 'tmpdir'
 require 'fileutils'
@@ -23,6 +24,7 @@ RSpec.configure do |config|
   end
 
   config.extend Dsl
+  config.include Sh
 end
 
 RSpec.shared_context 'tmp dirs' do
@@ -40,18 +42,9 @@ RSpec.shared_context 'tmp dirs' do
 end
 
 ##
-# Execute a command and return the result. Use this to execute commands in
-# `before` sections to prepare the environment to test.
-def sh(cmd)
-  out, status = Open3.capture2e cmd
-  return out if status.success?
-
-  raise_status cmd, out, status
-end
-
-def raise_status(cmd, out, status)
-  outmsg = out == '' ? '' : " with stdout/stderr:\n#{out}"
-  raise "#{status.stopsig} [#{cmd}] returned [#{status}]#{outmsg}"
+# Builds a path to afile in the source.
+def source_file(file)
+  File.expand_path(file, @src)
 end
 
 ##
