@@ -1,13 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.describe 'building a single book' do
-  def convert_args(from, to)
-    %W[
-      --doc #{from}
-      --out #{to}
-    ]
-  end
-
   HEADER = <<~ASCIIDOC
     = Title
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'helper/convert'
 require_relative 'helper/dsl'
 require_relative 'helper/sh'
 
@@ -23,6 +24,7 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  config.include Convert
   config.extend Dsl
   config.include Sh
 end
