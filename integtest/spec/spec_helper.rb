@@ -42,12 +42,6 @@ RSpec.shared_context 'tmp dirs' do
 end
 
 ##
-# Builds a path to afile in the source.
-def source_file(file)
-  File.expand_path(file, @src)
-end
-
-##
 # Build a path to a file in the destination.
 def dest_file(file)
   File.expand_path(file, @dest)

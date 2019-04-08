@@ -45,8 +45,10 @@ module Dsl
   end
 
   ##
-  # Include a context that converts asciidoc files into html. Pass a block that
-  # takes a `Source` object and returns the "root" asciidoc file to convert.
+  # Include a context into the current context that converts asciidoc files
+  # into html and adds some basic assertions about the conversion process. Pass
+  # a block that takes a `Source` object and returns the "root" asciidoc file
+  # to convert.
   def convert_single_before_context
     include_context 'tmp dirs'
     before(:context) do
