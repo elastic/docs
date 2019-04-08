@@ -3,7 +3,7 @@
 require 'open3'
 
 ##
-# Defines methods to run commands during `before(:context)` hooks.
+# Defines methods to run commands in example blocks like `it` and `before`.
 module Sh
   ##
   # Execute a command and return the result. Use this to execute commands in
