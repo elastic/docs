@@ -38,15 +38,23 @@ alias docbldls=docbldlsx
 
 alias docbldlsold='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash-extra/x-pack-logstash/docs/ --chunk 1'
 
-# Stack
-alias docbldstk='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/'
+# Installation and Upgrade Guide 7.0 and later
+alias docbldstk='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --chunk 1'
 
+# Installation and Upgrade Guide 6.7 and earlier
+alias docbldstkold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --chunk 1'
+
+
+# Glossary
 alias docbldgls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
 
+# Getting started
 alias docbldgs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
+# Stack Overview
 alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
 
+# Deploying Azure
 alias docbldaz='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
@@ -116,7 +124,7 @@ alias docbldjvr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs
 
 alias docbldejv='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
 
-alias docbldejs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
+alias docbldejs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
 alias docbldegr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
