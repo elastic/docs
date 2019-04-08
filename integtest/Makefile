@@ -35,13 +35,16 @@ check: \
 	open_all \
 	missing_index
 
+.PHONY: style
 style: pycodestyle rubocop
 
+.PHONY: pycodestyle
 pycodestyle: html_diff
 	pycodestyle html_diff
 
-rubocop: spec/*.rb
-	rubocop --cache false spec/*.rb
+.PHONY: rubocop
+rubocop:
+	rubocop --cache false
 
 .PHONY: rspec
 rspec:

@@ -80,7 +80,7 @@ module Dsl
     end
 
     ##
-    # Write a source file.
+    # Write a source file and return the absolute path to that file.
     def write(path, text)
       path = "#{@root}/#{path}"
       File.open(path, 'w:UTF-8') do |f|
