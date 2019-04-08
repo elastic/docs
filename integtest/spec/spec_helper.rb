@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'dsl'
+
 require 'tmpdir'
 require 'fileutils'
 require 'open3'
@@ -19,6 +21,8 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  config.extend Dsl
 end
 
 RSpec.shared_context 'tmp dirs' do
@@ -48,6 +52,12 @@ end
 def raise_status(cmd, out, status)
   outmsg = out == '' ? '' : " with stdout/stderr:\n#{out}"
   raise "#{status.stopsig} [#{cmd}] returned [#{status}]#{outmsg}"
+end
+
+##
+# Build a path to a file in the destination.
+def dest_file(file)
+  File.expand_path(file, @dest)
 end
 
 ##
