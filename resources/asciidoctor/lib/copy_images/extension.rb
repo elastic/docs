@@ -114,7 +114,8 @@ module CopyImages
       if admonition_image
         @copier.copy_image block, "images/icons/#{admonition_image}.#{admonition_extension}"
       else
-        logger.warn message_with_context "unknow revisionflag #{revisionflag}", :source_location => block.source_location
+        logger.warn message_with_context "unknow revisionflag #{revisionflag}",
+          source_location: block.source_location
       end
     end
   end
