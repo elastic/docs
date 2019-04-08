@@ -79,7 +79,7 @@ class OpenInWidget < TreeProcessorScaffold
       logger.error message_with_context "can't read snippet from #{normalized}",
         source_location: block.source_location
     end
-    return snippet_path
+    snippet_path
   end
 
   ##
@@ -93,7 +93,7 @@ class OpenInWidget < TreeProcessorScaffold
     snippet_path = "snippets/#{snippet}"
     source = block.source.gsub(CALLOUT_SCAN_RX, '') + "\n"
     write_snippet block, source, snippet_path
-    return snippet_path
+    snippet_path
   end
 
   ##
