@@ -31,11 +31,11 @@ RSpec.describe CrampedInclude do
     end
     it 'renders both callout lists' do
       expect(converted).to include('<callout arearefs="CO1-1">')
-        .and(include('<callout arearefs="CO2-1">'))
+      expect(converted).to include('<callout arearefs="CO2-1">')
     end
     it 'renders the sections that contain the lists' do
       expect(converted).to include('<title>P1</title>')
-        .and(include('<title>P2</title>'))
+      expect(converted).to include('<title>P2</title>')
     end
   end
 
