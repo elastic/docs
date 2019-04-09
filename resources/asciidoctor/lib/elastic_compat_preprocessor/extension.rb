@@ -115,7 +115,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   CODE_BLOCK_RX = /^-----*$/
   SNIPPET_RX = %r{^//\s*(AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)$}
   LEGACY_MACROS = 'added|beta|coming|deprecated|experimental'
-  LEGACY_BLOCK_MACRO_RX = /^(#{LEGACY_MACROS})\[([^\]]*)\]/
+  LEGACY_BLOCK_MACRO_RX = /^\s*(#{LEGACY_MACROS})\[([^\]]*)\]\s*$/
   LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[([^\]]*)\]/
 
   def process(_document, reader)
@@ -175,7 +175,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         end
 
         # First convert the "block" version of these macros. We convert them
-        # to block macros because they are at the start of the line....
+        # to block macros because they are alone on a line
         line&.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
         # Then convert the "inline" version of these macros. We convert them
         # to inline macros because they are *not* at the start of the line....

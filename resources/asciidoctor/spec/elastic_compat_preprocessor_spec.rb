@@ -30,57 +30,91 @@ RSpec.describe ElasticCompatPreprocessor do
 
   include_examples "doesn't break line numbers"
 
-  [
-      %w[added added note],
-      %w[coming changed note],
-      %w[deprecated deleted warning],
-  ].each do |(name, revisionflag, tag)|
-    it "invokes the #{name} block macro when #{name}[version] starts a line" do
-      actual = convert <<~ASCIIDOC
-        == Example
-        #{name}[some_version]
-      ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-        <#{tag} revisionflag="#{revisionflag}" revision="some_version">
-        <simpara></simpara>
-        </#{tag}>
-        </chapter>
-      DOCBOOK
-      expect(actual).to eq(expected.strip)
+  context 'change admonitions' do
+    shared_examples 'change admonition' do
+      include_context 'convert without logs'
+
+      shared_examples 'invokes the block macro' do
+        let(:expected) do
+          <<~DOCBOOK
+            <#{tag} revisionflag="#{revisionflag}" revision="some_version">
+            <simpara></simpara>
+            </#{tag}>
+          DOCBOOK
+        end
+        it 'invokes the block macro' do
+          expect(converted).to include(expected)
+        end
+      end
+      context 'when the admonition is alone on a line' do
+        let(:input) { "#{name}[some_version]" }
+        include_examples 'invokes the block macro'
+      end
+      context 'when the admonition has spaces before it' do
+        let(:input) { "   #{name}[some_version]" }
+        include_examples 'invokes the block macro'
+      end
+      context 'when the admonition has spaces after it' do
+        let(:input) { "#{name}[some_version]   " }
+        include_examples 'invokes the block macro'
+      end
+
+      shared_examples 'invokes the inline macro' do
+        it 'invokes the inline macro' do
+          expect(converted).to include(
+            %(<phrase revisionflag="#{revisionflag}" revision="some_version"/>)
+          )
+        end
+      end
+      context "when the admonition is surrounded by other text" do
+        let(:input) { "words #{name}[some_version] words" }
+        include_examples 'invokes the inline macro'
+      end
+      context "when the admonition has text before it" do
+        let(:input) { "words #{name}[some_version]" }
+        include_examples 'invokes the inline macro'
+      end
+      context "when the admonition has text after it" do
+        let(:input) { "#{name}[some_version] words" }
+        include_examples 'invokes the inline macro'
+      end
+
+      context 'when the admonition is skipped' do
+        let(:input) do
+          <<~ASCIIDOC
+            words before skip
+            ifeval::["true" == "false"]
+            #{name}[some_version]
+            endif::[]
+            words after skip
+          ASCIIDOC
+        end
+        it 'skips the admonition' do
+          expect(converted).not_to include('revisionflag')
+        end
+        it 'properly converts the rest of the text' do
+          expect(converted).to include('words before skip')
+          expect(converted).to include('words after skip')
+        end
+      end
     end
-
-    it "invokes the #{name} inline macro when #{name}[version] is otherwise on the line" do
-      actual = convert <<~ASCIIDOC
-        == Example
-        words #{name}[some_version]
-      ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-        <simpara>words <phrase revisionflag="#{revisionflag}" revision="some_version"/>
-        </simpara>
-        </chapter>
-      DOCBOOK
-      expect(actual).to eq(expected.strip)
+    context 'for added' do
+      include_context 'change admonition'
+      let(:name) { 'added' }
+      let(:revisionflag) { 'added' }
+      let(:tag) { 'note' }
     end
-
-    it "doesn't mind skipped #{name} block macros" do
-      actual = convert <<~ASCIIDOC
-        == Example
-
-        ifeval::["true" == "false"]
-        #{name}[some_version]
-        #endif::[]
-      ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-
-        </chapter>
-      DOCBOOK
-      expect(actual).to eq(expected.strip)
+    context 'for coming' do
+      include_context 'change admonition'
+      let(:name) { 'coming' }
+      let(:revisionflag) { 'changed' }
+      let(:tag) { 'note' }
+    end
+    context 'for added' do
+      include_context 'change admonition'
+      let(:name) { 'deprecated' }
+      let(:revisionflag) { 'deleted' }
+      let(:tag) { 'warning' }
     end
   end
 
