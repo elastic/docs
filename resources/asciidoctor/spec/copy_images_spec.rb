@@ -29,8 +29,6 @@ RSpec.describe CopyImages do
     }
   end
 
-  spec_dir = File.dirname(__FILE__)
-
   ##
   # Like the 'convert' shared context, but also captures any images that
   # would be copied by the conversion process to the `convert` array. That
@@ -38,7 +36,7 @@ RSpec.describe CopyImages do
   # [image_path_from_asciidoc_file, image_path_on_disk] and is in the order
   # that the images source be copied.
   shared_context 'convert intercepting images' do
-    # NOCOMMIT check if we can remove this context
+    # TODO once we've switched all of the examples in this file we can probably drop this.
     include_context 'convert with logs'
 
     # [] is the initial value but it is mutated by the conversion
@@ -56,6 +54,10 @@ RSpec.describe CopyImages do
       copied_storage
     end
   end
+
+  # Absolute paths
+  let(:spec_dir) { File.dirname(__FILE__) }
+  let(:resources_dir) { "#{spec_dir}/resources/copy_images" }
 
   # Full relative path to example images
   let(:example1) { "resources/copy_images/example1.png" }
@@ -337,25 +339,59 @@ RSpec.describe CopyImages do
   shared_context 'copy-callout-images is set' do
     include_context 'copy-callout-images'
     let(:relative_path) { 'images/icons/callouts' }
+    let(:absolute_path) { "#{resources_dir}/#{relative_path}" }
     let(:expected_copied) do
-      [ # NOCOMMIT make let for resources_path
+      [
         ["#{relative_path}/1.#{copy_callout_images}",
-          "#{spec_dir}/resources/copy_images/#{relative_path}/1.#{copy_callout_images}"],
+          "#{absolute_path}/1.#{copy_callout_images}"],
         ["#{relative_path}/2.#{copy_callout_images}",
-          "#{spec_dir}/resources/copy_images/#{relative_path}/2.#{copy_callout_images}"],
+          "#{absolute_path}/2.#{copy_callout_images}"],
       ]
     end
     let(:expected_logs) do
       <<~LOGS
-        INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/#{relative_path}/1.#{copy_callout_images}
-        INFO: <stdin>: line 6: copying #{spec_dir}/resources/copy_images/#{relative_path}/2.#{copy_callout_images}
+        INFO: <stdin>: line 5: copying #{absolute_path}/1.#{copy_callout_images}
+        INFO: <stdin>: line 6: copying #{absolute_path}/2.#{copy_callout_images}
       LOGS
     end
     it 'copies the callout images' do
       expect(copied).to eq(expected_copied)
     end
     it 'logs that it copied the callout images' do
-      expect(logs).to eq(expected_logs)
+      expect(logs).to eq(expected_logs.strip)
+    end
+    context 'when a callout image is missing' do
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          ----
+          foo <1> <2> <3>
+          ----
+          <1> words
+          <2> words
+          <3> words
+        ASCIIDOC
+      end
+      let(:expected_warnings) do
+        %r{
+          WARN:\ <stdin>:\ line\ 7:\ can't\ read\ image\ at\ any\ of\ \[
+          "#{spec_dir}/images/icons/callouts/3.#{copy_callout_images}",\s
+          "#{spec_dir}/resources/images/icons/callouts/3.#{copy_callout_images}",\s
+          .+
+          "#{spec_dir}/resources/copy_images/images/icons/callouts/3.#{copy_callout_images}"
+          .+
+        \]}x
+        # Comment to fix syntax highlighting bug in VSCode....'
+      end
+      it 'copies the images it can find' do
+        expect(copied).to eq(expected_copied)
+      end
+      it 'logs about the images it can copy' do
+        expect(logs).to include(expected_logs.strip)
+      end
+      it "logs a warning about the image it can't find" do
+        expect(logs).to match(expected_warnings)
+      end
     end
   end
   context 'when copy-callout-images is set to png' do
@@ -374,31 +410,6 @@ RSpec.describe CopyImages do
     it "doesn't log that it copied the callout images" do
       expect(logs).to eq('')
     end
-  end
-
-  it "has a nice error message when a callout image is missing" do
-    copied = []
-    attributes = copy_attributes copied
-    attributes['copy-callout-images'] = 'gif'
-    input = <<~ASCIIDOC
-      == Example
-      ----
-      foo <1> <2>
-      ----
-      <1> words
-      <2> words
-    ASCIIDOC
-    convert input, attributes, match(%r{
-    WARN:\ <stdin>:\ line\ 6:\ can't\ read\ image\ at\ any\ of\ \[
-      "#{spec_dir}/images/icons/callouts/2.gif",\s
-      "#{spec_dir}/resources/images/icons/callouts/2.gif",\s
-      .+
-      "#{spec_dir}/resources/copy_images/images/icons/callouts/2.gif"
-      .+
-    \]}x).and(match(%r{INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.gif}))
-    expect(copied).to eq([
-        ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
-    ])
   end
 
   it "only copies callout images one time" do
