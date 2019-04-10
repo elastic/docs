@@ -20,7 +20,7 @@ module Dsl
       dest_file(file_name)
     end
     let(:body) do
-      return nil unless File.exist? file
+      return unless File.exist? file
 
       File.open(dest_file(file), 'r:UTF-8') do |f|
         f.read
@@ -29,7 +29,7 @@ module Dsl
       end
     end
     let(:title) do
-      return nil unless body
+      return unless body
 
       m = body.match %r{<h1 class="title"><a id=".+"></a>([^<]+)(<a.+?)?</h1>}
       raise "Can't find title in #{body}" unless m
