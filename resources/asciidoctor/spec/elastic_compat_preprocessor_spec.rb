@@ -58,6 +58,17 @@ RSpec.describe ElasticCompatPreprocessor do
         let(:input) { "#{name}[some_version]   " }
         include_examples 'invokes the block macro'
       end
+      context 'when the admonition has a `]` in it' do
+        let(:input) { "#{name}[some_version, link:link.html[Title]]" }
+        include_examples 'invokes the block macro'
+        let(:expected) do
+          <<~DOCBOOK
+            <#{tag} revisionflag="#{revisionflag}" revision="some_version">
+            <simpara><ulink url="link.html">Title</ulink></simpara>
+            </#{tag}>
+          DOCBOOK
+        end
+      end
 
       shared_examples 'invokes the inline macro' do
         it 'invokes the inline macro' do
