@@ -119,77 +119,115 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[([^\]]*)\]/
 
   def process(_document, reader)
-    reader.instance_variable_set :@in_attribute_only_block, false
-    reader.instance_variable_set :@code_block_start, nil
-    def reader.process_line(line)
+    reader.extend ReaderExtension
+  end
+
+  ##
+  # Extensions to the Reader object that implement the conversions.
+  module ReaderExtension
+    def self.extended(base)
+      base.instance_variable_set :@in_attribute_only_block, false
+      base.instance_variable_set :@code_block_start, nil
+    end
+
+    ##
+    # Replaces the Asciidoctor's built in line processing to do our conversion.
+    def process_line(line)
       return line unless @process_lines
 
       if @in_attribute_only_block
-        return line unless line == '--'
-
-        @in_attribute_only_block = false
-        line.clear
-      elsif (match = INCLUDE_TAGGED_DIRECTIVE_RX.match line)
-        target = match[1]
-        tag = match[2]
-        return if preprocess_include_directive(
-          "elastic-include-tagged:#{target}", tag
-        )
-
-        # the line was not a valid include line and we've logged a warning
-        # about it so we should do the asciidoctor standard thing and keep
-        # it intact. This is how we do that.
-        @look_ahead += 1
-        line
+        process_in_attribute_only_block line
       elsif line == '--'
-        lines = self.lines
-        lines.shift
-        while Asciidoctor::AttributeEntryRx =~ (check_line = lines.shift)
-        end
-        return line unless check_line == '--'
-
-        @in_attribute_only_block = true
-        line.clear
+        process_start_block line
+      elsif (match = INCLUDE_TAGGED_DIRECTIVE_RX.match line)
+        process_include_tagged line, match[1], match[2]
       else
-        line = super
-        return if line.nil?
-
-        SOURCE_WITH_SUBS_RX.match(line) do |m|
-          # AsciiDoc would automatically add `subs` to every source block but
-          # Asciidoctor does not and we have thousands of blocks that rely on
-          # this behavior.
-          old_subs = m[1]
-          line.sub! "subs=\"#{old_subs}\"", "subs=\"#{old_subs},callouts\"" unless old_subs.include? 'callouts'
-        end
-        if CODE_BLOCK_RX =~ line
-          if @code_block_start
-            if line != @code_block_start
-              line.replace(@code_block_start)
-              message = "MIGRATION: code block end doesn't match start"
-              logger.warn message_with_context message, source_location: cursor
-            end
-            @code_block_start = nil
-          else
-            @code_block_start = line
-          end
-        end
-
-        # First convert the "block" version of these macros. We convert them
-        # to block macros because they are at the start of the line....
-        line&.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
-        # Then convert the "inline" version of these macros. We convert them
-        # to inline macros because they are *not* at the start of the line....
-        line&.gsub!(LEGACY_INLINE_MACRO_RX, '\1:[\2]')
-
-        # Transform Elastic's traditional comment based marking for
-        # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
-        # up during tree processing to turn the snippet into a marked up
-        # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
-        # thing but we have thousands of them and it'll take us some time to
-        # stop doing it.
-        line&.gsub!(SNIPPET_RX, 'lang_override::[\1]')
+        postprocess super
       end
     end
-    reader
+
+    ##
+    # Handle a line if we're in attribute only block. We are basically a
+    # passthrough in this state, just hunting for the block end. If we hit the
+    # block end we eat the block delimiter because we ate the start delimiter
+    # when entering into the attribute only block.
+    def process_in_attribute_only_block(line)
+      return line unless line == '--'
+
+      @in_attribute_only_block = false
+      line.clear
+    end
+
+    ##
+    # Process a start block when, potentially shifting into the "attribute only"
+    # block state if the block that is starting only contains attributes. If
+    # we enter into that state then we eat the block delimiter to work around
+    # a scoping difference between AsciiDoc and Asciidoctor.
+    def process_start_block(line)
+      lines = self.lines
+      lines.shift
+      while Asciidoctor::AttributeEntryRx =~ (check_line = lines.shift)
+      end
+      return line unless check_line == '--'
+
+      @in_attribute_only_block = true
+      line.clear
+    end
+
+    ##
+    # Process the `include-tagged` directive.
+    def process_include_tagged(line, target, tag)
+      return if preprocess_include_directive(
+        "elastic-include-tagged:#{target}", tag
+      )
+
+      # the line was not a valid include line and we've logged a warning
+      # about it so we should do the asciidoctor standard thing and keep
+      # it intact. This is how we do that.
+      @look_ahead += 1
+      line
+    end
+
+    ##
+    # Process lines after they've been processed by the reader.
+    def postprocess(line)
+      return if line.nil?
+
+      SOURCE_WITH_SUBS_RX.match(line) do |m|
+        # AsciiDoc would automatically add `subs` to every source block but
+        # Asciidoctor does not and we have thousands of blocks that rely on
+        # this behavior.
+        old_subs = m[1]
+        line.sub! "subs=\"#{old_subs}\"", "subs=\"#{old_subs},callouts\"" \
+          unless old_subs.include? 'callouts'
+      end
+      if CODE_BLOCK_RX =~ line
+        if @code_block_start
+          if line != @code_block_start
+            line.replace(@code_block_start)
+            message = "MIGRATION: code block end doesn't match start"
+            logger.warn message_with_context message, source_location: cursor
+          end
+          @code_block_start = nil
+        else
+          @code_block_start = line
+        end
+      end
+
+      # First convert the "block" version of these macros. We convert them
+      # to block macros because they are alone on a line
+      line&.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
+      # Then convert the "inline" version of these macros. We convert them
+      # to inline macros because they are *not* at the start of the line....
+      line&.gsub!(LEGACY_INLINE_MACRO_RX, '\1:[\2]')
+
+      # Transform Elastic's traditional comment based marking for
+      # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
+      # up during tree processing to turn the snippet into a marked up
+      # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
+      # thing but we have thousands of them and it'll take us some time to
+      # stop doing it.
+      line&.gsub!(SNIPPET_RX, 'lang_override::[\1]')
+    end
   end
 end
