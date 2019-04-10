@@ -36,7 +36,8 @@ RSpec.describe CopyImages do
   # [image_path_from_asciidoc_file, image_path_on_disk] and is in the order
   # that the images source be copied.
   shared_context 'convert intercepting images' do
-    # TODO once we've switched all of the examples in this file we can probably drop this.
+    # TODO: once we've switched all of the examples in this file we can probably
+    #  drop this.
     include_context 'convert with logs'
 
     # [] is the initial value but it is mutated by the conversion
@@ -343,9 +344,9 @@ RSpec.describe CopyImages do
     let(:expected_copied) do
       [
         ["#{relative_path}/1.#{copy_callout_images}",
-          "#{absolute_path}/1.#{copy_callout_images}"],
+         "#{absolute_path}/1.#{copy_callout_images}"],
         ["#{relative_path}/2.#{copy_callout_images}",
-          "#{absolute_path}/2.#{copy_callout_images}"],
+         "#{absolute_path}/2.#{copy_callout_images}"],
       ]
     end
     let(:expected_logs) do
