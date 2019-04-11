@@ -26,7 +26,6 @@ check: \
 	xpack_float_expected_files xpack_float_same_files \
 	migration_warnings \
 	readme_expected_files readme_same_files \
-	simple_all \
 	relative_conf_file \
 	new_repo new_book \
 	keep_hash keep_hash_new_repo keep_hash_new_book \

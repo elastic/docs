@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require_relative 'helper/convert'
-require_relative 'helper/dsl'
-require_relative 'helper/sh'
-
 require 'tmpdir'
 require 'fileutils'
 require 'open3'
+
+require_relative 'helper/convert'
+require_relative 'helper/dsl'
+require_relative 'helper/sh'
 
 ENV['GIT_AUTHOR_NAME'] = 'Test'
 ENV['GIT_AUTHOR_EMAIL'] = 'test@example.com'
