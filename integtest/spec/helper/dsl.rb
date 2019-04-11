@@ -54,6 +54,9 @@ module Dsl
       from = yield(Source.new @src)
       @asciidoctor_out = convert_single from, @dest,
                                         asciidoctor: true
+      # Convert a second time with the legacy `AsciiDoc` tool and stick the
+      # result into the `asciidoc` directory. We will compare the results of
+      # this conversion with the results of the `Asciidoctor` conversion.
       @asciidoc_out = convert_single from, "#{@dest}/asciidoc",
                                      asciidoctor: false
     end
