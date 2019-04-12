@@ -150,3 +150,6 @@ alias docbldx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/x-pack/docs/en/index
 
 # ECS
 alias docbldecs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
+
+# GKE 
+alias docbldgke='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
