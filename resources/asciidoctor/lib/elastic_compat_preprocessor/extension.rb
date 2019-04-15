@@ -191,7 +191,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
     ##
     # Process lines after they've been processed by the reader.
     def postprocess(line)
-      return if line.nil?
+      return unless line
 
       SOURCE_WITH_SUBS_RX.match(line) do |m|
         # AsciiDoc would automatically add `subs` to every source block but
