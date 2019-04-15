@@ -41,7 +41,7 @@ RSpec.describe CopyImages do
     include_context 'convert with logs'
 
     # [] is the initial value but it is mutated by the conversion
-    let(:copied_storage) { [].dup }
+    let(:copied_storage) { [] }
     let(:convert_attributes) do
       copy_attributes(copied_storage).tap do |attrs|
         attrs['resources'] = resources if defined?(resources)
