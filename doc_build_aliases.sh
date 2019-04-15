@@ -120,7 +120,7 @@ alias docbldpls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elastic
 
 alias docbldepi='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
 
-alias docbldjvr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
+alias docbldjvr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
 alias docbldejv='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
 
@@ -150,3 +150,6 @@ alias docbldx='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/x-pack/docs/en/index
 
 # ECS
 alias docbldecs='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
+
+# GKE 
+alias docbldgke='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'

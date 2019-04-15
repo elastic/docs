@@ -115,8 +115,8 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   CODE_BLOCK_RX = /^-----*$/
   SNIPPET_RX = %r{^//\s*(AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)$}
   LEGACY_MACROS = 'added|beta|coming|deprecated|experimental'
-  LEGACY_BLOCK_MACRO_RX = /^(#{LEGACY_MACROS})\[([^\]]*)\]/
-  LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[([^\]]*)\]/
+  LEGACY_BLOCK_MACRO_RX = /^\s*(#{LEGACY_MACROS})\[(.*)\]\s*$/
+  LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[(.*)\]/
 
   def process(_document, reader)
     reader.extend ReaderExtension
