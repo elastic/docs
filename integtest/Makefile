@@ -10,14 +10,15 @@ export GIT_COMMITTER_EMAIL=test@example.com
 
 .PHONY: check
 check: \
+	rspec \
 	style \
-	minimal_expected_files minimal_same_files \
+	minimal_same_files \
 	includes_expected_files includes_same_files \
 	emdash_expected_files emdash_same_files \
-	beta_expected_files beta_same_files \
+	beta_same_files \
 	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
-	adoc_expected_files adoc_same_files \
+	adoc_same_files \
 	empty_table_cell_expected_files empty_table_cell_same_files \
 	xpack_chapter_expected_files xpack_chapter_same_files \
 	xpack_part_expected_files xpack_part_same_files \
@@ -35,8 +36,19 @@ check: \
 	missing_index
 
 .PHONY: style
-style: html_diff
+style: pycodestyle rubocop
+
+.PHONY: pycodestyle
+pycodestyle: html_diff
 	pycodestyle html_diff
+
+.PHONY: rubocop
+rubocop:
+	rubocop --cache false
+
+.PHONY: rspec
+rspec:
+	rspec
 
 define STANDARD_EXPECTED_FILES=
 	[ -s $^/index.html ]
@@ -59,11 +71,6 @@ readme_expected_files: /tmp/readme_asciidoc
 	[ -s $^/images/icons/callouts/1.png ]
 	[ -s $^/images/icons/callouts/2.png ]
 	[ -s $^/snippets/blocks/1.json ]
-
-.PHONY: experimental_expected_files
-beta_expected_files: /tmp/beta_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	[ -s $^/images/icons/warning.png ]
 
 .PHONY: experimental_expected_files
 experimental_expected_files: /tmp/experimental_asciidoc
