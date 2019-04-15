@@ -166,9 +166,9 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
     def process_start_block(line)
       lines = self.lines
       lines.shift
-      while Asciidoctor::AttributeEntryRx =~ (check_line = lines.shift)
-      end
-      return line unless check_line == '--'
+
+      lines.shift while Asciidoctor::AttributeEntryRx =~ lines[0]
+      return line unless lines.shift == '--'
 
       @in_attribute_only_block = true
       line.clear
