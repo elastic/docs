@@ -13,7 +13,7 @@ module Convert
       --doc #{from}
       --out #{to}
     ]
-    opts += ['--asciidoctor'] if asciidoctor
+    cmd += ['--asciidoctor'] if asciidoctor
     run_convert cmd
   end
 
