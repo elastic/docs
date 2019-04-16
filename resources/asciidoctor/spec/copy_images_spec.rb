@@ -29,8 +29,6 @@ RSpec.describe CopyImages do
     }
   end
 
-  spec_dir = File.dirname(__FILE__)
-
   ##
   # Like the 'convert' shared context, but also captures any images that
   # would be copied by the conversion process to the `convert` array. That
@@ -38,13 +36,33 @@ RSpec.describe CopyImages do
   # [image_path_from_asciidoc_file, image_path_on_disk] and is in the order
   # that the images source be copied.
   shared_context 'convert intercepting images' do
-    let(:assert_no_logs) { false }
+    # TODO: once we've switched all of the examples in this file we can probably
+    #  drop this.
     include_context 'convert with logs'
 
     # [] is the initial value but it is mutated by the conversion
-    let(:copied) { [].dup }
-    let(:convert_attributes) { copy_attributes(copied) }
+    let(:copied_storage) { [] }
+    let(:convert_attributes) do
+      copy_attributes(copied_storage).tap do |attrs|
+        attrs['resources'] = resources if defined?(resources)
+        attrs['copy-callout-images'] = copy_callout_images \
+          if defined?(copy_callout_images)
+      end
+    end
+    let(:copied) do
+      # Force evaluation of converted because it populates copied_storage
+      converted
+      copied_storage
+    end
   end
+
+  # Absolute paths
+  let(:spec_dir) { File.dirname(__FILE__) }
+  let(:resources_dir) { "#{spec_dir}/resources/copy_images" }
+
+  # Full relative path to example images
+  let(:example1) { "resources/copy_images/example1.png" }
+  let(:example2) { "resources/copy_images/example2.png" }
 
   ##
   # Asserts that a particular `image_command` copies the appropriate image
@@ -62,35 +80,43 @@ RSpec.describe CopyImages do
     # Asserts that some `input` causes just the `example1.png` image to be copied.
     shared_examples 'copies example1' do
       include_context 'convert intercepting images'
-      let(:expected_logs) do
-        "INFO: <stdin>: line #{include_line}: copying #{spec_dir}/resources/copy_images/example1.png"
-      end
       it 'copies the image' do
-        expect(copied).to eq([
-            [resolved, "#{spec_dir}/resources/copy_images/example1.png"],
-        ])
+        expect(copied).to eq([[resolved, "#{spec_dir}/#{example1}"]])
       end
       it 'logs that it copied the image' do
-        expect(logs).to eq(expected_logs)
+        expect(logs).to include(
+          "INFO: <stdin>: line #{include_line}: copying #{spec_dir}/#{example1}"
+        )
       end
     end
+    shared_examples "when it can't find a file" do
+      include_context 'convert intercepting images'
+      let(:target) { 'not_found.jpg' }
+      it 'logs a warning' do
+        expect(logs).to match(expected_logs).and(not_match(/INFO: <stdin>/))
+      end
+      it "doesn't copy anything" do
+        expect(copied).to eq([])
+      end
+    end
+
     context 'when the image ref matches that path exactly' do
-      let(:target)   { 'resources/copy_images/example1.png' }
-      let(:resolved) { 'resources/copy_images/example1.png' }
+      let(:target) { example1 }
+      let(:resolved) { example1 }
       include_examples 'copies example1'
     end
     context 'when the image ref is just the name of the image' do
-      let(:target)   { 'example1.png' }
+      let(:target) { 'example1.png' }
       let(:resolved) { 'example1.png' }
       include_examples 'copies example1'
     end
     context 'when the image ref matches the end of the path' do
-      let(:target)   { 'copy_images/example1.png' }
+      let(:target) { 'copy_images/example1.png' }
       let(:resolved) { 'copy_images/example1.png' }
       include_examples 'copies example1'
     end
     context 'when the image contains attributes' do
-      let(:target)   { 'example1.{ext}' }
+      let(:target) { 'example1.{ext}' }
       let(:resolved) { 'example1.png' }
       let(:input) do
         <<~ASCIIDOC
@@ -101,6 +127,117 @@ RSpec.describe CopyImages do
         ASCIIDOC
       end
       let(:include_line) { 4 }
+      include_examples 'copies example1'
+    end
+    context 'when referencing an external image' do
+      include_context 'convert intercepting images'
+      let(:target) do
+        'https://f.cloud.github.com/assets/4320215/768165/19d8b1aa-e899-11e2-91bc-6b0553e8d722.png'
+      end
+      it "doesn't log anything" do
+        expect(logs).to eq('')
+      end
+      it "doesn't copy anything" do
+        expect(copied).to eq([])
+      end
+    end
+    context "when it can't find a file" do
+      include_examples "when it can't find a file"
+      let(:expected_logs) do
+        %r{WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+          "#{spec_dir}/not_found.jpg",\s
+          "#{spec_dir}/resources/not_found.jpg",\s
+          .+
+          "#{spec_dir}/resources/copy_images/not_found.jpg"
+          .+
+        \]}x
+        # Comment to fix syntax highlighting bug in VSCode....'
+      end
+    end
+    context 'when the resources attribute is invalid CSV' do
+      # Note that we still copy the images even with the invalid resources
+      include_examples 'copies example1'
+      let(:resources) { '"' }
+      let(:target) { 'example1.png' }
+      let(:resolved) { 'example1.png' }
+      it 'logs an error' do
+        expect(logs).to include(
+          "ERROR: <stdin>: line 2: Error loading [resources]: " \
+          "Unclosed quoted field on line 1."
+        )
+      end
+    end
+
+    ##
+    # Context and examples for testing copying from the directories in the
+    # `resources` attribute.
+    #
+    # Input:
+    #    resources - set it to a comma separated list of directories
+    #                containing #{tmp}
+    shared_examples 'copy with resources' do
+      let(:tmp) { Dir.mktmpdir }
+      before(:example) do
+        FileUtils.cp(
+          File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
+          File.join(tmp, 'tmp_example1.png')
+        )
+      end
+      after(:example) { FileUtils.remove_entry tmp }
+      context 'when the referenced image is in the resource directory' do
+        include_context 'convert intercepting images'
+        let(:target) { 'tmp_example1.png' }
+        it 'copies the image' do
+          expect(copied).to eq([[target, "#{tmp}/#{target}"]])
+        end
+        it 'logs that it copied the image' do
+          expect(logs).to eq(
+            "INFO: <stdin>: line 2: copying #{tmp}/#{target}"
+          )
+        end
+      end
+      context 'when the referenced image is in the doc directory' do
+        include_examples 'copies example1'
+        let(:target) { 'example1.png' }
+        let(:resolved) { 'example1.png' }
+      end
+    end
+    context 'when the resources attribute contains a single directory' do
+      let(:resources) { tmp }
+      include_examples 'copy with resources'
+      context "when it can't find a file" do
+        include_examples "when it can't find a file"
+        let(:expected_logs) do
+          %r{WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+            "#{tmp}/not_found.jpg",\s
+            "#{spec_dir}/not_found.jpg",\s
+            .+
+          \]}x
+          # Comment to fix syntax highlighting bug in VSCode....'
+        end
+      end
+    end
+    context 'when the resources attribute contains a multiple directories' do
+      let(:resources) { "/dummy1,#{tmp},/dummy2" }
+      include_examples 'copy with resources'
+      context "when it can't find a file" do
+        include_examples "when it can't find a file"
+        let(:expected_logs) do
+          %r{WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+            "/dummy1/not_found.jpg",\s
+            "/dummy2/not_found.jpg",\s
+            "#{tmp}/not_found.jpg",\s
+            "#{spec_dir}/not_found.jpg",\s
+            .+
+          \]}x
+          # Comment to fix syntax highlighting bug in VSCode....'
+        end
+      end
+    end
+    context 'when the resources attribute is empty' do
+      let(:resources) { '' }
+      let(:target) { example1 }
+      let(:resolved) { example1 }
       include_examples 'copies example1'
     end
   end
@@ -138,15 +275,15 @@ RSpec.describe CopyImages do
       end
       let(:expected_logs) do
         <<~LOGS
-          INFO: <stdin>: line 3: copying #{spec_dir}/resources/copy_images/example1.png
-          INFO: <stdin>: line 3: copying #{spec_dir}/resources/copy_images/example2.png
+          INFO: <stdin>: line 3: copying #{spec_dir}/#{example1}
+          INFO: <stdin>: line 3: copying #{spec_dir}/#{example2}
         LOGS
       end
       include_context 'convert intercepting images'
       it 'copies the images' do
         expect(copied).to eq([
-            ['example1.png', "#{spec_dir}/resources/copy_images/example1.png"],
-            ['example2.png', "#{spec_dir}/resources/copy_images/example2.png"],
+            ['example1.png', "#{spec_dir}/#{example1}"],
+            ['example2.png', "#{spec_dir}/#{example2}"],
         ])
       end
       it 'logs that it copied the image' do
@@ -155,239 +292,125 @@ RSpec.describe CopyImages do
     end
   end
 
-  it "warns when it can't find a file" do
-    copied = []
-    attributes = copy_attributes copied
-    input = <<~ASCIIDOC
-      == Example
-      image::not_found.jpg[]
-    ASCIIDOC
-    convert input, attributes, match(%r{
-        WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-          "#{spec_dir}/not_found.jpg",\s
-          "#{spec_dir}/resources/not_found.jpg",\s
-          .+
-          "#{spec_dir}/resources/copy_images/not_found.jpg"
-          .+
-        \]}x).and(not_match(/INFO: <stdin>/))
-    expect(copied).to eq([])
-  end
-
-  it "only attempts to copy each file once" do
-    copied = []
-    attributes = copy_attributes copied
-    input = <<~ASCIIDOC
-      == Example
-      image::resources/copy_images/example1.png[]
-      image::resources/copy_images/example1.png[]
-      image::resources/copy_images/example2.png[]
-      image::resources/copy_images/example1.png[]
-      image::resources/copy_images/example2.png[]
-    ASCIIDOC
-    expected_warnings = <<~LOG
-      INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png
-      INFO: <stdin>: line 4: copying #{spec_dir}/resources/copy_images/example2.png
-    LOG
-    convert input, attributes, eq(expected_warnings.strip)
-    expect(copied).to eq([
-        ["resources/copy_images/example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
-        ["resources/copy_images/example2.png", "#{spec_dir}/resources/copy_images/example2.png"],
-    ])
-  end
-
-  it "skips external images" do
-    copied = []
-    attributes = copy_attributes copied
-    input = <<~ASCIIDOC
-      == Example
-      image::https://f.cloud.github.com/assets/4320215/768165/19d8b1aa-e899-11e2-91bc-6b0553e8d722.png[]
-    ASCIIDOC
-    convert input, attributes
-    expect(copied).to eq([])
-  end
-
-  it "can find files using a single valued resources attribute" do
-    Dir.mktmpdir do |tmp|
-      FileUtils.cp(
-        ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
-        ::File.join(tmp, 'tmp_example1.png')
-      )
-
-      copied = []
-      attributes = copy_attributes copied
-      attributes['resources'] = tmp
-      input = <<~ASCIIDOC
+  context 'when the same image is referenced more than once' do
+    include_context 'convert intercepting images'
+    let(:input) do
+      <<~ASCIIDOC
         == Example
-        image::tmp_example1.png[]
+        image::#{example1}[]
+        image::#{example1}[]
+        image::#{example2}[]
+        image::#{example1}[]
+        image::#{example2}[]
       ASCIIDOC
-      convert input, attributes,
-          eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
-      expect(copied).to eq([
-          ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
-      ])
+    end
+    let(:expected_copied) do
+      [
+        [example1, "#{spec_dir}/#{example1}"],
+        [example2, "#{spec_dir}/#{example2}"],
+      ]
+    end
+    it 'is only copied once' do
+      expect(copied).to eq(expected_copied)
+    end
+    let(:expected_logs) do
+      <<~LOG
+        INFO: <stdin>: line 2: copying #{spec_dir}/#{example1}
+        INFO: <stdin>: line 4: copying #{spec_dir}/#{example2}
+      LOG
+    end
+    it 'is only logged once' do
+      expect(logs).to eq(expected_logs.strip)
     end
   end
 
-  it "can find files using a multi valued resources attribute" do
-    Dir.mktmpdir do |tmp|
-      FileUtils.cp(
-        ::File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
-        ::File.join(tmp, 'tmp_example1.png')
-      )
-
-      copied = []
-      attributes = copy_attributes copied
-      attributes['resources'] = "dummy1,#{tmp},/dummy2"
-      input = <<~ASCIIDOC
+  shared_context 'copy-callout-images' do
+    include_context 'convert intercepting images'
+    let(:input) do
+      <<~ASCIIDOC
         == Example
-        image::tmp_example1.png[]
+        ----
+        foo <1> <2>
+        ----
+        <1> words
+        <2> words
       ASCIIDOC
-      convert input, attributes,
-          eq("INFO: <stdin>: line 2: copying #{tmp}/tmp_example1.png")
-      expect(copied).to eq([
-          ["tmp_example1.png", "#{tmp}/tmp_example1.png"],
-      ])
     end
   end
-
-  it "doesn't mind an empty resources attribute" do
-    copied = []
-    attributes = copy_attributes copied
-    attributes['resources'] = ''
-    input = <<~ASCIIDOC
-      == Example
-      image::example1.png[]
-    ASCIIDOC
-    convert input, attributes,
-        eq("INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png")
-    expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
-    ])
+  shared_context 'copy-callout-images is set' do
+    include_context 'copy-callout-images'
+    let(:relative_path) { 'images/icons/callouts' }
+    let(:absolute_path) { "#{resources_dir}/#{relative_path}" }
+    let(:expected_copied) do
+      [
+        ["#{relative_path}/1.#{copy_callout_images}",
+         "#{absolute_path}/1.#{copy_callout_images}"],
+        ["#{relative_path}/2.#{copy_callout_images}",
+         "#{absolute_path}/2.#{copy_callout_images}"],
+      ]
+    end
+    let(:expected_logs) do
+      <<~LOGS
+        INFO: <stdin>: line 5: copying #{absolute_path}/1.#{copy_callout_images}
+        INFO: <stdin>: line 6: copying #{absolute_path}/2.#{copy_callout_images}
+      LOGS
+    end
+    it 'copies the callout images' do
+      expect(copied).to eq(expected_copied)
+    end
+    it 'logs that it copied the callout images' do
+      expect(logs).to eq(expected_logs.strip)
+    end
+    context 'when a callout image is missing' do
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          ----
+          foo <1> <2> <3>
+          ----
+          <1> words
+          <2> words
+          <3> words
+        ASCIIDOC
+      end
+      let(:expected_warnings) do
+        %r{
+          WARN:\ <stdin>:\ line\ 7:\ can't\ read\ image\ at\ any\ of\ \[
+          "#{spec_dir}/images/icons/callouts/3.#{copy_callout_images}",\s
+          "#{spec_dir}/resources/images/icons/callouts/3.#{copy_callout_images}",\s
+          .+
+          "#{spec_dir}/resources/copy_images/images/icons/callouts/3.#{copy_callout_images}"
+          .+
+        \]}x
+        # Comment to fix syntax highlighting bug in VSCode....'
+      end
+      it 'copies the images it can find' do
+        expect(copied).to eq(expected_copied)
+      end
+      it 'logs about the images it can copy' do
+        expect(logs).to include(expected_logs.strip)
+      end
+      it "logs a warning about the image it can't find" do
+        expect(logs).to match(expected_warnings)
+      end
+    end
   end
-
-  it "has a nice error message if resources is invalid CSV" do
-    copied = []
-    attributes = copy_attributes copied
-    attributes['resources'] = '"'
-    input = <<~ASCIIDOC
-      == Example
-      image::example1.png[]
-    ASCIIDOC
-    expected_warnings = <<~LOG
-      ERROR: <stdin>: line 2: Error loading [resources]: Unclosed quoted field on line 1.
-      INFO: <stdin>: line 2: copying #{spec_dir}/resources/copy_images/example1.png
-    LOG
-    convert input, attributes, eq(expected_warnings.strip)
-    expect(copied).to eq([
-        ["example1.png", "#{spec_dir}/resources/copy_images/example1.png"],
-    ])
+  context 'when copy-callout-images is set to png' do
+    include_context 'copy-callout-images is set'
+    let(:copy_callout_images) { 'png' }
   end
-
-  it "has a nice error message when it can't find a file with single valued resources attribute" do
-    Dir.mktmpdir do |tmp|
-      copied = []
-      attributes = copy_attributes copied
-      attributes['resources'] = tmp
-      input = <<~ASCIIDOC
-        == Example
-        image::not_found.png[]
-      ASCIIDOC
-      convert input, attributes, match(%r{
-          WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-            "#{tmp}/not_found.png",\s
-            "#{spec_dir}/not_found.png",\s
-            .+
-          \]}x).and(not_match(/INFO: <stdin>/))
+  context 'when copy-callout-images is set to gif' do
+    include_context 'copy-callout-images is set'
+    let(:copy_callout_images) { 'gif' }
+  end
+  context "when copy-callout-images isn't set" do
+    include_context 'copy-callout-images'
+    it "doesn't copy the callout images" do
       expect(copied).to eq([])
     end
-  end
-
-  it "has a nice error message when it can't find a file with multi valued resources attribute" do
-    Dir.mktmpdir do |tmp|
-      copied = []
-      attributes = copy_attributes copied
-      attributes['resources'] = "#{tmp},/dummy2"
-      input = <<~ASCIIDOC
-        == Example
-        image::not_found.png[]
-      ASCIIDOC
-      convert input, attributes, match(%r{
-          WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
-            "/dummy2/not_found.png",\s
-            "#{tmp}/not_found.png",\s
-            "#{spec_dir}/not_found.png",\s
-            .+
-          \]}x).and(not_match(/INFO: <stdin>/))
-      expect(copied).to eq([])
+    it "doesn't log that it copied the callout images" do
+      expect(logs).to eq('')
     end
-  end
-
-  it "copies images for callouts when requested (png)" do
-    copied = []
-    attributes = copy_attributes copied
-    attributes['copy-callout-images'] = 'png'
-    input = <<~ASCIIDOC
-      == Example
-      ----
-      foo <1> <2>
-      ----
-      <1> words
-      <2> words
-    ASCIIDOC
-    expected_warnings = <<~WARNINGS
-      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.png
-      INFO: <stdin>: line 6: copying #{spec_dir}/resources/copy_images/images/icons/callouts/2.png
-    WARNINGS
-    convert input, attributes, eq(expected_warnings.strip)
-    expect(copied).to eq([
-        ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
-        ["images/icons/callouts/2.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/2.png"],
-    ])
-  end
-
-  it "copies images for callouts when requested (gif)" do
-    copied = []
-    attributes = copy_attributes copied
-    attributes['copy-callout-images'] = 'gif'
-    input = <<~ASCIIDOC
-      == Example
-      ----
-      foo <1>
-      ----
-      <1> words
-    ASCIIDOC
-    expected_warnings = <<~WARNINGS
-      INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.gif
-    WARNINGS
-    convert input, attributes, eq(expected_warnings.strip)
-    expect(copied).to eq([
-        ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
-    ])
-  end
-
-  it "has a nice error message when a callout image is missing" do
-    copied = []
-    attributes = copy_attributes copied
-    attributes['copy-callout-images'] = 'gif'
-    input = <<~ASCIIDOC
-      == Example
-      ----
-      foo <1> <2>
-      ----
-      <1> words
-      <2> words
-    ASCIIDOC
-    convert input, attributes, match(%r{
-    WARN:\ <stdin>:\ line\ 6:\ can't\ read\ image\ at\ any\ of\ \[
-      "#{spec_dir}/images/icons/callouts/2.gif",\s
-      "#{spec_dir}/resources/images/icons/callouts/2.gif",\s
-      .+
-      "#{spec_dir}/resources/copy_images/images/icons/callouts/2.gif"
-      .+
-    \]}x).and(match(%r{INFO: <stdin>: line 5: copying #{spec_dir}/resources/copy_images/images/icons/callouts/1.gif}))
-    expect(copied).to eq([
-        ["images/icons/callouts/1.gif", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.gif"],
-    ])
   end
 
   it "only copies callout images one time" do
@@ -464,25 +487,6 @@ RSpec.describe CopyImages do
     expect(copied).to eq([
         ["images/icons/callouts/1.png", "#{spec_dir}/resources/copy_images/images/icons/callouts/1.png"],
     ])
-  end
-
-  it "doesn't copy callout images if the extension isn't set" do
-    copied = []
-    attributes = copy_attributes copied
-    input = <<~ASCIIDOC
-      == Example
-      ----
-      foo <1>
-      ----
-      <1> words
-
-      ----
-      foo <1>
-      ----
-      <1> words
-    ASCIIDOC
-    convert input, attributes
-    expect(copied).to eq([])
   end
 
   %w[note tip important caution warning].each do |(name)|
