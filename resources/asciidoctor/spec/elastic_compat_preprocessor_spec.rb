@@ -47,7 +47,7 @@ RSpec.describe ElasticCompatPreprocessor do
         end
       end
       context 'when the admonition is alone on a line' do
-        let(:input) { "#{invocation}" }
+        let(:input) { invocation }
         include_examples 'invokes the block macro'
       end
       context 'when the admonition has spaces before it' do
