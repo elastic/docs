@@ -6,13 +6,14 @@ require 'open3'
 # Method to convert asciidoc files to html in example blocks like `it`
 # and `before`.
 module Convert
-  def convert_single(from, to)
+  def convert_single(from, to, asciidoctor:)
     cmd = %W[
       /docs_build/build_docs.pl
       --in_standard_docker
       --doc #{from}
       --out #{to}
     ]
+    opts += ['--asciidoctor'] if asciidoctor
     run_convert cmd
   end
 

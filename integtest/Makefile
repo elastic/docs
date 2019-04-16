@@ -12,13 +12,9 @@ export GIT_COMMITTER_EMAIL=test@example.com
 check: \
 	rspec \
 	style \
-	minimal_same_files \
 	includes_expected_files includes_same_files \
 	emdash_expected_files emdash_same_files \
-	beta_same_files \
-	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
-	adoc_same_files \
 	empty_table_cell_expected_files empty_table_cell_same_files \
 	xpack_chapter_expected_files xpack_chapter_same_files \
 	xpack_part_expected_files xpack_part_same_files \
@@ -70,11 +66,6 @@ readme_expected_files: /tmp/readme_asciidoc
 	[ -s $^/images/icons/callouts/1.png ]
 	[ -s $^/images/icons/callouts/2.png ]
 	[ -s $^/snippets/blocks/1.json ]
-
-.PHONY: experimental_expected_files
-experimental_expected_files: /tmp/experimental_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	[ -s $^/images/icons/warning.png ]
 
 .PHONY: xpack_chapter_expected_files
 xpack_chapter_expected_files: /tmp/xpack_chapter_asciidoc
@@ -155,12 +146,6 @@ migration_warnings: migration_warnings.asciidoc
 
 /tmp/readme_asciidoctor: /docs_build/README.asciidoc
 	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
-
-/tmp/adoc_asciidoc: minimal.adoc
-	$(BD) --chunk 1 --doc $^
-
-/tmp/adoc_asciidoctor: minimal.adoc
-	$(BD) --chunk 1 --asciidoctor --doc $^
 
 # These don't declare dependencies because we don't know in general which files
 # are needed to build which asciidoc files.

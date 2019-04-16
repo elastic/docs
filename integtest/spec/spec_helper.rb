@@ -49,6 +49,15 @@ def dest_file(file)
 end
 
 ##
+# Return a list of the paths of all files in a directory relative to
+# that directory.
+def files_in(dir)
+  Dir.chdir(dir) do
+    Dir.glob('**/*').select { |f| File.file?(f) }
+  end
+end
+
+##
 # Match paths that refer to an existing file.
 # Prefer this instead of `expect(File).to exist('path')` because the failure
 # message is worlds better
@@ -59,7 +68,7 @@ RSpec::Matchers.define :file_exist do
   failure_message do |actual|
     msg = "expected that #{actual} exists"
     parent = File.expand_path('..', actual)
-    msg unless Dir.exist? parent
+    return msg unless Dir.exist? parent
 
     entries = Dir.entries(parent).reject { |e| e.start_with? '.' }
     msg + " but only #{entries} exist"
