@@ -62,16 +62,8 @@ RSpec.describe 'building a single book' do
       end
     end
   end
-  context 'when the book contains beta[]' do
-    convert_single_before_context do |src|
-      src.write 'index.asciidoc', <<~ASCIIDOC
-        #{HEADER}
-        beta[]
 
-        Words
-      ASCIIDOC
-    end
-
+  shared_context 'care admonition' do
     it 'copies the warning image' do
       expect(dest_file('images/icons/warning.png')).to file_exist
     end
@@ -81,9 +73,40 @@ RSpec.describe 'building a single book' do
           '<img alt="Warning" src="images/icons/warning.png" />'
         )
       end
+    end
+  end
+  context 'when the book contains beta[]' do
+    include_context 'care admonition'
+    convert_single_before_context do |src|
+      src.write 'index.asciidoc', <<~ASCIIDOC
+        #{HEADER}
+        beta[]
+
+        Words
+      ASCIIDOC
+    end
+    page_context 'chapter.html' do
       it 'includes the beta text' do
         expect(body).to include(
           'The design and code is less mature than official GA features'
+        )
+      end
+    end
+  end
+  context 'when the book contains experimental[]' do
+    include_context 'care admonition'
+    convert_single_before_context do |src|
+      src.write 'index.asciidoc', <<~ASCIIDOC
+        #{HEADER}
+        experimental[]
+
+        Words
+      ASCIIDOC
+    end
+    page_context 'chapter.html' do
+      it 'includes the experimental text' do
+        expect(body).to include(
+          'This functionality is experimental and may be changed or removed'
         )
       end
     end
