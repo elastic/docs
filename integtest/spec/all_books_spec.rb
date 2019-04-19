@@ -1,55 +1,100 @@
 # frozen_string_literal: true
 
 RSpec.describe 'building all books' do
-  context 'for a minimal config' do
+  shared_examples 'book basics' do |title, prefix|
+    context "for the #{title} book" do
+      page_context 'the book index', "html/#{prefix}/index.html" do
+        it 'contains a redirect to the only version of the book' do
+          expect(body).to include(
+            '<meta http-equiv="refresh" content="0; url=current/index.html">'
+          )
+        end
+      end
+      page_context "the current version's index",
+                   "html/#{prefix}/current/index.html" do
+        it 'have the right title' do
+          expect(title).to eq(title)
+        end
+        it 'contains a table of contents' do
+          expect(body).to include('<div class="toc">')
+        end
+      end
+    end
+  end
+  context 'for a single book built by a single repo' do
     convert_all_before_context do |src|
-      src.write 'source/index.asciidoc', <<~ASCIIDOC
+      repo = src.repo 'repo'
+      repo.write 'index.asciidoc', <<~ASCIIDOC
         = Title
 
         == Chapter
 
         Some text.
       ASCIIDOC
-      src.init_repo 'source'
-      src.write 'conf.yaml', <<~YAML
-        template:
-          defaults:
-            POSTHEAD: |
-              <link rel="stylesheet" type="text/css" href="styles.css" />
-            FINAL: |
-              <script type="text/javascript" src="docs.js"></script>
-              <script type='text/javascript' src='https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml'></script>
-
-        paths:
-          build:          html/
-          branch_tracker: html/branches.yaml
-          repos:          #{src.path 'repos'}
-
-        # This configures all of the repositories used to build the docs
-        repos:
-            # Normally we use the `https://` prefix to clone from github but this file
-            # is for testing so use a string that we can find with sed and replace with
-            # a file.
-            source:         #{src.path 'source'}
-
-        # The title to use for the table of contents
-        contents_title:     Elastic Stack and Product Documentation
-
-        # The actual books to build
-        contents:
-          -
-            title:      Test book
-            prefix:     test
-            current:    master
-            branches:   [ master ]
-            index:      index.asciidoc
-            tags:       test tag
-            subject:    Test
-            sources:
-              -
-                repo:   source
-                path:   index.asciidoc
-      YAML
+      book = src.book 'Test', 'test'
+      book.source repo, 'index.asciidoc'
+      src.conf
     end
+    include_examples 'book basics', 'Test', 'test'
+  end
+  context 'for a single book built by two repos' do
+    convert_all_before_context do |src|
+      repo1 = src.repo 'repo1'
+      repo1.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[chapter]]
+        == Chapter
+
+        Include between here
+        include::../repo2/included.asciidoc[]
+        and here.
+      ASCIIDOC
+      repo2 = src.repo 'repo2'
+      repo2.write 'included.asciidoc', <<~ASCIIDOC
+        included text
+      ASCIIDOC
+      book = src.book 'Test', 'test'
+      book.source repo1, 'index.asciidoc'
+      book.source repo2, 'included.asciidoc'
+      src.conf
+    end
+    include_examples 'book basics', 'Test', 'test'
+    page_context 'html/test/current/chapter.html' do
+      it 'contains the text from the index' do
+        expect(body).to include('Include between here')
+      end
+      it 'contains the included text' do
+        expect(body).to include('included text')
+      end
+    end
+  end
+  context 'for two books built by a single repo' do
+    convert_all_before_context do |src|
+      repo = src.repo 'repo'
+      repo.write 'first/index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        == Chapter
+
+        Some text.
+      ASCIIDOC
+      repo.write 'second/index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        == Chapter
+
+        Some text.
+      ASCIIDOC
+      book1 = src.book 'First', 'first'
+      book1.index = 'first/index.asciidoc'
+      book1.source repo, 'first'
+      book2 = src.book 'Second', 'second'
+      book2.index = 'second/index.asciidoc'
+      book2.source repo, 'second'
+      src.conf
+    end
+    include_examples 'book basics', 'First', 'first'
+    include_examples 'book basics', 'Second', 'second'
   end
 end

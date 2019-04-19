@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-require_relative 'helper/convert'
+require_relative 'helper/dest'
 require_relative 'helper/dsl'
 require_relative 'helper/sh'
+require_relative 'helper/source'
 
 require 'tmpdir'
 require 'fileutils'
@@ -23,29 +24,26 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
-  config.include Convert
   config.extend Dsl
   config.include Sh
 end
 
-RSpec.shared_context 'tmp dirs' do
+RSpec.shared_context 'source and dest' do
   before(:context) do
     @tmp = Dir.mktmpdir
-    @src = File.join @tmp, 'src'
-    @dest = File.join @tmp, 'dest'
-    Dir.mkdir @src
-    Dir.mkdir @dest
+    @src = Source.new @tmp
+    @dest = Dest.new @tmp
   end
 
   after(:context) do
     FileUtils.remove_entry @tmp
   end
-end
 
-##
-# Build a path to a file in the destination.
-def dest_file(file)
-  File.expand_path(file, @dest)
+  ##
+  # Build a path to a file in the destination.
+  def dest_file(file)
+    @dest.path(file)
+  end
 end
 
 ##

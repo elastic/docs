@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'source'
-
 module Dsl
   module ConvertSingle
     ##
@@ -11,17 +9,16 @@ module Dsl
     # file to convert. It does the conversion with both with `--asciidoctor`
     # and without `--asciidoctor` and asserts that the files are the same.
     def convert_single_before_context
-      include_context 'tmp dirs'
+      include_context 'source and dest'
       before(:context) do
-        source = Source.new @src
-        from = yield source
-        source.init_repo '.'
-        @asciidoctor_out = convert_single from, @dest, asciidoctor: true
+        from = yield @src.repo('src')
+        @src.init_repos
+        @asciidoctor_out = @dest.convert_single from, '.', asciidoctor: true
         # Convert a second time with the legacy `AsciiDoc` tool and stick the
         # result into the `asciidoc` directory. We will compare the results of
         # this conversion with the results of the `Asciidoctor` conversion.
-        @asciidoc_out = convert_single from, "#{@dest}/asciidoc",
-                                       asciidoctor: false
+        @asciidoc_out = @dest.convert_single from, 'asciidoc',
+                                             asciidoctor: false
       end
       include_examples 'convert single'
     end
