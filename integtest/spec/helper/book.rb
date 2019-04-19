@@ -26,6 +26,8 @@ class Book
   ##
   # The configuration needed to build the book.
   def conf
+    # We can't use to_yaml here because it emits yaml 1.2 but the docs build
+    # only supports 1.0.....
     <<~YAML.split("\n").map { |s| '    ' + s }.join "\n"
       title:      #{@title}
       prefix:     #{@prefix}
