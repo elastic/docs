@@ -16,18 +16,6 @@ module Sh
   end
 
   ##
-  # Init a git repo in root and commit any files in it.
-  def init_repo(root)
-    Dir.chdir root do
-      sh 'git init'
-      sh 'git add .'
-      sh "git commit -m 'init'"
-      # Add an Elastic remote so we get a nice edit url
-      sh 'git remote add elastic git@github.com:elastic/docs.git'
-    end
-  end
-
-  ##
   # Raise an exception based on a return status.
   def raise_status(cmd, out, status)
     outmsg = out == '' ? '' : " with stdout/stderr:\n#{out}"

@@ -6,7 +6,6 @@ require_relative 'helper/sh'
 
 require 'tmpdir'
 require 'fileutils'
-require 'open3'
 
 ENV['GIT_AUTHOR_NAME'] = 'Test'
 ENV['GIT_AUTHOR_EMAIL'] = 'test@example.com'
