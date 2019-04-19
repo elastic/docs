@@ -27,6 +27,7 @@ module CopyImages
     }.freeze
     CALLOUT_RX = /CO\d+-(\d+)/
     INLINE_IMAGE_RX = /(\\)?image:([^:\s\[](?:[^\n\[]*[^\s\[])?)\[/m
+    DOCBOOK_IMAGE_RX = %r{<imagedata fileref="([^"]+)"/>}m
 
     def initialize(name)
       super
@@ -48,12 +49,17 @@ module CopyImages
     end
 
     def process_inline_image(block)
-      return unless block.content_model == :simple
+      process_inline_image_from_source block, block.source if block.content_model == :simple
+      process_inline_image_from_converted block, block.text if
+        block.context == :list_item && block.parent.context == :olist
+    end
 
-      # One day Asciidoc will parse inline things into the AST and we can
-      # get at them nicely. Today, we have to scrape them from the source
-      # of the node.
-      block.source.scan(INLINE_IMAGE_RX) do |(escape, target)|
+    ##
+    # Scan the inline image from the asciidoc source. One day Asciidoc will
+    # parse inline things into the AST and we can get at them nicely. Today, we
+    # have to scrape them from the source of the node.
+    def process_inline_image_from_source(block, source)
+      source.scan(INLINE_IMAGE_RX) do |(escape, target)|
         next if escape
 
         # We have to resolve attributes inside the target. But there is a
@@ -63,6 +69,22 @@ module CopyImages
         block.document.playback_attributes block.attributes
         target = block.sub_attributes target
         block.document.clear_playback_attributes block.attributes
+        uri = block.image_uri target
+        process_image block, uri
+      end
+    end
+
+    ##
+    # Scan the inline image from the generated docbook. It is not nice that
+    # this is required there isn't much we can do about it. We *could* rewrite
+    # all of the image copying to be against the generated docbook using this
+    # code but I feel like that'd be slower. For now, we'll stick with this.
+    def process_inline_image_from_converted(block, converted)
+      converted.scan(DOCBOOK_IMAGE_RX) do |(target)|
+        # We have to resolve attributes inside the target. But there is a
+        # "funny" ritual for that because attribute substitution is always
+        # against the document. We have to play the block's attributes against
+        # the document, then clear them on the way out.
         uri = block.image_uri target
         process_image block, uri
       end
