@@ -42,6 +42,8 @@ class Book
     YAML
   end
 
+  ##
+  # The html for a link to a particular branch of this book.
   def link_to(branch)
     url = "#{@prefix}/#{branch}/index.html"
     %(<a class="ulink" href="#{url}" target="_top">#{@title}</a>)
