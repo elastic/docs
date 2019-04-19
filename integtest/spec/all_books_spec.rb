@@ -33,7 +33,6 @@ RSpec.describe 'building all books' do
       ASCIIDOC
       book = src.book 'Test', 'test'
       book.source repo, 'index.asciidoc'
-      src.conf
     end
     include_examples 'book basics', 'Test', 'test'
   end
@@ -57,7 +56,6 @@ RSpec.describe 'building all books' do
       book = src.book 'Test', 'test'
       book.source repo1, 'index.asciidoc'
       book.source repo2, 'included.asciidoc'
-      src.conf
     end
     include_examples 'book basics', 'Test', 'test'
     page_context 'html/test/current/chapter.html' do
@@ -92,7 +90,6 @@ RSpec.describe 'building all books' do
       book2 = src.book 'Second', 'second'
       book2.index = 'second/index.asciidoc'
       book2.source repo, 'second'
-      src.conf
     end
     include_examples 'book basics', 'First', 'first'
     include_examples 'book basics', 'Second', 'second'

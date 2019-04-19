@@ -5,7 +5,7 @@ module Dsl
     ##
     # Include a context into the current context that converts asciidoc files
     # into html and adds some basic assertions about the conversion process.
-    # Pass a block that takes a `Source` object and returns the "root" asciidoc
+    # Pass a block that takes a `Repo` object and returns the "index" asciidoc
     # file to convert. It does the conversion with both with `--asciidoctor`
     # and without `--asciidoctor` and asserts that the files are the same.
     def convert_single_before_context

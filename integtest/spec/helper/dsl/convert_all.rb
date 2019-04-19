@@ -4,15 +4,16 @@ module Dsl
   module ConvertAll
     ##
     # Include a context into the current context that converts "all books" as
-    # configured by a conf file. Pass a block that takes a `Source` object,
-    # writes all of the input asciidoc files, writes the conf file, and returns
-    # the path to the conf file.
+    # configured by a conf file. Pass a block that takes a `Source` object and
+    # uses it to:
+    # 1. Create source repositories and write them
+    # 2. Configure the books that should be built
     def convert_all_before_context
       include_context 'source and dest'
       before(:context) do
-        from = yield @src
+        yield @src
         @src.init_repos
-        @out = @dest.convert_all from
+        @out = @dest.convert_all @src.conf
       end
       include_examples 'convert all'
     end
