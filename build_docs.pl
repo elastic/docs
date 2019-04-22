@@ -46,6 +46,7 @@ use Sys::Hostname;
 use ES::BranchTracker();
 use ES::Repo();
 use ES::Book();
+use ES::TargetRepo();
 use ES::Toc();
 use ES::LinkCheck();
 use ES::Template();
@@ -448,25 +449,20 @@ sub init_repos {
 
     # Check out the target repo before the other repos so that
     # we can use the tracker file that it contains.
-    my $target_repo = ES::Repo->new(
-        name      => 'target_repo',
-        dir       => $repos_dir,
-        user      => $Opts->{user},
-        url       => $Opts->{target_repo},
-        reference => $reference_dir,
-        # We can't keep the hash of the target repo because it is what stores
-        # the hashes in the first place!
-        keep_hash => 0,
-        # Intentionally not passing the tracker because we need to build the
-        # tracker from information in this repo.
+    my $target_repo_checkout = "$temp_dir/target_repo";
+    my $target_repo = ES::TargetRepo->new(
+        dir         => $repos_dir,
+        user        => $Opts->{user},
+        url         => $Opts->{target_repo},
+        reference   => $reference_dir,
+        destination => dir( $target_repo_checkout ),
     );
     delete $child_dirs{ $target_repo->git_dir->absolute };
-    my $target_repo_checkout = "$temp_dir/target_repo";
     $tracker_path = "$target_repo_checkout/$tracker_path";
     eval {
         $target_repo->update_from_remote();
-        printf(" - %20s: Checking out\n", 'target_repo');
-        $target_repo->checkout_to($target_repo_checkout);
+        printf(" - %20s: Checking out minimal\n", 'target_repo');
+        $target_repo->checkout_minimal();
         1;
     } or do {
         # If creds are invalid, explicitly reject them to try to clear the cache
@@ -480,6 +476,11 @@ sub init_repos {
     # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
+    unless ( $pm->start('target_repo') ) {
+        printf(" - %20s: Checking out remaining\n", 'target_repo');
+        $target_repo->checkout_all();
+        $pm->finish;
+    }
     for my $name (@repo_names) {
         my $url = $conf->{$name};
         # We always use ssh-style urls regardless of conf.yaml so we can use

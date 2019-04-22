@@ -5,9 +5,10 @@ use warnings;
 use v5.10;
 
 use Path::Class();
-use URI();
 use Encode qw(decode_utf8);
 use ES::Util qw(run sha_for);
+
+use base qw( ES::BaseRepo );
 
 my %Repos;
 
@@ -16,38 +17,13 @@ sub new {
 #===================================
     my ( $class, %args ) = @_;
 
-    my $name = $args{name} or die "No <name> specified";
-    my $url  = $args{url}  or die "No <url> specified for repo <$name>";
-    if ( my $user = $args{user} ) {
-        $url = URI->new($url);
-        $url->userinfo($user);
-    }
+    my $self = shift->SUPER::new(%args);
 
-    my $dir = $args{dir} or die "No <dir> specified for repo <$name>";
-
-    my $reference_dir = 0;
-    if ($args{reference}) {
-        my $reference_subdir = $url;
-        $reference_subdir =~ s|/$||;
-        $reference_subdir =~ s|:*/*\.git$||;
-        $reference_subdir =~ s/.*[\/:]//g;
-        $reference_dir = $args{reference}->subdir("$reference_subdir.git");
-    }
-
-    my $self = bless {
-        name          => $name,
-        git_dir       => $dir->subdir("$name.git"),
-        url           => $url,
-        tracker       => $args{tracker},
-        reference_dir => $reference_dir,
-        keep_hash     => $args{keep_hash},
-        sub_dirs      => {},
-    }, $class;
-    if ( $self->tracker ) {
-        # Only track repos that have a tracker. Other repos are for things like
-        # the target_branch.
-        $Repos{$name} = $self;
-    }
+    my $name = $self->name;
+    $self->{tracker} = $args{tracker}
+        or die "No <tracker> specified for repo <$name>";
+    $self->{keep_hash} = $args{keep_hash};
+    $Repos{$self->name} = $self;
     $self;
 }
 
@@ -57,77 +33,6 @@ sub get_repo {
     my $class = shift;
     my $name = shift || '';
     return $Repos{$name} || die "Unknown repo name <$name>";
-}
-
-#===================================
-sub update_from_remote {
-#===================================
-    my $self = shift;
-
-    my $git_dir = $self->git_dir;
-    local $ENV{GIT_DIR} = $git_dir;
-
-    my $name = $self->name;
-    eval {
-        unless ( $self->_try_to_fetch ) {
-            my $url = $self->url;
-            printf(" - %20s: Cloning from <%s>\n", $name, $url);
-            run 'git', 'clone', '--bare', $self->_reference_args, $url, $git_dir;
-        }
-        1;
-    }
-    or die "Error updating repo <$name>: $@";
-}
-
-#===================================
-sub _try_to_fetch {
-#===================================
-    my $self    = shift;
-    my $git_dir = $self->git_dir;
-    return unless -e $git_dir;
-
-    my $alternates_file = $git_dir->file('objects', 'info', 'alternates');
-    if ( -e $alternates_file ) {
-        my $alternates = $alternates_file->slurp( iomode => '<:encoding(UTF-8)' );
-        chomp( $alternates );
-        unless ( -e $alternates ) {
-            printf(" - %20s: Missing reference. Deleting\n", $self->name);
-            $git_dir->rmtree;
-            return;
-        }
-    }
-
-    my $remote = eval { run qw(git remote -v) } || '';
-    $remote =~ /^origin\s+(\S+)/;
-
-    my $origin = $1;
-    unless ($origin) {
-        printf(" - %20s: Repo dir exists but is not a repo. Deleting\n", $self->name);
-        $git_dir->rmtree;
-        return;
-    }
-
-    my $name = $self->name;
-    my $url  = $self->url;
-    if ( $origin ne $url ) {
-        printf(" - %20s: Upstream has changed to <%s>. Deleting\n", $self->name, $url);
-        $git_dir->rmtree;
-        return;
-    }
-    printf(" - %20s: Fetching\n", $self->name);
-    run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
-    return 1;
-}
-
-#===================================
-sub _reference_args {
-#===================================
-    my $self = shift;
-    return () unless $self->reference_dir;
-    return ('--reference', $self->reference_dir) if -e $self->reference_dir;
-    say " - Reference missing so not caching: " . $self->reference_dir;
-    $self->{reference_dir} = 0;
-    return ();
 }
 
 #===================================
@@ -150,7 +55,7 @@ sub has_changed {
     my $old = $self->_last_commit_info(@_);
 
     my $new;
-    if ( $self->keep_hash ) {
+    if ( $self->{keep_hash} ) {
         # If we're keeping the hash from the last build but there *isn't* a
         # hash that means that the branch wasn't used the last time we built
         # this book. That means we'll skip it entirely when building the book
@@ -169,7 +74,7 @@ sub has_changed {
     }
     $new .= '|asciidoctor' if $asciidoctor;
 
-    return $old ne $new if $self->keep_hash;
+    return $old ne $new if $self->{keep_hash};
     return if $old eq $new;
 
     my $changed;
@@ -191,7 +96,7 @@ sub mark_done {
     my $new;
     if ( exists $self->{sub_dirs}->{$branch} ) {
         $new = 'local';
-    } elsif ( $self->keep_hash ) {
+    } elsif ( $self->{keep_hash} ) {
         $new = $self->_last_commit($title, $branch, $path);
         return unless $new; # Skipped if nil
     } else {
@@ -227,7 +132,7 @@ sub extract {
         return;
     }
 
-    if ( $self->keep_hash ) {
+    if ( $self->{keep_hash} ) {
         $branch = $self->_last_commit(@_);
         unless ( $branch ) {
             printf(" - %40.40s: %s is new. Skipping\n", $title, $self->{name});
@@ -245,17 +150,6 @@ sub extract {
 
     run "tar", "-x", "-C", $dest, "-f", $tar;
     $tar->remove;
-}
-
-#===================================
-sub show_file {
-#===================================
-    my $self = shift;
-    my ( $branch, $file ) = @_;
-
-    local $ENV{GIT_DIR} = $self->git_dir;
-
-    return decode_utf8 run( qw (git show ), $branch . ':' . $file );
 }
 
 #===================================
@@ -300,7 +194,7 @@ sub dump_recent_commits {
 
     local $ENV{GIT_DIR} = $self->git_dir;
     my $start = $self->_last_commit( $title, $branch, $src_path );
-    my $rev_range = $self->keep_hash ? $start : "$start...$branch";
+    my $rev_range = $self->{keep_hash} ? $start : "$start...$branch";
 
     my $commits = eval {
         decode_utf8 run( 'git', 'log', $rev_range,
@@ -358,20 +252,6 @@ sub all_repo_branches {
 }
 
 #===================================
-sub checkout_to {
-#===================================
-    my ( $self, $destination ) = @_;
-
-    die 'sub_dir not supported with checkout_to' if %{ $self->{sub_dirs}};
-    my $name = $self->name;
-    eval {
-        run qw(git clone), $self->git_dir, $destination;
-        1;
-    }
-    or die "Error checking out repo <$name>: $@";
-}
-
-#===================================
 # Information about the last commit, *not* including flags like `asciidoctor.`
 #===================================
 sub _last_commit {
@@ -394,12 +274,7 @@ sub _last_commit_info {
 }
 
 #===================================
-sub name          { shift->{name} }
-sub git_dir       { shift->{git_dir} }
-sub url           { shift->{url} }
 sub tracker       { shift->{tracker} }
-sub reference_dir { shift->{reference_dir} }
-sub keep_hash     { shift->{keep_hash} }
 #===================================
 
 1
