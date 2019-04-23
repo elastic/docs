@@ -43,11 +43,17 @@ sub checkout_minimal {
 
     my $original_pwd = Cwd::cwd();
     eval {
-        run qw(git clone --no-checkout), $self->git_dir, $self->{destination};
-        chdir $self->{destination};
-        run qw(git config core.sparseCheckout true);
-        $self->_write_sparse_config("/*\n!html/*/\n");
-        run qw(git checkout master);
+        my $out = run qw(git clone --no-checkout),
+            $self->git_dir, $self->{destination};
+        if ( $out =~ /You appear to have cloned an empty repository./) {
+            $self->{started_empty} = 1;
+        } else {
+            $self->{started_empty} = 0;
+            chdir $self->{destination};
+            run qw(git config core.sparseCheckout true);
+            $self->_write_sparse_config("/*\n!html/*/\n");
+            run qw(git checkout master);
+        }
         1;
     } or die "Error checking out repo <target_repo>: $@";
     chdir $original_pwd;
@@ -65,7 +71,7 @@ sub checkout_all {
     chdir $self->{destination};
     eval {
         $self->_write_sparse_config("*\n");
-        run qw(git read-tree -mu HEAD);
+        run qw(git read-tree -mu HEAD) unless $self->{started_empty};
         1;
     } or die "Error checking out repo <target_repo>: $@";
     chdir $original_pwd;
