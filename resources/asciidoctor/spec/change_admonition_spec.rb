@@ -56,7 +56,7 @@ RSpec.describe ChangeAdmonition do
       let(:invocation) { "#{name}:[some_version]" }
       let(:expected) do
         %(<simpara>words ) +
-        %(<phrase revisionflag="#{revisionflag}" revision="some_version"/>)
+          %(<phrase revisionflag="#{revisionflag}" revision="some_version"/>)
       end
       it 'creates a phrase' do
         expect(converted).to include(expected)
