@@ -14,6 +14,12 @@ use base qw( ES::BaseRepo );
 my %Repos;
 
 #===================================
+# Create a repo for tracking *built* docs. This creation doesn't do anything
+# on disk and the repo should be prepared by calling `update_from_remote` and
+# `checkout_minimal`. The first call interacts with the network and can take
+# a long time, especially if the repo doesn't exist locally. The second call
+# is generally much quicker.
+#===================================
 sub new {
 #===================================
     my ( $class, %args ) = @_;
@@ -27,6 +33,9 @@ sub new {
     $self;
 }
 
+#===================================
+# Checks out the parts of this repo that are not built docs. This will make
+# sure that we have the tracker file that we need to check out other repos.
 #===================================
 sub checkout_minimal {
 #===================================
@@ -45,6 +54,9 @@ sub checkout_minimal {
 }
 
 #===================================
+# Checks out the rest of the repo. This must be finished before we can build
+# docs into the repo.
+#===================================
 sub checkout_all {
 #===================================
     my ( $self ) = @_;
@@ -60,6 +72,8 @@ sub checkout_all {
 }
 
 #===================================
+# Write a sparse checkout config for the repo.
+#===================================
 sub _write_sparse_config {
 #===================================
     my ( $self, $config ) = @_;
@@ -72,7 +86,6 @@ sub _write_sparse_config {
         or dir("Couldn't write sparse config");
     print $sparse $config;
     close $sparse;
-
 }
 
 1
