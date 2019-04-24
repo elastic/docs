@@ -488,7 +488,7 @@ RSpec.describe ElasticCompatPreprocessor do
     let(:expected_warnings) do
       <<~WARNINGS
         INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
-        WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
+        WARN: <stdin>: line 3: MIGRATION: reading snippets from a path makes the book harder to read
       WARNINGS
     end
     include_examples(

@@ -2,6 +2,8 @@
 
 require 'asciidoctor/extensions'
 
+require_relative '../migration_log'
+
 ##
 # Preprocessor to turn Elastic's "wild west" formatted block extensions into
 # standard asciidoctor formatted extensions
@@ -108,8 +110,6 @@ require 'asciidoctor/extensions'
 # well.
 #
 class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
-  include Asciidoctor::Logging
-
   INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/
   SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
   CODE_BLOCK_RX = /^-----*$/
@@ -121,6 +121,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
   def process(_document, reader)
     reader.instance_variable_set :@in_attribute_only_block, false
     reader.instance_variable_set :@code_block_start, nil
+    reader.extend MigrationLog
     def reader.process_line(line)
       return line unless @process_lines
 
@@ -165,8 +166,8 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           if @code_block_start
             if line != @code_block_start
               line.replace(@code_block_start)
-              message = "MIGRATION: code block end doesn't match start"
-              logger.warn message_with_context message, source_location: cursor
+              migration_warn @document, cursor, 'delimiter-mismatch',
+                             "code block end doesn't match start"
             end
             @code_block_start = nil
           else

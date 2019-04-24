@@ -2,7 +2,8 @@
 
 require 'fileutils'
 
-require_relative '../scaffold.rb'
+require_relative '../migration_log'
+require_relative '../scaffold'
 
 ##
 # Extensions for enriching certain source blocks with "OPEN IN CONSOLE",
@@ -38,6 +39,7 @@ require_relative '../scaffold.rb'
 #
 class OpenInWidget < TreeProcessorScaffold
   include Asciidoctor::Logging
+  include MigrationLog
 
   CALLOUT_SCAN_RX = / ?#{Asciidoctor::CalloutScanRx}/
 
@@ -72,9 +74,9 @@ class OpenInWidget < TreeProcessorScaffold
       block.document.base_dir)
     if File.readable? normalized
       copy_override_snippet block, normalized, snippet_path
-      message = "reading snippets from a path makes the book harder to read"
-      logger.warn message_with_context message,
-        source_location: block.source_location
+      migration_warn block, block.source_location, 'override-snippet',
+                     'reading snippets from a path makes the book harder ' \
+                     'to read'
     else
       logger.error message_with_context "can't read snippet from #{normalized}",
         source_location: block.source_location

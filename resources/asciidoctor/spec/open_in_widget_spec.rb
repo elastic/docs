@@ -22,6 +22,31 @@ RSpec.describe OpenInWidget do
     }
   end
 
+  ##
+  # Like the 'convert with logs' shared context, but also captures any files
+  # that would be copied by the conversion process to the `copied` array. That
+  # array contains tuples of the form
+  # [image_path_from_asciidoc_file, image_path_on_disk] and is in the order
+  # that the images source be copied.
+  shared_context 'convert intercepting copies' do
+    include_context 'convert with logs'
+
+    # [] is the initial value but it is mutated by the conversion
+    let(:copied_storage) { [] }
+    let(:convert_attributes) do
+      stub_file_opts(copied_storage).tap do |attrs|
+        attrs['resources'] = resources if defined?(resources)
+        attrs['copy-callout-images'] = copy_callout_images \
+          if defined?(copy_callout_images)
+      end
+    end
+    let(:copied) do
+      # Force evaluation of converted because it populates copied_storage
+      converted
+      copied_storage
+    end
+  end
+
   %w[console sense kibana].each do |lang|
     it "supports automatic snippet extraction with #{lang} language" do
       input = <<~ASCIIDOC
@@ -96,30 +121,55 @@ RSpec.describe OpenInWidget do
       ])
     end
 
-    it "supports override snippet path with #{lang} language" do
-      input = <<~ASCIIDOC
-        == Example
-        [source,#{lang},snippet=snippet.#{lang}]
-        ----
-        GET /
-        ----
-      ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-        <programlisting language="#{lang}" linenumbering="unnumbered"><ulink type="snippet" url="snippets/snippet.#{lang}"/>GET /</programlisting>
-        </chapter>
-      DOCBOOK
-      warnings = <<~WARNINGS
-        INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.#{lang}
-        WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
-      WARNINGS
-      file_opts = []
-      actual = convert input, stub_file_opts(file_opts), eq(warnings.strip)
-      expect(actual).to eq(expected.strip)
-      expect(file_opts).to eq([
-        ["snippets/snippet.#{lang}", "#{spec_dir}/snippets/snippet.#{lang}"],
-      ])
+    # TODO: finish converting this to standard rspec
+    context "when the document contains an override snippet in #{lang}" do
+      include_context 'convert intercepting copies'
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          [source,#{lang},snippet=snippet.#{lang}]
+          ----
+          GET /
+          ----
+        ASCIIDOC
+      end
+      it 'includes a link to the overridden path' do
+        expect(converted).to include(
+          %(<ulink type="snippet" url="snippets/snippet.#{lang}"/>)
+        )
+      end
+      it 'logs that it copies the snippet' do
+        expect(logs).to include(
+          "INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.#{lang}"
+        )
+      end
+      it 'logs a warning about how bad of an idea this is' do
+        expect(logs).to include(
+          "WARN: <stdin>: line 3: MIGRATION: reading snippets from a path makes the book harder to read"
+        )
+      end
+      it 'copies the file' do
+        expect(copied).to eq([
+          ["snippets/snippet.#{lang}", "#{spec_dir}/snippets/snippet.#{lang}"],
+        ])
+      end
+      context 'when you disable the migration warning' do
+        let(:input) do
+          <<~ASCIIDOC
+            == Example
+            :migration-warning-override-snippet: false
+            [source,#{lang},snippet=snippet.#{lang}]
+            ----
+            GET /
+            ----
+          ASCIIDOC
+        end
+        it 'does not log a warning about how bad an idea this is' do
+          expect(logs).not_to include(
+            "MIGRATION: reading snippets from a path makes the book harder to read"
+          )
+        end
+      end
     end
 
     it "logs an error if override snippet is missing with #{lang} language" do
