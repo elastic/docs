@@ -60,7 +60,7 @@ alias docbldaz='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/azure-marketplace/d
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
 
 # Curator
-alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
+alias docbldcr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
 
 # Cloud
 alias docbldec='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
