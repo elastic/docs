@@ -32,7 +32,7 @@ sub new {
         $reference_dir = $args{reference}->subdir("$reference_subdir.git");
     }
 
-    bless {
+    return bless {
         name          => $name,
         git_dir       => $dir->subdir("$name.git"),
         url           => $url,

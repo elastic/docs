@@ -8,7 +8,7 @@ use Path::Class();
 use Encode qw(decode_utf8);
 use ES::Util qw(run sha_for);
 
-use base qw( ES::BaseRepo );
+use parent qw( ES::BaseRepo );
 
 my %Repos;
 
@@ -17,7 +17,7 @@ sub new {
 #===================================
     my ( $class, %args ) = @_;
 
-    my $self = shift->SUPER::new(%args);
+    my $self = $class->SUPER::new(%args);
 
     my $name = $self->name;
     $self->{tracker} = $args{tracker}
