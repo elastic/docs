@@ -9,11 +9,17 @@ require_relative 'sh'
 class Dest
   include Sh
 
+  ##
+  # Stdout and stderr of running the conversions in convert_single
+  # or convert_all.
+  attr_reader :convert_outputs
+
   def initialize(tmp)
     @bare_dest = File.expand_path 'dest.git', tmp
     @dest = File.expand_path 'dest', tmp
     Dir.mkdir @dest
     @initialized_bare_repo = false
+    @convert_outputs = []
   end
 
   ##
@@ -27,7 +33,7 @@ class Dest
   def convert_single(from, to, asciidoctor:)
     cmd = %W[--doc #{from} --out #{path(to)}]
     cmd += ['--asciidoctor'] if asciidoctor
-    run_convert cmd
+    @convert_outputs << run_convert(cmd)
   end
 
   ##
@@ -39,9 +45,13 @@ class Dest
       --target_repo #{bare_repo}
       --conf #{conf}
     ]
-    out = run_convert cmd
+    @convert_outputs << run_convert(cmd)
+  end
+
+  ##
+  # Checks out the results of the last call to convert_all
+  def checkout_conversion
     sh "git clone #{bare_repo} #{@dest}"
-    out
   end
 
   private

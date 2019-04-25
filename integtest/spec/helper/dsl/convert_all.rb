@@ -9,22 +9,47 @@ module Dsl
     # 1. Create source repositories and write them
     # 2. Configure the books that should be built
     def convert_all_before_context
-      include_context 'source and dest'
-      before(:context) do
-        yield @src
-        @src.init_repos
-        @out = @dest.convert_all @src.conf
+      convert_before do |src, dest|
+        yield src
+        src.init_repos
+        dest.convert_all src.conf
+        dest.checkout_conversion
       end
       include_examples 'convert all'
+      let(:expected_revision) { 'init' }
     end
 
     shared_context 'convert all' do
-      let(:out) { @out }
-      let(:books) { @src.books }
+      let(:out) { outputs[0] }
+      include_examples 'builds all books'
+      include_examples 'convert all basics'
+    end
+    shared_examples 'builds all books' do
       it 'prints that it is updating repositories' do
         # TODO: more assertions about the logged output
         expect(out).to include('Updating repositories')
       end
+      it 'prints that it is building all branches of every book' do
+        # TODO: read branches from somewhere when we specify them
+        books.each do |book|
+          expect(out).to include("#{book.title}: Building master...")
+          expect(out).to include("#{book.title}: Finished master")
+        end
+      end
+      it 'prints that it is copying master to current for every book' do
+        # TODO: read branches from somewhere when we specify them
+        books.each do |book|
+          expect(out).to include("#{book.title}: Copying master to current")
+        end
+      end
+      it 'prints that it is commiting changes' do
+        expect(out).to include('Commiting changes')
+      end
+      it 'prints that it is pushing changes' do
+        expect(out).to include('Pushing changes')
+      end
+    end
+    shared_examples 'convert all basics' do
       it 'creates redirects.conf' do
         expect(dest_file('redirects.conf')).to file_exist
       end
@@ -32,8 +57,8 @@ module Dsl
         expect(dest_file('html/branches.yaml')).to file_exist
       end
       file_context 'html/revision.txt' do
-        it 'contains the initial revision message' do
-          expect(contents).to include('init')
+        it 'contains the latest revision message' do
+          expect(contents).to include(expected_revision)
         end
       end
       page_context 'the global index', 'html/index.html' do
