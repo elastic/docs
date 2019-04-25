@@ -16,7 +16,7 @@ module Dsl
         dest.checkout_conversion
       end
       include_examples 'convert all'
-      let(:expected_revision) { 'init' }
+      let(:latest_revision) { 'init' }
     end
 
     shared_context 'convert all' do

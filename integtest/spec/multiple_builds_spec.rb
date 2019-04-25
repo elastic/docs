@@ -43,7 +43,7 @@ RSpec.describe 'building all books more than once' do
 
   context 'when building one book out of one repo twice' do
     context 'when the second build is a noop' do
-      let(:expected_revision) { 'init' }
+      let(:latest_revision) { 'init' }
       shared_examples 'second build is noop' do
         context 'the second build' do
           let(:out) { outputs[1] }
@@ -80,7 +80,7 @@ RSpec.describe 'building all books more than once' do
         ASCIIDOC
         repo.commit 'changed text'
       end
-      let(:expected_revision) { 'changed text' }
+      let(:latest_revision) { 'changed text' }
       context 'the second build' do
         let(:out) { outputs[1] }
         include_examples 'builds all books'
