@@ -7,6 +7,11 @@ require_relative 'dsl/file_contexts'
 ##
 # Defines methods to create contexts and shared examples used in the tests.
 module Dsl
+  ##
+  # Setup some conversion that runs before this context. Prefer
+  # convert_all_before_context if you need to test `--all` once and prefer
+  # convert_single_before_context if you need to test `--doc`. Use this
+  # directly only if you need to test `--all` multiple times.
   def convert_before
     include_context 'source and dest'
     before(:context) do
