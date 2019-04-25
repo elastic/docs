@@ -58,7 +58,7 @@ module Dsl
       end
       file_context 'html/revision.txt' do
         it 'contains the latest revision message' do
-          expect(contents).to include(expected_revision)
+          expect(contents).to include(latest_revision)
         end
       end
       page_context 'the global index', 'html/index.html' do
