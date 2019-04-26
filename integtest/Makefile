@@ -37,44 +37,6 @@ rubocop:
 rspec:
 	rspec
 
-define STANDARD_EXPECTED_FILES=
-	[ -s $^/index.html ]
-	[ -s $^/docs.js ]
-	[ -s $^/styles.css ]
-	[ -s $^/template.md5 ]
-endef
-
-.PHONY: readme_expected_files
-readme_expected_files: /tmp/readme_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	# Checking for copied images
-	[ -s $^/resources/cat.jpg ]
-	[ -s $^/images/icons/caution.png ]
-	[ -s $^/images/icons/important.png ]
-	[ -s $^/images/icons/note.png ]
-	[ -s $^/images/icons/warning.png ]
-	[ -s $^/images/icons/callouts/1.png ]
-	[ -s $^/images/icons/callouts/2.png ]
-	[ -s $^/snippets/blocks/1.json ]
-
-.PHONY: %_expected_files
-%_expected_files: /tmp/%_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-
-.PHONY: %_same_files
-%_same_files: /tmp/%_asciidoc /tmp/%_asciidoctor
-	diff \
-		<(cd /tmp/$*_asciidoc    && find * -type f | sort \
-			| grep -v 'snippets/' \
-		) \
-		<(cd /tmp/$*_asciidoctor && find * -type f | sort \
-			| grep -v 'snippets/' \
-		)
-	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html'); do \
-		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
-	done
-	# TODO validate the snippets have the same contents even if the files aren't the same
-
 # Build the docs into a temporary directory
 define BD_DUMMY=
 /docs_build/build_docs.pl --in_standard_docker --out /tmp/dummy
