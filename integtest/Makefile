@@ -14,7 +14,6 @@ check: \
 	style \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	migration_warnings \
-	simple_all \
 	relative_conf_file \
 	new_repo new_book \
 	keep_hash keep_hash_new_repo keep_hash_new_book \

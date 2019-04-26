@@ -65,12 +65,17 @@ end
 #   logs             - lines logged
 RSpec.shared_context 'convert with logs' do
   let(:convert_logger) { Asciidoctor::MemoryLogger.new }
-  let!(:converted) do
-    # We use let! here to force the conversion because it populates the logger
+  let(:converted) do
+    # Using let! here would stop us from having to explicitly evaluate
+    # `converted` in the let for `logs` but it'd cause `converted` to be
+    # evaluated before `before(:example)` blocks
     extra_attributes = defined?(convert_attributes) ? convert_attributes : {}
     internal_convert input, convert_logger, extra_attributes
   end
   let(:logs) do
+    # Evaluate converted because it populates the logger as a side effect.
+    converted
+    # Now render the logs.
     convert_logger.messages
       .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
       .join("\n")
