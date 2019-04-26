@@ -29,6 +29,15 @@ class Repo
   end
 
   ##
+  # Copy a file into the source path, returning the destination path.
+  def cp(source_file, dest_relative_path)
+    realpath = path dest_relative_path
+    dir = File.expand_path '..', realpath
+    FileUtils.mkdir_p dir
+    FileUtils.cp source_file, realpath
+  end
+
+  ##
   # Transform path fragment for a source file into the path that that file
   # should have.
   def path(source_relative_path)

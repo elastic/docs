@@ -14,7 +14,7 @@ module Dsl
         include_context 'Dsl_file', file_name
 
         # Yield to the block to add more tests.
-        class_exec(&block)
+        class_exec(&block) if block
       end
     end
     shared_context 'Dsl_file' do |file_name|
@@ -41,7 +41,7 @@ module Dsl
         include_context 'Dsl_page', file_name
 
         # Yield to the block to add more tests.
-        class_exec(&block)
+        class_exec(&block) if block
       end
     end
     shared_context 'Dsl_page' do |file_name|
