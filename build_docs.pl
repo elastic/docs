@@ -171,14 +171,19 @@ sub _guess_edit_url {
 
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $remotes = eval { run qw(git remote -v) } || '';
-    if ($remotes !~ m|\s+(\S+[/:]elastic(?:search-cn)?/\S+)|) {
-        # We need either an elastic or elasticsearch-cn organization. All
+    my $remote;
+    if ($remotes =~ m|\s+(\S+[/:]elastic(?:search-cn)?/\S+)|) {
+        $remote = $1;
+        # We prefer either an elastic or elasticsearch-cn organization. All
         # but two books are in elastic but elasticsearch-cn is special.
-        say "Couldn't find edit url because there isn't an Elastic clone";
-        say "$remotes";
-        return;
+    } else {
+        say "Couldn't find edit url because there isn't an Elastic remote";
+        if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
+            $remote = $1;
+        } else {
+            $remote = 'unknown';
+        }
     }
-    my $remote = $1;
     my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
     return ES::Repo::edit_url_for_url_and_branch($remote, $branch);
 }
