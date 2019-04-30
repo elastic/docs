@@ -258,6 +258,8 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it "doesn't remove the block" do
+      # The point here is that the attribute setting *doesn't* apply to the
+      # text because we haven't doctored the block.
       expect(converted).to include('<simpara>{attr}</simpara>')
     end
   end
