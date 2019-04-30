@@ -31,7 +31,7 @@ pycodestyle: html_diff
 
 .PHONY: rubocop
 rubocop:
-	rubocop --cache false
+	rubocop
 
 .PHONY: rspec
 rspec:
