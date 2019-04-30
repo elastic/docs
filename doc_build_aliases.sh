@@ -52,15 +52,15 @@ alias docbldgls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-d
 alias docbldgs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
 # Stack Overview
-alias docbldso='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
+alias docbldso='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
 
 # Deploying Azure
-alias docbldaz='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
+alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
 
 # Curator
-alias docbldcr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
+alias docbldcr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
 
 # Cloud
 alias docbldec='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
@@ -118,7 +118,7 @@ alias docbldres='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elastic
 
 alias docbldpls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
 
-alias docbldepi='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
+alias docbldepi='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
 
 alias docbldjvr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
