@@ -8,7 +8,7 @@ require 'asciidoctor/extensions'
 #
 # Usage
 #
-#   include:elastic-include-tagged:{doc-tests}/RestClientDocumentation.java[rest-client-init]
+#   include:elastic-include-tagged:{doc-tests}/Foo.java[tag]
 #
 class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
   include Asciidoctor::Logging
@@ -28,7 +28,8 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
     start_match = /^(\s*).+tag::#{tag}\b/
     end_match = /end::#{tag}\b/
 
-    path, target_type, relpath = reader.resolve_include_path target, attrs, attrs
+    path, target_type, relpath =
+      reader.resolve_include_path target, attrs, attrs
     # resolve_include_path returns a nil target_type if it can't find the file
     # and it logs a nice error for us
     return path unless target_type
@@ -70,8 +71,10 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
       return path
     end
     if found_end == false
-      warn Asciidoctor::Reader::Cursor.new(path, relpath, relpath, start_of_include),
-          "missing end tag [#{tag}]"
+      cursor = Asciidoctor::Reader::Cursor.new(
+        path, relpath, relpath, start_of_include
+      )
+      warn cursor, "missing end tag [#{tag}]"
     end
     reader.push_include included_lines, path, relpath, start_of_include, attrs
   end

@@ -47,7 +47,8 @@ RSpec.describe OpenInWidget do
       ])
     end
 
-    it "supports automatic snippet extraction for many snippets with #{lang} language" do
+    it "supports automatic snippet extraction for many snippets " \
+        "with #{lang} language" do
       input = <<~ASCIIDOC
         == Example
         [source,#{lang}]

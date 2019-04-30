@@ -245,31 +245,21 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  it "attribute only blocks don't pick up blocks with attributes and other stuff" do
-    actual = convert <<~ASCIIDOC
-      == Header
+  context 'when a block contains things other than attributes' do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        --
+        :attr: test
+        added::[some_version]
+        --
 
-      --
-      :attr: test
-      added[some_version]
-      --
-
-      [id="{attr}"]
-      == Header
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_header">
-      <title>Header</title>
-      <note revisionflag="added" revision="some_version">
-      <simpara></simpara>
-      </note>
-      </chapter>
-      <chapter id="test">
-      <title>Header</title>
-
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        {attr}
+      ASCIIDOC
+    end
+    it "doesn't remove the block" do
+      expect(converted).to include('<simpara>{attr}</simpara>')
+    end
   end
 
   it "adds callouts to substitutions for source blocks if there aren't any" do
@@ -349,7 +339,9 @@ RSpec.describe ElasticCompatPreprocessor do
       <screen>foo</screen>
       </chapter>
     DOCBOOK
-    actual = convert input, {}, match(/WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/)
+    actual = convert input, {}, match(
+      /WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/
+    )
     expect(actual).to eq(expected.strip)
   end
 

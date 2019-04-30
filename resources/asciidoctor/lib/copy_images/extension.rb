@@ -5,7 +5,8 @@ require_relative 'copier.rb'
 
 module CopyImages
   ##
-  # Copies images that are referenced into the same directory as the output files.
+  # Copies images that are referenced into the same directory as the
+  # output files.
   #
   # It finds the images by looking in a comma separated list of directories
   # defined by the `resources` attribute.
@@ -84,7 +85,8 @@ module CopyImages
       return unless coids
 
       coids.scan(CALLOUT_RX) do |(index)|
-        @copier.copy_image block, "images/icons/callouts/#{index}.#{callout_extension}"
+        @copier.copy_image block,
+          "images/icons/callouts/#{index}.#{callout_extension}"
       end
     end
 
@@ -103,7 +105,8 @@ module CopyImages
       style = block.attr 'style'
       return unless style
 
-      @copier.copy_image block, "images/icons/#{style.downcase}.#{admonition_extension}"
+      @copier.copy_image block,
+        "images/icons/#{style.downcase}.#{admonition_extension}"
     end
 
     def process_change_admonition(admonition_extension, block)
@@ -112,7 +115,8 @@ module CopyImages
 
       admonition_image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
       if admonition_image
-        @copier.copy_image block, "images/icons/#{admonition_image}.#{admonition_extension}"
+        @copier.copy_image block,
+          "images/icons/#{admonition_image}.#{admonition_extension}"
       else
         logger.warn message_with_context "unknow revisionflag #{revisionflag}",
           source_location: block.source_location
