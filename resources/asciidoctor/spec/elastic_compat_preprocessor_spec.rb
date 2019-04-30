@@ -395,14 +395,14 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  def stub_file_opts
-    return {
-      'copy_snippet' => proc { |uri, source| },
-      'write_snippet' => proc { |uri, source| },
-    }
-  end
-
   shared_context 'general snippet' do |lang, override|
+    include_context 'convert with logs'
+    let(:convert_attributes) do
+      {
+        'copy_snippet' => proc { |uri, source| },
+        'write_snippet' => proc { |uri, source| },
+      }
+    end
     let(:snippet) do
       snippet = <<~ASCIIDOC
         [source,js]
@@ -425,9 +425,6 @@ RSpec.describe ElasticCompatPreprocessor do
   end
   shared_examples 'linked snippet' do |override, lang, path|
     let(:has_link_to_path) { %r{<ulink type="snippet" url="#{path}"/>} }
-    let(:converted) do
-      convert input, stub_file_opts, eq(expected_warnings.strip)
-    end
     shared_examples 'converted with override' do
       it "has the #{lang} language" do
         expect(converted).to match(has_lang)
@@ -478,9 +475,6 @@ RSpec.describe ElasticCompatPreprocessor do
   context 'for a snippet without an override' do
     include_context 'general snippet', 'js', nil
     let(:has_any_link) { /<ulink type="snippet"/ }
-    let(:converted) do
-      convert input, stub_file_opts
-    end
 
     it "has the js language" do
       expect(converted).to match(has_lang)
