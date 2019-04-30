@@ -11,9 +11,15 @@ class Repo
 
   attr_reader :name, :root
 
+  ##
+  # Set to false to prevent adding an Elastic clone when the repo
+  # is initialized
+  attr_accessor :add_elastic_remote
+
   def initialize(name, root)
     @name = name
     @root = root
+    @add_elastic_remote = true
   end
 
   ##
@@ -26,6 +32,15 @@ class Repo
       f.write text
     end
     realpath
+  end
+
+  ##
+  # Copy a file into the source path, returning the destination path.
+  def cp(source_file, dest_relative_path)
+    realpath = path dest_relative_path
+    dir = File.expand_path '..', realpath
+    FileUtils.mkdir_p dir
+    FileUtils.cp source_file, realpath
   end
 
   ##
@@ -51,7 +66,10 @@ class Repo
     Dir.chdir @root do
       sh 'git init'
       commit 'init'
-      sh 'git remote add elastic git@github.com:elastic/docs.git'
+      if @add_elastic_remote
+        # Add an Elastic remote so we get a nice edit url
+        sh 'git remote add elastic git@github.com:elastic/docs.git'
+      end
     end
   end
 end
