@@ -11,9 +11,15 @@ class Repo
 
   attr_reader :name, :root
 
+  ##
+  # Set to false to prevent adding an Elastic clone when the repo
+  # is initialized
+  attr_accessor :add_elastic_remote
+
   def initialize(name, root)
     @name = name
     @root = root
+    @add_elastic_remote = true
   end
 
   ##
@@ -49,8 +55,10 @@ class Repo
       sh 'git init'
       sh 'git add .'
       sh "git commit -m 'init'"
-      # Add an Elastic remote so we get a nice edit url
-      sh 'git remote add elastic git@github.com:elastic/docs.git'
+      if @add_elastic_remote
+        # Add an Elastic remote so we get a nice edit url
+        sh 'git remote add elastic git@github.com:elastic/docs.git'
+      end
     end
   end
 end

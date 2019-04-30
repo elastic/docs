@@ -45,6 +45,26 @@ RSpec.describe 'building a single book' do
     end
   end
 
+  context "when there isn't an elastic remote" do
+    convert_single_before_context do |src|
+      src.add_elastic_remote = false
+      src.write 'index.asciidoc', <<~ASCIIDOC
+        #{HEADER}
+        This is a minimal viable asciidoc file for use with build_docs. The
+        actual contents of this paragraph aren't important but having a
+        paragraph here is required.
+      ASCIIDOC
+    end
+
+    page_context 'chapter.html' do
+      it 'has an "unknown" edit url' do
+        expect(body).to include(<<~HTML.strip)
+          <a href="unknown/edit/master/index.asciidoc" class="edit_me"
+        HTML
+      end
+    end
+  end
+
   context 'when one file includes another' do
     convert_single_before_context do |src|
       src.write 'included.asciidoc', 'I am tiny.'
