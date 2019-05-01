@@ -4,9 +4,17 @@ FROM bitnami/minideb:stretch
 
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
+# Setup repos for things like node and yarn
+RUN install_packages apt-transport-https gnupg2 ca-certificates
+COPY .docker/apt/sources.list.d/* /etc/apt/sources.list.d/
+COPY .docker/apt/keys/* /
+RUN cat /nodesource.gpg | apt-key add - && rm /nodesource.gpg
+RUN cat /yarn.gpg | apt-key add - && rm yarn.gpg
+
 # Package inventory:
 # * To make life easier
 #   * bash
+#   * less
 # * Used by the docs build
 #   * libnss-wrapper
 #   * libxml2-utils
@@ -26,16 +34,21 @@ LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 # * Used to check the docs build in CI
 #   * python3
 #   * python3-pip
+# * Used to check javascript
+#   * nodejs
+#   * yarn
 RUN install_packages \
   bash \
   build-essential \
   curl \
   cmake \
   git \
+  less \
   libnss-wrapper \
   libxml2-dev \
   libxml2-utils \
   make \
+  nodejs \
   nginx \
   openssh-client \
   openssh-server \
@@ -46,6 +59,7 @@ RUN install_packages \
   ruby \
   ruby-dev \
   unzip \
+  yarn \
   xsltproc
 
 # We mount these directories with tmpfs so we can write to them so they
@@ -72,3 +86,8 @@ RUN bundle install --binstubs --system --frozen
 # consistent version and we can't rely on running bundler in docker to update
 # it because we can't copy from the image to the host machine while building
 # the image.
+
+COPY package.json /
+COPY yarn.lock /
+ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
+RUN yarn install --frozen-lockfile
