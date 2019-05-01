@@ -52,24 +52,6 @@ RUN install_packages \
 # have to be empty. So we delete them.
 RUN rm -rf /var/log/nginx && rm -rf /run
 
-# Gem inventory:
-# * Used by the docs build
-#   * asciidoctor
-#   * thread_safe
-# * Speculative
-#   * asciidoctor-diagram
-#   * asciimath
-# * Used to check the build in CI
-#   * rubocop
-#   * rspec
-RUN gem install --no-document \
-  asciidoctor:1.5.8 \
-  asciidoctor-diagram:1.5.12 \
-  asciimath:1.0.8 \
-  rubocop:0.64.0 \
-  rspec:3.8.0 \
-  thread_safe:0.3.6
-
 # Wheel inventory:
 # * Used to test the docs build
 #   * beautifulsoup4
@@ -79,3 +61,14 @@ RUN pip3 install \
   beautifulsoup4==4.7.1 \
   lxml==4.3.1 \
   pycodestyle==2.5.0
+
+# Install ruby deps with bundler to make things more standard for Ruby folks.
+RUN gem install bundler:2.0.1
+RUN bundle config --global silence_root_warning 1
+COPY Gemfile* /
+RUN bundle install --binstubs --system --frozen
+# --frozen forces us to regenerate Gemfile.lock locally before using it in
+# docker which is important because we need Gemfile.lock to lock the gems to a
+# consistent version and we can't rely on running bundler in docker to update
+# it because we can't copy from the image to the host machine while building
+# the image.

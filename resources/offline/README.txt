@@ -5,4 +5,7 @@ published in any other form or on any other website without explicit permission.
 
 IMPORTANT: Elastic publishes frequent documentation updates and this static
 doc bundle might be missing important information. For the latest changes,
-visit https://elastic.co/guide. 
+visit https://elastic.co/guide.
+
+For information about Elastic Trademarks, Terms of Use, Privacy policies, and
+Brand usage, see https://elastic.co.

@@ -10,22 +10,10 @@ export GIT_COMMITTER_EMAIL=test@example.com
 
 .PHONY: check
 check: \
+	rspec \
 	style \
-	minimal_expected_files minimal_same_files \
-	includes_expected_files includes_same_files \
-	emdash_expected_files emdash_same_files \
-	beta_expected_files beta_same_files \
-	experimental_expected_files experimental_same_files \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
-	adoc_expected_files adoc_same_files \
-	empty_table_cell_expected_files empty_table_cell_same_files \
-	xpack_chapter_expected_files xpack_chapter_same_files \
-	xpack_part_expected_files xpack_part_same_files \
-	xpack_section_expected_files xpack_section_same_files \
-	xpack_float_expected_files xpack_float_same_files \
 	migration_warnings \
-	readme_expected_files readme_same_files \
-	simple_all \
 	relative_conf_file \
 	new_repo new_book \
 	keep_hash keep_hash_new_repo keep_hash_new_book \
@@ -35,87 +23,19 @@ check: \
 	missing_index
 
 .PHONY: style
-style: html_diff
+style: pycodestyle rubocop
+
+.PHONY: pycodestyle
+pycodestyle: html_diff
 	pycodestyle html_diff
 
-define STANDARD_EXPECTED_FILES=
-	[ -s $^/index.html ]
-	[ -s $^/docs.js ]
-	[ -s $^/styles.css ]
-	[ -s $^/template.md5 ]
-endef
+.PHONY: rubocop
+rubocop:
+	rubocop --cache false
 
-.PHONY: readme_expected_files
-readme_expected_files: /tmp/readme_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	# Checking for expected html files
-	[ -s $^/_conditions_of_use.html ]
-	# Checking for copied images
-	[ -s $^/resources/cat.jpg ]
-	[ -s $^/images/icons/caution.png ]
-	[ -s $^/images/icons/important.png ]
-	[ -s $^/images/icons/note.png ]
-	[ -s $^/images/icons/warning.png ]
-	[ -s $^/images/icons/callouts/1.png ]
-	[ -s $^/images/icons/callouts/2.png ]
-	[ -s $^/snippets/blocks/1.json ]
-
-.PHONY: experimental_expected_files
-beta_expected_files: /tmp/beta_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	[ -s $^/images/icons/warning.png ]
-
-.PHONY: experimental_expected_files
-experimental_expected_files: /tmp/experimental_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	[ -s $^/images/icons/warning.png ]
-
-.PHONY: xpack_chapter_expected_files
-xpack_chapter_expected_files: /tmp/xpack_chapter_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	$(call GREP,'Chapter<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
-	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
-	$(call NOT_CONTAIN,'Section<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
-
-.PHONY: xpack_part_expected_files
-xpack_part_expected_files: /tmp/xpack_part_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	$(call GREP,'Part<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_part.html)
-	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
-
-.PHONY: xpack_section_expected_files
-xpack_section_expected_files: /tmp/xpack_section_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	$(call GREP,'Section<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
-	$(call NOT_CONTAIN,'Floater<a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_section.html)
-
-.PHONY: xpack_float_expected_files
-xpack_float_expected_files: /tmp/xpack_float_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-	$(call GREP,'Floater</span><a[^>]*>edit</a><a class="xpack_tag" href="/subscriptions">',$^/_chapter.html)
-
-.PHONY: %_expected_files
-%_expected_files: /tmp/%_asciidoc
-	$(STANDARD_EXPECTED_FILES)
-
-.PHONY: %_same_files
-%_same_files: /tmp/%_asciidoc /tmp/%_asciidoctor
-	diff \
-		<(cd /tmp/$*_asciidoc    && find * -type f | sort \
-			| grep -v 'snippets/' \
-		) \
-		<(cd /tmp/$*_asciidoctor && find * -type f | sort \
-			| grep -v 'snippets/' \
-		)
-	for file in $$(cd /tmp/$*_asciidoc && find * -type f -name '*.html'); do \
-		./html_diff /tmp/$*_asciidoc/$$file /tmp/$*_asciidoctor/$$file; \
-	done
-	# TODO validate the snippets have the same contents even if the files aren't the same
-
-# Build the docs into the target
-define BD=
-/docs_build/build_docs.pl --in_standard_docker --out $@
-endef
+.PHONY: rspec
+rspec:
+	rspec
 
 # Build the docs into a temporary directory
 define BD_DUMMY=
@@ -143,28 +63,6 @@ migration_warnings: migration_warnings.asciidoc
 		test $$? -eq 255
 	$(call GREP,"WARNING: migration_warnings.asciidoc: line 7: MIGRATION: code block end doesn't match start",/tmp/out)
 	$(BD_DUMMY) --asciidoctor --doc migration_warnings.asciidoc --suppress_migration_warnings
-
-/tmp/readme_asciidoc: /docs_build/README.asciidoc
-	$(BD) --doc /docs_build/README.asciidoc
-
-/tmp/readme_asciidoctor: /docs_build/README.asciidoc
-	$(BD) --asciidoctor --doc /docs_build/README.asciidoc
-
-/tmp/adoc_asciidoc: minimal.adoc
-	$(BD) --chunk 1 --doc $^
-
-/tmp/adoc_asciidoctor: minimal.adoc
-	$(BD) --chunk 1 --asciidoctor --doc $^
-
-# These don't declare dependencies because we don't know in general which files
-# are needed to build which asciidoc files.
-.PRECIOUS: /tmp/%_asciidoc     # don't try to remove the directory. you can't
-/tmp/%_asciidoc:
-	$(BD) --chunk 1 --doc $*.asciidoc
-
-.PRECIOUS: /tmp/%_asciidoctor  # don't try to remove the directory. you can't
-/tmp/%_asciidoctor:
-	$(BD) --chunk 1 --asciidoctor --doc $*.asciidoc
 
 .PHONY: simple_all
 simple_all:
