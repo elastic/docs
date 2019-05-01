@@ -152,76 +152,102 @@
 
 // END jscookie
 
-jQuery(function() {
-  var lang = jQuery('section#guide[lang]').attr('lang') || 'en';
+(function() {
   var Strings;
+  jQuery(function() {
+    var lang = jQuery('section#guide[lang]').attr('lang') || 'en';
+    init_strings(lang);
 
-  if (lang === 'en') {
-    Strings = {
-      "Configure Console URL" : "Configure Console URL",
-      "Configure Sense URL" : "Configure Sense URL",
-      "Copy as cURL" : "Copy as cURL",
-      "Couldn't automatically copy!" : "Couldn't automatically copy!",
-      "Default Console URL" : "Default Console URL",
-      "Default Sense URL" : "Default Sense URL",
-      "Default Kibana URL" : "Default Kibana URL",
-      "Enter the URL of the Console editor" : "Enter the URL of the Console editor",
-      "Enter the URL of the Sense editor" : "Enter the URL of the Sense editor",
-      "Enter the URL of Kibana": "Enter the URL of Kibana",
-      "On this page" : "On this page",
-      "Open snippet in Console" : "Open snippet in Console",
-      "Open snippet in Sense" : "Open snippet in Sense",
-      "Or install Kibana" : 'Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>.',
-      "Or install Sense2" : 'Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 editor</a>.',
-      "Save" : "Save",
-      "This page is not available in the docs for version:" : "This page is not available in the docs for version:",
-      "View in Sense" : "View in Sense",
-      "View in Console" : "View in Console"
-    };
-  } else if (lang === 'zh_cn') {
-    Strings = {
-      "Configure Console URL" : "配置 Console URL",
-      "Configure Sense URL" : "配置 Sense URL",
-      "Copy as cURL" : "拷贝为 cURL",
-      "Couldn't automatically copy!" : "无法自动拷贝!",
-      "Default Console URL" : "默认 Console URL",
-      "Default Sense URL" : "默认 Sense URL",
-      "Default Kibana URL" : "默认 Kibana URL",
-      "Enter the URL of the Console editor" : "输入 Console 编辑器的 URL",
-      "Enter the URL of the Sense editor" : "输入 Sense 编辑器的 URL",
-      "Enter the URL of Kibana": "输入 Kibana 的 URL",
-      "On this page" : "本页导航",
-      "Open snippet in Console" : "在 Console 中打开代码片段",
-      "Open snippet in Sense" : "在 Sense 中打开代码片段",
-      "Or install Kibana" : '或安装 <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>。',
-      "Or install Sense2" : '或安装 <a href="https://www.elastic.co/guide/en/sense/current/installing.html">Sense 2 编辑器</a>。',
-      "Save" : "保存",
-      "This page is not available in the docs for version:" : "当前页在这些版本的文档中不可用：",
-      "View in Sense" : "在 Sense 中查看",
-      "View in Console" : "在 Console 中查看"
+    // Move rtp container to top right and make visible
+    var right_col = jQuery('#right_col');
+    var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
+
+    jQuery('.page_header > a[href="../current/index.html"]').click(function() {
+      get_current_page_in_version('current')
+    });
+
+    var default_kibana_url = 'http://localhost:5601';
+    var default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console';
+    var default_sense_url = default_kibana_url + '/app/sense/';
+
+    var kibana_url = Cookies.get('kibana_url') || default_kibana_url;
+    var console_url = Cookies.get('console_url') || default_console_url;
+    var sense_url = Cookies.get('sense_url') || default_sense_url;
+
+    // Enable Sense widget
+    init_sense_widgets(sense_url);
+    init_console_widgets(console_url);
+    init_kibana_widgets(kibana_url);
+
+    var div = jQuery('div.toc');
+    // Fetch toc.html unless there is already a .toc on the page
+    if (div.length == 0
+      && jQuery('#guide').find('div.article,div.book').length == 0) {
+      var url = location.href.replace(/[^\/]+$/, 'toc.html');
+      var toc = jQuery.get(url, {}, function(data) {
+        right_col.append(data);
+        init_toc();
+        open_current();
+      }).always(init_headers);
+    } else {
+      init_toc();
+    }
+  });
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      init_strings: init_strings,
+      init_console_widgets: init_console_widgets,
     };
   }
 
-  // Move rtp container to top right and make visible
-  var right_col = jQuery('#right_col');
-  var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
-
-  jQuery('.page_header > a[href="../current/index.html"]').click(function() {
-    get_current_page_in_version('current')
-  });
-
-  var default_kibana_url = 'http://localhost:5601';
-  var default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console';
-  var default_sense_url = default_kibana_url + '/app/sense/';
-
-  var kibana_url = Cookies.get('kibana_url') || default_kibana_url;
-  var console_url = Cookies.get('console_url') || default_console_url;
-  var sense_url = Cookies.get('sense_url') || default_sense_url;
-
-  // Enable Sense widget
-  init_sense_widgets(sense_url);
-  init_console_widgets(console_url);
-  init_kibana_widgets(kibana_url);
+  function init_strings(lang) {
+    if (lang === 'en') {
+      Strings = {
+        "Configure Console URL" : "Configure Console URL",
+        "Configure Sense URL" : "Configure Sense URL",
+        "Copy as cURL" : "Copy as cURL",
+        "Couldn't automatically copy!" : "Couldn't automatically copy!",
+        "Default Console URL" : "Default Console URL",
+        "Default Sense URL" : "Default Sense URL",
+        "Default Kibana URL" : "Default Kibana URL",
+        "Enter the URL of the Console editor" : "Enter the URL of the Console editor",
+        "Enter the URL of the Sense editor" : "Enter the URL of the Sense editor",
+        "Enter the URL of Kibana": "Enter the URL of Kibana",
+        "On this page" : "On this page",
+        "Open snippet in Console" : "Open snippet in Console",
+        "Open snippet in Sense" : "Open snippet in Sense",
+        "Or install Kibana" : 'Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>.',
+        "Or install Sense2" : 'Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 editor</a>.',
+        "Save" : "Save",
+        "This page is not available in the docs for version:" : "This page is not available in the docs for version:",
+        "View in Sense" : "View in Sense",
+        "View in Console" : "View in Console"
+      };
+    } else if (lang === 'zh_cn') {
+      Strings = {
+        "Configure Console URL" : "配置 Console URL",
+        "Configure Sense URL" : "配置 Sense URL",
+        "Copy as cURL" : "拷贝为 cURL",
+        "Couldn't automatically copy!" : "无法自动拷贝!",
+        "Default Console URL" : "默认 Console URL",
+        "Default Sense URL" : "默认 Sense URL",
+        "Default Kibana URL" : "默认 Kibana URL",
+        "Enter the URL of the Console editor" : "输入 Console 编辑器的 URL",
+        "Enter the URL of the Sense editor" : "输入 Sense 编辑器的 URL",
+        "Enter the URL of Kibana": "输入 Kibana 的 URL",
+        "On this page" : "本页导航",
+        "Open snippet in Console" : "在 Console 中打开代码片段",
+        "Open snippet in Sense" : "在 Sense 中打开代码片段",
+        "Or install Kibana" : '或安装 <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>。',
+        "Or install Sense2" : '或安装 <a href="https://www.elastic.co/guide/en/sense/current/installing.html">Sense 2 编辑器</a>。',
+        "Save" : "保存",
+        "This page is not available in the docs for version:" : "当前页在这些版本的文档中不可用：",
+        "View in Sense" : "在 Sense 中查看",
+        "View in Console" : "在 Console 中查看"
+      };
+    }
+  }
 
   function init_sense_widgets(sense_url) {
     var base_url = window.location.href.replace(/\/[^/?]+(?:\?.*)?$/, '/')
@@ -644,18 +670,4 @@ jQuery(function() {
     current.addClass('current_page');
     current.parentsUntil('ul.toc', 'li.collapsible').addClass('show');
   }
-
-  var div = jQuery('div.toc');
-  // Fetch toc.html unless there is already a .toc on the page
-  if (div.length == 0
-    && jQuery('#guide').find('div.article,div.book').length == 0) {
-    var url = location.href.replace(/[^\/]+$/, 'toc.html');
-    var toc = jQuery.get(url, {}, function(data) {
-      right_col.append(data);
-      init_toc();
-      open_current();
-    }).always(init_headers);
-  } else {
-    init_toc();
-  }
-});
+})();
