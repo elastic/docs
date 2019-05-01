@@ -3,7 +3,7 @@ window.jQuery = require('jquery');
 const docs = require('../docs.js');
 docs.init_strings('en');
 
-function pageWithConsole(name, text, extraTextMatchers) {
+function pageWithConsole(name, consoleText, extraTextMatchers) {
   describe(name, () => {
     let copyAsCurl;
     beforeEach(() => {
@@ -11,7 +11,7 @@ function pageWithConsole(name, text, extraTextMatchers) {
         <div id="guide">
           <div class="pre_wrapper">
             <pre class="programlisting prettyprint lang-js">
-              ${text}
+              ${consoleText}
             </pre>
           </div>
           <div class="console_widget" data-snippet="snippets/getting-started-cluster-health/1.json"></div>
