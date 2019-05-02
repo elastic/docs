@@ -24,15 +24,15 @@ def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
   }
   attributes.merge! extra_attributes
   result = Asciidoctor.convert input,
-      safe:       :unsafe, # Used to include "funny" files.
-      backend:    :docbook45,
-      logger:     logger,
-      doctype:    :book,
+      safe: :unsafe, # Used to include "funny" files.
+      backend: :docbook45,
+      logger: logger,
+      doctype: :book,
       attributes: attributes,
-      sourcemap:  true
+      sourcemap: true
   warnings_string = logger.messages
-        .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
-        .join("\n")
+                          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
+                          .join("\n")
   expect(warnings_string).to warnings_matcher
   result
 end
@@ -45,12 +45,12 @@ def internal_convert(input, convert_logger, extra_attributes)
   }
   attributes.merge! extra_attributes
   Asciidoctor.convert input,
-      safe:       :unsafe, # Used to include "funny" files.
-      backend:    :docbook45,
-      logger:     convert_logger,
-      doctype:    :book,
-      attributes: attributes,
-      sourcemap:  true
+    safe: :unsafe, # Used to include "funny" files.
+    backend: :docbook45,
+    logger: convert_logger,
+    doctype: :book,
+    attributes: attributes,
+    sourcemap: true
 end
 
 ##
@@ -77,8 +77,8 @@ RSpec.shared_context 'convert with logs' do
     converted
     # Now render the logs.
     convert_logger.messages
-      .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
-      .join("\n")
+                  .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
+                  .join("\n")
   end
 end
 
@@ -99,9 +99,9 @@ RSpec.shared_context 'convert without logs' do
     converted = internal_convert input, convert_logger, extra_attributes
     if convert_logger.messages.empty? == false
       raise "Expected no logs but got:\n" +
-        convert_logger.messages
-          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
-          .join("\n")
+            convert_logger.messages
+                          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
+                          .join("\n")
     end
     converted
   end

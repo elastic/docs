@@ -18,7 +18,6 @@ our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    git_creds
     sha_for
     timestamp
     write_html_redirect
@@ -632,27 +631,6 @@ sub timestamp {
     $mon++;
     sprintf "%04d-%02d-%02dT%02d:%02d:%02d+00:00", $year, $mon, $mday, $hour,
         $min, $sec;
-}
-
-#===================================
-sub git_creds {
-#===================================
-    my ( $action, $body ) = @_;
-
-    require IPC::Open3;
-
-    my ( $chld_out, $chld_in, $pid );
-    no warnings 'once';
-    open( NULL, ">", File::Spec->devnull );
-    $pid = IPC::Open3::open3( $chld_in, $chld_out, ">&NULL", 'git',
-        'credential', $action );
-
-    print $chld_in "$body\n\n";
-
-    waitpid( $pid, 0 );
-    my $out = join "", <$chld_out>;
-    return $out || '';
-
 }
 
 1

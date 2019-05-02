@@ -28,7 +28,6 @@ use lib 'lib';
 use ES::Util qw(
     run $Opts
     build_chunked build_single build_pdf
-    git_creds
     proc_man
     sha_for
     timestamp
@@ -46,6 +45,7 @@ use Sys::Hostname;
 use ES::BranchTracker();
 use ES::Repo();
 use ES::Book();
+use ES::TargetRepo();
 use ES::Toc();
 use ES::LinkCheck();
 use ES::Template();
@@ -170,14 +170,19 @@ sub _guess_edit_url {
 
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $remotes = eval { run qw(git remote -v) } || '';
-    if ($remotes !~ m|\s+(\S+[/:]elastic(?:search-cn)?/\S+)|) {
-        # We need either an elastic or elasticsearch-cn organization. All
+    my $remote;
+    if ($remotes =~ m|\s+(\S+[/:]elastic(?:search-cn)?/\S+)|) {
+        $remote = $1;
+        # We prefer either an elastic or elasticsearch-cn organization. All
         # but two books are in elastic but elasticsearch-cn is special.
-        say "Couldn't find edit url because there isn't an Elastic clone";
-        say "$remotes";
-        return;
+    } else {
+        say "Couldn't find edit url because there isn't an Elastic remote";
+        if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
+            $remote = $1;
+        } else {
+            $remote = 'unknown';
+        }
     }
-    my $remote = $1;
     my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
     return ES::Repo::edit_url_for_url_and_branch($remote, $branch);
 }
@@ -448,25 +453,20 @@ sub init_repos {
 
     # Check out the target repo before the other repos so that
     # we can use the tracker file that it contains.
-    my $target_repo = ES::Repo->new(
-        name      => 'target_repo',
-        dir       => $repos_dir,
-        user      => $Opts->{user},
-        url       => $Opts->{target_repo},
-        reference => $reference_dir,
-        # We can't keep the hash of the target repo because it is what stores
-        # the hashes in the first place!
-        keep_hash => 0,
-        # Intentionally not passing the tracker because we need to build the
-        # tracker from information in this repo.
+    my $target_repo_checkout = "$temp_dir/target_repo";
+    my $target_repo = ES::TargetRepo->new(
+        dir         => $repos_dir,
+        user        => $Opts->{user},
+        url         => $Opts->{target_repo},
+        reference   => $reference_dir,
+        destination => dir( $target_repo_checkout ),
     );
     delete $child_dirs{ $target_repo->git_dir->absolute };
-    my $target_repo_checkout = "$temp_dir/target_repo";
     $tracker_path = "$target_repo_checkout/$tracker_path";
     eval {
         $target_repo->update_from_remote();
-        printf(" - %20s: Checking out\n", 'target_repo');
-        $target_repo->checkout_to($target_repo_checkout);
+        printf(" - %20s: Checking out minimal\n", 'target_repo');
+        $target_repo->checkout_minimal();
         1;
     } or do {
         # If creds are invalid, explicitly reject them to try to clear the cache
@@ -480,6 +480,11 @@ sub init_repos {
     # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
     my $pm = proc_man( $Opts->{procs} * 3 );
+    unless ( $pm->start('target_repo') ) {
+        printf(" - %20s: Checking out remaining\n", 'target_repo');
+        $target_repo->checkout_all();
+        $pm->finish;
+    }
     for my $name (@repo_names) {
         my $url = $conf->{$name};
         # We always use ssh-style urls regardless of conf.yaml so we can use
