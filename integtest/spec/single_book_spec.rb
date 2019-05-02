@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+
 RSpec.describe 'building a single book' do
   HEADER = <<~ASCIIDOC
     = Title
@@ -365,5 +367,28 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/warning.png'
     file_context 'images/icons/callouts/1.png'
     file_context 'images/icons/callouts/2.png'
+  end
+
+  context 'when building a book in a worktree without its parent' do
+    convert_before do |src, dest|
+      repo = src.repo('src')
+      repo.write 'index.asciidoc', <<~ASCIIDOC
+        #{HEADER}
+        I am in a worktree.
+      ASCIIDOC
+      src.init_repos
+      worktree = src.path 'worktree'
+      repo.create_worktree worktree, 'HEAD'
+      FileUtils.rm_rf repo.root
+      dest.convert_single "#{worktree}/index.asciidoc", '.', asciidoctor: true
+    end
+    page_context 'chapter.html' do
+      it 'complains about not being able to find the repo toplevel' do
+        expect(outputs[0]).to include("Couldn't find repo toplevel for /tmp/")
+      end
+      it 'has the worktree text' do
+        expect(body).to include('I am in a worktree.')
+      end
+    end
   end
 end
