@@ -105,6 +105,7 @@ sub build_chunked {
                 '-a' => 'resources=' . join(',', @$resources),
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
+                $latest ? () : ('-a' => "migration-warnings=false"),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -152,7 +153,7 @@ sub build_chunked {
         } or do { $output = $@; $died = 1; };
     }
 
-    _check_build_error( $output, $died, $lenient, $latest );
+    _check_build_error( $output, $died, $lenient );
 
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
         or die "Couldn't find chunk dir in <$dest>";
@@ -235,6 +236,7 @@ sub build_single {
                 '-a' => 'resources=' . join(',', @$resources),
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
+                $latest ? () : ('-a' => "migration-warnings=false"),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -282,7 +284,7 @@ sub build_single {
         } or do { $output = $@; $died = 1; };
     }
 
-    _check_build_error( $output, $died, $lenient, $latest );
+    _check_build_error( $output, $died, $lenient );
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
@@ -299,11 +301,10 @@ sub build_single {
 #===================================
 sub _check_build_error {
 #===================================
-    my ( $output, $died, $lenient, $latest ) = @_;
+    my ( $output, $died, $lenient ) = @_;
 
     my @lines = split "\n", $output;
     my @build_warnings = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} @lines;
-    @build_warnings = grep {!/MIGRATION:/} @build_warnings unless $latest;
     my $warned = @build_warnings;
     return unless $died || $warned;
 
