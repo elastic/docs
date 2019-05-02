@@ -118,8 +118,7 @@ RSpec.describe ElasticIncludeTagged do
     end
     it 'logs a warning about the missing tag' do
       expect(logs).to eq(
-        'WARN: <stdin>: line 5: elastic-include-tagged missing ' \
-        'start tag [missing_start]'
+        'WARN: <stdin>: line 5: missing start tag [missing_start]'
       )
     end
   end
@@ -137,8 +136,7 @@ RSpec.describe ElasticIncludeTagged do
     end
     it 'logs a warning about the missing tag' do
       expect(logs).to eq(
-        "WARN: #{include_file}: line 30: elastic-include-tagged missing " \
-        'end tag [missing_end]'
+        "WARN: #{include_file}: line 30: missing end tag [missing_end]"
       )
     end
   end
