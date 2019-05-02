@@ -103,21 +103,6 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
         @start_of_include = lineno
       end
     end
-<<<<<<< HEAD
-    if start_of_include.nil?
-      warn reader.cursor, "missing start tag [#{tag}]"
-      return path
-    end
-    if found_end == false
-      cursor = Asciidoctor::Reader::Cursor.new(
-        path, relpath, relpath, start_of_include
-      )
-      warn cursor, "missing end tag [#{tag}]"
-    end
-    reader.push_include included_lines, path, relpath, start_of_include, attrs
-  end
-=======
->>>>>>> master
 
     def warn(message, cursor = @reader.cursor)
       logger.warn message_with_context message, source_location: cursor
