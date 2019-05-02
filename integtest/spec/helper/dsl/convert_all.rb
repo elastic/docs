@@ -11,12 +11,10 @@ module Dsl
     def convert_all_before_context
       convert_before do |src, dest|
         yield src
-        src.init_repos
         dest.convert_all src.conf
         dest.checkout_conversion
       end
       include_examples 'convert all'
-      let(:latest_revision) { 'init' }
     end
 
     shared_context 'convert all' do

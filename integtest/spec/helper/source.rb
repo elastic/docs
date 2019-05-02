@@ -22,10 +22,18 @@ class Source
   end
 
   ##
-  # Called before conversion to initialize all repos with a commit containing
-  # all of the files written to them.
-  def init_repos
-    @repos.each(&:init)
+  # Create a repository with an index file.
+  def simple_repo(name, index_content)
+    repo(name).tap do |repo|
+      repo.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[chapter]]
+        == Chapter
+        #{index_content}
+      ASCIIDOC
+      repo.commit 'init'
+    end
   end
 
   ##
@@ -51,6 +59,14 @@ class Source
   # Create a new book and return it.
   def book(title, prefix)
     Book.new(title, prefix).tap { |b| @books.push b }
+  end
+
+  ##
+  # Create a book and initialize the provided repo as one of its sources.
+  def simple_book(repo)
+    book('Test', 'test').tap do |book|
+      book.source repo, 'index.asciidoc'
+    end
   end
 
   ##

@@ -18,13 +18,14 @@ sub new {
         my $path   = dir('.')->subdir( $_->{path} )->relative('.');
         my $repo   = ES::Repo->get_repo( $_->{repo} );
         my $prefix = defined $_->{prefix} ? $_->{prefix} : $repo->name;
-        push @sources,
-            {
+        my $map_branches = 
+        push @sources, {
             repo    => $repo,
             prefix  => $prefix,
             path    => $path,
-            exclude => { map { $_ => 1 } @{ $_->{exclude_branches} || [] } }
-            };
+            exclude => { map { $_ => 1 } @{ $_->{exclude_branches} || [] } },
+            map_branches => $_->{map_branches} || {}
+        };
     }
 
     bless { sources => \@sources, temp_dir => $args{temp_dir} }, $class;
@@ -44,8 +45,9 @@ sub has_changed {
     my $branch = shift;
     my $asciidoctor = shift;
     for my $source ( $self->_sources_for_branch($branch) ) {
+        my $repo_branch = $source->{map_branches}->{$branch} || $branch;
         return 1
-            if $source->{repo}->has_changed( $title, $branch, $source->{path}, $asciidoctor );
+            if $source->{repo}->has_changed( $title, $repo_branch, $source->{path}, $asciidoctor );
     }
     return;
 }
@@ -58,7 +60,8 @@ sub mark_done {
     my $branch = shift;
     my $asciidoctor = shift;
     for my $source ( $self->_sources_for_branch($branch) ) {
-        $source->{repo}->mark_done( $title, $branch, $source->{path}, $asciidoctor );
+        my $repo_branch = $source->{map_branches}->{$branch} || $branch;
+        $source->{repo}->mark_done( $title, $repo_branch, $source->{path}, $asciidoctor );
     }
     return;
 }
@@ -71,9 +74,10 @@ sub dump_recent_commits {
     my $branch = shift;
     my $text   = '';
     for my $source ( $self->_sources_for_branch($branch) ) {
+        my $repo_branch = $source->{map_branches}->{$branch} || $branch;
         $text
             .= $source->{repo}
-            ->dump_recent_commits( $title, $branch, $source->{path} );
+            ->dump_recent_commits( $title, $repo_branch, $source->{path} );
     }
     return $text;
 }
@@ -95,9 +99,10 @@ sub prepare {
         my $prefix = $source->{prefix};
         my $path   = $source->{path};
         my $source_checkout = $checkout->subdir($prefix);
+        my $repo_branch = $source->{map_branches}->{$branch} || $branch;
 
-        $repo->extract( $title, $branch, $path, $source_checkout );
-        $edit_urls{ $source_checkout->absolute } = $repo->edit_url($branch);
+        $repo->extract( $title, $repo_branch, $path, $source_checkout );
+        $edit_urls{ $source_checkout->absolute } = $repo->edit_url($repo_branch);
         $first_path = $source_checkout unless $first_path;
     }
     return ( $checkout, \%edit_urls, $first_path );
