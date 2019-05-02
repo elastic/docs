@@ -28,24 +28,6 @@ RSpec.configure do |config|
   config.include Sh
 end
 
-RSpec.shared_context 'source and dest' do
-  before(:context) do
-    @tmp = Dir.mktmpdir
-    @src = Source.new @tmp
-    @dest = Dest.new @tmp
-  end
-
-  after(:context) do
-    FileUtils.remove_entry @tmp
-  end
-
-  ##
-  # Build a path to a file in the destination.
-  def dest_file(file)
-    @dest.path(file)
-  end
-end
-
 ##
 # Return a list of the paths of all files in a directory relative to
 # that directory.

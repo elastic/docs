@@ -50,11 +50,22 @@ class Repo
     File.expand_path(source_relative_path, @root)
   end
 
+  ##
+  # Commit all changes to the repo.
+  def commit(message)
+    Dir.chdir @root do
+      sh 'git add .'
+      sh "git commit -m '#{message}'"
+    end
+  end
+
+  ##
+  # Initialize the repo and commit all files in it and add an Elastic remote
+  # so we get a nice edit url when we build the docs.
   def init
     Dir.chdir @root do
       sh 'git init'
-      sh 'git add .'
-      sh "git commit -m 'init'"
+      commit 'init'
       if @add_elastic_remote
         # Add an Elastic remote so we get a nice edit url
         sh 'git remote add elastic git@github.com:elastic/docs.git'
