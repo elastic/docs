@@ -16,7 +16,7 @@ RSpec.describe OpenInWidget do
   spec_dir = File.dirname(__FILE__)
 
   def stub_file_opts(result)
-    return {
+    {
       'copy_snippet' => proc { |uri, source| result << [uri, source] },
       'write_snippet' => proc { |uri, snippet| result << [uri, snippet] },
     }

@@ -22,7 +22,7 @@ RSpec.describe CopyImages do
   end
 
   def copy_attributes(copied)
-    return {
+    {
       'copy_image' => proc { |uri, source|
         copied << [uri, source]
       },
