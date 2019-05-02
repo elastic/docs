@@ -27,9 +27,6 @@ module Dsl
       it 'prints the path to the html index' do
         expect(out).to include(dest_file('index.html'))
       end
-      it 'creates the template hash' do
-        expect(dest_file('template.md5')).to file_exist
-      end
       it 'creates the css' do
         expect(dest_file('styles.css')).to file_exist
       end
