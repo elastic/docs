@@ -82,8 +82,9 @@ RSpec.describe EditMe do
       end
     end
 
-    shared_examples 'standard document part' \
-        do |type, title_start = '<title>', title_end = '</title>'|
+    shared_examples 'standard document part' do |type, title_start, title_end|
+      title_start ||= '<title>'
+      title_end ||= '</title>'
       context "for a document with #{type}s" do
         let(:input) do
           <<~ASCIIDOC
@@ -117,8 +118,9 @@ RSpec.describe EditMe do
       end
     end
 
-    shared_examples 'standard document part' \
-        do |type, title_start = '<title>', title_end = '</title>'|
+    shared_examples 'standard document part' do |type, title_start, title_end|
+      title_start ||= '<title>'
+      title_end ||= '</title>'
       context "for a document with #{type}s" do
         let(:input) do
           <<~ASCIIDOC
