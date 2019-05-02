@@ -369,6 +369,9 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/callouts/2.png'
   end
 
+  ##
+  # When you point `build_docs` to a worktree it doesn't properly share the
+  # worktree's parent into the docker container. This test simulates *that*.
   context 'when building a book in a worktree without its parent' do
     convert_before do |src, dest|
       repo = src.repo('src')
