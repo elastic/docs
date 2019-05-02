@@ -28,7 +28,6 @@ use lib 'lib';
 use ES::Util qw(
     run $Opts
     build_chunked build_single build_pdf
-    git_creds
     proc_man
     sha_for
     timestamp
