@@ -58,7 +58,7 @@ class Dest
 
   ##
   # The location of the bare repository. the first time this is called in a
-  # given contextw the bare repository is initialized
+  # given context the bare repository is initialized
   def bare_repo
     unless @initialized_bare_repo
       sh "git init --bare #{@bare_dest}"

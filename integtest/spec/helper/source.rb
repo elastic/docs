@@ -16,7 +16,7 @@ class Source
   end
 
   ##
-  # Create a source repo to which you can add files to be converted.
+  # Create a source repo and return it. You should add files to be converted.
   def repo(name)
     Repo.new(name, path(name)).tap { |r| @repos.push r }
   end
@@ -48,7 +48,7 @@ class Source
   end
 
   ##
-  # Create a new book.
+  # Create a new book and return it.
   def book(title, prefix)
     Book.new(title, prefix).tap { |b| @books.push b }
   end
