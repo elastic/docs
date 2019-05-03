@@ -22,7 +22,7 @@ function pageWithConsole(name, consoleText, extraTextMatchers) {
       copyAsCurl = jQuery('.copy_as_curl');
     });
 
-    it('to exist', () => {
+    test('exists', () => {
       expect(copyAsCurl).toHaveLength(1);
     });
     describe('when clicked', () => {
@@ -33,20 +33,20 @@ function pageWithConsole(name, consoleText, extraTextMatchers) {
         });
         copyAsCurl.click();
       });
-      it('copies a curl command to the clipboard', () => {
+      test('copies a curl command to the clipboard', () => {
         expect(document.execCommand).toHaveBeenCalledWith('copy');
       });
       describe('the copied text', () => {
-        it('starts with curl', () => {
+        test('starts with curl', () => {
           expect(document.copied).toMatch(/^curl/)
         });
-        it('includes a method', () => {
+        test('includes a method', () => {
           expect(document.copied).toMatch(/-X/)
         });
-        it('includes the Content-Type', () => {
+        test('includes the Content-Type', () => {
           expect(document.copied).toMatch(/-H 'Content-Type: application\/json'/);
         });
-        it('has a trailing newline', () => {
+        test('has a trailing newline', () => {
           expect(document.copied).toMatch(/\n$/);
         });
         extraTextMatchers();
@@ -58,13 +58,14 @@ function pageWithConsole(name, consoleText, extraTextMatchers) {
 describe('console widget', () => {
   describe('Copy as cURL button', () => {
     pageWithConsole('a snippet without a body', 'GET /_cat/health?v', () => {
-      it('includes the corrent method', () => {
+      test('includes the corrent method', () => {
         expect(document.copied).toMatch(/-X GET/)
       });
-      it('includes the url', () => {
+      test('includes the url', () => {
         expect(document.copied).toMatch(/"localhost:9200\/_cat\/health\?v"/);
       });
     });
+
     const withBody = dedent `
       PUT twitter/_doc/1
       {
@@ -74,13 +75,13 @@ describe('console widget', () => {
       }
     `
     pageWithConsole('a snippet with a body', withBody, () => {
-      it('includes the method', () => {
+      test('includes the method', () => {
         expect(document.copied).toMatch(/-X PUT/)
       });
-      it('includes the url', () => {
+      test('includes the url', () => {
         expect(document.copied).toMatch(/"localhost:9200\/twitter\/_doc\/1"/);
       });
-      it('include the body', () => {
+      test('includes the body', () => {
         expect(document.copied).toEqual(expect.stringContaining(dedent `
           -d'
           {
@@ -90,9 +91,6 @@ describe('console widget', () => {
           }
           '
         `));
-      });
-      it('has a trailing newline', () => {
-        expect(document.copied).toMatch(/\n$/);
       });
     });
   });
