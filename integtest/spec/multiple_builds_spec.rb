@@ -8,8 +8,9 @@
 RSpec.describe 'building all books more than once' do
   def self.build_one_book_out_of_one_repo_twice
     convert_before do |src, dest|
-      repo = src.simple_repo 'repo', 'Some text.'
-      src.simple_book repo
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
 
       # Convert the first time. This should build the docs.
       dest.convert_all src.conf
@@ -27,32 +28,20 @@ RSpec.describe 'building all books more than once' do
   end
 
   def self.build_one_book_out_of_two_repos_twice(
-      before_first_build: ->(book, repo1, repo2){},
-      before_second_build: ->(book, repo1, repo2){}
+      before_first_build: ->(src) {},
+      before_second_build: ->(src) {}
     )
     convert_before do |src, dest|
-      # Setup the source
-      repo1 = src.simple_repo 'repo1', <<~ASCIIDOC
-        Include between here
-        include::../repo2/included.asciidoc[]
-        and here.
-      ASCIIDOC
-      repo2 = src.repo 'repo2'
-      repo2.write 'included.asciidoc', <<~ASCIIDOC
-        included text
-      ASCIIDOC
-      repo2.commit 'init'
-      book = src.simple_book repo1
-      book.source repo2, 'included.asciidoc'
+      src.simple_include
 
       # Allow the caller to customize the source.
-      before_first_build.(book, repo1, repo2)
+      before_first_build.call(src)
 
       # Convert the first time. This should build the docs.
       dest.convert_all src.conf
 
       # Take some action between the builds.
-      before_second_build.(book, repo1, repo2)
+      before_second_build.call(src)
 
       # Convert the second time.
       dest.convert_all src.conf
@@ -142,33 +131,38 @@ RSpec.describe 'building all books more than once' do
       end
       context 'because there are unrelated changes to the index repo' do
         build_one_book_out_of_two_repos_twice(
-          before_second_build: ->(book, repo1, repo2){
+          before_second_build: lambda do |src|
+            repo1 = src.repo 'repo1'
             repo1.write 'garbage', 'junk'
             repo1.commit 'adding junk'
-          }
+          end
         )
         include_examples 'second build is noop'
       end
       context 'because there are unrelated changes to the included repo' do
         build_one_book_out_of_two_repos_twice(
-          before_second_build: ->(book, repo1, repo2){
+          before_second_build: lambda do |src|
+            repo2 = src.repo 'repo2'
             repo2.write 'garbage', 'junk'
             repo2.commit 'adding junk'
-          }
+          end
         )
         include_examples 'second build is noop'
       end
       context 'because there is an unrelated change in a mapped branch' do
         build_one_book_out_of_two_repos_twice(
-          before_first_build: ->(book, repo1, repo2){
+          before_first_build: lambda do |src|
+            book = src.book 'Test'
+            repo2 = src.repo 'repo2'
             book.source repo2, 'included.asciidoc',
                         map_branches: { 'master': 'override' }
             repo2.switch_to_new_branch 'override'
-          },
-          before_second_build: ->(book, repo1, repo2){
+          end,
+          before_second_build: lambda do |src|
+            repo2 = src.repo 'repo2'
             repo2.write 'garbage', 'junk'
             repo2.commit 'adding junk'
-          }
+          end
         )
         include_examples 'second build is noop'
       end
@@ -179,30 +173,34 @@ RSpec.describe 'building all books more than once' do
 
       context 'because the index repo changes' do
         build_one_book_out_of_two_repos_twice(
-          before_second_build: ->(book, repo1, repo2){
+          before_second_build: lambda do |src|
+            repo1 = src.repo 'repo1'
             text = repo1.read 'index.asciidoc'
             repo1.write 'index.asciidoc', text + 'new text'
             repo1.commit 'changed text'
-          }
+          end
         )
         include_examples 'second build is not a noop'
       end
       context 'because the included repo changes' do
         build_one_book_out_of_two_repos_twice(
-          before_second_build: ->(book, repo1, repo2){
+          before_second_build: lambda do |src|
+            repo2 = src.repo 'repo2'
             repo2.write 'included.asciidoc', 'new text'
             repo2.commit 'changed text'
-          }
+          end
         )
         include_examples 'second build is not a noop'
       end
       context "because a repo's branch mapping changes" do
         build_one_book_out_of_two_repos_twice(
-          before_second_build: ->(book, repo1, repo2){
+          before_second_build: lambda do |src|
+            book = src.book 'Test'
+            repo2 = src.repo 'repo2'
             book.source repo2, 'included.asciidoc',
                         map_branches: { 'master': 'override' }
             repo2.switch_to_new_branch 'override'
-          }
+          end
         )
         # We don't make a new commit so the latest revision is still 'init'
         let(:latest_revision) { 'init' }
@@ -212,15 +210,18 @@ RSpec.describe 'building all books more than once' do
       end
       context 'because there is a change in a mapped branch' do
         build_one_book_out_of_two_repos_twice(
-          before_first_build: ->(book, repo1, repo2){
+          before_first_build: lambda do |src|
+            book = src.book 'Test'
+            repo2 = src.repo 'repo2'
             book.source repo2, 'included.asciidoc',
                         map_branches: { 'master': 'override' }
             repo2.switch_to_new_branch 'override'
-          },
-          before_second_build: ->(book, repo1, repo2){
+          end,
+          before_second_build: lambda do |src|
+            repo2 = src.repo 'repo2'
             repo2.write 'included.asciidoc', 'new text'
-            repo2.commit 'changed text'  
-          }
+            repo2.commit 'changed text'
+          end
         )
         include_examples 'second build is not a noop'
       end

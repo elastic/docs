@@ -23,7 +23,7 @@ class Book
   # map_branches - optional hash that overrides which branch is used for this
   #                repo when the book is building a particular branch
   def source(repo, path, map_branches: nil)
-    @sources[repo.name] = {path: path, map_branches: map_branches}
+    @sources[repo.name] = { path: path, map_branches: map_branches }
   end
 
   ##

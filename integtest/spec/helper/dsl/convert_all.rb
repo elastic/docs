@@ -29,14 +29,14 @@ module Dsl
       end
       it 'prints that it is building all branches of every book' do
         # TODO: read branches from somewhere when we specify them
-        books.each do |book|
+        books.each_value do |book|
           expect(out).to include("#{book.title}: Building master...")
           expect(out).to include("#{book.title}: Finished master")
         end
       end
       it 'prints that it is copying master to current for every book' do
         # TODO: read branches from somewhere when we specify them
-        books.each do |book|
+        books.each_value do |book|
           expect(out).to include("#{book.title}: Copying master to current")
         end
       end
@@ -61,7 +61,7 @@ module Dsl
       end
       page_context 'the global index', 'html/index.html' do
         it 'contains a link to the current verion of each book' do
-          books.each do |book|
+          books.each_value do |book|
             expect(body).to include(book.link_to('current'))
           end
         end

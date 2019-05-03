@@ -23,8 +23,9 @@ RSpec.describe 'building all books' do
   end
   context 'for a single book built by a single repo' do
     convert_all_before_context do |src|
-      repo = src.simple_repo 'repo', 'Some text.'
-      src.simple_book repo
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
     end
     let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
@@ -32,19 +33,12 @@ RSpec.describe 'building all books' do
   context 'for a single book built by two repos' do
     def self.single_book_built_by_two_repos
       convert_all_before_context do |src|
-        repo1 = src.simple_repo 'repo1', <<~ASCIIDOC
-          Include between here
-          include::../repo2/included.asciidoc[]
-          and here.
-        ASCIIDOC
-        repo2 = src.repo 'repo2'
-        repo2.write 'included.asciidoc', <<~ASCIIDOC
-          included text
-        ASCIIDOC
-        repo2.commit 'init'
-        book = src.simple_book repo1
-        yield repo2, book
+        src.simple_include
+        yield src if block_given?
       end
+      include_context 'single book built by two repos'
+    end
+    shared_context 'single book built by two repos' do
       let(:latest_revision) { 'init' }
       include_examples 'book basics', 'Test', 'test'
       page_context 'html/test/current/chapter.html' do
@@ -54,9 +48,7 @@ RSpec.describe 'building all books' do
       end
     end
     context "when the repos don't have any special configuration" do
-      single_book_built_by_two_repos do |repo2, book|
-        book.source repo2, 'included.asciidoc'
-      end
+      single_book_built_by_two_repos
       page_context 'html/test/current/chapter.html' do
         it 'contains the included text' do
           expect(body).to include('included text')
@@ -64,12 +56,14 @@ RSpec.describe 'building all books' do
       end
     end
     context 'when one of the repos has a branch map' do
-      single_book_built_by_two_repos do |repo2, book|
+      single_book_built_by_two_repos do |src|
+        repo2 = src.repo 'repo2'
         repo2.switch_to_new_branch 'override'
         repo2.write 'included.asciidoc', <<~ASCIIDOC
           correct text to include
         ASCIIDOC
         repo2.commit 'on override branch'
+        book = src.book 'Test'
         book.source repo2, 'included.asciidoc',
                     map_branches: { 'master': 'override' }
       end
@@ -98,10 +92,10 @@ RSpec.describe 'building all books' do
         Some text.
       ASCIIDOC
       repo.commit 'init'
-      book1 = src.book 'First', 'first'
+      book1 = src.book 'First'
       book1.index = 'first/index.asciidoc'
       book1.source repo, 'first'
-      book2 = src.book 'Second', 'second'
+      book2 = src.book 'Second'
       book2.index = 'second/index.asciidoc'
       book2.source repo, 'second'
     end

@@ -374,12 +374,9 @@ RSpec.describe 'building a single book' do
   # worktree's parent into the docker container. This test simulates *that*.
   context 'when building a book in a worktree without its parent' do
     convert_before do |src, dest|
-      repo = src.repo('src')
-      repo.write 'index.asciidoc', <<~ASCIIDOC
-        #{HEADER}
+      repo = src.repo_with_index 'src', <<~ASCIIDOC
         I am in a worktree.
       ASCIIDOC
-      repo.commit 'init'
       worktree = src.path 'worktree'
       repo.create_worktree worktree, 'HEAD'
       FileUtils.rm_rf repo.root
