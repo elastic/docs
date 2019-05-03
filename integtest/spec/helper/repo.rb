@@ -11,6 +11,7 @@ class Repo
 
   attr_reader :name, :root
 
+  ##
   # Set to false to prevent adding an Elastic clone when the repo
   # is initialized
   attr_accessor :add_elastic_remote
