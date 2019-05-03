@@ -16,7 +16,7 @@ class Source
   end
 
   ##
-  # Create a source repo to which you can add files to be converted.
+  # Create a source repo and return it. You should add files to be converted.
   def repo(name)
     Repo.new(name, path(name)).tap { |r| @repos.push r }
   end
@@ -47,10 +47,14 @@ class Source
     File.expand_path(source_relative_path, @root)
   end
 
+  ##
+  # Create a new book and return it.
   def book(title, prefix)
     Book.new(title, prefix).tap { |b| @books.push b }
   end
 
+  ##
+  # Build the config file that can build all books declared in this source.
   def conf
     # We can't use to_yaml here because it emits yaml 1.2 but the docs build
     # only supports 1.0.....

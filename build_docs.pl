@@ -362,7 +362,7 @@ sub build_entries {
             temp_dir => $temp_dir,
             %$entry
         );
-        $toc->add_entry( $book->build( $Opts->{rebuild} , $Opts->{keep_hash} ) );
+        $toc->add_entry( $book->build( $Opts->{rebuild} ) );
     }
 
     return $toc;
