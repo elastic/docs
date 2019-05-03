@@ -53,27 +53,27 @@ require_relative '../migration_log'
 # Turns
 #   ["source","sh",subs="attributes"]
 #   --------------------------------------------
-#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
-#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
+#   wget https://artifacts.elastic.co//elasticsearch-{version}.zip
+#   wget https://artifacts.elastic.co//elasticsearch-{version}.zip.sha512
 #   shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
 #   unzip elasticsearch-{version}.zip
 #   cd elasticsearch-{version}/ <2>
 #   --------------------------------------------
-#   <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
-#       `elasticsearch-{version}.zip: OK`.
+#   <1> Compares the SHA of the downloaded `.zip` archive and the published
+#       checksum, which should output `elasticsearch-{version}.zip: OK`.
 #   <2> This directory is known as `$ES_HOME`.
 #
 # Into
 #   ["source","sh",subs="attributes,callouts"]
 #   --------------------------------------------
-#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
-#   wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
+#   wget https://artifacts.elastic.co/elasticsearch-{version}.zip
+#   wget https://artifacts.elastic.co/elasticsearch-{version}.zip.sha512
 #   shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
 #   unzip elasticsearch-{version}.zip
 #   cd elasticsearch-{version}/ <2>
 #   --------------------------------------------
-#   <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
-#       `elasticsearch-{version}.zip: OK`.
+#   <1> Compares the SHA of the downloaded `.zip` archive and the published
+#       checksum, which should output `elasticsearch-{version}.zip: OK`.
 #   <2> This directory is known as `$ES_HOME`.
 # Because asciidoc adds callouts to all "source" blocks. We'd *prefer* to do
 # this in the tree processor because it is less messy but we can't because
@@ -110,8 +110,10 @@ require_relative '../migration_log'
 # well.
 #
 class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
-  INCLUDE_TAGGED_DIRECTIVE_RX = /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/
-  SOURCE_WITH_SUBS_RX = /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
+  INCLUDE_TAGGED_DIRECTIVE_RX =
+    /^include-tagged::([^\[][^\[]*)\[(#{Asciidoctor::CC_ANY}+)?\]$/
+  SOURCE_WITH_SUBS_RX =
+    /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
   CODE_BLOCK_RX = /^-----*$/
   SNIPPET_RX = %r{^//\s*(AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)$}
   LEGACY_MACROS = 'added|beta|coming|deprecated|experimental'

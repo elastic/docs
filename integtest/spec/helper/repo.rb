@@ -87,4 +87,12 @@ class Repo
     end
     @initialized = true
   end
+
+  ##
+  # Create a worktree at `dest` for the branch `branch`.
+  def create_worktree(dest, branch)
+    Dir.chdir @root do
+      sh "git worktree add #{dest} #{branch}"
+    end
+  end
 end

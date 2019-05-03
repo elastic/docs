@@ -96,7 +96,7 @@ sub build_chunked {
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
-                $private ? () : ( '-a' => "edit_urls=" .
+                $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                     edit_urls_for_asciidoctor($edit_urls) ),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
@@ -230,7 +230,7 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                $private ? () : ( '-a' => "edit_urls=" .
+                $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),

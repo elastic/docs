@@ -55,7 +55,8 @@ RSpec.describe EditMe do
     include_examples 'standard document part', 'bibliography'
     include_examples 'standard document part', 'dedication'
     include_examples 'standard document part', 'colophon'
-    include_examples 'standard document part', 'float', %(renderas="sect2">), %(</bridgehead>)
+    include_examples 'standard document part', 'float',
+                     %(renderas="sect2">), %(</bridgehead>)
   end
 
   context 'when edit_urls is configured' do
@@ -81,7 +82,9 @@ RSpec.describe EditMe do
       end
     end
 
-    shared_examples 'standard document part' do |type, title_start = '<title>', title_end = '</title>'|
+    shared_examples 'standard document part' do |type, title_start, title_end|
+      title_start ||= '<title>'
+      title_end ||= '</title>'
       context "for a document with #{type}s" do
         let(:input) do
           <<~ASCIIDOC
@@ -115,7 +118,9 @@ RSpec.describe EditMe do
       end
     end
 
-    shared_examples 'standard document part' do |type, title_start = '<title>', title_end = '</title>'|
+    shared_examples 'standard document part' do |type, title_start, title_end|
+      title_start ||= '<title>'
+      title_end ||= '</title>'
       context "for a document with #{type}s" do
         let(:input) do
           <<~ASCIIDOC

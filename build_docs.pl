@@ -133,13 +133,15 @@ sub _guess_opts_from_file {
 
     my %edit_urls = ();
     my $doc_toplevel = _find_toplevel($index->parent);
-    if ( $doc_toplevel ) {
-        $Opts->{root_dir} = $doc_toplevel;
-        my $edit_url = _guess_edit_url($doc_toplevel);
-        @edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
-    } else {
+    unless ( $doc_toplevel ) {
         $Opts->{root_dir} = $index->parent;
+        # If we can't find the edit url for the document then we're never
+        # going to find it for anyone.
+        return;
     }
+    $Opts->{root_dir} = $doc_toplevel;
+    my $edit_url = _guess_edit_url($doc_toplevel);
+    @edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
     for my $resource ( @{ $Opts->{resource} } ) {
         my $resource_toplevel = _find_toplevel($resource);
         next unless $resource_toplevel;
