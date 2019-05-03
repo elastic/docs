@@ -72,7 +72,8 @@ RSpec.describe OpenInWidget do
       ])
     end
 
-    it "supports automatic snippet extraction for many snippets with #{lang} language" do
+    it "supports automatic snippet extraction for many snippets " \
+        "with #{lang} language" do
       input = <<~ASCIIDOC
         == Example
         [source,#{lang}]
@@ -124,6 +125,8 @@ RSpec.describe OpenInWidget do
     # TODO: finish converting this to standard rspec
     context "when the document contains an override snippet in #{lang}" do
       include_context 'convert intercepting copies'
+      let(:relative_path) { "snippets/snippet.#{lang}" }
+      let(:absolue_path) { "#{spec_dir}/#{relative_path}" }
       let(:input) do
         <<~ASCIIDOC
           == Example
@@ -135,18 +138,18 @@ RSpec.describe OpenInWidget do
       end
       it 'includes a link to the overridden path' do
         expect(converted).to include(
-          %(<ulink type="snippet" url="snippets/snippet.#{lang}"/>)
+          %(<ulink type="snippet" url="#{relative_path}"/>)
         )
       end
       it 'logs that it copies the snippet' do
         expect(logs).to include(
-          "INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.#{lang}"
+          "INFO: <stdin>: line 3: copying snippet #{absolue_path}"
         )
       end
       it 'logs a warning about how bad of an idea this is' do
-        expect(logs).to include(
-          "WARN: <stdin>: line 3: MIGRATION: reading snippets from a path makes the book harder to read"
-        )
+        expect(logs).to include(<<~LOG.strip)
+          WARN: <stdin>: line 3: MIGRATION: reading snippets from a path makes the book harder to read
+        LOG
       end
       it 'copies the file' do
         expect(copied).to eq([
@@ -165,9 +168,9 @@ RSpec.describe OpenInWidget do
           ASCIIDOC
         end
         it 'does not log a warning about how bad an idea this is' do
-          expect(logs).not_to include(
-            "MIGRATION: reading snippets from a path makes the book harder to read"
-          )
+          expect(logs).not_to include(<<~LOG.strip)
+            MIGRATION: reading snippets from a path makes the book harder to read
+          LOG
         end
       end
     end

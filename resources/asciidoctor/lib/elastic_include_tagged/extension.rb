@@ -8,7 +8,7 @@ require 'asciidoctor/extensions'
 #
 # Usage
 #
-#   include:elastic-include-tagged:{doc-tests}/RestClientDocumentation.java[rest-client-init]
+#   include:elastic-include-tagged:{doc-tests}/Foo.java[tag]
 #
 class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
   def handles?(target)
