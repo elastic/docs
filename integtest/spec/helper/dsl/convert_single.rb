@@ -11,26 +11,21 @@ module Dsl
     # file to convert. It does the conversion with both with `--asciidoctor`
     # and without `--asciidoctor` and asserts that the files are the same.
     def convert_single_before_context
-      include_context 'source and dest'
-      before(:context) do
-        from = yield @src.repo('src')
-        @src.init_repos
-        @asciidoctor_out = @dest.convert_single from, '.', asciidoctor: true
+      convert_before do |src, dest|
+        from = yield src.repo('src')
+        src.init_repos
+        dest.convert_single from, '.', asciidoctor: true
         # Convert a second time with the legacy `AsciiDoc` tool and stick the
         # result into the `asciidoc` directory. We will compare the results of
         # this conversion with the results of the `Asciidoctor` conversion.
-        @asciidoc_out = @dest.convert_single from, 'asciidoc',
-                                             asciidoctor: false
+        dest.convert_single from, 'asciidoc', asciidoctor: false
       end
       include_examples 'convert single'
     end
     shared_context 'convert single' do
-      let(:out) { @asciidoctor_out }
+      let(:out) { outputs[0] }
       it 'prints the path to the html index' do
         expect(out).to include(dest_file('index.html'))
-      end
-      it 'creates the template hash' do
-        expect(dest_file('template.md5')).to file_exist
       end
       it 'creates the css' do
         expect(dest_file('styles.css')).to file_exist
@@ -60,7 +55,7 @@ module Dsl
         it 'logs the same lines' do
           # The only difference should be that the output path
           # includes `asciidoc/`
-          expect(@asciidoc_out.gsub('asciidoc/', '')).to eq(@asciidoctor_out)
+          expect(outputs[1].gsub('asciidoc/', '')).to eq(outputs[0])
         end
         it 'makes the same non-snippet files' do
           expect(asciidoc_non_snippet_files).to contain_exactly(

@@ -18,7 +18,6 @@ our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    git_creds
     sha_for
     timestamp
     write_html_redirect
@@ -97,7 +96,7 @@ sub build_chunked {
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
-                $private ? () : ( '-a' => "edit_urls=" .
+                $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                     edit_urls_for_asciidoctor($edit_urls) ),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
@@ -106,6 +105,7 @@ sub build_chunked {
                 '-a' => 'resources=' . join(',', @$resources),
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
+                $latest ? () : ('-a' => "migration-warnings=false"),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -153,7 +153,7 @@ sub build_chunked {
         } or do { $output = $@; $died = 1; };
     }
 
-    _check_build_error( $output, $died, $lenient, $latest );
+    _check_build_error( $output, $died, $lenient );
 
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
         or die "Couldn't find chunk dir in <$dest>";
@@ -230,12 +230,13 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                $private ? () : ( '-a' => "edit_urls=" .
+                $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
+                $latest ? () : ('-a' => "migration-warnings=false"),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -283,7 +284,7 @@ sub build_single {
         } or do { $output = $@; $died = 1; };
     }
 
-    _check_build_error( $output, $died, $lenient, $latest );
+    _check_build_error( $output, $died, $lenient );
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
@@ -300,11 +301,10 @@ sub build_single {
 #===================================
 sub _check_build_error {
 #===================================
-    my ( $output, $died, $lenient, $latest ) = @_;
+    my ( $output, $died, $lenient ) = @_;
 
     my @lines = split "\n", $output;
     my @build_warnings = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} @lines;
-    @build_warnings = grep {!/MIGRATION:/} @build_warnings unless $latest;
     my $warned = @build_warnings;
     return unless $died || $warned;
 
@@ -631,27 +631,6 @@ sub timestamp {
     $mon++;
     sprintf "%04d-%02d-%02dT%02d:%02d:%02d+00:00", $year, $mon, $mday, $hour,
         $min, $sec;
-}
-
-#===================================
-sub git_creds {
-#===================================
-    my ( $action, $body ) = @_;
-
-    require IPC::Open3;
-
-    my ( $chld_out, $chld_in, $pid );
-    no warnings 'once';
-    open( NULL, ">", File::Spec->devnull );
-    $pid = IPC::Open3::open3( $chld_in, $chld_out, ">&NULL", 'git',
-        'credential', $action );
-
-    print $chld_in "$body\n\n";
-
-    waitpid( $pid, 0 );
-    my $out = join "", <$chld_out>;
-    return $out || '';
-
 }
 
 1

@@ -52,7 +52,7 @@ sub has_changed {
     return 1 if exists $self->{sub_dirs}->{$branch};
 
     local $ENV{GIT_DIR} = $self->git_dir;
-    my $old = $self->_last_commit_info(@_);
+    my $old_info = $self->_last_commit_info(@_);
 
     my $new;
     if ( $self->{keep_hash} ) {
@@ -60,26 +60,29 @@ sub has_changed {
         # hash that means that the branch wasn't used the last time we built
         # this book. That means we'll skip it entirely when building the book
         # anyway so we should consider the book not to have changed.
-        return 0 unless $old;
+        return 0 unless $old_info;
 
         $new = $self->_last_commit(@_);
     } else {
         # If we aren't keeping the hash from the last build and there *isn't*
         # a hash that means that this is a new repo so we should build it.
-        return 1 unless $old;
+        return 1 unless $old_info;
 
         $new = sha_for($branch) or die(
                 "Remote branch <origin/$branch> doesn't exist in repo "
                 . $self->name);
     }
-    $new .= '|asciidoctor' if $asciidoctor;
+    my $new_info = $new;
+    $new_info .= '|asciidoctor' if $asciidoctor;
 
-    return $old ne $new if $self->{keep_hash};
-    return if $old eq $new;
+    return $old_info ne $new_info if $self->{keep_hash};
+    return if $old_info eq $new_info;
 
     my $changed;
     eval {
-        $changed = !!run qw(git diff --shortstat), $old, $new, '--', $path;
+        $changed = !!run qw(git diff --shortstat),
+                         $self->_last_commit(@_), $new,
+                         '--', $path;
         1;
     }
         || do { $changed = 1 };

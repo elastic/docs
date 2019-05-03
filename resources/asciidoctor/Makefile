@@ -13,4 +13,4 @@ rspec:
 
 .PHONY: robucop
 rubocop:
-	rubocop --cache false
+	rubocop

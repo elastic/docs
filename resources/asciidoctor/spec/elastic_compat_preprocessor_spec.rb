@@ -245,31 +245,23 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  it "attribute only blocks don't pick up blocks with attributes and other stuff" do
-    actual = convert <<~ASCIIDOC
-      == Header
+  context 'when a block contains things other than attributes' do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        --
+        :attr: test
+        added::[some_version]
+        --
 
-      --
-      :attr: test
-      added[some_version]
-      --
-
-      [id="{attr}"]
-      == Header
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_header">
-      <title>Header</title>
-      <note revisionflag="added" revision="some_version">
-      <simpara></simpara>
-      </note>
-      </chapter>
-      <chapter id="test">
-      <title>Header</title>
-
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        {attr}
+      ASCIIDOC
+    end
+    it "doesn't remove the block" do
+      # The point here is that the attribute setting *doesn't* apply to the
+      # text because we haven't doctored the block.
+      expect(converted).to include('<simpara>{attr}</simpara>')
+    end
   end
 
   it "adds callouts to substitutions for source blocks if there aren't any" do
@@ -349,7 +341,9 @@ RSpec.describe ElasticCompatPreprocessor do
       <screen>foo</screen>
       </chapter>
     DOCBOOK
-    actual = convert input, {}, match(/WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/)
+    actual = convert input, {}, match(
+      /WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/
+    )
     expect(actual).to eq(expected.strip)
   end
 
@@ -395,14 +389,14 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  def stub_file_opts
-    return {
-      'copy_snippet' => proc { |uri, source| },
-      'write_snippet' => proc { |uri, source| },
-    }
-  end
-
   shared_context 'general snippet' do |lang, override|
+    include_context 'convert with logs'
+    let(:convert_attributes) do
+      {
+        'copy_snippet' => proc { |uri, source| },
+        'write_snippet' => proc { |uri, source| },
+      }
+    end
     let(:snippet) do
       snippet = <<~ASCIIDOC
         [source,js]
@@ -425,9 +419,6 @@ RSpec.describe ElasticCompatPreprocessor do
   end
   shared_examples 'linked snippet' do |override, lang, path|
     let(:has_link_to_path) { %r{<ulink type="snippet" url="#{path}"/>} }
-    let(:converted) do
-      convert input, stub_file_opts, eq(expected_warnings.strip)
-    end
     shared_examples 'converted with override' do
       it "has the #{lang} language" do
         expect(converted).to match(has_lang)
@@ -465,7 +456,7 @@ RSpec.describe ElasticCompatPreprocessor do
     let(:expected_warnings) do
       <<~WARNINGS
         INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
-        WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
+        WARN: <stdin>: line 3: MIGRATION: reading snippets from a path makes the book harder to read
       WARNINGS
     end
     include_examples(
@@ -478,9 +469,6 @@ RSpec.describe ElasticCompatPreprocessor do
   context 'for a snippet without an override' do
     include_context 'general snippet', 'js', nil
     let(:has_any_link) { /<ulink type="snippet"/ }
-    let(:converted) do
-      convert input, stub_file_opts
-    end
 
     it "has the js language" do
       expect(converted).to match(has_lang)
