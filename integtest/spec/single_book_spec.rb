@@ -379,7 +379,7 @@ RSpec.describe 'building a single book' do
         #{HEADER}
         I am in a worktree.
       ASCIIDOC
-      src.init_repos
+      repo.commit 'init'
       worktree = src.path 'worktree'
       repo.create_worktree worktree, 'HEAD'
       FileUtils.rm_rf repo.root

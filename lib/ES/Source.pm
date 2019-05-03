@@ -18,7 +18,6 @@ sub new {
         my $path   = dir('.')->subdir( $_->{path} )->relative('.');
         my $repo   = ES::Repo->get_repo( $_->{repo} );
         my $prefix = defined $_->{prefix} ? $_->{prefix} : $repo->name;
-        my $map_branches = 
         push @sources, {
             repo    => $repo,
             prefix  => $prefix,
