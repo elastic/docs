@@ -67,6 +67,8 @@ alias docbldec='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/saas/ind
 
 alias docbldece='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
+alias docbldk8s='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/cloud/docs/k8s/index.asciidoc --chunk 1'
+
 # Beats
 alias docbldbpr='$GIT_HOME/docs/build_docs.pl --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
 
