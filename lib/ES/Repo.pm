@@ -77,7 +77,7 @@ sub has_changed {
 
     return $old_info ne $new_info if $self->{keep_hash};
     return if $old_info eq $new_info;
-    # If the asciidoctor-ness of the previous build dosen't match this one then
+    # If the asciidoctor-ness of the previous build doesn't match this one then
     # we've changed. It'd be nice if build-info were a class but we'll be
     # dropping asciidoctor as soon as we've migrated all of the books and this
     # is sort of a local minima of effort.
