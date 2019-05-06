@@ -43,7 +43,7 @@ class Source
   ##
   # Create a new book and return it.
   def book(title, prefix: title.downcase)
-    @books.fetch(title) { @books[title] = Book.new title, prefix }
+    @books[title] || (@books[title] = Book.new title, prefix)
   end
 
   ##
@@ -56,7 +56,7 @@ class Source
   end
 
   ##
-  # Create a repository with an index file that inclues headings that make
+  # Create a repository with an index file that includes headings that make
   # docbook happy and commit that file. Returns the repo.
   def repo_with_index(name, index_content)
     repo_with_file name, 'index.asciidoc', <<~ASCIIDOC

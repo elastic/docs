@@ -62,14 +62,14 @@ class Repo
   # Commit all changes to the repo.
   def commit(message)
     Dir.chdir @root do
-      init_if_needed
+      init_repo!
       sh 'git add .'
       sh "git commit -m '#{message}'"
     end
   end
 
   ##
-  # Creates a new branch from the curren branch and checks it out.
+  # Creates a new branch from the current branch and checks it out.
   def switch_to_new_branch(new_branch)
     Dir.chdir @root do
       sh "git checkout -b #{new_branch}"
@@ -86,7 +86,7 @@ class Repo
 
   private
 
-  def init_if_needed
+  def init_repo!
     return if @initialized
 
     sh 'git init'
