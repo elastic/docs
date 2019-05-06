@@ -5,12 +5,8 @@ SHELL = /bin/bash -eux -o pipefail
 MAKEFLAGS += --silent
 
 .PHONY: check
-check: rspec rubocop
+check: jest
 
-.PHONY: rspec
-rspec:
-	rspec
-
-.PHONY: robucop
-rubocop:
-	rubocop
+.PHONY: jest
+jest:
+	/node_modules/jest/bin/jest.js

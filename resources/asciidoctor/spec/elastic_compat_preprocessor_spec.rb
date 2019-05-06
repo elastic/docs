@@ -30,16 +30,16 @@ RSpec.describe ElasticCompatPreprocessor do
 
   include_examples "doesn't break line numbers"
 
-  context 'change admonitions' do
-    shared_examples 'change admonition' do
+  context 'admonitions' do
+    shared_examples 'admonition' do
       include_context 'convert without logs'
 
       shared_examples 'invokes the block macro' do
         let(:expected) do
           <<~DOCBOOK
-            <#{tag} revisionflag="#{revisionflag}" revision="some_version">
+            <#{tag_start}>
             <simpara></simpara>
-            </#{tag}>
+            </#{tag_end}>
           DOCBOOK
         end
         it 'invokes the block macro' do
@@ -47,46 +47,45 @@ RSpec.describe ElasticCompatPreprocessor do
         end
       end
       context 'when the admonition is alone on a line' do
-        let(:input) { "#{name}[some_version]" }
+        let(:input) { invocation }
         include_examples 'invokes the block macro'
       end
       context 'when the admonition has spaces before it' do
-        let(:input) { "   #{name}[some_version]" }
+        let(:input) { "   #{invocation}" }
         include_examples 'invokes the block macro'
       end
       context 'when the admonition has spaces after it' do
-        let(:input) { "#{name}[some_version]   " }
+        let(:input) { "#{invocation}   " }
         include_examples 'invokes the block macro'
       end
       context 'when the admonition has a `]` in it' do
-        let(:input) { "#{name}[some_version, link:link.html[Title]]" }
+        let(:invocation_text) { 'link:link.html[Title]' }
+        let(:input) { invocation_with_text }
         include_examples 'invokes the block macro'
         let(:expected) do
           <<~DOCBOOK
-            <#{tag} revisionflag="#{revisionflag}" revision="some_version">
+            <#{tag_start}>
             <simpara><ulink url="link.html">Title</ulink></simpara>
-            </#{tag}>
+            </#{tag_end}>
           DOCBOOK
         end
       end
 
       shared_examples 'invokes the inline macro' do
         it 'invokes the inline macro' do
-          expect(converted).to include(
-            %(<phrase revisionflag="#{revisionflag}" revision="some_version"/>)
-          )
+          expect(converted).to include("<phrase #{phrase}/>")
         end
       end
       context "when the admonition is surrounded by other text" do
-        let(:input) { "words #{name}[some_version] words" }
+        let(:input) { "words #{invocation} words" }
         include_examples 'invokes the inline macro'
       end
       context "when the admonition has text before it" do
-        let(:input) { "words #{name}[some_version]" }
+        let(:input) { "words #{invocation}" }
         include_examples 'invokes the inline macro'
       end
       context "when the admonition has text after it" do
-        let(:input) { "#{name}[some_version] words" }
+        let(:input) { "#{invocation} words" }
         include_examples 'invokes the inline macro'
       end
 
@@ -95,7 +94,7 @@ RSpec.describe ElasticCompatPreprocessor do
           <<~ASCIIDOC
             words before skip
             ifeval::["true" == "false"]
-            #{name}[some_version]
+            #{invocation}
             endif::[]
             words after skip
           ASCIIDOC
@@ -108,6 +107,17 @@ RSpec.describe ElasticCompatPreprocessor do
           expect(converted).to include('words after skip')
         end
       end
+    end
+
+    shared_examples 'change admonition' do
+      include_examples 'admonition'
+      let(:invocation) { "#{name}[some_version]" }
+      let(:invocation_with_text) { "#{name}[some_version, #{invocation_text}]" }
+      let(:tag_start) do
+        %(#{tag} revisionflag="#{revisionflag}" revision="some_version")
+      end
+      let(:tag_end) { tag }
+      let(:phrase) { %(revisionflag="#{revisionflag}" revision="some_version") }
     end
     context 'for added' do
       include_context 'change admonition'
@@ -127,55 +137,22 @@ RSpec.describe ElasticCompatPreprocessor do
       let(:revisionflag) { 'deleted' }
       let(:tag) { 'warning' }
     end
-  end
 
-  %w[beta experimental].each do |name|
-    it "invokes the #{name} block macro when #{name}[] starts a line" do
-      actual = convert <<~ASCIIDOC
-        == Example
-        #{name}[]
-      ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-        <warning role="#{name}">
-        <simpara></simpara>
-        </warning>
-        </chapter>
-      DOCBOOK
-      expect(actual).to eq(expected.strip)
+    shared_examples 'care admonition' do
+      include_examples 'admonition'
+      let(:invocation) { "#{name}[]" }
+      let(:invocation_with_text) { "#{name}[#{invocation_text}]" }
+      let(:tag_start) { %(warning role="#{name}") }
+      let(:tag_end) { 'warning' }
+      let(:phrase) { %(role="#{name}") }
     end
-
-    it "invokes the #{name} inline macro when #{name}[version] is otherwise on the line" do
-      actual = convert <<~ASCIIDOC
-        == Example
-        words #{name}[]
-      ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-        <simpara>words <phrase role="#{name}"/>
-        </simpara>
-        </chapter>
-      DOCBOOK
-      expect(actual).to eq(expected.strip)
+    context 'for beta' do
+      include_context 'care admonition'
+      let(:name) { 'beta' }
     end
-
-    it "doesn't mind skipped #{name} block macros" do
-      actual = convert <<~ASCIIDOC
-        == Example
-
-        ifeval::["true" == "false"]
-        #{name}[]
-        #endif::[]
-      ASCIIDOC
-      expected = <<~DOCBOOK
-        <chapter id="_example">
-        <title>Example</title>
-
-        </chapter>
-      DOCBOOK
-      expect(actual).to eq(expected.strip)
+    context 'for experimental' do
+      include_context 'care admonition'
+      let(:name) { 'experimental' }
     end
   end
 
@@ -268,31 +245,23 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  it "attribute only blocks don't pick up blocks with attributes and other stuff" do
-    actual = convert <<~ASCIIDOC
-      == Header
+  context 'when a block contains things other than attributes' do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        --
+        :attr: test
+        added::[some_version]
+        --
 
-      --
-      :attr: test
-      added[some_version]
-      --
-
-      [id="{attr}"]
-      == Header
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_header">
-      <title>Header</title>
-      <note revisionflag="added" revision="some_version">
-      <simpara></simpara>
-      </note>
-      </chapter>
-      <chapter id="test">
-      <title>Header</title>
-
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        {attr}
+      ASCIIDOC
+    end
+    it "doesn't remove the block" do
+      # The point here is that the attribute setting *doesn't* apply to the
+      # text because we haven't doctored the block.
+      expect(converted).to include('<simpara>{attr}</simpara>')
+    end
   end
 
   it "adds callouts to substitutions for source blocks if there aren't any" do
@@ -372,7 +341,9 @@ RSpec.describe ElasticCompatPreprocessor do
       <screen>foo</screen>
       </chapter>
     DOCBOOK
-    actual = convert input, {}, match(/WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/)
+    actual = convert input, {}, match(
+      /WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/
+    )
     expect(actual).to eq(expected.strip)
   end
 
@@ -418,14 +389,14 @@ RSpec.describe ElasticCompatPreprocessor do
     expect(actual).to eq(expected.strip)
   end
 
-  def stub_file_opts
-    return {
-      'copy_snippet' => proc { |uri, source| },
-      'write_snippet' => proc { |uri, source| },
-    }
-  end
-
   shared_context 'general snippet' do |lang, override|
+    include_context 'convert with logs'
+    let(:convert_attributes) do
+      {
+        'copy_snippet' => proc { |uri, source| },
+        'write_snippet' => proc { |uri, source| },
+      }
+    end
     let(:snippet) do
       snippet = <<~ASCIIDOC
         [source,js]
@@ -448,9 +419,6 @@ RSpec.describe ElasticCompatPreprocessor do
   end
   shared_examples 'linked snippet' do |override, lang, path|
     let(:has_link_to_path) { %r{<ulink type="snippet" url="#{path}"/>} }
-    let(:converted) do
-      convert input, stub_file_opts, eq(expected_warnings.strip)
-    end
     shared_examples 'converted with override' do
       it "has the #{lang} language" do
         expect(converted).to match(has_lang)
@@ -488,7 +456,7 @@ RSpec.describe ElasticCompatPreprocessor do
     let(:expected_warnings) do
       <<~WARNINGS
         INFO: <stdin>: line 3: copying snippet #{spec_dir}/snippets/snippet.sense
-        WARN: <stdin>: line 3: reading snippets from a path makes the book harder to read
+        WARN: <stdin>: line 3: MIGRATION: reading snippets from a path makes the book harder to read
       WARNINGS
     end
     include_examples(
@@ -501,9 +469,6 @@ RSpec.describe ElasticCompatPreprocessor do
   context 'for a snippet without an override' do
     include_context 'general snippet', 'js', nil
     let(:has_any_link) { /<ulink type="snippet"/ }
-    let(:converted) do
-      convert input, stub_file_opts
-    end
 
     it "has the js language" do
       expect(converted).to match(has_lang)

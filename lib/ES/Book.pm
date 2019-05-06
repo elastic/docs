@@ -154,7 +154,7 @@ sub new {
 #===================================
 sub build {
 #===================================
-    my ( $self, $rebuild, $keep_hash ) = @_;
+    my ( $self, $rebuild ) = @_;
 
     my $toc = ES::Toc->new( $self->title );
     my $dir = $self->dir;
@@ -174,7 +174,7 @@ sub build {
     my $rebuilding_any_branch = 0;
     my $rebuilding_current_branch = 0;
     for my $branch ( @{ $self->branches } ) {
-        my $building = $self->_build_book( $branch, $pm, $rebuild, $keep_hash, $latest );
+        my $building = $self->_build_book( $branch, $pm, $rebuild, $latest );
         $rebuilding_any_branch ||= $building;
         $latest = 0;
 
@@ -234,7 +234,7 @@ sub build {
 #===================================
 sub _build_book {
 #===================================
-    my ( $self, $branch, $pm, $rebuild, $keep_hash, $latest ) = @_;
+    my ( $self, $branch, $pm, $rebuild, $latest ) = @_;
 
     my $branch_dir    = $self->dir->subdir($branch);
     my $source        = $self->source;
@@ -244,23 +244,8 @@ sub _build_book {
     my $subject       = $self->subject;
     my $lang          = $self->lang;
 
-    unless ( $rebuild ) {
-        if ( $keep_hash ) {
-            # If we're preserving the hash for previously built books then we
-            # can't build new books so we should skip them.
-            return 0 unless -e $branch_dir;
-            # And we don't want to build books if the source hasn't changed.
-            return 0 unless $source->has_changed( $self->title, $branch, $self->asciidoctor );
-        } else {
-            # Otherwise we can *only* skip books if their destination directory
-            # exists, the template version is up to date, and the source hasn't
-            # changed.
-            return 0 if
-                   -e $branch_dir
-                && !$template->md5_changed($branch_dir)
-                && !$source->has_changed( $self->title, $branch, $self->asciidoctor );
-        }
-    }
+    return 0 unless $rebuild ||
+        $source->has_changed( $self->title, $branch, $self->asciidoctor );
 
     my ( $checkout, $edit_urls, $first_path ) = $source->prepare($self->title, $branch);
 

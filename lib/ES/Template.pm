@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use v5.10;
 use Encode qw(encode_utf8);
-use Digest::MD5 qw(md5_hex);
 use Path::Class qw(file);
 use File::Copy::Recursive qw(fcopy);
 
@@ -62,8 +61,6 @@ sub apply {
     # Copy javascript
     fcopy( 'resources/web/docs.js', $dir )
         or die "Couldn't copy <docs.js> to <$dir>: $!";
-
-    $dir->file('template.md5')->spew( $self->{md5} );
 }
 
 my $Autosense_RE = qr{
@@ -105,15 +102,6 @@ sub _autosense_snippets {
         $counter++;
     }
     return $contents;
-}
-
-#===================================
-sub md5_changed {
-#===================================
-    my $self = shift;
-    my $dir  = shift;
-    my $file = $dir->file('template.md5');
-    return !eval { $file->slurp eq $self->{md5}; };
 }
 
 #===================================
@@ -196,7 +184,6 @@ sub _init {
 
     $self->{map}   = \%map;
     $self->{parts} = \@parts;
-    $self->{md5}   = md5_hex( join "", map { encode_utf8 $_} @parts );
     return $self;
 }
 
