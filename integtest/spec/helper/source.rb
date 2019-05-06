@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'pathname'
+
 require_relative 'book'
 require_relative 'repo'
 
@@ -86,14 +88,19 @@ class Source
 
   ##
   # Build the config file that can build all books declared in this source.
-  def conf
+  def conf(relative_path: false)
     # We can't use to_yaml here because it emits yaml 1.2 but the docs build
     # only supports 1.0.....
-    write 'conf.yaml', <<~YAML
+    path = write 'conf.yaml', <<~YAML
       #{common_conf}
       repos:#{repos_conf}
       contents:#{books_conf}
     YAML
+    return path unless relative_path
+
+    Pathname.new(path)
+            .relative_path_from(Pathname.new(Dir.getwd))
+            .to_s
   end
 
   private
