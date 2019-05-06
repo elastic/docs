@@ -32,6 +32,7 @@ module Dsl
 
     let(:books) { @src.books }
     let(:outputs) { @dest.convert_outputs }
+    let(:statuses) { @dest.convert_statuses }
 
     ##
     # Build a path to a file in the destination.
