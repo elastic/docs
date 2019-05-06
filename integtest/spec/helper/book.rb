@@ -8,10 +8,15 @@ class Book
   # is `index.asciidoc`.
   attr_writer :index
 
+  ##
+  # Should this book build with asciidoctor (true) or asciidoc (false).
+  attr_accessor :asciidoctor
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
     @index = 'index.asciidoc'
+    @asciidoctor = true
     @sources = {}
   end
 
@@ -39,7 +44,7 @@ class Book
       index:      #{@index}
       tags:       test tag
       subject:    Test
-      asciidoctor: true
+      asciidoctor: #{@asciidoctor}
       sources:
       #{sources_conf}
     YAML

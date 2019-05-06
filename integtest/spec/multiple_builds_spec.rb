@@ -6,34 +6,11 @@
 # TODO: rename this to be more consistent with it just being about detecting
 #       when the source changes
 RSpec.describe 'building all books more than once' do
-  def self.build_one_book_out_of_one_repo_twice
-    convert_before do |src, dest|
-      repo = src.repo_with_index 'repo', 'Some text.'
-      book = src.book 'Test'
-      book.source repo, 'index.asciidoc'
-
-      # Convert the first time. This should build the docs.
-      dest.convert_all src.conf
-
-      # Let the block customize this.
-      yield repo
-
-      # Convert the second time.
-      dest.convert_all src.conf
-
-      # Checkout the files so we can assert about them.
-      dest.checkout_conversion
-    end
-    include_context 'build one book twice'
-  end
-
-  def self.build_one_book_out_of_two_repos_twice(
-      before_first_build: ->(src) {},
+  def self.build_twice(
+      before_first_build:,
       before_second_build: ->(src) {}
     )
     convert_before do |src, dest|
-      src.simple_include
-
       # Allow the caller to customize the source.
       before_first_build.call(src)
 
@@ -50,6 +27,38 @@ RSpec.describe 'building all books more than once' do
       dest.checkout_conversion
     end
     include_context 'build one book twice'
+  end
+
+  def self.build_one_book_out_of_one_repo_twice(
+      before_first_build: ->(src) {},
+      before_second_build: ->(src) {}
+    )
+    build_twice(
+      before_first_build: lambda do |src|
+        repo = src.repo_with_index 'repo', 'Some text.'
+        book = src.book 'Test'
+        book.source repo, 'index.asciidoc'
+
+        # Allow the caller to customize the source
+        before_first_build.call(src)
+      end,
+      before_second_build: before_second_build
+    )
+  end
+
+  def self.build_one_book_out_of_two_repos_twice(
+      before_first_build: ->(src) {},
+      before_second_build: ->(src) {}
+    )
+    build_twice(
+      before_first_build: lambda do |src|
+        src.simple_include
+
+        # Allow the caller to customize the source
+        before_first_build.call(src)
+      end,
+      before_second_build: before_second_build
+    )
   end
 
   shared_context 'build one book twice' do
@@ -89,15 +98,18 @@ RSpec.describe 'building all books more than once' do
       let(:latest_revision) { 'init' }
 
       context 'because there are no changes to the source repo' do
-        build_one_book_out_of_one_repo_twice {}
+        build_one_book_out_of_one_repo_twice
         include_examples 'second build is noop'
       end
 
       context 'because there are unrelated changes source repo' do
-        build_one_book_out_of_one_repo_twice do |repo|
-          repo.write 'garbage', 'junk'
-          repo.commit 'adding junk'
-        end
+        build_one_book_out_of_one_repo_twice(
+          before_second_build: lambda do |src|
+            repo = src.repo 'repo'
+            repo.write 'garbage', 'junk'
+            repo.commit 'adding junk'
+          end
+        )
         include_examples 'second build is noop'
       end
     end
@@ -106,16 +118,49 @@ RSpec.describe 'building all books more than once' do
       let(:new_text) { 'New text.' }
 
       context 'because the source repo changes' do
-        build_one_book_out_of_one_repo_twice do |repo|
-          repo.write 'index.asciidoc', <<~ASCIIDOC
-            = Title
+        build_one_book_out_of_one_repo_twice(
+          before_second_build: lambda do |src|
+            repo = src.repo 'repo'
+            repo.write 'index.asciidoc', <<~ASCIIDOC
+              = Title
 
-            [[chapter]]
-            == Chapter
-            New text.
-          ASCIIDOC
-          repo.commit 'changed text'
-        end
+              [[chapter]]
+              == Chapter
+              New text.
+            ASCIIDOC
+            repo.commit 'changed text'
+          end
+        )
+        include_examples 'second build is not a noop'
+      end
+      context 'because the book changes from asciidoc to asciidoctor' do
+        build_one_book_out_of_one_repo_twice(
+          before_first_build: lambda do |src|
+            book = src.book 'Test'
+            book.asciidoctor = false
+          end,
+          before_second_build: lambda do |src|
+            book = src.book 'Test'
+            book.asciidoctor = true
+          end
+        )
+        # We didn't change the revision....
+        let(:latest_revision) { 'init' }
+        # And the text hasn't changed
+        let(:new_text) { 'Some text.' }
+        include_examples 'second build is not a noop'
+      end
+      context 'because the book changes from asciidoctor to asciidoc' do
+        build_one_book_out_of_one_repo_twice(
+          before_second_build: lambda do |src|
+            book = src.book 'Test'
+            book.asciidoctor = false
+          end
+        )
+        # We didn't change the revision....
+        let(:latest_revision) { 'init' }
+        # And the text hasn't changed
+        let(:new_text) { 'Some text.' }
         include_examples 'second build is not a noop'
       end
     end
