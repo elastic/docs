@@ -7,13 +7,18 @@ module Dsl
     ##
     # Include a context into the current context that converts asciidoc files
     # into html and adds some basic assertions about the conversion process.
-    # Pass a block that takes a `Repo` object and returns the "index" asciidoc
-    # file to convert. It does the conversion with both with `--asciidoctor`
-    # and without `--asciidoctor` and asserts that the files are the same.
+    # Pass a block that takes a `Repo` object and uses it to build and return
+    # an index file to convert. This method will then automatically commit any
+    # outstanding changes to the repo and convert the index from asciidoc to
+    # html. Twice, actually, once with `--asciidoctor` and once without
+    # `--asciidoctor`. Finally this method will include a shared context that
+    # asserts some basic things about the built books and that the
+    # `--asciidoctor` and non-`--asciidoctor` build produce the same results.
     def convert_single_before_context
       convert_before do |src, dest|
-        from = yield src.repo('src')
-        src.init_repos
+        repo = src.repo 'src'
+        from = yield repo
+        repo.commit 'commit outstanding'
         dest.convert_single from, '.', asciidoctor: true
         # Convert a second time with the legacy `AsciiDoc` tool and stick the
         # result into the `asciidoc` directory. We will compare the results of
