@@ -191,7 +191,7 @@
         init_headers(right_col);
       });
     } else {
-      init_toc(right_col);
+      init_toc();
     }
   });
 
