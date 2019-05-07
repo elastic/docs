@@ -103,4 +103,13 @@ RSpec.describe 'building all books' do
     include_examples 'book basics', 'First', 'first'
     include_examples 'book basics', 'Second', 'second'
   end
+  context 'for a relative config file' do
+    convert_all_before_context relative_conf: true do |src|
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+    end
+    let(:latest_revision) { 'init' }
+    include_examples 'book basics', 'Test', 'test'
+  end
 end
