@@ -160,7 +160,6 @@
 
     // Move rtp container to top right and make visible
     var right_col = jQuery('#right_col');
-    var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
 
     jQuery('.page_header > a[href="../current/index.html"]').click(function() {
       get_current_page_in_version('current')
@@ -188,7 +187,9 @@
         right_col.append(data);
         init_toc();
         open_current();
-      }).always(init_headers);
+      }).always(function() {
+        init_headers(right_col);
+      });
     } else {
       init_toc();
     }
@@ -635,8 +636,9 @@
         });
   }
 
-  function init_headers() {
+  function init_headers(right_col) {
     // Add on-this-page block
+    var this_page = jQuery('<div id="this_page"></div>').prependTo(right_col);
     this_page.append('<h2>' + Strings['On this page'] + '</h2>');
     var ul = jQuery('<ul></ul>').appendTo(this_page);
     var items = 0;

@@ -8,10 +8,10 @@ module Dsl
     # uses it to:
     # 1. Create source repositories and write them
     # 2. Configure the books that should be built
-    def convert_all_before_context
+    def convert_all_before_context(relative_conf: false)
       convert_before do |src, dest|
         yield src
-        dest.convert_all src.conf
+        dest.convert_all src.conf(relative_path: relative_conf)
         dest.checkout_conversion
       end
       include_examples 'convert all'
