@@ -8,19 +8,27 @@ class Book
   # is `index.asciidoc`.
   attr_writer :index
 
+  ##
+  # Should this book build with asciidoctor (true) or asciidoc (false).
+  attr_accessor :asciidoctor
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
     @index = 'index.asciidoc'
-    @sources = []
+    @asciidoctor = true
+    @sources = {}
   end
 
   ##
-  # Define a source repository for the book.
+  # Define a source repository for the book. Calling this again with the same
+  # repo will redefine the source for that repo.
   # repo - the repository containing the source files
   # path - path within the repository to checkout to build the book
-  def source(repo, path)
-    @sources.push repo: repo, path: path
+  # map_branches - optional hash that overrides which branch is used for this
+  #                repo when the book is building a particular branch
+  def source(repo, path, map_branches: nil)
+    @sources[repo.name] = { path: path, map_branches: map_branches }
   end
 
   ##
@@ -36,7 +44,7 @@ class Book
       index:      #{@index}
       tags:       test tag
       subject:    Test
-      asciidoctor: true
+      asciidoctor: #{@asciidoctor}
       sources:
       #{sources_conf}
     YAML
@@ -52,14 +60,25 @@ class Book
   private
 
   def sources_conf
-    sources_yaml = ''
-    @sources.each do |source|
-      sources_yaml += <<~YAML
+    yaml = ''
+    @sources.each_pair do |repo_name, config|
+      yaml += <<~YAML
         -
-          repo:   #{source[:repo].name}
-          path:   #{source[:path]}
+          repo:   #{repo_name}
+          path:   #{config[:path]}
       YAML
+      yaml += map_branches_conf config[:map_branches]
     end
-    sources_yaml.split("\n").map { |s| '  ' + s }.join "\n"
+    yaml.split("\n").map { |s| '  ' + s }.join "\n"
+  end
+
+  def map_branches_conf(map_branches)
+    return '' unless map_branches
+
+    yaml = "  map_branches:\n"
+    map_branches.each_pair do |key, value|
+      yaml += "    #{key}: #{value}\n"
+    end
+    yaml
   end
 end

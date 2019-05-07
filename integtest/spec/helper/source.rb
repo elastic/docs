@@ -11,21 +11,14 @@ class Source
   def initialize(tmp)
     @root = File.expand_path 'src', tmp
     Dir.mkdir @root
-    @repos = []
-    @books = []
+    @repos = Hash.new { |hash, name| hash[name] = Repo.new name, path(name) }
+    @books = {}
   end
 
   ##
   # Create a source repo and return it. You should add files to be converted.
   def repo(name)
-    Repo.new(name, path(name)).tap { |r| @repos.push r }
-  end
-
-  ##
-  # Called before conversion to initialize all repos with a commit containing
-  # all of the files written to them.
-  def init_repos
-    @repos.each(&:init)
+    @repos[name]
   end
 
   ##
@@ -49,8 +42,46 @@ class Source
 
   ##
   # Create a new book and return it.
-  def book(title, prefix)
-    Book.new(title, prefix).tap { |b| @books.push b }
+  def book(title, prefix: title.downcase)
+    @books[title] || (@books[title] = Book.new title, prefix)
+  end
+
+  ##
+  # Create a repository containing a file and commit that. Returns the repo.
+  def repo_with_file(name, file, content)
+    repo(name).tap do |repo|
+      repo.write file, content
+      repo.commit 'init'
+    end
+  end
+
+  ##
+  # Create a repository with an index file that includes headings that make
+  # docbook happy and commit that file. Returns the repo.
+  def repo_with_index(name, index_content)
+    repo_with_file name, 'index.asciidoc', <<~ASCIIDOC
+      = Title
+
+      [[chapter]]
+      == Chapter
+      #{index_content}
+    ASCIIDOC
+  end
+
+  ##
+  # Create two repos and a book. The first repo contains an index that includes
+  # a file in the second repo. The book is configured to use both repos as a
+  # source so that it'll build properly.
+  def simple_include
+    repo1 = repo_with_index 'repo1', <<~ASCIIDOC
+      Include between here
+      include::../repo2/included.asciidoc[]
+      and here.
+    ASCIIDOC
+    repo2 = repo_with_file 'repo2', 'included.asciidoc', 'included text'
+    book = book 'Test'
+    book.source repo1, 'index.asciidoc'
+    book.source repo2, 'included.asciidoc'
   end
 
   ##
@@ -68,7 +99,7 @@ class Source
   private
 
   def common_conf
-    repos_path = path '../repos' # TODO: .. is pretty lame here
+    repos_path = path '../repos'
     <<~YAML
       template:
         defaults:
@@ -87,7 +118,7 @@ class Source
 
   def repos_conf
     repos_yaml = ''
-    @repos.each do |repo|
+    @repos.each_value do |repo|
       repos_yaml += "\n  #{repo.name}: #{repo.root}"
     end
     repos_yaml
@@ -95,7 +126,7 @@ class Source
 
   def books_conf
     books_yaml = ''
-    @books.each do |book|
+    @books.each_value do |book|
       books_yaml += "\n  -\n"
       books_yaml += book.conf
     end
