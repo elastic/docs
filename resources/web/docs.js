@@ -197,8 +197,9 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      init_strings: init_strings,
       init_console_widgets: init_console_widgets,
+      init_headers: init_headers,
+      init_strings: init_strings,
     };
   }
 

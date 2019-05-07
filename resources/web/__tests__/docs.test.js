@@ -3,7 +3,7 @@ window.jQuery = require('jquery');
 const docs = require('../docs.js');
 docs.init_strings('en');
 
-function pageWithConsole(name, consoleText, extraTextMatchers) {
+function pageWithConsole(name, consoleText, extraTextAssertions) {
   describe(name, () => {
     let copyAsCurl;
     beforeEach(() => {
@@ -49,7 +49,7 @@ function pageWithConsole(name, consoleText, extraTextMatchers) {
         test('has a trailing newline', () => {
           expect(document.copied).toMatch(/\n$/);
         });
-        extraTextMatchers();
+        extraTextAssertions();
       });
     });
   });
@@ -92,6 +92,89 @@ describe('console widget', () => {
           '
         `));
       });
+    });
+  });
+});
+
+function describeInitHeaders(name, guideBody, onThisPageAssertions) {
+  describe(name, () => {
+    beforeEach(() => {
+      document.body.innerHTML = dedent `
+        <div id="guide">
+          ${guideBody}
+        </div>
+        <div id="right_col">
+          <div id="other_stuff" />
+        </div>
+      `;
+
+      const rightCol = jQuery('#right_col');
+      docs.init_headers(rightCol);
+    });
+
+    describe('the "On This Page" section', () => {
+      onThisPageAssertions();
+    });
+  });
+}
+
+describe('On This Page', () => {
+  const onlyTitle = dedent `
+    <h2>
+      <a id="getting-started"></a>
+      Getting Started
+    </h2>
+  `;
+  const oneSubsection = dedent `
+    ${onlyTitle}
+    <h3>
+      <a id="nrt"></a>
+      Near Realtime (NRT)
+    </h3>
+  `;
+  const twoSubsections = dedent `
+    ${oneSubsection}
+    <h3>
+      <a id="cluster"></a>
+      Cluster
+    </h3>
+  `;
+
+  describeInitHeaders('for page with just a title', onlyTitle, () => {
+    test("doesn't exist", () => {
+      expect(jQuery('#this_page')).toHaveLength(0);
+    });
+  });
+
+  function existsAssertions() {
+    test('exists', () => {
+      expect(jQuery('#this_page')).toHaveLength(1);
+    });
+    test('be before any other right column content', () => {
+      expect(jQuery('#right_col').children().get(0).id).toEqual('this_page');
+      expect(jQuery('#right_col').children().get(1).id).toEqual('other_stuff');
+      expect(jQuery('#right_col').children()).toHaveLength(2);
+    });
+  }
+  describeInitHeaders('for page with one subsection', oneSubsection, () => {
+    existsAssertions();
+    test('contains a link to the subsection header', () => {
+      const link = jQuery('#this_page a[href="#nrt"]')
+      expect(link).toHaveLength(1);
+      expect(link.text().trim()).toEqual('Near Realtime (NRT)');
+    });
+  });
+  describeInitHeaders('for page with two subsections', twoSubsections, () => {
+    existsAssertions();
+    test('contains a link to the first subsection header', () => {
+      const link = jQuery('#this_page a[href="#nrt"]')
+      expect(link).toHaveLength(1);
+      expect(link.text().trim()).toEqual('Near Realtime (NRT)');
+    });
+    test('contains a link to the second subsection header', () => {
+      const link = jQuery('#this_page a[href="#cluster"]')
+      expect(link).toHaveLength(1);
+      expect(link.text().trim()).toEqual('Cluster');
     });
   });
 });
