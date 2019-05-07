@@ -636,9 +636,9 @@
         });
   }
 
-  function init_headers() {
+  function init_headers(right_col) {
     // Add on-this-page block
-    var this_page = jQuery('<div id="this_page"></div>').appendTo(right_col);
+    var this_page = jQuery('<div id="this_page"></div>').prependTo(right_col);
     this_page.append('<h2>' + Strings['On this page'] + '</h2>');
     var ul = jQuery('<ul></ul>').appendTo(this_page);
     var items = 0;
