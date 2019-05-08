@@ -113,8 +113,6 @@ RSpec.describe 'building all books' do
     include_examples 'book basics', 'Test', 'test'
   end
   context 'when target_branch is specified' do
-    # Setting target_branch here will cause the branch to be forked from
-    # master
     convert_all_before_context target_branch: 'new_branch' do |src|
       repo = src.repo_with_index 'repo', 'Some text.'
       book = src.book 'Test'

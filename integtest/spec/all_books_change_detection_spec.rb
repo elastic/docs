@@ -31,7 +31,7 @@ RSpec.describe 'building all books' do
         dest.convert_all src.conf, target_branch: config.target_branch
 
         # Checkout the files so we can assert about them.
-        dest.checkout_conversion(branch: config.target_branch)
+        dest.checkout_conversion branch: config.target_branch
       end
       include_context 'build one book twice'
     end
