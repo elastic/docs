@@ -61,13 +61,15 @@ RSpec.describe ElasticCompatPreprocessor do
       context 'when the admonition has a `]` in it' do
         let(:invocation_text) { 'link:link.html[Title]' }
         let(:input) { invocation_with_text }
-        include_examples 'invokes the block macro'
         let(:expected) do
           <<~DOCBOOK
             <#{tag_start}>
             <simpara><ulink url="link.html">Title</ulink></simpara>
             </#{tag_end}>
           DOCBOOK
+        end
+        it 'invokes the block macro' do
+          expect(converted).to include(expected)
         end
       end
 
