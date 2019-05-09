@@ -86,7 +86,7 @@ RSpec.describe ElasticCompatTreeProcessor do
           ASCIIDOC
         end
         include_examples 'has the expected language'
-        it "the paragraph is intact" do
+        it 'the paragraph is intact' do
           expect(converted).to match(%r{<simpara>Words words words.</simpara>})
         end
       end
@@ -113,7 +113,7 @@ RSpec.describe ElasticCompatTreeProcessor do
           ASCIIDOC
         end
         include_examples 'has the expected language'
-        it "has a working callout list" do
+        it 'has a working callout list' do
           expect(converted).to match(/<callout arearefs="CO1-1">\n<para>foo/)
         end
       end

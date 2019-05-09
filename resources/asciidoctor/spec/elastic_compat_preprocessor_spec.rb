@@ -78,15 +78,15 @@ RSpec.describe ElasticCompatPreprocessor do
           expect(converted).to include("<phrase #{phrase}/>")
         end
       end
-      context "when the admonition is surrounded by other text" do
+      context 'when the admonition is surrounded by other text' do
         let(:input) { "words #{invocation} words" }
         include_examples 'invokes the inline macro'
       end
-      context "when the admonition has text before it" do
+      context 'when the admonition has text before it' do
         let(:input) { "words #{invocation}" }
         include_examples 'invokes the inline macro'
       end
-      context "when the admonition has text after it" do
+      context 'when the admonition has text after it' do
         let(:input) { "#{invocation} words" }
         include_examples 'invokes the inline macro'
       end
@@ -406,7 +406,7 @@ RSpec.describe ElasticCompatPreprocessor do
       it "has the #{lang} language" do
         expect(converted).to match(has_lang)
       end
-      it "have a link to the snippet" do
+      it 'have a link to the snippet' do
         expect(converted).to match(has_link_to_path)
       end
     end
@@ -453,10 +453,10 @@ RSpec.describe ElasticCompatPreprocessor do
     include_context 'general snippet', 'js', nil
     let(:has_any_link) { /<ulink type="snippet"/ }
 
-    it "has the js language" do
+    it 'has the js language' do
       expect(converted).to match(has_lang)
     end
-    it "not have a link to any snippet" do
+    it 'not have a link to any snippet' do
       expect(converted).not_to match(has_any_link)
     end
   end
