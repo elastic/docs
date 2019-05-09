@@ -49,8 +49,8 @@ RSpec.describe CopyImages do
   let(:resources_dir) { "#{spec_dir}/resources/copy_images" }
 
   # Full relative path to example images
-  let(:example1) { "resources/copy_images/example1.png" }
-  let(:example2) { "resources/copy_images/example2.png" }
+  let(:example1) { 'resources/copy_images/example1.png' }
+  let(:example2) { 'resources/copy_images/example2.png' }
 
   ##
   # Asserts that a particular `image_command` copies the appropriate image
@@ -148,8 +148,8 @@ RSpec.describe CopyImages do
       let(:resolved) { 'example1.png' }
       it 'logs an error' do
         expect(logs).to include(
-          "ERROR: <stdin>: line 2: Error loading [resources]: " \
-          "Unclosed quoted field on line 1."
+          'ERROR: <stdin>: line 2: Error loading [resources]: ' \
+          'Unclosed quoted field on line 1.'
         )
       end
     end

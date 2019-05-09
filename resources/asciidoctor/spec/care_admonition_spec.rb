@@ -50,7 +50,7 @@ RSpec.describe CareAdmonition do
           expect(converted).to include(expected)
         end
       end
-      context "when written without the ::" do
+      context 'when written without the ::' do
         let(:input) do
           <<~ASCIIDOC
             == Example
