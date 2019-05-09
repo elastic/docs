@@ -14,12 +14,19 @@ class Dest
   # or convert_all.
   attr_reader :convert_outputs
 
+  ##
+  # Status of the conversions. If any conversion fails it'll raise an error
+  # unless called with expect_failure. If it is called with expect_failure
+  # then it'll fail if there *isn't* a failure.
+  attr_reader :convert_statuses
+
   def initialize(tmp)
     @bare_dest = File.expand_path 'dest.git', tmp
     @dest = File.expand_path 'dest', tmp
     Dir.mkdir @dest
     @initialized_bare_repo = false
     @convert_outputs = []
+    @convert_statuses = []
   end
 
   ##
@@ -30,22 +37,26 @@ class Dest
 
   ##
   # Convert a single book.
-  def convert_single(from, to, asciidoctor:)
+  def convert_single(from, to,
+                     expect_failure: false,
+                     suppress_migration_warnings: false,
+                     asciidoctor:)
     cmd = %W[--doc #{from} --out #{path(to)}]
     cmd += ['--asciidoctor'] if asciidoctor
-    @convert_outputs << run_convert(cmd)
+    cmd += ['--suppress_migration_warnings'] if suppress_migration_warnings
+    run_convert(cmd, expect_failure)
   end
 
   ##
   # Convert a conf file worth of books and check it out.
-  def convert_all(conf)
+  def convert_all(conf, expect_failure: false)
     cmd = %W[
       --all
       --push
       --target_repo #{bare_repo}
       --conf #{conf}
     ]
-    @convert_outputs << run_convert(cmd)
+    run_convert(cmd, expect_failure)
   end
 
   ##
@@ -67,15 +78,18 @@ class Dest
     @bare_dest
   end
 
-  def run_convert(cmd)
+  def run_convert(cmd, expect_failure)
     cmd.unshift '/docs_build/build_docs.pl', '--in_standard_docker'
     # Use popen here instead of capture to keep stdin open to appease the
     # docker-image-always-removed paranoia in build_docs.pl
     _stdin, out, wait_thr = Open3.popen2e(*cmd)
     status = wait_thr.value
     out = out.read
-    raise_status cmd, out, status unless status.success?
+    ok = status.success?
+    ok = !ok if expect_failure
+    raise_status cmd, out, status unless ok
 
-    out
+    @convert_outputs << out
+    @convert_statuses << status.exitstatus
   end
 end

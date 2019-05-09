@@ -13,8 +13,6 @@ check: \
 	rspec \
 	style \
 	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
-	migration_warnings \
-	relative_conf_file \
 	new_repo new_book \
 	keep_hash keep_hash_new_repo keep_hash_new_book \
 	sub_dir keep_hash_and_sub_dir \
@@ -56,30 +54,11 @@ missing_include_fails_asciidoctor: missing_include.asciidoc
 		test $$? -eq 255
 	$(call GREP,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
 
-.PHONY: migration_warnings
-migration_warnings: migration_warnings.asciidoc
-	set +e; \
-		$(BD_DUMMY) --asciidoctor --doc migration_warnings.asciidoc > /tmp/out 2>&1; \
-		test $$? -eq 255
-	$(call GREP,"WARNING: migration_warnings.asciidoc: line 7: MIGRATION: code block end doesn't match start",/tmp/out)
-	$(BD_DUMMY) --asciidoctor --doc migration_warnings.asciidoc --suppress_migration_warnings
-
 .PHONY: simple_all
 simple_all:
 	# Test the simplest possible `--all` invocation
 	rm -rf $(TMP)
 	$(BUILD_MINIMAL_ALL)
-	$(call MINIMAL_ALL_EXPECTED_FILES,init)
-
-.PHONY: relative_conf_file
-relative_conf_file:
-	# Make sure that using a relative referece to the --conf file works.
-	rm -rf $(TMP)
-	$(SETUP_MINIMAL_ALL)
-	cd $(TMP) && \
-		/docs_build/build_docs.pl --in_standard_docker --all --push \
-			--target_repo $(TMP)/dest.git \
-			--conf conf.yaml
 	$(call MINIMAL_ALL_EXPECTED_FILES,init)
 
 .PHONY: new_repo

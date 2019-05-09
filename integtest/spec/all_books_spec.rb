@@ -23,47 +23,54 @@ RSpec.describe 'building all books' do
   end
   context 'for a single book built by a single repo' do
     convert_all_before_context do |src|
-      repo = src.repo 'repo'
-      repo.write 'index.asciidoc', <<~ASCIIDOC
-        = Title
-
-        == Chapter
-
-        Some text.
-      ASCIIDOC
-      book = src.book 'Test', 'test'
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
+    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
   end
   context 'for a single book built by two repos' do
-    convert_all_before_context do |src|
-      repo1 = src.repo 'repo1'
-      repo1.write 'index.asciidoc', <<~ASCIIDOC
-        = Title
-
-        [[chapter]]
-        == Chapter
-
-        Include between here
-        include::../repo2/included.asciidoc[]
-        and here.
-      ASCIIDOC
-      repo2 = src.repo 'repo2'
-      repo2.write 'included.asciidoc', <<~ASCIIDOC
-        included text
-      ASCIIDOC
-      book = src.book 'Test', 'test'
-      book.source repo1, 'index.asciidoc'
-      book.source repo2, 'included.asciidoc'
-    end
-    include_examples 'book basics', 'Test', 'test'
-    page_context 'html/test/current/chapter.html' do
-      it 'contains the text from the index' do
-        expect(body).to include('Include between here')
+    def self.single_book_built_by_two_repos
+      convert_all_before_context do |src|
+        src.simple_include
+        yield src if block_given?
       end
-      it 'contains the included text' do
-        expect(body).to include('included text')
+      include_context 'single book built by two repos'
+    end
+    shared_context 'single book built by two repos' do
+      let(:latest_revision) { 'init' }
+      include_examples 'book basics', 'Test', 'test'
+      page_context 'html/test/current/chapter.html' do
+        it 'contains the text from the index' do
+          expect(body).to include('Include between here')
+        end
+      end
+    end
+    context "when the repos don't have any special configuration" do
+      single_book_built_by_two_repos
+      page_context 'html/test/current/chapter.html' do
+        it 'contains the included text' do
+          expect(body).to include('included text')
+        end
+      end
+    end
+    context 'when one of the repos has a branch map' do
+      single_book_built_by_two_repos do |src|
+        repo2 = src.repo 'repo2'
+        repo2.switch_to_new_branch 'override'
+        repo2.write 'included.asciidoc', <<~ASCIIDOC
+          correct text to include
+        ASCIIDOC
+        repo2.commit 'on override branch'
+        book = src.book 'Test'
+        book.source repo2, 'included.asciidoc',
+                    map_branches: { 'master': 'override' }
+      end
+      page_context 'html/test/current/chapter.html' do
+        it 'contains the included text' do
+          expect(body).to include('correct text to include')
+        end
       end
     end
   end
@@ -84,14 +91,25 @@ RSpec.describe 'building all books' do
 
         Some text.
       ASCIIDOC
-      book1 = src.book 'First', 'first'
+      repo.commit 'init'
+      book1 = src.book 'First'
       book1.index = 'first/index.asciidoc'
       book1.source repo, 'first'
-      book2 = src.book 'Second', 'second'
+      book2 = src.book 'Second'
       book2.index = 'second/index.asciidoc'
       book2.source repo, 'second'
     end
+    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'First', 'first'
     include_examples 'book basics', 'Second', 'second'
+  end
+  context 'for a relative config file' do
+    convert_all_before_context relative_conf: true do |src|
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+    end
+    let(:latest_revision) { 'init' }
+    include_examples 'book basics', 'Test', 'test'
   end
 end

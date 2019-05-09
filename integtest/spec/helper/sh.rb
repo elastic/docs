@@ -19,6 +19,6 @@ module Sh
   # Raise an exception based on a return status.
   def raise_status(cmd, out, status)
     outmsg = out == '' ? '' : " with stdout/stderr:\n#{out}"
-    raise "#{status.stopsig} [#{cmd}] returned [#{status}]#{outmsg}"
+    raise "#{status.exitstatus} [#{cmd}] returned [#{status}]#{outmsg}"
   end
 end
