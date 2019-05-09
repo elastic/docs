@@ -11,18 +11,18 @@ class EditMe < TreeProcessorScaffold
   include Asciidoctor::Logging
 
   def process(document)
-    logger.error("sourcemap is required") unless document.sourcemap
+    logger.error('sourcemap is required') unless document.sourcemap
     edit_urls_string = document.attributes['edit_urls']
     return unless edit_urls_string
 
     edit_urls = []
     CSV.parse edit_urls_string do |toplevel, url|
       unless toplevel
-        logger.error message_with_context "invalid edit_urls, no toplevel"
+        logger.error message_with_context 'invalid edit_urls, no toplevel'
         next
       end
       unless url
-        logger.error message_with_context "invalid edit_urls, no url"
+        logger.error message_with_context 'invalid edit_urls, no url'
         next
       end
       url = url[0..-2] if url.end_with? '/'

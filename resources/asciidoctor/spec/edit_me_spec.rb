@@ -114,7 +114,7 @@ RSpec.describe EditMe do
     context 'for a document with a preface' do
       include_context 'preface'
       it "doesn't add a link to the preface" do
-        expect(converted).to include("<title>Preface</title>")
+        expect(converted).to include('<title>Preface</title>')
       end
     end
 
