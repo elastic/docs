@@ -46,7 +46,7 @@ module CopyImages
     def process_block_image(block)
       return unless block.context == :image
 
-      uri = block.image_uri(block.attr 'target')
+      uri = block.image_uri(block.attr('target'))
       process_image block, uri
     end
 
