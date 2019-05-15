@@ -112,4 +112,16 @@ RSpec.describe 'building all books' do
     let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
   end
+  context 'when target_branch is specified' do
+    convert_all_before_context target_branch: 'new_branch' do |src|
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+    end
+    let(:latest_revision) { 'init' }
+    include_examples 'book basics', 'Test', 'test'
+    it 'prints that it is forking the new branch from master' do
+      expect(out).to include('target_repo: Forking <new_branch> from master')
+    end
+  end
 end

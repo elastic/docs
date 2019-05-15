@@ -29,7 +29,6 @@ use ES::Util qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    sha_for
     timestamp
     write_html_redirect
     write_nginx_redirects
@@ -462,6 +461,7 @@ sub init_repos {
         url         => $Opts->{target_repo},
         reference   => $reference_dir,
         destination => dir( $target_repo_checkout ),
+        branch      => $Opts->{target_branch} || 'master',
     );
     delete $child_dirs{ $target_repo->git_dir->absolute };
     $tracker_path = "$target_repo_checkout/$tracker_path";
@@ -555,30 +555,23 @@ sub push_changes {
     $build_dir->file('revision.txt')
         ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
 
-    say 'Preparing commit';
-    run qw(git add -A);
-
-    if ( run qw(git status -s --) ) {
+    # Check if there are changes before committing and save that because if
+    # there are changes we'll commit them. Once we've committed them checking
+    # if there are changes will say "no" because there aren't changes
+    # *any more*. Thus we build $has_changes and $should_push here and not
+    # in the `if` statements below.
+    my $has_changes = $target_repo->outstanding_changes;
+    my $should_push = $has_changes || $target_repo->new_branch;
+    if ( $has_changes ) {
+        say 'Preparing commit';
         build_sitemap($build_dir);
-        run qw(git add -A);
         say "Commiting changes";
-        run qw(git commit -m), 'Updated docs';
+        $target_repo->commit;
     }
-
-    my $remote_sha = eval {
-        my $remote = run qw(git rev-parse --symbolic-full-name @{u});
-        chomp $remote;
-        return sha_for($remote);
-    } || '';
-
-    if ( sha_for('HEAD') ne $remote_sha ) {
-        say "Pushing changes to bare repo";
-        run qw(git push origin HEAD );
-        local $ENV{GIT_DIR} = $target_repo->git_dir if $target_repo;
+    if ( $should_push ) {
         say "Pushing changes";
-        run qw(git push origin HEAD );
-    }
-    else {
+        $target_repo->push_changes;
+    } else {
         say "No changes to push";
     }
 }
@@ -760,6 +753,7 @@ sub command_line_opts {
         'toc',
         # Options only compatible with --all
         'all',
+        'target_branch=s',
         'target_repo=s',
         'keep_hash',
         'linkcheckonly',
@@ -820,6 +814,7 @@ sub usage {
           --sub_dir         Use a directory as a branch of some repo
                             (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
           --target_repo     Repository to which to commit docs
+          --target_branch   Branch to which to commit docs
           --user            Specify which GitHub user to use, if not your own
 
     General Opts:
@@ -868,6 +863,7 @@ sub check_opts {
         die('--reference not compatible with --doc') if $Opts->{reference};
         die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
         die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
+        die('--target_branch not compatible with --doc') if $Opts->{target_branch};
         die('--target_repo not compatible with --doc') if $Opts->{target_repo};
         die('--user not compatible with --doc') if $Opts->{user};
     } else {

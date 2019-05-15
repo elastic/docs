@@ -49,20 +49,23 @@ class Dest
 
   ##
   # Convert a conf file worth of books and check it out.
-  def convert_all(conf, expect_failure: false)
+  def convert_all(conf, expect_failure: false, target_branch: nil)
     cmd = %W[
       --all
       --push
       --target_repo #{bare_repo}
       --conf #{conf}
     ]
+    cmd += ['--target_branch', target_branch] if target_branch
     run_convert(cmd, expect_failure)
   end
 
   ##
   # Checks out the results of the last call to convert_all
-  def checkout_conversion
-    sh "git clone #{bare_repo} #{@dest}"
+  def checkout_conversion(branch: nil)
+    branch_cmd = ''
+    branch_cmd = "--branch #{branch} " if branch
+    sh "git clone #{branch_cmd}#{bare_repo} #{@dest}"
   end
 
   private
