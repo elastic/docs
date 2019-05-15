@@ -140,13 +140,13 @@ sub _guess_opts_from_file {
     }
     $Opts->{root_dir} = $doc_toplevel;
     my $edit_url = _guess_edit_url($doc_toplevel);
-    @edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
+    $edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
     for my $resource ( @{ $Opts->{resource} } ) {
         my $resource_toplevel = _find_toplevel($resource);
         next unless $resource_toplevel;
 
         my $resource_edit_url = _guess_edit_url($resource_toplevel);
-        @edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
+        $edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
     }
     $Opts->{edit_urls} = { %edit_urls };
 }
