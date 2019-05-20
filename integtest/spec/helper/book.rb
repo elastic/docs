@@ -17,7 +17,7 @@ class Book
     @prefix = prefix
     @index = 'index.asciidoc'
     @asciidoctor = true
-    @sources = {}
+    @sources = []
   end
 
   ##
@@ -28,7 +28,7 @@ class Book
   # map_branches - optional hash that overrides which branch is used for this
   #                repo when the book is building a particular branch
   def source(repo, path, map_branches: nil)
-    @sources[repo.name] = { path: path, map_branches: map_branches }
+    @sources.push repo: repo.name, path: path, map_branches: map_branches
   end
 
   ##
@@ -61,10 +61,10 @@ class Book
 
   def sources_conf
     yaml = ''
-    @sources.each_pair do |repo_name, config|
+    @sources.each do |config|
       yaml += <<~YAML
         -
-          repo:   #{repo_name}
+          repo:   #{config[:repo]}
           path:   #{config[:path]}
       YAML
       yaml += map_branches_conf config[:map_branches]

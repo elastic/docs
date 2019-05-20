@@ -23,6 +23,7 @@ our @EXPORT_OK = qw(
     write_html_redirect
     write_nginx_redirects
     write_nginx_test_config
+    write_nginx_preview_config
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -562,6 +563,60 @@ http {
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
     set \$guide_root "http://localhost:8000/guide";
     $redirects_line
+  }
+}
+CONF
+    $dest->spew( iomode => '>:utf8', $nginx_conf );
+}
+
+#===================================
+# Build an nginx config file useful for serving a preview of all built docs.
+#
+# dest            - file to which to write the test config : Path::Class::file
+#===================================
+sub write_nginx_preview_config {
+#===================================
+    my ( $dest ) = @_;
+
+    # TODO pull redirects from branches
+    # NOCOMMIT drop the time
+    my $nginx_conf = <<"CONF";
+daemon off;
+error_log /dev/stdout info;
+pid /run/nginx/nginx.pid;
+
+events {
+  worker_connections 64;
+}
+
+http {
+  error_log /dev/stdout crit;
+  log_format short '\$http_watermark \$http_host \$request \$status';
+  access_log /dev/stdout short;
+
+  server {
+    listen 8000;
+    location /guide {
+      proxy_pass http://0.0.0.0:3000;
+      proxy_http_version 1.1;
+      proxy_set_header Host \$host;
+      proxy_cache_bypass \$http_upgrade;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      text/html  html;
+      application/javascript  js;
+      text/css   css;
+    }
+    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
+    rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
+    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
+    rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
+    rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
   }
 }
 CONF

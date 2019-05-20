@@ -30,6 +30,32 @@ RSpec.describe 'building all books' do
     let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
   end
+  context 'for a single book built by a single repo with two sources' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        Some text.
+
+        image::resources/cat.jpg[A cat]
+      ASCIIDOC
+      root = File.expand_path '../../', __dir__
+      repo.cp "#{root}/resources/cat.jpg", 'resources/cat.jpg'
+      repo.commit 'add cat image'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.source repo, 'resources'
+    end
+    let(:latest_revision) { 'add cat image' }
+    include_examples 'book basics', 'Test', 'test'
+    page_context "the current version's chapter page",
+                 'html/test/current/chapter.html' do
+      it 'has a link to the image' do
+        expect(body).to include(<<~HTML.strip)
+          <img src="resources/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
+    file_context 'html/test/current/resources/cat.jpg'
+  end
   context 'for a single book built by two repos' do
     def self.single_book_built_by_two_repos
       convert_all_before_context do |src|

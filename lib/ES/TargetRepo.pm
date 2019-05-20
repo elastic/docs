@@ -166,4 +166,8 @@ sub _branch_exists {
     return eval { run qw(git rev-parse --verify), $branch };
 }
 
+#===================================
+sub destination { shift->{destination} }
+#===================================
+
 1

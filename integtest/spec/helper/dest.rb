@@ -2,6 +2,7 @@
 
 require 'open3'
 
+require_relative 'preview'
 require_relative 'sh'
 
 ##
@@ -102,6 +103,18 @@ class Dest
     branch_cmd = ''
     branch_cmd = "--branch #{branch} " if branch
     sh "git clone #{branch_cmd}#{bare_repo} #{@dest}"
+  end
+
+  ##
+  # Start the preview service.
+  def start_preview
+    Preview.new(bare_repo)
+  end
+
+  def remove_target_brach(branch_name)
+    Dir.chdir bare_repo do
+      sh "git branch -D #{branch_name}"
+    end
   end
 
   ##
