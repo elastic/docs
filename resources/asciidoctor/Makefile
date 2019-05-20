@@ -11,6 +11,6 @@ check: rspec rubocop
 rspec:
 	rspec
 
-.PHONY: robucop
+.PHONY: rubocop
 rubocop:
 	rubocop
