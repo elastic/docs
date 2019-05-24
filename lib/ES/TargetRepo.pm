@@ -75,7 +75,6 @@ sub checkout_minimal {
         printf(" - %20s: Forking <%s> from master\n",
             'target_repo', $self->{branch});
         run qw(git checkout -b), $self->{branch};
-        $self->{new_branch} = 1;
         1;
     } or die "Error checking out repo <target_repo>: $@";
     chdir $original_pwd;
@@ -138,13 +137,6 @@ sub push_changes {
     local $ENV{GIT_DIR} = $self->{git_dir};
     run qw(git push origin master) if $self->{initialized_empty_master};
     run qw(git push origin), $self->{branch};
-}
-
-#===================================
-# Is this a new branch?
-#===================================
-sub new_branch {
-    return shift->{new_branch};
 }
 
 #===================================
