@@ -336,6 +336,8 @@ sub check_kibana_links {
         $link_checker->check_source( $source, $extractor,
             "Kibana [$branch]: $links_file" );
 
+        # Mark the file that we need for the link check done so we can use
+        # --keep_hash with it during some other build.
         $repo->mark_done( $link_check_name, $branch, $links_file, 0 );
     }
 }
