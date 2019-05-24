@@ -57,7 +57,6 @@ sub set_sha_for_branch {
 #===================================
     my ( $self, $repo, $branch, $sha ) = @_;
     $self->shas->{$repo}{$branch} = $sha;
-    say("ASDFASF $branch $sha");
     $self->write;
 }
 
