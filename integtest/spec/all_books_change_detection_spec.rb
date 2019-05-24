@@ -6,9 +6,11 @@
 RSpec.describe 'building all books' do
   class Config
     attr_accessor :target_branch
+    attr_accessor :checkout_branch
 
     def initialize
       @target_branch = nil
+      @checkout_branch = nil
     end
   end
   describe 'change detection' do
@@ -31,7 +33,8 @@ RSpec.describe 'building all books' do
         dest.convert_all src.conf, target_branch: config.target_branch
 
         # Checkout the files so we can assert about them.
-        dest.checkout_conversion branch: config.target_branch
+        checkout = config.checkout_branch || config.target_branch
+        dest.checkout_conversion branch: checkout
       end
       include_context 'build one book twice'
     end
@@ -129,26 +132,13 @@ RSpec.describe 'building all books' do
           include_examples 'second build is noop'
         end
         context 'even when there is a new target branch' do
-          # Adding a new target branch will cause us to fork it from the
-          # master branch which so we won't have to rebuild the book *but*
-          # we push anyway so the new target branch is available.
           build_one_book_out_of_one_repo_twice(
             before_second_build: lambda do |_src, config|
               config.target_branch = 'new_target'
+              config.checkout_branch = 'master'
             end
           )
-          context 'the second build' do
-            let(:out) { outputs[1] }
-            it "doesn't print that it is building any books" do
-              expect(out).not_to include(': Building ')
-            end
-            it "doesn't print that it is commiting changes" do
-              expect(out).not_to include('Commiting changes')
-            end
-            it 'prints that it is pushing changes' do
-              expect(out).to include('Pushing changes')
-            end
-          end
+          include_examples 'second build is noop'
         end
       end
       context "when the second build isn't a noop" do

@@ -555,20 +555,11 @@ sub push_changes {
     $build_dir->file('revision.txt')
         ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
 
-    # Check if there are changes before committing and save that because if
-    # there are changes we'll commit them. Once we've committed them checking
-    # if there are changes will say "no" because there aren't changes
-    # *any more*. Thus we build $has_changes and $should_push here and not
-    # in the `if` statements below.
-    my $has_changes = $target_repo->outstanding_changes;
-    my $should_push = $has_changes || $target_repo->new_branch;
-    if ( $has_changes ) {
+    if ( $target_repo->outstanding_changes ) {
         say 'Preparing commit';
         build_sitemap($build_dir);
         say "Commiting changes";
         $target_repo->commit;
-    }
-    if ( $should_push ) {
         say "Pushing changes";
         $target_repo->push_changes;
     } else {
