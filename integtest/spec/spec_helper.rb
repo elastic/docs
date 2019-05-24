@@ -37,6 +37,10 @@ def files_in(dir)
   end
 end
 
+def indent(str, indentation)
+  str.split("\n").map { |s| indentation + s }.join "\n"
+end
+
 ##
 # Match paths that refer to an existing file.
 # Prefer this instead of `expect(File).to exist('path')` because the failure

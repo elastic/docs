@@ -311,21 +311,32 @@ sub check_kibana_links {
     my @branches = sort map { $_->basename }
         grep { $_->is_dir } $build_dir->subdir('en/kibana')->children;
 
+    my $link_check_name = 'link-check-kibana';
+
     for (@branches) {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
+        my $links_file;
         my $source = eval {
-            $repo->show_file( $branch, $src_path . ".js" )
+            $links_file = $src_path . ".js";
+            $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
-            $repo->show_file( $branch, $src_path . ".ts" )
+            $links_file = $src_path . ".ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
-            $repo->show_file( $branch, $legacy_path . ".js" )
-        } ||
-            $repo->show_file( $branch, $legacy_path . ".ts" );
+            $links_file = $legacy_path . ".js";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
+            $links_file = $legacy_path . ".ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        };
+        die "failed to find kibana links file;\n$@" unless $source;
 
         $link_checker->check_source( $source, $extractor,
-            "Kibana [$branch]: $src_path" );
+            "Kibana [$branch]: $links_file" );
+
+        $repo->mark_done( $link_check_name, $branch, $links_file, 0 );
     }
 }
 
