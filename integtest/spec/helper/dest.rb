@@ -47,17 +47,53 @@ class Dest
     run_convert(cmd, expect_failure)
   end
 
+  def prepare_convert_all(conf)
+    ConvertAll.new conf, bare_repo, self
+  end
+
   ##
   # Convert a conf file worth of books and check it out.
   def convert_all(conf, expect_failure: false, target_branch: nil)
-    cmd = %W[
-      --all
-      --push
-      --target_repo #{bare_repo}
-      --conf #{conf}
-    ]
-    cmd += ['--target_branch', target_branch] if target_branch
-    run_convert(cmd, expect_failure)
+    # TODO: remove this in favor of prepare_convert_all
+    convert = ConvertAll.new conf, bare_repo, self
+    convert.target_branch target_branch if target_branch
+    convert.convert(expect_failure: expect_failure)
+  end
+
+  class ConvertAll
+    def initialize(conf, target_repo, dest)
+      @cmd = %W[
+        --all
+        --push
+        --target_repo #{target_repo}
+        --conf #{conf}
+      ]
+      @dest = dest
+    end
+
+    def convert(expect_failure: false)
+      @dest.run_convert(@cmd, expect_failure)
+    end
+
+    def target_branch(target_branch)
+      @cmd += ['--target_branch', target_branch]
+      self
+    end
+
+    def skip_link_check
+      @cmd += ['--skiplinkcheck']
+      self
+    end
+
+    def keep_hash
+      @cmd += ['--keep_hash']
+      self
+    end
+
+    def sub_dir(repo, branch)
+      @cmd += ['--sub_dir', "#{repo.name}:#{branch}:#{repo.root}"]
+      self
+    end
   end
 
   ##
@@ -67,8 +103,6 @@ class Dest
     branch_cmd = "--branch #{branch} " if branch
     sh "git clone #{branch_cmd}#{bare_repo} #{@dest}"
   end
-
-  private
 
   ##
   # The location of the bare repository. the first time this is called in a

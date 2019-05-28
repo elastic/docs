@@ -36,7 +36,7 @@ class Book
   def conf
     # We can't use to_yaml here because it emits yaml 1.2 but the docs build
     # only supports 1.0.....
-    <<~YAML.split("\n").map { |s| '    ' + s }.join "\n"
+    indent(<<~YAML, '    ')
       title:      #{@title}
       prefix:     #{@prefix}
       current:    master
@@ -69,7 +69,7 @@ class Book
       YAML
       yaml += map_branches_conf config[:map_branches]
     end
-    yaml.split("\n").map { |s| '  ' + s }.join "\n"
+    indent(yaml, '  ')
   end
 
   def map_branches_conf(map_branches)

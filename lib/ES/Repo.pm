@@ -140,13 +140,10 @@ sub extract {
         return;
     }
 
-    if ( $self->{keep_hash} ) {
-        $branch = $self->_last_commit(@_);
-        unless ( $branch ) {
-            printf(" - %40.40s: %s is new. Skipping\n", $title, $self->{name});
-            return;
-        }
-        die "--keep_hash can't build on top of --sub_dir" if $branch eq 'local';
+    $branch = $self->_resolve_branch( @_ );
+    unless ( $branch ) {
+        printf(" - %40.40s: %s is new. Skipping\n", $title, $self->{name});
+        return;
     }
 
     local $ENV{GIT_DIR} = $self->git_dir;
@@ -260,6 +257,24 @@ sub all_repo_branches {
 }
 
 #===================================
+sub show_file {
+#===================================
+    my $self = shift;
+    my ( $reason, $branch, $file ) = @_;
+
+    if ( exists $self->{sub_dirs}->{$branch} ) {
+        my $realpath = $self->{sub_dirs}->{$branch}->file($file);
+        return $realpath->slurp( iomode => "<:encoding(UTF-8)" );
+    }
+
+    my $resolved_branch = $self->_resolve_branch( @_ );
+    die "Can't resolve $branch" unless $resolved_branch;
+
+    local $ENV{GIT_DIR} = $self->git_dir;
+    return decode_utf8 run( qw (git show ), $resolved_branch . ':' . $file );
+}
+
+#===================================
 # Information about the last commit, *not* including flags like `asciidoctor.`
 #===================================
 sub _last_commit {
@@ -279,6 +294,23 @@ sub _last_commit_info {
     my $tracker_branch = $self->_tracker_branch(@_);
     my $sha = $self->tracker->sha_for_branch($self->name, $tracker_branch);
     return $sha;
+}
+
+#===================================
+# Converts a branch specification into the branch to actually use in the git
+# repo. Returns falsy if we've been instructed to keep the hash used by the
+# last build but we have yet to use the branch.
+#===================================
+sub _resolve_branch {
+#===================================
+    my $self = shift;
+    my ( $title, $branch, $path ) = @_;
+
+    return $branch unless $self->{keep_hash};
+
+    $branch = $self->_last_commit(@_);
+    die "--keep_hash can't build on top of --sub_dir" if $branch eq 'local';
+    return $branch;
 }
 
 #===================================

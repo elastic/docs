@@ -113,17 +113,6 @@ sub _reference_args {
 }
 
 #===================================
-sub show_file {
-#===================================
-    my $self = shift;
-    my ( $branch, $file ) = @_;
-
-    local $ENV{GIT_DIR} = $self->git_dir;
-
-    return decode_utf8 run( qw (git show ), $branch . ':' . $file );
-}
-
-#===================================
 sub name          { shift->{name} }
 sub git_dir       { shift->{git_dir} }
 sub url           { shift->{url} }
