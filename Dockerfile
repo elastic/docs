@@ -64,7 +64,7 @@ RUN install_packages \
 
 # We mount these directories with tmpfs so we can write to them so they
 # have to be empty. So we delete them.
-RUN rm -rf /var/log/nginx && rm -rf /run
+RUN rm -rf /var/log/nginx && rm -rf /run/nginx
 
 # Wheel inventory:
 # * Used to test the docs build
