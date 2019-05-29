@@ -741,10 +741,10 @@ sub init_env {
         $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
         $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
         $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
-    } else {
-        eval { run( 'xsltproc', '--version' ) }
-            or die "Please install <xsltproc>";
     }
+
+    eval { run( 'xsltproc', '--version' ) }
+        or die "Please install <xsltproc>";
 }
 
 #===================================
