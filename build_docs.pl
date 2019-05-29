@@ -844,36 +844,6 @@ sub command_line_opts {
 }
 
 #===================================
-sub check_opts {
-#===================================
-    if ( !$Opts->{doc} ) {
-        die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
-        die('--chunk only compatible with --doc') if $Opts->{chunk};
-        # Lang will be 'en' even if it isn't specified so we don't check it.
-        die('--lenient only compatible with --doc') if $Opts->{lenient};
-        die('--out only compatible with --doc') if $Opts->{out};
-        die('--pdf only compatible with --doc') if $Opts->{pdf};
-        die('--resource only compatible with --doc') if $Opts->{resource};
-        die('--single only compatible with --doc') if $Opts->{single};
-        die('--toc only compatible with --doc') if $Opts->{toc};
-    }
-    if ( !$Opts->{all} ) {
-        die('--keep_hash only compatible with --all') if $Opts->{keep_hash};
-        die('--linkcheckonly only compatible with --all') if $Opts->{linkcheckonly};
-        die('--push only compatible with --all') if $Opts->{push};
-        die('--rebuild only compatible with --all') if $Opts->{rebuild};
-        die('--reference only compatible with --all') if $Opts->{reference};
-        die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
-        die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
-        die('--user only compatible with --all') if $Opts->{user};
-    }
-    if ( !$Opts->{all} && !$Opts->{preview} ) {
-        die('--target_branch only compatible with --all or --preview') if $Opts->{target_branch};
-        die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
-    }
-}
-
-#===================================
 sub usage {
 #===================================
     my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
@@ -950,5 +920,35 @@ USAGE
         $name --self-test -C resources/asciidoctor rubocop
     
 USAGE
+    }
+}
+
+#===================================
+sub check_opts {
+#===================================
+    if ( !$Opts->{doc} ) {
+        die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
+        die('--chunk only compatible with --doc') if $Opts->{chunk};
+        # Lang will be 'en' even if it isn't specified so we don't check it.
+        die('--lenient only compatible with --doc') if $Opts->{lenient};
+        die('--out only compatible with --doc') if $Opts->{out};
+        die('--pdf only compatible with --doc') if $Opts->{pdf};
+        die('--resource only compatible with --doc') if $Opts->{resource};
+        die('--single only compatible with --doc') if $Opts->{single};
+        die('--toc only compatible with --doc') if $Opts->{toc};
+    }
+    if ( !$Opts->{all} ) {
+        die('--keep_hash only compatible with --all') if $Opts->{keep_hash};
+        die('--linkcheckonly only compatible with --all') if $Opts->{linkcheckonly};
+        die('--push only compatible with --all') if $Opts->{push};
+        die('--rebuild only compatible with --all') if $Opts->{rebuild};
+        die('--reference only compatible with --all') if $Opts->{reference};
+        die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
+        die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
+        die('--user only compatible with --all') if $Opts->{user};
+    }
+    if ( !$Opts->{all} && !$Opts->{preview} ) {
+        die('--target_branch only compatible with --all or --preview') if $Opts->{target_branch};
+        die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
     }
 }
