@@ -28,6 +28,7 @@ class EditMe < TreeProcessorScaffold
       url = url[0..-2] if url.end_with? '/'
       edit_urls << { toplevel: toplevel, url: url }
     end
+    edit_urls.reverse!
     document.attributes['edit_urls'] = edit_urls
     super
   end
@@ -43,12 +44,15 @@ class EditMe < TreeProcessorScaffold
 
       edit_urls = @document.attributes['edit_urls']
       edit_url = edit_urls.find { |e| path.start_with? e[:toplevel] }
+
       unless edit_url
         logger.warn message_with_context "couldn't find edit url for #{path}",
           source_location: source_location
         return super
       end
       url = edit_url[:url]
+      return super if url == '<disable>'
+
       url += path[edit_url[:toplevel].length..-1]
       "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"
     end

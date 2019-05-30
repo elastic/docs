@@ -75,6 +75,7 @@ RSpec.describe EditMe do
       %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
     end
     include_context 'convert without logs'
+
     context 'for a document with a preface' do
       include_context 'preface'
       it 'adds a link to the preface' do
@@ -108,6 +109,49 @@ RSpec.describe EditMe do
       end
     end
     include_examples 'all standard document parts'
+
+    context 'when edit_urls has two matches' do
+      let(:convert_attributes) do
+        edit_urls = <<~CSV
+          <stdin>,www.example.com/stdin
+          #{spec_dir},www.example.com/spec_dir
+          #{spec_dir}/resources/edit_me/section2.adoc,www.example.com/section2
+        CSV
+        { 'edit_urls' => edit_urls }
+      end
+      let(:input) do
+        <<~ASCIIDOC
+          include::resources/edit_me/section1.adoc[]
+
+          include::resources/edit_me/section2.adoc[]
+        ASCIIDOC
+      end
+      it 'uses the last match' do
+        url = 'www.example.com/section2'
+        link = %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
+        expect(converted).to include("<title>Section 2#{link}</title>")
+      end
+    end
+    context 'when edit_urls explictly disables a path' do
+      let(:convert_attributes) do
+        edit_urls = <<~CSV
+          <stdin>,www.example.com/stdin
+          #{spec_dir},www.example.com/spec_dir
+          #{spec_dir}/resources/edit_me/section2.adoc,<disable>
+        CSV
+        { 'edit_urls' => edit_urls }
+      end
+      let(:input) do
+        <<~ASCIIDOC
+          include::resources/edit_me/section1.adoc[]
+
+          include::resources/edit_me/section2.adoc[]
+        ASCIIDOC
+      end
+      it "doesn't have an edit me link" do
+        expect(converted).to include('<title>Section 2</title>')
+      end
+    end
   end
   context 'when edit_urls is not configured' do
     include_context 'convert without logs'

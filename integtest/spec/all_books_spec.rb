@@ -124,4 +124,36 @@ RSpec.describe 'building all books' do
       expect(out).to include('target_repo: Forking <new_branch> from master')
     end
   end
+  context 'when one source is private' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        Words
+
+        include::../private_repo/foo.asciidoc[]
+      ASCIIDOC
+      private_repo = src.repo 'private_repo'
+      private_repo.write 'foo.asciidoc', <<~ASCIIDOC
+        [[foo]]
+        == Foo
+
+        Words
+      ASCIIDOC
+      private_repo.commit 'build foo'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.source private_repo, 'foo.asciidoc', is_private: true
+    end
+    let(:latest_revision) { 'init' }
+    page_context 'html/test/current/chapter.html' do
+      it 'does contain an edit link because it is from a public source' do
+        expect(body).to include(%(title="Edit this page on GitHub"))
+      end
+    end
+
+    page_context 'html/test/current/foo.html' do
+      it "doesn't contain an edit link because it is from a private source" do
+        expect(body).not_to include(%(title="Edit this page on GitHub"))
+      end
+    end
+  end
 end
