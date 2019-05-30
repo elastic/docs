@@ -579,7 +579,13 @@ sub write_nginx_preview_config {
     my ( $dest ) = @_;
 
     # TODO pull redirects from branches
-    # NOCOMMIT drop the time
+
+    # We log the X-Opaque-Id which is a header that Elasticsearch uses to mark
+    # requests with an id that is opaque to Elasticsearch. Presumably this is
+    # a standard. Either way we follow along. We us it in our tests so we can
+    # figure out which request came from which test. That is the only reason
+    # we *need* it right now. Presumably we'll find some other use for it later
+    # though. Think of it as a distributed trace id.
     my $nginx_conf = <<"CONF";
 daemon off;
 error_log /dev/stdout info;
@@ -591,7 +597,7 @@ events {
 
 http {
   error_log /dev/stdout crit;
-  log_format short '\$http_watermark \$http_host \$request \$status';
+  log_format short '\$http_x_opaque_id \$http_host \$request \$status';
   access_log /dev/stdout short;
 
   server {

@@ -56,7 +56,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     #    branch.
     raise "branches can't contain [.]" if branch.include? '.'
 
-    req['Watermark'] = watermark
+    req['X-Opaque-Id'] = watermark
     req['Host'] = branch
     Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
   end
