@@ -582,7 +582,7 @@ sub write_nginx_preview_config {
 
     # We log the X-Opaque-Id which is a header that Elasticsearch uses to mark
     # requests with an id that is opaque to Elasticsearch. Presumably this is
-    # a standard. Either way we follow along. We us it in our tests so we can
+    # a standard. Either way we follow along. We use it in our tests so we can
     # figure out which request came from which test. That is the only reason
     # we *need* it right now. Presumably we'll find some other use for it later
     # though. Think of it as a distributed trace id.

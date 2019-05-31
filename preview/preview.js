@@ -15,7 +15,7 @@ const catOpts = {
 
 const requestHandler = (request, response) => {
   parsedUrl = url.parse(request.url);
-  if (false == parsedUrl.pathname.startsWith('/guide')) {
+  if (!parsedUrl.pathname.startsWith('/guide')) {
     response.statusCode = 404;
     response.end();
     return;
