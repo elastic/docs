@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'net/http'
+
 RSpec.describe 'building all books' do
   shared_examples 'book basics' do |title, prefix|
     context "for the #{title} book" do
