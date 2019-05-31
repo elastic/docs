@@ -17,7 +17,7 @@ class Book
     @prefix = prefix
     @index = 'index.asciidoc'
     @asciidoctor = true
-    @sources = {}
+    @sources = []
   end
 
   ##
@@ -27,12 +27,15 @@ class Book
   # path - path within the repository to checkout to build the book
   # map_branches - optional hash that overrides which branch is used for this
   #                repo when the book is building a particular branch
-  def source(repo, path, map_branches: nil, is_private: nil)
-    @sources[repo.name] = {
+  # is_private - Configure the source to be private so it doesn't get edit
+  #              urls. Defaults to false.
+  def source(repo, path, map_branches: nil, is_private: false)
+    @sources.push(
+      repo: repo.name,
       path: path,
       map_branches: map_branches,
-      is_private: is_private,
-    }
+      is_private: is_private
+    )
   end
 
   ##
@@ -65,15 +68,15 @@ class Book
 
   def sources_conf
     yaml = ''
-    @sources.each_pair do |repo_name, config|
-      yaml += "\n-\n#{source_conf repo_name, config}"
+    @sources.each do |config|
+      yaml += "\n-\n#{source_conf config}"
     end
     indent yaml, '  '
   end
 
-  def source_conf(repo_name, config)
+  def source_conf(config)
     yaml = <<~YAML
-      repo:    #{repo_name}
+      repo:    #{config[:repo]}
       path:    #{config[:path]}
     YAML
     yaml += 'private: true' if config[:is_private]

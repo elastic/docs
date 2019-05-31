@@ -45,7 +45,6 @@ sub new {
 sub update_from_remote {
 #===================================
     my $self = shift;
-
     my $git_dir = $self->git_dir;
     local $ENV{GIT_DIR} = $git_dir;
 
@@ -59,6 +58,15 @@ sub update_from_remote {
         1;
     }
     or die "Error updating repo <$name>: $@";
+}
+
+#===================================
+sub fetch {
+#===================================
+    my $self = shift;
+    local $ENV{GIT_DIR} = $self->git_dir;
+
+    return run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
 }
 
 #===================================
@@ -97,7 +105,7 @@ sub _try_to_fetch {
         return;
     }
     printf(" - %20s: Fetching\n", $self->name);
-    run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
+    $self->fetch();
     return 1;
 }
 

@@ -33,6 +33,7 @@ use ES::Util qw(
     write_html_redirect
     write_nginx_redirects
     write_nginx_test_config
+    write_nginx_preview_config
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -71,14 +72,16 @@ $Opts->{template} = ES::Template->new(
     abs_urls => $Opts->{doc},
 );
 
-$Opts->{doc}       ? build_local( $Opts->{doc} )
-    : $Opts->{all} ? build_all()
-    :                usage();
+$Opts->{doc}           ? build_local()
+    : $Opts->{all}     ? build_all()
+    : $Opts->{preview} ? preview()
+    :                    usage();
 
 #===================================
 sub build_local {
 #===================================
-    my $doc = shift;
+    my $doc = $Opts->{doc};
+
 
     my $index = file($doc)->absolute($Old_Pwd);
     die "File <$doc> doesn't exist" unless -f $index;
@@ -207,23 +210,28 @@ sub build_local_pdf {
         say "See: $pdf";
     }
 }
+
 #===================================
 sub build_all {
 #===================================
     die "--target_repo is required with --all" unless ( $Opts->{target_repo} );
 
-    my ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout) = init_repos();
+    my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
+
+    say "Updating repositories";
+    my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+    init_repos( $repos_dir, $temp_dir, $reference_dir, $target_repo );
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
-    $build_dir = dir("$target_repo_checkout/$build_dir");
+    $build_dir = $target_repo->destination->subdir( $build_dir );
     $build_dir->mkpath;
 
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
 
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
-    my $redirects = dir( $target_repo_checkout )->file( 'redirects.conf' );
+    my $redirects = $target_repo->destination->file( 'redirects.conf' );
 
     if ( $Opts->{linkcheckonly} ){
         say "Skipping documentation builds."
@@ -251,7 +259,7 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
-    push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
+    push_changes( $build_dir, $target_repo ) if $Opts->{push};
     serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
 
     $temp_dir->rmtree;
@@ -430,34 +438,21 @@ ENTRY
 
     say $fh "</urlset>";
     close $fh or die "Couldn't close $sitemap: $!"
-
 }
 
 #===================================
-sub init_repos {
+sub init_dirs {
 #===================================
-    say "Updating repositories";
-
     my $repos_dir = $Conf->{paths}{repos}
         or die "Missing <paths.repos> in config";
 
     $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
-    my %child_dirs = map { $_ => 1 } $repos_dir->children;
-
     my $temp_dir = $running_in_standard_docker ? dir('/tmp/docsbuild') : $repos_dir->subdir('.temp');
+    $temp_dir = $temp_dir->absolute;
     $temp_dir->rmtree;
     $temp_dir->mkpath;
-    delete $child_dirs{ $temp_dir->absolute };
-
-    my $conf = $Conf->{repos}
-        or die "Missing <repos> in config";
-
-    my @repo_names = sort keys %$conf;
-
-    my $tracker_path = $Conf->{paths}{branch_tracker}
-        or die "Missing <paths.branch_tracker> in config";
 
     my $reference_dir = dir($Opts->{reference});
     if ( $reference_dir ) {
@@ -465,32 +460,47 @@ sub init_repos {
         die "Missing reference directory $reference_dir" unless -e $reference_dir;
     }
 
-    # Check out the target repo before the other repos so that
-    # we can use the tracker file that it contains.
-    my $target_repo_checkout = "$temp_dir/target_repo";
+    return ( $repos_dir, $temp_dir, $reference_dir );
+}
+
+#===================================
+sub init_target_repo {
+#===================================
+    my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
+
     my $target_repo = ES::TargetRepo->new(
         dir         => $repos_dir,
         user        => $Opts->{user},
         url         => $Opts->{target_repo},
         reference   => $reference_dir,
-        destination => dir( $target_repo_checkout ),
+        destination => dir( "$temp_dir/target_repo" ),
         branch      => $Opts->{target_branch} || 'master',
     );
+    $target_repo->update_from_remote;
+    return $target_repo;
+}
+
+#===================================
+sub init_repos {
+#===================================
+    my ( $repos_dir, $temp_dir, $reference_dir, $target_repo ) = @_;
+
+    printf(" - %20s: Checking out minimal\n", 'target_repo');
+    $target_repo->checkout_minimal();
+
+    my %child_dirs = map { $_ => 1 } $repos_dir->children;
+    delete $child_dirs{ $temp_dir->absolute };
+
+    my $conf = $Conf->{repos}
+        or die "Missing <repos> in config";
+
+    my @repo_names = sort keys %$conf;
+
     delete $child_dirs{ $target_repo->git_dir->absolute };
-    $tracker_path = "$target_repo_checkout/$tracker_path";
-    eval {
-        $target_repo->update_from_remote();
-        printf(" - %20s: Checking out minimal\n", 'target_repo');
-        $target_repo->checkout_minimal();
-        1;
-    } or do {
-        # If creds are invalid, explicitly reject them to try to clear the cache
-        my $error = $@;
-        if ( $error =~ /Invalid username or password/ ) {
-            revoke_github_creds();
-        }
-        die $error;
-    };
+
+    my $tracker_path = $Conf->{paths}{branch_tracker}
+        or die "Missing <paths.branch_tracker> in config";
+    $tracker_path = $target_repo->destination . "/$tracker_path";
 
     # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
@@ -553,16 +563,64 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    return ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout);
+    return $target_repo;
+}
+
+
+#===================================
+sub preview {
+#===================================
+    die "--target_repo is required with --preview" unless $Opts->{target_repo};
+    die "--preview is only supported by build_docs and not by build_docs.pl"
+        unless $running_in_standard_docker;
+
+    my $nginx_config = file('/tmp/nginx.conf');
+    write_nginx_preview_config( $nginx_config );
+
+    if ( my $node_pid = fork ) {
+        my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
+
+        say "Cloning built docs";
+        my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+        say "Built docs are ready";
+
+        if ( my $nginx_pid = fork ) {
+            $SIG{TERM} = sub {
+                # We should be a good citizen and shut down the subprocesses.
+                # This isn't so important in k8s or docker because we shoot
+                # the entire container when we're done, but it is nice when
+                # testing.
+                say 'Terminating preview services...nginx';
+                kill 'TERM', $nginx_pid;
+                wait;
+                say 'Terminating preview services...node';
+                kill 'TERM', $node_pid;
+                wait;
+                say 'Terminated preview services';
+                exit 0;
+            };
+            while (1) {
+                sleep 1;
+                my $fetch_result = $target_repo->fetch;
+                say "$fetch_result" if ( $fetch_result );
+            }
+            exit;
+        } else {
+            close STDIN;
+            open( STDIN, "</dev/null" );
+            exec( qw(node /docs_build/preview/preview.js) );
+        }
+    } else {
+        close STDIN;
+        open( STDIN, "</dev/null" );
+        exec( qw(nginx -c), $nginx_config );
+    }
 }
 
 #===================================
 sub push_changes {
 #===================================
-    my ($build_dir, $target_repo, $target_repo_checkout) = @_;
-
-    local $ENV{GIT_WORK_TREE} = $target_repo_checkout;
-    local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
+    my ($build_dir, $target_repo ) = @_;
 
     say 'Building revision.txt';
     $build_dir->file('revision.txt')
@@ -608,6 +666,13 @@ sub init_env {
             die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
             print "Found ssh auth\n";
         }
+
+        if ( $Opts->{preview} ) {
+            # `--preview` is run in k8s it doesn't *want* a tty
+            # so it should avoid doing housekeeping below.
+            return;
+        }
+
         # If we're in docker we're relying on closing stdin to cause an orderly
         # shutdown because it is really the only way for us to know for sure
         # that the python build_docs process thats on the host is dead.
@@ -767,7 +832,9 @@ sub command_line_opts {
         'skiplinkcheck',
         'sub_dir=s@',
         'user=s',
-        # Options that do *something* for either --doc or --all
+        # Options only compatible with --preview
+        'preview',
+        # Options that do *something* for either --doc or --all or --preview
         'conf=s',
         'in_standard_docker',
         'open',
@@ -859,26 +926,29 @@ USAGE
 #===================================
 sub check_opts {
 #===================================
-    if ( $Opts->{doc} ) {
-        die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
-        die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
-        die('--push not compatible with --doc') if $Opts->{push};
-        die('--rebuild not compatible with --doc') if $Opts->{rebuild};
-        die('--reference not compatible with --doc') if $Opts->{reference};
-        die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
-        die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
-        die('--target_branch not compatible with --doc') if $Opts->{target_branch};
-        die('--target_repo not compatible with --doc') if $Opts->{target_repo};
-        die('--user not compatible with --doc') if $Opts->{user};
-    } else {
-        die('--asciidoctor not compatible with --all') if $Opts->{asciidoctor};
-        die('--chunk not compatible with --all') if $Opts->{chunk};
+    if ( !$Opts->{doc} ) {
+        die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
+        die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
-        die('--lenient not compatible with --all') if $Opts->{lenient};
-        die('--out not compatible with --all') if $Opts->{out};
-        die('--pdf not compatible with --all') if $Opts->{pdf};
-        die('--resource not compatible with --all') if $Opts->{resource};
-        die('--single not compatible with --all') if $Opts->{single};
-        die('--toc not compatible with --all') if $Opts->{toc};
+        die('--lenient only compatible with --doc') if $Opts->{lenient};
+        die('--out only compatible with --doc') if $Opts->{out};
+        die('--pdf only compatible with --doc') if $Opts->{pdf};
+        die('--resource only compatible with --doc') if $Opts->{resource};
+        die('--single only compatible with --doc') if $Opts->{single};
+        die('--toc only compatible with --doc') if $Opts->{toc};
+    }
+    if ( !$Opts->{all} ) {
+        die('--keep_hash only compatible with --all') if $Opts->{keep_hash};
+        die('--linkcheckonly only compatible with --all') if $Opts->{linkcheckonly};
+        die('--push only compatible with --all') if $Opts->{push};
+        die('--rebuild only compatible with --all') if $Opts->{rebuild};
+        die('--reference only compatible with --all') if $Opts->{reference};
+        die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
+        die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
+        die('--user only compatible with --all') if $Opts->{user};
+    }
+    if ( !$Opts->{all} && !$Opts->{preview} ) {
+        die('--target_branch only compatible with --all or --preview') if $Opts->{target_branch};
+        die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
     }
 }
