@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'net/http'
 
 RSpec.describe 'building a single book' do
   HEADER = <<~ASCIIDOC
@@ -429,6 +430,25 @@ RSpec.describe 'building a single book' do
           expect(body).to include('CODE HERE')
         end
       end
+    end
+  end
+
+  context 'when run with --open' do
+    include_context 'source and dest'
+    before(:context) do
+      repo = @src.repo_with_index 'repo', 'Words'
+      @opened_docs =
+        @dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.').open
+    end
+    after(:context) do
+      @opened_docs.exit
+    end
+
+    let(:index) { Net::HTTP.get_response(URI('http://localhost:8000/guide/')) }
+    it 'serves the book' do
+      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+        <a href="chapter.html">Chapter
+      HTML
     end
   end
 end
