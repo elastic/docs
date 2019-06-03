@@ -7,10 +7,21 @@ RSpec.describe 'building all books' do
   class Config
     attr_accessor :target_branch
     attr_accessor :checkout_branch
+    attr_accessor :keep_hash
 
-    def initialize
+    def initialize(src, dest)
+      @src = src
+      @dest = dest
       @target_branch = nil
       @checkout_branch = nil
+      @keep_hash = false
+    end
+
+    def convert_all
+      conversion = @dest.prepare_convert_all @src.conf
+      conversion.target_branch @target_branch if @target_branch
+      conversion.keep_hash if @keep_hash
+      conversion.convert
     end
   end
   describe 'change detection' do
@@ -19,24 +30,23 @@ RSpec.describe 'building all books' do
         before_second_build:
       )
       convert_before do |src, dest|
-        config = Config.new
+        config = Config.new src, dest
         # Allow the caller to customize the source.
         before_first_build.call(src, config)
 
         # Convert the first time. This should build the docs.
-        dest.convert_all src.conf, target_branch: config.target_branch
+        config.convert_all
 
         # Take some action between the builds.
         before_second_build.call(src, config)
 
         # Convert the second time.
-        dest.convert_all src.conf, target_branch: config.target_branch
+        config.convert_all
 
         # Checkout the files so we can assert about them.
         checkout = config.checkout_branch || config.target_branch
         dest.checkout_conversion branch: checkout
       end
-      include_context 'build one book twice'
     end
 
     def self.build_one_book_out_of_one_repo_twice(
@@ -45,15 +55,37 @@ RSpec.describe 'building all books' do
       )
       build_twice(
         before_first_build: lambda do |src, config|
-          repo = src.repo_with_index 'repo', 'Some text.'
-          book = src.book 'Test'
-          book.source repo, 'index.asciidoc'
+          src.book_and_repo 'repo', 'Test', 'Some text.'
 
           # Allow the caller to customize the source
           before_first_build.call src, config
         end,
         before_second_build: before_second_build
       )
+      include_context 'build one book twice'
+    end
+
+    def self.build_one_book_out_of_one_repo_and_then_out_of_two(
+        before_second_build: ->(src, config) {}
+      )
+      build_twice(
+        before_first_build: lambda do |src, _config|
+          src.book_and_repo 'repo', 'Test', 'Some text.'
+        end,
+        before_second_build: init_second_book_and_customize(before_second_build)
+      )
+      include_context 'build one book twice'
+    end
+
+    def self.init_second_book_and_customize(before_second_build)
+      lambda do |src, config|
+        repo2 = src.repo 'repo2'
+        repo2.write 'garbage', 'junk'
+        repo2.commit 'adding junk'
+        src.book('Test').source repo2, 'garbage'
+
+        before_second_build.call src, config
+      end
     end
 
     def self.build_one_book_out_of_two_repos_twice(
@@ -71,6 +103,23 @@ RSpec.describe 'building all books' do
           before_second_build.call src
         end
       )
+      include_context 'build one book twice'
+    end
+
+    def self.build_one_book_then_two_books(
+        before_second_build: ->(src, config) {}
+      )
+      build_twice(
+        before_first_build: lambda do |src, _config|
+          src.book_and_repo 'repo', 'Test', 'Some text.'
+        end,
+        before_second_build: lambda do |src, config|
+          src.book('Test2').source src.repo('repo'), 'index.asciidoc'
+
+          before_second_build.call src, config
+        end
+      )
+      include_examples 'build one book then two books'
     end
 
     shared_context 'build one book twice' do
@@ -79,6 +128,21 @@ RSpec.describe 'building all books' do
         include_examples 'builds all books'
       end
       include_examples 'convert all basics'
+    end
+
+    shared_examples 'build one book then two books' do
+      context 'the first build' do
+        let(:out) { outputs[0] }
+        include_examples 'builds any books'
+        it 'does print that it is building the original book' do
+          expect(out).to include('Test: Building master...')
+        end
+        it "doesn't print that it is building the new book" do
+          # The new book doesn't exist at this point in the test
+          expect(out).not_to include('Test2: Building master...')
+        end
+      end
+      page_context 'html/test/current/chapter.html'
     end
 
     shared_examples 'second build is noop' do
@@ -119,6 +183,25 @@ RSpec.describe 'building all books' do
               repo = src.repo 'repo'
               repo.write 'garbage', 'junk'
               repo.commit 'adding junk'
+            end
+          )
+          include_examples 'second build is noop'
+        end
+        context 'when --keep_hash is specified and there are related ' \
+                'changes source repo' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, config|
+              repo = src.repo 'repo'
+              repo.write 'index.asciidoc', <<~ASCIIDOC
+                = Title
+
+                [[chapter]]
+                == Chapter
+                New text.
+              ASCIIDOC
+              repo.commit 'changed text'
+
+              config.keep_hash = true
             end
           )
           include_examples 'second build is noop'
@@ -199,6 +282,28 @@ RSpec.describe 'building all books' do
             end
           )
           let(:latest_revision) { 'init' }
+          let(:new_text) { 'Some text.' }
+          include_examples 'second build is not a noop'
+        end
+      end
+    end
+
+    context 'when building one book out of one repo and then out of two' do
+      context 'when the second build is a noop' do
+        let(:latest_revision) { 'init' }
+        context 'because it was run with --keep_hash' do
+          build_one_book_out_of_one_repo_and_then_out_of_two(
+            before_second_build: lambda do |_src, config|
+              config.keep_hash = true
+            end
+          )
+          include_examples 'second build is noop'
+        end
+      end
+      context "when the second build isn't a noop" do
+        let(:latest_revision) { 'adding junk' }
+        context 'because it was run without any special flags' do
+          build_one_book_out_of_one_repo_and_then_out_of_two
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
@@ -308,6 +413,48 @@ RSpec.describe 'building all books' do
             end
           )
           include_examples 'second build is not a noop'
+        end
+      end
+    end
+
+    context 'when building one book and then building two books' do
+      context 'without any special flags' do
+        build_one_book_then_two_books
+        let(:latest_revision) { 'init' }
+        context 'the second build' do
+          let(:out) { outputs[1] }
+          include_examples 'builds any books'
+          it "doesn't print that it is building the original book" do
+            # The original book hasn't changed so we don't rebuild it
+            expect(out).not_to include('Test: Building master...')
+          end
+          it 'does print that it is building the new book' do
+            expect(out).to include('Test2: Building master...')
+          end
+        end
+        page_context 'html/test2/current/chapter.html'
+      end
+      context 'when --keep_hash is specified' do
+        build_one_book_then_two_books(
+          before_second_build: lambda do |_src, config|
+            config.keep_hash = true
+          end
+        )
+        let(:latest_revision) { 'init' }
+        context 'the second build' do
+          let(:out) { outputs[1] }
+          it "doesn't print that it is building the original book" do
+            # The original book hasn't changed so we don't rebuild it
+            expect(out).not_to include('Test: Building master...')
+          end
+          it "doesn't print that it is building the new book" do
+            expect(out).not_to include('Test2: Building master...')
+          end
+          it 'does print that it is pushing changes' do
+            # This is because the TOC includes the new book. That isn't great
+            # but it is fine.
+            expect(out).to include('Pushing changes')
+          end
         end
       end
     end
