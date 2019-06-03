@@ -133,7 +133,7 @@ RSpec.describe 'building all books' do
     shared_examples 'build one book then two books' do
       context 'the first build' do
         let(:out) { outputs[0] }
-        include_examples 'builds any books'
+        include_examples 'commits changes'
         it 'does print that it is building the original book' do
           expect(out).to include('Test: Building master...')
         end
@@ -423,7 +423,7 @@ RSpec.describe 'building all books' do
         let(:latest_revision) { 'init' }
         context 'the second build' do
           let(:out) { outputs[1] }
-          include_examples 'builds any books'
+          include_examples 'commits changes'
           it "doesn't print that it is building the original book" do
             # The original book hasn't changed so we don't rebuild it
             expect(out).not_to include('Test: Building master...')
