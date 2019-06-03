@@ -12,13 +12,11 @@ export GIT_COMMITTER_EMAIL=test@example.com
 check: \
 	rspec \
 	style \
-	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	new_repo new_book \
 	keep_hash keep_hash_new_repo keep_hash_new_book \
 	sub_dir keep_hash_and_sub_dir \
 	multi_branch \
-	open_all \
-	missing_index
+	open_all
 
 .PHONY: style
 style: pycodestyle rubocop
@@ -39,20 +37,6 @@ rspec:
 define BD_DUMMY=
 /docs_build/build_docs.pl --in_standard_docker --out /tmp/dummy
 endef
-
-.PHONY: missing_include_fails_asciidoc
-missing_include_fails_asciidoc: missing_include.asciidoc
-	set +e; \
-		$(BD_DUMMY) --doc missing_include.asciidoc > /tmp/out 2>&1; \
-		test $$? -eq 255
-	$(call GREP,'WARNING: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
-
-.PHONY: missing_include_fails_asciidoctor
-missing_include_fails_asciidoctor: missing_include.asciidoc
-	set +e; \
-		$(BD_DUMMY) --asciidoctor --doc missing_include.asciidoc > /tmp/out 2>&1; \
-		test $$? -eq 255
-	$(call GREP,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
 
 .PHONY: simple_all
 simple_all:
@@ -382,24 +366,6 @@ open_all:
 	$(call GREP,'301 Moved Permanently',$(TMP)/guide/rdir)
 	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
 	kill -QUIT $$(cat /run/nginx/nginx.pid)
-
-.PHONY: missing_index
-missing_index:
-	rm -rf $(TMP)
-	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,docs/not_the_index.asciidoc)
-	git init --bare $(TMP)/dest.git
-	sed -e 's|--tmp--|$(TMP)|' \
-		-e 's|path:   index.asciidoc|path:   docs|' \
-		-e 's|index:      index.asciidoc|index:      foo/index.asciidoc|' \
-		small_conf.yaml > $(TMP)/conf.yaml
-	set +e; /docs_build/build_docs.pl --in_standard_docker --all \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml > $(TMP)/out 2>&1; \
-		\
-		test $$? -eq 2
-	$(call GREP,'Can'"'"'t find index',$(TMP)/out)
-	$(call GREP,'foo/index.asciidoc',$(TMP)/out)
-
 
 define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.
