@@ -23,7 +23,8 @@ sub new {
             prefix  => $prefix,
             path    => $path,
             exclude => { map { $_ => 1 } @{ $_->{exclude_branches} || [] } },
-            map_branches => $_->{map_branches} || {}
+            map_branches => $_->{map_branches} || {},
+            private => $_->{private} || 0,
         };
     }
 
@@ -101,7 +102,8 @@ sub prepare {
         my $repo_branch = $source->{map_branches}->{$branch} || $branch;
 
         $repo->extract( $title, $repo_branch, $path, $source_checkout );
-        $edit_urls{ $source_checkout->absolute } = $repo->edit_url($repo_branch);
+        $edit_urls{ $source_checkout->absolute } = $source->{private} ?
+            '<disable>' : $repo->edit_url($repo_branch);
         $first_path = $source_checkout unless $first_path;
     }
     return ( $checkout, \%edit_urls, $first_path );
