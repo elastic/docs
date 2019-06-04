@@ -27,8 +27,15 @@ class Book
   # path - path within the repository to checkout to build the book
   # map_branches - optional hash that overrides which branch is used for this
   #                repo when the book is building a particular branch
-  def source(repo, path, map_branches: nil)
-    @sources.push repo: repo.name, path: path, map_branches: map_branches
+  # is_private - Configure the source to be private so it doesn't get edit
+  #              urls. Defaults to false.
+  def source(repo, path, map_branches: nil, is_private: false)
+    @sources.push(
+      repo: repo.name,
+      path: path,
+      map_branches: map_branches,
+      is_private: is_private
+    )
   end
 
   ##
@@ -62,22 +69,27 @@ class Book
   def sources_conf
     yaml = ''
     @sources.each do |config|
-      yaml += <<~YAML
-        -
-          repo:   #{config[:repo]}
-          path:   #{config[:path]}
-      YAML
-      yaml += map_branches_conf config[:map_branches]
+      yaml += "\n-\n#{source_conf config}"
     end
-    indent(yaml, '  ')
+    indent yaml, '  '
+  end
+
+  def source_conf(config)
+    yaml = <<~YAML
+      repo:    #{config[:repo]}
+      path:    #{config[:path]}
+    YAML
+    yaml += 'private: true' if config[:is_private]
+    yaml += map_branches_conf config[:map_branches]
+    indent yaml, '  '
   end
 
   def map_branches_conf(map_branches)
     return '' unless map_branches
 
-    yaml = "  map_branches:\n"
+    yaml = "map_branches:\n"
     map_branches.each_pair do |key, value|
-      yaml += "    #{key}: #{value}\n"
+      yaml += "  #{key}: #{value}\n"
     end
     yaml
   end
