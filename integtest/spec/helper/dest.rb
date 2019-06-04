@@ -58,7 +58,7 @@ class Dest
     # TODO: remove this in favor of prepare_convert_all
     convert = ConvertAll.new conf, bare_repo, self
     convert.target_branch target_branch if target_branch
-    convert.convert(expect_failure: expect_failure)
+    convert.convert expect_failure: expect_failure
   end
 
   class ConvertAll
