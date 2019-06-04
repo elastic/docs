@@ -531,17 +531,7 @@ sub init_repos {
         }
         else {
             $pm->start($name) and next;
-            eval {
-                $repo->update_from_remote();
-                1;
-            } or do {
-                # If creds are invalid, explicitly reject them to try to clear the cache
-                my $error = $@;
-                if ( $error =~ /Invalid username or password/ ) {
-                    revoke_github_creds();
-                }
-                die $error;
-            };
+            $repo->update_from_remote();
             $pm->finish;
         }
     }
