@@ -145,7 +145,7 @@ RSpec.describe 'building a single book' do
         end
       end
     end
-    context 'for a book that a reference to a floating title' do
+    context 'for a book that has a reference to a floating title' do
       convert_single_before_context do |src|
         src.write 'index.asciidoc', <<~ASCIIDOC
           #{HEADER}
