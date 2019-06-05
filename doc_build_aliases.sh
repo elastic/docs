@@ -57,7 +57,10 @@ alias docbldso='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-do
 # Deploying Azure
 alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
+# Solutions 
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
+
+alias docbldsec='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
