@@ -10,14 +10,18 @@ require 'securerandom'
 # and the preview is designed to update itself as its target repo changes so
 # we start it once and play with the target repo during the tests.
 RSpec.describe 'previewing built docs', order: :defined do
+  very_large_text = 'muchtext' * 1024 * 1024 * 5 # 40mb
   repo_root = File.expand_path '../../', __dir__
+
   convert_before do |src, dest|
     repo = src.repo_with_index 'repo', <<~ASCIIDOC
       Some text.
 
       image::resources/cat.jpg[A cat]
+      image::resources/very_large.jpg[Not a jpg but very big]
     ASCIIDOC
     repo.cp "#{repo_root}/resources/cat.jpg", 'resources/cat.jpg'
+    repo.write 'resources/very_large.jpg', very_large_text
     repo.commit 'add cat image'
     book = src.book 'Test'
     book.source repo, 'index.asciidoc'
@@ -64,10 +68,13 @@ RSpec.describe 'previewing built docs', order: :defined do
   shared_context 'docs for branch' do
     watermark = SecureRandom.uuid
     let(:watermark) { watermark }
-    let(:root) { get watermark, branch, 'guide/index.html' }
     let(:current_url) { 'guide/test/current' }
+    let(:root) { get watermark, branch, 'guide/index.html' }
     let(:cat_image) do
       get watermark, branch, "#{current_url}/resources/cat.jpg"
+    end
+    let(:very_large) do
+      get watermark, branch, "#{current_url}/resources/very_large.jpg"
     end
   end
 
@@ -106,7 +113,10 @@ RSpec.describe 'previewing built docs', order: :defined do
     include_examples 'serves the docs root'
     it 'serves an image' do
       bytes = File.open("#{repo_root}/resources/cat.jpg", 'rb', &:read)
-      expect(cat_image).to serve(doc_body(eq(bytes)))
+      expect(cat_image).to serve(eq(bytes))
+    end
+    it 'serves a very large file' do
+      expect(very_large).to serve(eq(very_large_text))
     end
   end
   describe 'for the test branch' do

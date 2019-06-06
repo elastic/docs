@@ -607,6 +607,8 @@ http {
       proxy_http_version 1.1;
       proxy_set_header Host \$host;
       proxy_cache_bypass \$http_upgrade;
+      proxy_buffering off;
+      gzip on;
       add_header 'Access-Control-Allow-Origin' '*';
       if (\$request_method = 'OPTIONS') {
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
