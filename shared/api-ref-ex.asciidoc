@@ -1,0 +1,123 @@
+
+[[ccr-put-follow]]
+=== Create follower API
+++++
+<titleabbrev>Create follower</titleabbrev>
+++++
+
+Creates a follower index.
+
+// TODO: Add anchors for each section
+[[ccr-put-follow-request]]
+==== Request
+// Variables should use <...> syntax
+
+[source,js]
+----
+PUT /<follower_index>/_ccr/follow?wait_for_active_shards=1
+{
+  "remote_cluster" : "<remote_cluster>",
+  "leader_index" : "<leader_index>"
+}
+----
+// CONSOLE
+
+[[ccr-put-follow-authorization]]
+==== Authorization
+// Optional.
+
+If the {es} {security-features} are enabled, you must have `write`, `monitor`,
+and `manage_follow_index` index privileges for the follower index. You must have
+`read` and `monitor` index privileges for the leader index. You must also have
+`manage_ccr` cluster privileges on the cluster that contains the follower index.
+For more information, see
+{stack-ov}/security-privileges.html[Security privileges].
+
+[[ccr-put-follow-desc]]
+==== Description
+
+This API creates a new follower index that is configured to follow the
+referenced leader index. When this API returns, the follower index exists, and
+{ccr} starts replicating operations from the leader index to the follower index.
+
+// Guidelines for parameter documentation
+// ***************************************
+// * Use a definition list.
+// * Each parameter should be marked as Optional or Required.
+// * Include the data type.
+// * Include default values as the last sentence of the first paragraph.
+// * Include a range of valid values, if applicable.
+// For objects, you may include a separate definition list.
+// ***************************************
+
+[[ccr-put-follow-path-params]]
+==== Path parameters
+// A list of all parameters in the endpoint request
+
+`follower_index` (Required)::
+(string) Name of the follower index
+
+[[ccr-put-follow-query-params]]
+==== Query parameters
+// Optional parameters 
+
+`wait_for_active_shards` (Optional)::
+(integer) Specifies the number of shards to wait on being active before
+responding. A shard must be restored from the leader index being active.
+Restoring a follower shard requires transferring all the remote Lucene segment
+files to the follower index. The default is `0`, which means waiting on none of
+the shards to be active.
+
+[[ccr-put-follow-request-body]]
+==== Request body
+
+`remote_cluster` (Required)::
+(string) <<modules-remote-clusters,Remote cluster>> containing the leader
+index
+
+`leader_index` (Required)::
+(string) the name of the index in the leader cluster to follow
+
+// ***************************************
+// [[ccr-put-follow-response-body]]
+// ==== Response body
+// Response body is only required for detailed responses.
+// ***************************************
+
+[[ccr-put-follow-example]]
+==== Example
+// Optional.
+// Use an 'Examples' heading if you include multiple examples.
+
+[source,js]
+----
+PUT /follower_index/_ccr/follow?wait_for_active_shards=1
+{
+  "remote_cluster" : "remote_cluster",
+  "leader_index" : "leader_index",
+  "max_read_request_operation_count" : 1024,
+  "max_outstanding_read_requests" : 16,
+  "max_read_request_size" : "1024k",
+  "max_write_request_operation_count" : 32768,
+  "max_write_request_size" : "16k",
+  "max_outstanding_write_requests" : 8,
+  "max_write_buffer_count" : 512,
+  "max_write_buffer_size" : "512k",
+  "max_retry_delay" : "10s",
+  "read_poll_timeout" : "30s"
+}
+----
+// CONSOLE
+// TEST[setup:remote_cluster_and_leader_index]
+
+The API returns the following result:
+
+[source,js]
+----
+{
+  "follow_index_created" : true,
+  "follow_index_shards_acked" : true,
+  "index_following_started" : true
+}
+----
+// TESTRESPONSE
