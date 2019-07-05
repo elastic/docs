@@ -71,7 +71,7 @@ alias docbldec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.
 alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
 # Cloud
-alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index-heroku.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/heroku --chunk 1'
+alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/heroku/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/saas --chunk 1'
 
 alias docbldk8s='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --resource $GIT_HOME/cloud/docs/shared --chunk 1'
 
