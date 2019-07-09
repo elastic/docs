@@ -61,7 +61,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
-          <a href="unknown/edit/master/index.asciidoc" class="edit_me"
+          <a href="unknown/edit/master/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
         HTML
       end
     end
@@ -142,6 +142,25 @@ RSpec.describe 'building a single book' do
           # We match on the empty cell followed by the non-empty cell so we
           # can be sure we're matching the right part of the table.
           expect(body).to include("<tr>#{empty_cell}#{non_empty_cell}</tr>")
+        end
+      end
+    end
+    context 'for a book that has a reference to a floating title' do
+      convert_single_before_context do |src|
+        src.write 'index.asciidoc', <<~ASCIIDOC
+          #{HEADER}
+          <<floater>>
+
+          [float]
+          [[floater]]
+          == Floater
+        ASCIIDOC
+      end
+      page_context 'chapter.html' do
+        it "there isn't an edit me link in the link to the section" do
+          expect(body).to include(<<~HTML.strip)
+            <a class="xref" href="chapter.html#floater" title="Floater">Floater</a>
+          HTML
         end
       end
     end
