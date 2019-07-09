@@ -206,43 +206,6 @@ multi_branch:
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
 
-<<<<<<< HEAD
-.PHONY: missing_index
-missing_index:
-	rm -rf $(TMP)
-	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,docs/not_the_index.asciidoc)
-	git init --bare $(TMP)/dest.git
-	sed -e 's|--tmp--|$(TMP)|' \
-		-e 's|path:   index.asciidoc|path:   docs|' \
-		-e 's|index:      index.asciidoc|index:      foo/index.asciidoc|' \
-		small_conf.yaml > $(TMP)/conf.yaml
-	set +e; /docs_build/build_docs.pl --in_standard_docker --all \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml > $(TMP)/out 2>&1; \
-		\
-		test $$? -eq 2
-	$(call GREP,'Can'"'"'t find index',$(TMP)/out)
-	$(call GREP,'foo/index.asciidoc',$(TMP)/out)
-
-=======
-.PHONY: open_all
-open_all:
-	# Test that `--all --open` starts nginx in a usable way.
-	rm -rf $(TMP)
-	$(SETUP_MINIMAL_ALL)
-	/docs_build/build_docs.pl --in_standard_docker --all \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml --open | tee $(TMP)/out &
-	curl -I --retry 10 --retry-connrefused http://127.0.0.1:8000/guide/
-	mkdir $(TMP)/guide
-	curl -sS http://127.0.0.1:8000/guide/ > $(TMP)/guide/index.html
-	$(call GREP,'Test book',$(TMP)/guide/index.html)
-	curl -sSI http://127.0.0.1:8000/guide/reference/setup > $(TMP)/guide/rdir
-	$(call GREP,'301 Moved Permanently',$(TMP)/guide/rdir)
-	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
-	kill -QUIT $$(cat /run/nginx/nginx.pid)
->>>>>>> master
-
 define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.
 	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,index.asciidoc)
