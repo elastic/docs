@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use v5.10;
 
-use Path::Class();
+use Path::Class qw(dir);
 use ES::Util qw(run sha_for);
 use YAML qw(Dump Load);
 use Storable qw(dclone);
@@ -59,7 +59,7 @@ sub prune_out_of_date {
 #===================================
     my ( $self, @entries ) = @_;
     my %allowed;
-    $self->_allowed_entries_from_books( \%allowed, @entries );
+    _allowed_entries_from_books( \%allowed, @entries );
 
     while (my ($repo, $branches) = each %{ $self->{shas} } ) {
         my $allowed_for_repo = $allowed{$repo} || '';
@@ -84,21 +84,23 @@ sub prune_out_of_date {
 #===================================
 sub _allowed_entries_from_books {
 #===================================
-    my ( $self, $allowed, @entries ) = @_;
+    my ( $allowed, @entries ) = @_;
 
     foreach my $book ( @entries ) {
         my $title = $book->{title};
-        foreach my $branch ( @{ $book->{branches} } ) {
+        foreach ( @{ $book->{branches} } ) {
+            my ( $branch, $branch_title ) = ref $_ eq 'HASH' ? (%$_) : ( $_, $_ );
             foreach my $source ( @{ $book->{sources} } ) {
                 my $repo = $source->{repo};
-                my $path = $source->{path};
+                my $path = dir('.')->subdir( $source->{path} )->relative('.');
                 my $mapped_branch = $source->{map_branches}{$branch} || $branch;
                 $allowed->{$repo}{"$title/$path/$mapped_branch"} = 1;
             }
         }
+        if (exists $book->{sections}) {
+            _allowed_entries_from_books( $allowed, @{ $book->{sections} } );
+        }
     }
-
-    # NOCOMMIT recur with sections
 }
 
 #===================================
