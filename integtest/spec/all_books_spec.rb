@@ -152,6 +152,7 @@ RSpec.describe 'building all books' do
       expect(out).to include('target_repo: Forking <new_branch> from master')
     end
   end
+
   context 'when one source is private' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', <<~ASCIIDOC
@@ -184,6 +185,7 @@ RSpec.describe 'building all books' do
       end
     end
   end
+
   context 'when run with --open' do
     include_context 'source and dest'
     before(:context) do
@@ -212,6 +214,24 @@ RSpec.describe 'building all books' do
       expect(legacy_redirect['location']).to eq(
         "#{root}en/elasticsearch/reference/current/setup.html"
       )
+    end
+  end
+
+  context "when the index for the book isn't in the repo" do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', 'words'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.index = 'not_index.asciidoc'
+      dest.prepare_convert_all(src.conf).convert(expect_failure: true)
+    end
+    it 'fails with an appropriate error status' do
+      expect(statuses[0]).to eq(2)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to match(%r{
+        Can't\ find\ index\ \[.+/src/not_index.asciidoc\]
+      }x)
     end
   end
 end

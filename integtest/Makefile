@@ -12,10 +12,8 @@ export GIT_COMMITTER_EMAIL=test@example.com
 check: \
 	rspec \
 	style \
-	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
 	sub_dir keep_hash_and_sub_dir \
-	multi_branch \
-	missing_index
+	multi_branch
 
 .PHONY: style
 style: pycodestyle rubocop
@@ -36,20 +34,6 @@ rspec:
 define BD_DUMMY=
 /docs_build/build_docs.pl --in_standard_docker --out /tmp/dummy
 endef
-
-.PHONY: missing_include_fails_asciidoc
-missing_include_fails_asciidoc: missing_include.asciidoc
-	set +e; \
-		$(BD_DUMMY) --doc missing_include.asciidoc > /tmp/out 2>&1; \
-		test $$? -eq 255
-	$(call GREP,'WARNING: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
-
-.PHONY: missing_include_fails_asciidoctor
-missing_include_fails_asciidoctor: missing_include.asciidoc
-	set +e; \
-		$(BD_DUMMY) --asciidoctor --doc missing_include.asciidoc > /tmp/out 2>&1; \
-		test $$? -eq 255
-	$(call GREP,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
 
 .PHONY: simple_all
 simple_all:
@@ -222,6 +206,7 @@ multi_branch:
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
 
+<<<<<<< HEAD
 .PHONY: missing_index
 missing_index:
 	rm -rf $(TMP)
@@ -239,6 +224,24 @@ missing_index:
 	$(call GREP,'Can'"'"'t find index',$(TMP)/out)
 	$(call GREP,'foo/index.asciidoc',$(TMP)/out)
 
+=======
+.PHONY: open_all
+open_all:
+	# Test that `--all --open` starts nginx in a usable way.
+	rm -rf $(TMP)
+	$(SETUP_MINIMAL_ALL)
+	/docs_build/build_docs.pl --in_standard_docker --all \
+		--target_repo $(TMP)/dest.git \
+		--conf $(TMP)/conf.yaml --open | tee $(TMP)/out &
+	curl -I --retry 10 --retry-connrefused http://127.0.0.1:8000/guide/
+	mkdir $(TMP)/guide
+	curl -sS http://127.0.0.1:8000/guide/ > $(TMP)/guide/index.html
+	$(call GREP,'Test book',$(TMP)/guide/index.html)
+	curl -sSI http://127.0.0.1:8000/guide/reference/setup > $(TMP)/guide/rdir
+	$(call GREP,'301 Moved Permanently',$(TMP)/guide/rdir)
+	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
+	kill -QUIT $$(cat /run/nginx/nginx.pid)
+>>>>>>> master
 
 define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.
