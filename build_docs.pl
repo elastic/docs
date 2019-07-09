@@ -762,8 +762,9 @@ sub serve_and_open_browser {
     if ( my $pid = fork ) {
         # parent
         $SIG{INT} = sub {
-            kill -9, $pid;
+            kill 'TERM', $pid;
         };
+        $SIG{TERM} = $SIG{INT};
         if ( not $running_in_standard_docker ) {
             sleep 1;
             say "Press Ctrl-C to exit the web server";
@@ -771,7 +772,7 @@ sub serve_and_open_browser {
         }
 
         wait;
-        say "\nExiting";
+        say 'Terminated preview services';
         exit;
     }
     else {

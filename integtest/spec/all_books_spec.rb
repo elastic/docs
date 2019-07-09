@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'net/http'
+
 RSpec.describe 'building all books' do
   shared_examples 'book basics' do |title, prefix|
     context "for the #{title} book" do
@@ -181,6 +183,37 @@ RSpec.describe 'building all books' do
       it "doesn't contain an edit link because it is from a private source" do
         expect(body).not_to include(%(title="Edit this page on GitHub"))
       end
+    end
+  end
+
+  context 'when run with --open' do
+    include_context 'source and dest'
+    before(:context) do
+      repo = @src.repo_with_index 'repo', 'Words'
+      book = @src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      @opened_docs = @dest.prepare_convert_all(@src.conf).open
+    end
+    after(:context) do
+      @opened_docs.exit
+    end
+
+    let(:root) { 'http://localhost:8000/guide/' }
+    let(:index) { Net::HTTP.get_response(URI(root)) }
+    let(:legacy_redirect) do
+      Net::HTTP.get_response(URI("#{root}reference/setup/"))
+    end
+
+    it 'serves the book' do
+      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+        <a class="ulink" href="test/current/index.html" target="_top">Test
+      HTML
+    end
+    it 'serves a legacy redirect' do
+      expect(legacy_redirect.code).to eq('301')
+      expect(legacy_redirect['location']).to eq(
+        "#{root}en/elasticsearch/reference/current/setup.html"
+      )
     end
   end
 

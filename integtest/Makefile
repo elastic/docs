@@ -13,8 +13,7 @@ check: \
 	rspec \
 	style \
 	sub_dir keep_hash_and_sub_dir \
-	multi_branch \
-	open_all
+	multi_branch
 
 .PHONY: style
 style: pycodestyle rubocop
@@ -206,23 +205,6 @@ multi_branch:
 	$(call GREP,'Test book: Copying master to current',$(TMP)/out)
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
-
-.PHONY: open_all
-open_all:
-	# Test that `--all --open` starts nginx in a usable way.
-	rm -rf $(TMP)
-	$(SETUP_MINIMAL_ALL)
-	/docs_build/build_docs.pl --in_standard_docker --all \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml --open | tee $(TMP)/out &
-	curl -I --retry 10 --retry-connrefused http://127.0.0.1:8000/guide/
-	mkdir $(TMP)/guide
-	curl -sS http://127.0.0.1:8000/guide/ > $(TMP)/guide/index.html
-	$(call GREP,'Test book',$(TMP)/guide/index.html)
-	curl -sSI http://127.0.0.1:8000/guide/reference/setup > $(TMP)/guide/rdir
-	$(call GREP,'301 Moved Permanently',$(TMP)/guide/rdir)
-	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
-	kill -QUIT $$(cat /run/nginx/nginx.pid)
 
 define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.
