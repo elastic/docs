@@ -598,7 +598,7 @@ sub preview {
         } else {
             close STDIN;
             open( STDIN, "</dev/null" );
-            exec( qw(node /docs_build/preview/preview.js) );
+            exec( qw(node --max-old-space-size=128 /docs_build/preview/preview.js) );
         }
     } else {
         close STDIN;
