@@ -450,4 +450,23 @@ RSpec.describe 'building a single book' do
       end
     end
   end
+
+  context 'when an included file is missing' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', <<~ASCIIDOC
+        include::missing.asciidoc[]
+      ASCIIDOC
+      dest.convert_single "#{repo.root}/index.asciidoc", '.',
+                          asciidoctor: true,
+                          expect_failure: true
+    end
+    it 'fails with an appropriate error status' do
+      expect(statuses[0]).to eq(255)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to include(<<~LOG.strip)
+        ERROR: index.asciidoc: line 5: include file not found: #{@src.repo('src').root}/missing.asciidoc
+      LOG
+    end
+  end
 end
