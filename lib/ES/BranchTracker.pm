@@ -15,25 +15,18 @@ my %Repos;
 sub new {
 #===================================
     my ( $class, $file, @repos ) = @_;
-    my $old  = {};
-    my $yaml = '';
+    my %shas;
 
     if ( -e $file ) {
         my $yaml = $file->slurp( iomode => '<:utf8' );
-        $old = Load($yaml);
-    }
-
-    my %new;
-    for (@repos) {
-        $new{$_} = $old->{$_} || {};
+        %shas = %{ Load($yaml) };
     }
 
     my $self = bless {
         file => $file,
-        shas => \%new,
-        yaml => $yaml,
+        shas => \%shas,
     }, $class;
-    $self->write;
+    
     return $self;
 
 }
@@ -56,26 +49,69 @@ sub sha_for_branch {
 sub set_sha_for_branch {
 #===================================
     my ( $self, $repo, $branch, $sha ) = @_;
+
     $self->shas->{$repo}{$branch} = $sha;
-    $self->write;
 }
 
 #===================================
-sub delete_branch {
+sub prune_out_of_date {
 #===================================
-    my ( $self, $repo, $branch ) = @_;
-    my $shas = $self->shas;
-    delete $shas->{$repo}{$branch} || return;
-    unless ( keys %{ $shas->{$repo} } ) {
-        delete $shas->{$repo};
+# Prunes tracker entries for books that are no longer built.
+#===================================
+    my ( $self, @entries ) = @_;
+    my %allowed = $self->_allowed_entries_from_books( @entries );
+
+    while (my ($repo, $branches) = each %{ $self->{shas} } ) {
+        my $allowed_for_repo = $allowed{$repo} || '';
+        unless ($allowed_for_repo) {
+            say "Pruning for $repo";
+            delete $self->{shas}->{$repo};
+            next;
+        }
+        foreach my $branch ( keys %{ $branches } ) {
+            # We can't clear the link check information at this point safely
+            # because we need it for PR builds and we don't have a good way
+            # tell if it'll be needed again. It is a problem, but not a big one
+            # right now.
+            unless ($allowed_for_repo->{$branch} || $branch =~ /^link-check/) {
+                say "Pruning for $repo $branch";
+                delete $self->{shas}->{$repo}->{$branch};
+            }
+        }
     }
-    $self->write;
+
+    # Here is where you'd check if it worked
+}
+
+#===================================
+sub _allowed_entries_from_books {
+#===================================
+    my ( $self, @entries ) = @_;
+    my %allowed;
+
+    foreach my $book ( @entries ) {
+        my $title = $book->{title};
+        foreach my $branch ( @{ $book->{branches} } ) {
+            foreach my $source ( @{ $book->{sources} } ) {
+                my $repo = $source->{repo};
+                my $path = $source->{path};
+                my $branch_mapping = $source->{map_branches} || ();
+                my $mapped_branch = $source->{map_branches}{$branch} || $branch;
+                $allowed{$repo}{"$title/$path/$mapped_branch"} = 1;
+            }
+        }
+    }
+
+    # NOCOMMIT recur with sections
+
+    return %allowed;
 }
 
 #===================================
 sub write {
 #===================================
     my $self = shift;
+    # TODO move the empty pruning into the pruning method above and just save here
     my $to_save = dclone( $self->shas );
     # Empty hashes are caused by new repos that are unused which shouldn't
     # force a commit.
@@ -84,11 +120,8 @@ sub write {
             delete $to_save->{$repo};
         }
     }
-    my $new  = Dump( $to_save );
-    return if $new eq $self->{yaml};
     $self->file->parent->mkpath;
-    $self->file->spew( iomode => '>:utf8', $new );
-    $self->{yaml} = $new;
+    $self->file->spew( iomode => '>:utf8', Dump( $to_save ) );
 }
 
 #===================================
