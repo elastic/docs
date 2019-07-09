@@ -61,7 +61,7 @@ sub prune_out_of_date {
     my %allowed;
     _allowed_entries_from_books( \%allowed, @entries );
 
-    while (my ($repo, $branches) = each %{ $self->{shas} } ) {
+    while ( my ($repo, $branches) = each %{ $self->{shas} } ) {
         my $allowed_for_repo = $allowed{$repo} || '';
         unless ($allowed_for_repo) {
             say "Pruning for $repo";
@@ -75,9 +75,13 @@ sub prune_out_of_date {
             # right now.
             unless ($allowed_for_repo->{$branch} || $branch =~ /^link-check/) {
                 say "Pruning for $repo $branch";
-                delete $self->{shas}->{$repo}->{$branch};
+                delete $branches->{$branch};
             }
         }
+        # Empty can show up because there is a new book that weren't not
+        # building at this time and we don't want that to force a commit so we
+        # clean them up while we're purging here.
+        delete $self->{shas}->{$repo} unless keys %{ $branches };
     }
 }
 
@@ -107,17 +111,8 @@ sub _allowed_entries_from_books {
 sub write {
 #===================================
     my $self = shift;
-    # TODO move the empty pruning into the pruning method above and just save here
-    my $to_save = dclone( $self->shas );
-    # Empty hashes are caused by new repos that are unused which shouldn't
-    # force a commit.
-    while (my ($repo, $branches) = each %{ $to_save } ) {
-        unless ( keys %{ $branches } ) {
-            delete $to_save->{$repo};
-        }
-    }
     $self->file->parent->mkpath;
-    $self->file->spew( iomode => '>:utf8', Dump( $to_save ) );
+    $self->file->spew( iomode => '>:utf8', Dump( $self->{shas} ) );
 }
 
 #===================================
