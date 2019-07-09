@@ -26,9 +26,8 @@ sub new {
         file => $file,
         shas => \%shas,
     }, $class;
-    
-    return $self;
 
+    return $self;
 }
 
 #===================================

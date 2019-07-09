@@ -288,8 +288,9 @@ RSpec.describe 'building all books' do
         context 'because we remove a branch from the book' do
           build_one_book_out_of_one_repo_twice(
             before_first_build: lambda do |src, _config|
+              repo = src.repo 'repo'
               book = src.book 'Test'
-              book.
+              book.branches.push 'foo'
             end,
             before_second_build: lambda do |src, _config|
               book = src.book 'Test'
