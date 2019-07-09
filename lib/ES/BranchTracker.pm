@@ -58,7 +58,8 @@ sub prune_out_of_date {
 # Prunes tracker entries for books that are no longer built.
 #===================================
     my ( $self, @entries ) = @_;
-    my %allowed = $self->_allowed_entries_from_books( @entries );
+    my %allowed;
+    $self->_allowed_entries_from_books( \%allowed, @entries );
 
     while (my ($repo, $branches) = each %{ $self->{shas} } ) {
         my $allowed_for_repo = $allowed{$repo} || '';
@@ -78,15 +79,12 @@ sub prune_out_of_date {
             }
         }
     }
-
-    # Here is where you'd check if it worked
 }
 
 #===================================
 sub _allowed_entries_from_books {
 #===================================
-    my ( $self, @entries ) = @_;
-    my %allowed;
+    my ( $self, $allowed, @entries ) = @_;
 
     foreach my $book ( @entries ) {
         my $title = $book->{title};
@@ -94,16 +92,13 @@ sub _allowed_entries_from_books {
             foreach my $source ( @{ $book->{sources} } ) {
                 my $repo = $source->{repo};
                 my $path = $source->{path};
-                my $branch_mapping = $source->{map_branches} || ();
                 my $mapped_branch = $source->{map_branches}{$branch} || $branch;
-                $allowed{$repo}{"$title/$path/$mapped_branch"} = 1;
+                $allowed->{$repo}{"$title/$path/$mapped_branch"} = 1;
             }
         }
     }
 
     # NOCOMMIT recur with sections
-
-    return %allowed;
 }
 
 #===================================
