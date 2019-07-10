@@ -18,9 +18,9 @@ require 'asciidoctor/extensions'
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   def activate(registry)
     [
-        [:added, 'added', 'note'],
-        [:coming, 'changed', 'note'],
-        [:deprecated, 'deleted', 'warning'],
+      [:added, 'added', 'note'],
+      [:coming, 'changed', 'note'],
+      [:deprecated, 'deleted', 'warning'],
     ].each do |(name, revisionflag, tag)|
       registry.block_macro ChangeAdmonitionBlock.new(revisionflag, tag), name
       registry.inline_macro ChangeAdmonitionInline.new(revisionflag), name

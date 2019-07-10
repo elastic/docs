@@ -264,10 +264,12 @@ RSpec.describe CopyImages do
         LOGS
       end
       it 'copies the images' do
-        expect(copied).to eq([
+        expect(copied).to eq(
+          [
             ['example1.png', "#{spec_dir}/#{example1}"],
             ['example2.png', "#{spec_dir}/#{example2}"],
-        ])
+          ]
+        )
       end
       it 'logs that it copied the image' do
         expect(logs).to eq(expected_logs.strip)
@@ -439,10 +441,10 @@ RSpec.describe CopyImages do
         ASCIIDOC
       end
       it 'copies what it can' do
-        expect(copied).to eq([
-          ["#{relative_path}/1.#{copy_callout_images}",
-           "#{absolute_path}/1.#{copy_callout_images}"],
-        ])
+        expect(copied).to eq(
+          [["#{relative_path}/1.#{copy_callout_images}",
+            "#{absolute_path}/1.#{copy_callout_images}"]]
+        )
       end
       it 'logs a warnings about the bad callout item' do
         expect(logs).to include(

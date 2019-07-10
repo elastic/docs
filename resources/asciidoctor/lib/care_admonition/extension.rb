@@ -15,8 +15,8 @@ require 'asciidoctor/extensions'
 class CareAdmonition < Asciidoctor::Extensions::Group
   def activate(registry)
     [
-        [:beta, 'beta'],
-        [:experimental, 'experimental'],
+      [:beta, 'beta'],
+      [:experimental, 'experimental'],
     ].each do |(name, role)|
       registry.block_macro ChangeAdmonitionBlock.new(role), name
       registry.inline_macro ChangeAdmonitionInline.new(role), name
