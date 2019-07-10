@@ -8,6 +8,7 @@ export HOME=$JENKINS_HOME
 export IMAGE=docker.elastic.co/docs/build:1
 
 ./build_docs --just-build-image
+ls -a $JENKINS_HOME
 ssh-agent bash -c "
     ssh-add &&
     docker run --rm \
