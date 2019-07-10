@@ -14,7 +14,7 @@ export REPO=git@github.com:elastic/built-docs.git
 export IMAGE=docker.elastic.co/docs/build:1
 
 ./build_docs --just-build-image
-ssh-agent bash -c "
+ssh-agent bash -c '
     ssh-add &&
     echo test $SSH_AUTH_SOCK test &&
     docker run --rm \
@@ -25,4 +25,4 @@ ssh-agent bash -c "
         -e GITHUB_TOKEN=$GITHUB_TOKEN \
         -v ~/.git-references:/var/lib/jenkins/.git-references:cached,ro \
         -e CACHE_DIR=/var/lib/jenkins/.git-references \
-        $IMAGE node /docs_build/preview/clean.js $REPO"
+        $IMAGE node /docs_build/preview/clean.js $REPO'
