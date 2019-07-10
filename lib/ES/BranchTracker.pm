@@ -64,7 +64,6 @@ sub prune_out_of_date {
     while ( my ($repo, $branches) = each %{ $self->{shas} } ) {
         my $allowed_for_repo = $allowed{$repo} || '';
         unless ($allowed_for_repo) {
-            say "Pruning for $repo";
             delete $self->{shas}->{$repo};
             next;
         }
@@ -74,11 +73,10 @@ sub prune_out_of_date {
             # tell if it'll be needed again. It is a problem, but not a big one
             # right now.
             unless ($allowed_for_repo->{$branch} || $branch =~ /^link-check/) {
-                say "Pruning for $repo $branch";
                 delete $branches->{$branch};
             }
         }
-        # Empty can show up because there is a new book that weren't not
+        # Empty can show up because there is a new book that were not
         # building at this time and we don't want that to force a commit so we
         # clean them up while we're purging here.
         delete $self->{shas}->{$repo} unless keys %{ $branches };
