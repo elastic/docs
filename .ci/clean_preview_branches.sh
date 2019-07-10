@@ -2,8 +2,8 @@
 
 set -eo pipefail
 
-# Only set this in docker tests.
-JENKINS_HOME=/var/lib/jenkins
+# Uncomment me to test with docker.
+# JENKINS_HOME=/var/lib/jenkins
 
 # Use Jenkin's home as our home because that is where the ssh
 # known hosts file lives.
@@ -16,7 +16,6 @@ export IMAGE=docker.elastic.co/docs/build:1
 ./build_docs --just-build-image
 ssh-agent bash -c '
     ssh-add &&
-    echo test $SSH_AUTH_SOCK test &&
     docker run --rm \
         -v $(pwd):/docs_build:cached,ro \
         -v ~/.ssh/known_hosts:/root/.ssh/known_hosts:cached,ro \
