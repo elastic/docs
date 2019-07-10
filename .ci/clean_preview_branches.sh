@@ -14,6 +14,8 @@ export REPO=git@github.com:elastic/built-docs.git
 export IMAGE=docker.elastic.co/docs/build:1
 
 ./build_docs --just-build-image
+ls /var/lib/jenkins
+ls /var/lib/jenkins/.ssh
 ssh-agent bash -c "
     ssh-add &&
     echo "test $SSH_AUTH_SOCK test"
