@@ -16,6 +16,6 @@ ssh-agent bash -c "
         -v $SSH_AUTH_SOCK:$SSH_AUTH_SOCK:cached,ro \
         -e SSH_AUTH_SOCK=$SSH_AUTH_SOCK \
         -e GITHUB_TOKEN=$GITHUB_TOKEN \
-        -v ~/.git-references:/var/lib/jenkins/.git-references:cached,ro \
+        -v $JENKINS_HOME/.git-references:/var/lib/jenkins/.git-references:cached,ro \
         -e CACHE_DIR=/var/lib/jenkins/.git-references \
         $IMAGE node /docs_build/preview/clean.js $REPO"
