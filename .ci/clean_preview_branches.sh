@@ -2,9 +2,12 @@
 
 set -eo pipefail
 
-# TODO pick up the image name automatically
+# Use Jenkin's home as our home because that is where the ssh
+# known hosts file lives.
+export HOME=$JENKINS_HOME
+
 export REPO=git@github.com:elastic/built-docs.git
-export HOME=/var/lib/jenkins
+# TODO pick up the image name automatically
 export IMAGE=docker.elastic.co/docs/build:1
 
 ./build_docs --just-build-image
@@ -16,6 +19,6 @@ ssh-agent bash -c "
         -v $SSH_AUTH_SOCK:$SSH_AUTH_SOCK:cached,ro \
         -e SSH_AUTH_SOCK=$SSH_AUTH_SOCK \
         -e GITHUB_TOKEN=$GITHUB_TOKEN \
-        -v ~/.git-references:/var/lib/jenkins/.git-references:cached,ro \
+        -v !/.git-references:/var/lib/jenkins/.git-references:cached,ro \
         -e CACHE_DIR=/var/lib/jenkins/.git-references \
         $IMAGE node /docs_build/preview/clean.js $REPO"
