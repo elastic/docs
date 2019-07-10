@@ -2,8 +2,9 @@
 
 set -eo pipefail
 
-# Only set this in docker
+# Only set this in docker tests.
 JENKINS_HOME=/var/lib/jenkins
+
 # Use Jenkin's home as our home because that is where the ssh
 # known hosts file lives.
 export HOME=$JENKINS_HOME
@@ -21,6 +22,6 @@ ssh-agent bash -c "
         -v $SSH_AUTH_SOCK:$SSH_AUTH_SOCK:cached,ro \
         -e SSH_AUTH_SOCK=$SSH_AUTH_SOCK \
         -e GITHUB_TOKEN=$GITHUB_TOKEN \
-        -v !/.git-references:/var/lib/jenkins/.git-references:cached,ro \
+        -v ~/.git-references:/var/lib/jenkins/.git-references:cached,ro \
         -e CACHE_DIR=/var/lib/jenkins/.git-references \
         $IMAGE node /docs_build/preview/clean.js $REPO"
