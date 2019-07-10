@@ -220,7 +220,8 @@ sub build_all {
 
     say "Updating repositories";
     my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
-    init_repos( $repos_dir, $temp_dir, $reference_dir, $target_repo );
+    my $tracker = init_repos(
+            $repos_dir, $temp_dir, $reference_dir, $target_repo );
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
@@ -259,6 +260,8 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
+    $tracker->prune_out_of_date( @$contents );
+    $tracker->write;
     push_changes( $build_dir, $target_repo ) if $Opts->{push};
     serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
 
@@ -553,7 +556,7 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    return $target_repo;
+    return $tracker;
 }
 
 
