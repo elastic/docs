@@ -169,10 +169,13 @@ if (require.main === module) {
   const cache_dir = process.env['CACHE_DIR'];
   const repo = process.argv[2];
 
-  process.on('SIGINT', function() {
+  process.on('SIGINT', () => {
     process.exit(1);
   });
 
   new Cleaner(token, repo, cache_dir, os.tmpdir()).run()
-    .catch(err => console.error(err));
+    .catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
 }
