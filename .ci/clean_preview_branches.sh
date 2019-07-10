@@ -16,6 +16,7 @@ export IMAGE=docker.elastic.co/docs/build:1
 ./build_docs --just-build-image
 ssh-agent bash -c "
     ssh-add &&
+    echo $SSH_AUTH_SOCK
     docker run --rm \
         -v $(pwd):/docs_build:cached,ro \
         -v ~/.ssh/known_hosts:/root/.ssh/known_hosts:cached,ro \
