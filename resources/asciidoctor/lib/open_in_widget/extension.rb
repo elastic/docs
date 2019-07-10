@@ -51,8 +51,9 @@ class OpenInWidget < TreeProcessorScaffold
 
     snippet_path = snippet_path block, lang, block.attr('snippet')
 
-    block.set_attr 'snippet_link',
-      "<ulink type=\"snippet\" url=\"#{snippet_path}\"/>"
+    block.set_attr(
+      'snippet_link', "<ulink type=\"snippet\" url=\"#{snippet_path}\"/>"
+    )
     block.document.register :links, snippet_path
 
     def block.content
@@ -71,16 +72,21 @@ class OpenInWidget < TreeProcessorScaffold
   # them up and warn the user that they are lame.
   def handle_override_snippet(block, snippet)
     snippet_path = "snippets/#{snippet}"
-    normalized = block.normalize_system_path(snippet_path,
-      block.document.base_dir)
+    normalized = block.normalize_system_path(
+      snippet_path, block.document.base_dir
+    )
     if File.readable? normalized
       copy_override_snippet block, normalized, snippet_path
       migration_warn block, block.source_location, 'override-snippet',
                      'reading snippets from a path makes the book harder ' \
                      'to read'
     else
-      logger.error message_with_context "can't read snippet from #{normalized}",
-        source_location: block.source_location
+      logger.error(
+        message_with_context(
+          "can't read snippet from #{normalized}",
+          source_location: block.source_location
+        )
+      )
     end
     snippet_path
   end
@@ -102,8 +108,12 @@ class OpenInWidget < TreeProcessorScaffold
   ##
   # Copies an override snippet from the filesystem into the snippets directory.
   def copy_override_snippet(block, source, uri)
-    logger.info message_with_context "copying snippet #{source}",
-      source_location: block.source_location
+    logger.info(
+      message_with_context(
+        "copying snippet #{source}",
+        source_location: block.source_location
+      )
+    )
     copy_proc = block.document.attr 'copy_snippet'
     if copy_proc
       # Delegate to a proc for copying if one is defined. Used for testing.
@@ -120,8 +130,12 @@ class OpenInWidget < TreeProcessorScaffold
   # Writes a snippet extracted from the asciidoc file into the
   # snippets directory.
   def write_snippet(block, snippet, uri)
-    logger.info message_with_context "writing snippet #{uri}",
-      source_location: block.source_location
+    logger.info(
+      message_with_context(
+        "writing snippet #{uri}",
+        source_location: block.source_location
+      )
+    )
     write_proc = block.document.attr 'write_snippet'
     if write_proc
       # Delegate to a proc for copying if one is defined. Used for testing.
