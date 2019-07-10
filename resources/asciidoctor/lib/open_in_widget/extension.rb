@@ -49,13 +49,8 @@ class OpenInWidget < TreeProcessorScaffold
     lang = block.attr 'language'
     return unless %w[console sense kibana].include? lang
 
-    snippet = block.attr 'snippet'
-    snippet_path =
-      if snippet
-        handle_override_snippet block, snippet
-      else
-        handle_implicit_snippet block, lang
-      end
+    snippet_path = snippet_path block, lang, block.attr('snippet')
+
     block.set_attr 'snippet_link',
       "<ulink type=\"snippet\" url=\"#{snippet_path}\"/>"
     block.document.register :links, snippet_path
@@ -63,6 +58,12 @@ class OpenInWidget < TreeProcessorScaffold
     def block.content
       "#{@attributes['snippet_link']}#{super}"
     end
+  end
+
+  def snippet_path(block, lang, snippet)
+    return handle_override_snippet block, snippet if snippet
+
+    handle_implicit_snippet block, lang
   end
 
   ##

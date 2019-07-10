@@ -47,13 +47,17 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       admon = Asciidoctor::Block.new(parent, :pass, content_model: :compound)
       admon << Asciidoctor::Block.new(admon, :pass,
         attributes: { 'revisionflag' => @revisionflag },
-        source: "<#{@tag} " \
-                "revisionflag=\"#{@revisionflag}\" " \
-                "revision=\"#{version}\">")
+        source: tag_source(version))
       admon << Asciidoctor::Block.new(admon, :paragraph,
         source: attrs[:passtext],
         subs: Asciidoctor::Substitutors::NORMAL_SUBS)
       admon << Asciidoctor::Block.new(admon, :pass, source: "</#{@tag}>")
+    end
+
+    def tag_source(version)
+      <<~HTML
+        <#{@tag} revisionflag="#{@revisionflag}" revision="#{version}">
+      HTML
     end
   end
 
