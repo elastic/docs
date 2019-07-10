@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use v5.10;
 
-use Path::Class();
+use Path::Class qw(dir);
 use ES::Util qw(run sha_for);
 use YAML qw(Dump Load);
 use Storable qw(dclone);
@@ -15,27 +15,19 @@ my %Repos;
 sub new {
 #===================================
     my ( $class, $file, @repos ) = @_;
-    my $old  = {};
-    my $yaml = '';
+    my %shas;
 
     if ( -e $file ) {
         my $yaml = $file->slurp( iomode => '<:utf8' );
-        $old = Load($yaml);
-    }
-
-    my %new;
-    for (@repos) {
-        $new{$_} = $old->{$_} || {};
+        %shas = %{ Load($yaml) };
     }
 
     my $self = bless {
         file => $file,
-        shas => \%new,
-        yaml => $yaml,
+        shas => \%shas,
     }, $class;
-    $self->write;
-    return $self;
 
+    return $self;
 }
 
 #===================================
@@ -56,39 +48,69 @@ sub sha_for_branch {
 sub set_sha_for_branch {
 #===================================
     my ( $self, $repo, $branch, $sha ) = @_;
+
     $self->shas->{$repo}{$branch} = $sha;
-    $self->write;
 }
 
 #===================================
-sub delete_branch {
+sub prune_out_of_date {
 #===================================
-    my ( $self, $repo, $branch ) = @_;
-    my $shas = $self->shas;
-    delete $shas->{$repo}{$branch} || return;
-    unless ( keys %{ $shas->{$repo} } ) {
-        delete $shas->{$repo};
+# Prunes tracker entries for books that are no longer built.
+#===================================
+    my ( $self, @entries ) = @_;
+    my %allowed;
+    _allowed_entries_from_books( \%allowed, @entries );
+
+    while ( my ($repo, $branches) = each %{ $self->{shas} } ) {
+        my $allowed_for_repo = $allowed{$repo} || '';
+        unless ($allowed_for_repo) {
+            delete $self->{shas}->{$repo};
+            next;
+        }
+        foreach my $branch ( keys %{ $branches } ) {
+            # We can't clear the link check information at this point safely
+            # because we need it for PR builds and we don't have a good way
+            # tell if it'll be needed again. It is a problem, but not a big one
+            # right now.
+            unless ($allowed_for_repo->{$branch} || $branch =~ /^link-check/) {
+                delete $branches->{$branch};
+            }
+        }
+        # Empty can show up because there is a new book that were not
+        # building at this time and we don't want that to force a commit so we
+        # clean them up while we're purging here.
+        delete $self->{shas}->{$repo} unless keys %{ $branches };
     }
-    $self->write;
+}
+
+#===================================
+sub _allowed_entries_from_books {
+#===================================
+    my ( $allowed, @entries ) = @_;
+
+    foreach my $book ( @entries ) {
+        my $title = $book->{title};
+        foreach ( @{ $book->{branches} } ) {
+            my ( $branch, $branch_title ) = ref $_ eq 'HASH' ? (%$_) : ( $_, $_ );
+            foreach my $source ( @{ $book->{sources} } ) {
+                my $repo = $source->{repo};
+                my $path = dir('.')->subdir( $source->{path} )->relative('.');
+                my $mapped_branch = $source->{map_branches}{$branch} || $branch;
+                $allowed->{$repo}{"$title/$path/$mapped_branch"} = 1;
+            }
+        }
+        if (exists $book->{sections}) {
+            _allowed_entries_from_books( $allowed, @{ $book->{sections} } );
+        }
+    }
 }
 
 #===================================
 sub write {
 #===================================
     my $self = shift;
-    my $to_save = dclone( $self->shas );
-    # Empty hashes are caused by new repos that are unused which shouldn't
-    # force a commit.
-    while (my ($repo, $branches) = each %{ $to_save } ) {
-        unless ( keys %{ $branches } ) {
-            delete $to_save->{$repo};
-        }
-    }
-    my $new  = Dump( $to_save );
-    return if $new eq $self->{yaml};
     $self->file->parent->mkpath;
-    $self->file->spew( iomode => '>:utf8', $new );
-    $self->{yaml} = $new;
+    $self->file->spew( iomode => '>:utf8', Dump( $self->{shas} ) );
 }
 
 #===================================

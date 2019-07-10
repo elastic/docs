@@ -220,7 +220,8 @@ sub build_all {
 
     say "Updating repositories";
     my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
-    init_repos( $repos_dir, $temp_dir, $reference_dir, $target_repo );
+    my $tracker = init_repos(
+            $repos_dir, $temp_dir, $reference_dir, $target_repo );
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
@@ -259,6 +260,8 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
+    $tracker->prune_out_of_date( @$contents );
+    $tracker->write;
     push_changes( $build_dir, $target_repo ) if $Opts->{push};
     serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
 
@@ -531,17 +534,7 @@ sub init_repos {
         }
         else {
             $pm->start($name) and next;
-            eval {
-                $repo->update_from_remote();
-                1;
-            } or do {
-                # If creds are invalid, explicitly reject them to try to clear the cache
-                my $error = $@;
-                if ( $error =~ /Invalid username or password/ ) {
-                    revoke_github_creds();
-                }
-                die $error;
-            };
+            $repo->update_from_remote();
             $pm->finish;
         }
     }
@@ -563,7 +556,7 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    return $target_repo;
+    return $tracker;
 }
 
 
@@ -608,7 +601,7 @@ sub preview {
         } else {
             close STDIN;
             open( STDIN, "</dev/null" );
-            exec( qw(node /docs_build/preview/preview.js) );
+            exec( qw(node --max-old-space-size=128 /docs_build/preview/preview.js) );
         }
     } else {
         close STDIN;
@@ -772,8 +765,9 @@ sub serve_and_open_browser {
     if ( my $pid = fork ) {
         # parent
         $SIG{INT} = sub {
-            kill -9, $pid;
+            kill 'TERM', $pid;
         };
+        $SIG{TERM} = $SIG{INT};
         if ( not $running_in_standard_docker ) {
             sleep 1;
             say "Press Ctrl-C to exit the web server";
@@ -781,7 +775,7 @@ sub serve_and_open_browser {
         }
 
         wait;
-        say "\nExiting";
+        say 'Terminated preview services';
         exit;
     }
     else {

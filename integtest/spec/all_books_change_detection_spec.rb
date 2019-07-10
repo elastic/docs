@@ -285,6 +285,58 @@ RSpec.describe 'building all books' do
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
+        context 'because we add a branch to the book' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, _config|
+              repo = src.repo 'repo'
+              repo.switch_to_new_branch 'foo'
+              book = src.book 'Test'
+              book.branches.push 'foo'
+            end
+          )
+          let(:latest_revision) { 'init' }
+          let(:new_text) { 'Some text.' }
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+          end
+          file_context 'html/branches.yaml' do
+            it 'includes the original branch' do
+              expect(contents).to include('Test/index.asciidoc/master')
+            end
+            it 'includes the added branch' do
+              expect(contents).to include('Test/index.asciidoc/foo')
+            end
+          end
+        end
+        context 'because we remove a branch from the book' do
+          build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              repo = src.repo 'repo'
+              repo.switch_to_new_branch 'foo'
+              book = src.book 'Test'
+              book.branches.push 'foo'
+            end,
+            before_second_build: lambda do |src, _config|
+              book = src.book 'Test'
+              book.branches.delete 'foo'
+            end
+          )
+          let(:latest_revision) { 'init' }
+          let(:new_text) { 'Some text.' }
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+          end
+          file_context 'html/branches.yaml' do
+            it 'includes the built branch' do
+              expect(contents).to include('Test/index.asciidoc/master')
+            end
+            it "doesn't include the removed branch" do
+              expect(contents).not_to include('Test/index.asciidoc/foo')
+            end
+          end
+        end
       end
     end
 
