@@ -41,6 +41,9 @@ module Dsl
           expect(out).to include("#{book.title}: Copying master to current")
         end
       end
+      include_examples 'commits changes'
+    end
+    shared_examples 'commits changes' do
       it 'prints that it is commiting changes' do
         expect(out).to include('Commiting changes')
       end

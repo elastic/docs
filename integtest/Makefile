@@ -12,13 +12,8 @@ export GIT_COMMITTER_EMAIL=test@example.com
 check: \
 	rspec \
 	style \
-	missing_include_fails_asciidoc missing_include_fails_asciidoctor \
-	new_repo new_book \
-	keep_hash keep_hash_new_repo keep_hash_new_book \
 	sub_dir keep_hash_and_sub_dir \
-	multi_branch \
-	open_all \
-	missing_index
+	multi_branch
 
 .PHONY: style
 style: pycodestyle rubocop
@@ -40,167 +35,12 @@ define BD_DUMMY=
 /docs_build/build_docs.pl --in_standard_docker --out /tmp/dummy
 endef
 
-.PHONY: missing_include_fails_asciidoc
-missing_include_fails_asciidoc: missing_include.asciidoc
-	set +e; \
-		$(BD_DUMMY) --doc missing_include.asciidoc > /tmp/out 2>&1; \
-		test $$? -eq 255
-	$(call GREP,'WARNING: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
-
-.PHONY: missing_include_fails_asciidoctor
-missing_include_fails_asciidoctor: missing_include.asciidoc
-	set +e; \
-		$(BD_DUMMY) --asciidoctor --doc missing_include.asciidoc > /tmp/out 2>&1; \
-		test $$? -eq 255
-	$(call GREP,'ERROR: missing_include.asciidoc: line 7: include file not found: /docs_build/integtest/missing.asciidoc',/tmp/out)
-
 .PHONY: simple_all
 simple_all:
 	# Test the simplest possible `--all` invocation
 	rm -rf $(TMP)
 	$(BUILD_MINIMAL_ALL)
 	$(call MINIMAL_ALL_EXPECTED_FILES,init)
-
-.PHONY: new_repo
-new_repo:
-	# Test that `--all` works when you add a new repo to a book that used to
-	# only have a single repo
-	rm -rf $(TMP)
-	$(BUILD_MINIMAL_ALL)
-
-	# Replace the minimal documentation in the source repo with one that
-	# references the second repo
-	sed -e 's|../||' includes_source2.asciidoc > $(TMP)/source/index.asciidoc
-	cat $(TMP)/source/index.asciidoc
-	cd $(TMP)/source && \
-		git add . && \
-		git commit -m 'includes source2'
-	# Add new repo to conf file
-	$(call INIT_REPO_WITH_FILE,$(TMP)/source2,included.asciidoc,index.asciidoc)
-	sed -riE 's|^(\s+)source:|\1source2: $(TMP)/source2\n\1source:|' $(TMP)/conf.yaml
-	echo "            -"                          >> $(TMP)/conf.yaml
-	echo "                repo:   source2"        >> $(TMP)/conf.yaml
-	echo "                path:   index.asciidoc" >> $(TMP)/conf.yaml
-
-	# Build the book wit hthe new repo
-	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml | tee $(TMP)/out
-	$(call GREP,'Test book',$(TMP)/out)
-	$(call NOT_CONTAIN,'No changes to push',$(TMP)/out)
-
-	git clone $(TMP)/dest.git $(TMP)/dest
-	$(call GREP,'I am tiny.',$(TMP)/dest/html/test/current/_chapter.html)
-
-.PHONY: new_book
-new_book:
-	# Test that `--all` works when you add a new book to the list
-	rm -rf $(TMP)
-	$(BUILD_MINIMAL_ALL)
-
-	# Add a new book
-	echo "    -"                                  >> $(TMP)/conf.yaml
-	echo "        title:      Test book 2"        >> $(TMP)/conf.yaml
-	echo "        prefix:     test2"              >> $(TMP)/conf.yaml
-	echo "        current:    master"             >> $(TMP)/conf.yaml
-	echo "        branches:   [ master ]"         >> $(TMP)/conf.yaml
-	echo "        index:      index.asciidoc"     >> $(TMP)/conf.yaml
-	echo "        tags:       test tag"           >> $(TMP)/conf.yaml
-	echo "        subject:    Test"               >> $(TMP)/conf.yaml
-	echo "        sources:"                       >> $(TMP)/conf.yaml
-	echo "            -"                          >> $(TMP)/conf.yaml
-	echo "                repo:   source"         >> $(TMP)/conf.yaml
-	echo "                path:   index.asciidoc" >> $(TMP)/conf.yaml
-
-	# Adding a new book should cause that book to build
-	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml | tee $(TMP)/out
-	$(call GREP,'Test book 2',$(TMP)/out)
-	$(call NOT_CONTAIN,'No changes to push',$(TMP)/out)
-
-	git clone $(TMP)/dest.git $(TMP)/dest
-	$(call GREP,'minimal viable asciidoc',$(TMP)/dest/html/test2/current/_chapter.html)
-
-.PHONY: keep_hash
-keep_hash:
-	# Test that `--all --keep_hash` doesn't pull new updates
-	rm -rf $(TMP)
-	$(BUILD_MINIMAL_ALL)
-
-	# REPLACE the minimal documentation in the source repo
-	cp ../README.asciidoc $(TMP)/source/index.asciidoc
-	cd $(TMP)/source && \
-		git add . && \
-		git commit -m 'README'
-
-	# Rebuild the docs with --keep_hash which should ignore the replacement
-	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml \
-		--keep_hash | tee $(TMP)/out
-	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
-	$(call GREP,'No changes to push',$(TMP)/out)
-
-	# We expact the same files as the minimal because the changes that we
-	# made shouldn't be included
-	$(call MINIMAL_ALL_EXPECTED_FILES,init)
-
-.PHONY: keep_hash_new_repo
-keep_hash_new_repo:
-	# Test that `--all --keep_hash` doesn't pull new updates
-	rm -rf $(TMP)
-	$(BUILD_MINIMAL_ALL)
-
-	# Add new repo to conf file
-	$(call INIT_REPO_WITH_FILE,$(TMP)/source2,minimal.asciidoc,totally_not_used.asciidoc)
-	sed -riE 's|^(\s+)source:|\1source2: $(TMP)/source2\n\1source:|' $(TMP)/conf.yaml
-	echo "            -"                          >> $(TMP)/conf.yaml
-	echo "                repo:   source2"        >> $(TMP)/conf.yaml
-	echo "                path:   not_used.asciidoc" >> $(TMP)/conf.yaml
-
-	# Rebuild the docs with --keep_hash which should ignore the new repo
-	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml \
-		--keep_hash | tee $(TMP)/out
-	$(call NOT_CONTAIN,'Test book',$(TMP)/out)
-	$(call GREP,'No changes to push',$(TMP)/out)
-
-	# We expact the same files as the minimal because we didn't make
-	# any changes
-	$(call MINIMAL_ALL_EXPECTED_FILES,init)
-
-.PHONY: keep_hash_new_book
-keep_hash_new_book:
-	# Test that `--all --keep_hash` doesn't pull new updates
-	rm -rf $(TMP)
-	$(BUILD_MINIMAL_ALL)
-
-	# Add a new book
-	echo "    -"                                  >> $(TMP)/conf.yaml
-	echo "        title:      Test book 2"        >> $(TMP)/conf.yaml
-	echo "        prefix:     test2"              >> $(TMP)/conf.yaml
-	echo "        current:    master"             >> $(TMP)/conf.yaml
-	echo "        branches:   [ master ]"         >> $(TMP)/conf.yaml
-	echo "        index:      index.asciidoc"     >> $(TMP)/conf.yaml
-	echo "        tags:       test tag"           >> $(TMP)/conf.yaml
-	echo "        subject:    Test"               >> $(TMP)/conf.yaml
-	echo "        sources:"                       >> $(TMP)/conf.yaml
-	echo "            -"                          >> $(TMP)/conf.yaml
-	echo "                repo:   source"         >> $(TMP)/conf.yaml
-	echo "                path:   index.asciidoc" >> $(TMP)/conf.yaml
-
-	# If we build the all the books with --keep_hash we shouldn't rebuild
-	# any books because the new book wasn't built last time.
-	/docs_build/build_docs.pl --in_standard_docker --all --push \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml \
-		--keep_hash | tee $(TMP)/out
-	$(call NOT_CONTAIN,'Test book 2',$(TMP)/out)
-	# But we *will* rebuild the table of contents so we get the book in the
-	# list. That is unfortunate but isn't too big a deal.
-	$(call GREP,'Pushing changes',$(TMP)/out)
 
 .PHONY: sub_dir
 sub_dir:
@@ -365,41 +205,6 @@ multi_branch:
 	$(call GREP,'Test book: Copying master to current',$(TMP)/out)
 	$(call GREP,'Test book: Writing versions TOC',$(TMP)/out)
 	$(call GREP,'Pushing changes',$(TMP)/out)
-
-.PHONY: open_all
-open_all:
-	# Test that `--all --open` starts nginx in a usable way.
-	rm -rf $(TMP)
-	$(SETUP_MINIMAL_ALL)
-	/docs_build/build_docs.pl --in_standard_docker --all \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml --open | tee $(TMP)/out &
-	curl -I --retry 10 --retry-connrefused http://127.0.0.1:8000/guide/
-	mkdir $(TMP)/guide
-	curl -sS http://127.0.0.1:8000/guide/ > $(TMP)/guide/index.html
-	$(call GREP,'Test book',$(TMP)/guide/index.html)
-	curl -sSI http://127.0.0.1:8000/guide/reference/setup > $(TMP)/guide/rdir
-	$(call GREP,'301 Moved Permanently',$(TMP)/guide/rdir)
-	$(call GREP,'Location: http://localhost:8000/guide/en/elasticsearch/reference/current/setup.html',$(TMP)/guide/rdir)
-	kill -QUIT $$(cat /run/nginx/nginx.pid)
-
-.PHONY: missing_index
-missing_index:
-	rm -rf $(TMP)
-	$(call INIT_REPO_WITH_FILE,$(TMP)/source,minimal.asciidoc,docs/not_the_index.asciidoc)
-	git init --bare $(TMP)/dest.git
-	sed -e 's|--tmp--|$(TMP)|' \
-		-e 's|path:   index.asciidoc|path:   docs|' \
-		-e 's|index:      index.asciidoc|index:      foo/index.asciidoc|' \
-		small_conf.yaml > $(TMP)/conf.yaml
-	set +e; /docs_build/build_docs.pl --in_standard_docker --all \
-		--target_repo $(TMP)/dest.git \
-		--conf $(TMP)/conf.yaml > $(TMP)/out 2>&1; \
-		\
-		test $$? -eq 2
-	$(call GREP,'Can'"'"'t find index',$(TMP)/out)
-	$(call GREP,'foo/index.asciidoc',$(TMP)/out)
-
 
 define SETUP_MINIMAL_ALL=
 	# First build a repository to use as the source.

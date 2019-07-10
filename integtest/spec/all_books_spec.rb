@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'net/http'
+
 RSpec.describe 'building all books' do
   shared_examples 'book basics' do |title, prefix|
     context "for the #{title} book" do
@@ -148,6 +150,88 @@ RSpec.describe 'building all books' do
     include_examples 'book basics', 'Test', 'test'
     it 'prints that it is forking the new branch from master' do
       expect(out).to include('target_repo: Forking <new_branch> from master')
+    end
+  end
+
+  context 'when one source is private' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        Words
+
+        include::../private_repo/foo.asciidoc[]
+      ASCIIDOC
+      private_repo = src.repo 'private_repo'
+      private_repo.write 'foo.asciidoc', <<~ASCIIDOC
+        [[foo]]
+        == Foo
+
+        Words
+      ASCIIDOC
+      private_repo.commit 'build foo'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.source private_repo, 'foo.asciidoc', is_private: true
+    end
+    let(:latest_revision) { 'init' }
+    page_context 'html/test/current/chapter.html' do
+      it 'does contain an edit link because it is from a public source' do
+        expect(body).to include(%(title="Edit this page on GitHub"))
+      end
+    end
+
+    page_context 'html/test/current/foo.html' do
+      it "doesn't contain an edit link because it is from a private source" do
+        expect(body).not_to include(%(title="Edit this page on GitHub"))
+      end
+    end
+  end
+
+  context 'when run with --open' do
+    include_context 'source and dest'
+    before(:context) do
+      repo = @src.repo_with_index 'repo', 'Words'
+      book = @src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      @opened_docs = @dest.prepare_convert_all(@src.conf).open
+    end
+    after(:context) do
+      @opened_docs.exit
+    end
+
+    let(:root) { 'http://localhost:8000/guide/' }
+    let(:index) { Net::HTTP.get_response(URI(root)) }
+    let(:legacy_redirect) do
+      Net::HTTP.get_response(URI("#{root}reference/setup/"))
+    end
+
+    it 'serves the book' do
+      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+        <a class="ulink" href="test/current/index.html" target="_top">Test
+      HTML
+    end
+    it 'serves a legacy redirect' do
+      expect(legacy_redirect.code).to eq('301')
+      expect(legacy_redirect['location']).to eq(
+        "#{root}en/elasticsearch/reference/current/setup.html"
+      )
+    end
+  end
+
+  context "when the index for the book isn't in the repo" do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', 'words'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.index = 'not_index.asciidoc'
+      dest.prepare_convert_all(src.conf).convert(expect_failure: true)
+    end
+    it 'fails with an appropriate error status' do
+      expect(statuses[0]).to eq(2)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to match(%r{
+        Can't\ find\ index\ \[.+/src/not_index.asciidoc\]
+      }x)
     end
   end
 end

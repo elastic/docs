@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'net/http'
 
 RSpec.describe 'building a single book' do
   HEADER = <<~ASCIIDOC
@@ -61,7 +62,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
-          <a href="unknown/edit/master/index.asciidoc" class="edit_me"
+          <a href="unknown/edit/master/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
         HTML
       end
     end
@@ -142,6 +143,25 @@ RSpec.describe 'building a single book' do
           # We match on the empty cell followed by the non-empty cell so we
           # can be sure we're matching the right part of the table.
           expect(body).to include("<tr>#{empty_cell}#{non_empty_cell}</tr>")
+        end
+      end
+    end
+    context 'for a book that has a reference to a floating title' do
+      convert_single_before_context do |src|
+        src.write 'index.asciidoc', <<~ASCIIDOC
+          #{HEADER}
+          <<floater>>
+
+          [float]
+          [[floater]]
+          == Floater
+        ASCIIDOC
+      end
+      page_context 'chapter.html' do
+        it "there isn't an edit me link in the link to the section" do
+          expect(body).to include(<<~HTML.strip)
+            <a class="xref" href="chapter.html#floater" title="Floater">Floater</a>
+          HTML
         end
       end
     end
@@ -369,6 +389,25 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/callouts/2.png'
   end
 
+  context 'when run with --open' do
+    include_context 'source and dest'
+    before(:context) do
+      repo = @src.repo_with_index 'repo', 'Words'
+      @opened_docs =
+        @dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.').open
+    end
+    after(:context) do
+      @opened_docs.exit
+    end
+
+    let(:index) { Net::HTTP.get_response(URI('http://localhost:8000/guide/')) }
+    it 'serves the book' do
+      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+        <a href="chapter.html">Chapter
+      HTML
+    end
+  end
+
   ##
   # When you point `build_docs` to a worktree it doesn't properly share the
   # worktree's parent into the docker container. This test simulates *that*.
@@ -429,6 +468,25 @@ RSpec.describe 'building a single book' do
           expect(body).to include('CODE HERE')
         end
       end
+    end
+  end
+
+  context 'when an included file is missing' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', <<~ASCIIDOC
+        include::missing.asciidoc[]
+      ASCIIDOC
+      dest.convert_single "#{repo.root}/index.asciidoc", '.',
+                          asciidoctor: true,
+                          expect_failure: true
+    end
+    it 'fails with an appropriate error status' do
+      expect(statuses[0]).to eq(255)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to include(<<~LOG.strip)
+        ERROR: index.asciidoc: line 5: include file not found: #{@src.repo('src').root}/missing.asciidoc
+      LOG
     end
   end
 end

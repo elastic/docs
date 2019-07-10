@@ -71,19 +71,25 @@ class Source
   end
 
   ##
+  # Create a repo with an index.asciidoctor file and a book that uses it as
+  # a source.
+  def book_and_repo(repo_name, book_name, index_content)
+    repo = repo_with_index repo_name, index_content
+    book(book_name).source repo, 'index.asciidoc'
+  end
+
+  ##
   # Create two repos and a book. The first repo contains an index that includes
   # a file in the second repo. The book is configured to use both repos as a
   # source so that it'll build properly.
   def simple_include
-    repo1 = repo_with_index 'repo1', <<~ASCIIDOC
+    book_and_repo 'repo1', 'Test', <<~ASCIIDOC
       Include between here
       include::../repo2/included.asciidoc[]
       and here.
     ASCIIDOC
     repo2 = repo_with_file 'repo2', 'included.asciidoc', 'included text'
-    book = book 'Test'
-    book.source repo1, 'index.asciidoc'
-    book.source repo2, 'included.asciidoc'
+    book('Test').source repo2, 'included.asciidoc'
   end
 
   ##
