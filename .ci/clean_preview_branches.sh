@@ -2,6 +2,8 @@
 
 set -eo pipefail
 
+# Only set this in docker
+JENKINS_HOME=/var/lib/jenkins
 # Use Jenkin's home as our home because that is where the ssh
 # known hosts file lives.
 export HOME=$JENKINS_HOME
