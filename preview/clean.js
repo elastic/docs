@@ -29,7 +29,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
       'clone',
       '--bare',
       '--reference', `${cache_dir}/${repo_name}`,
-      repo, this.local_path])
+      repo, this.local_path], {GIT_SSH_COMMAND: "ssh -v"})
   }
 
   this.show_heads = () => {
