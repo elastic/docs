@@ -72,21 +72,15 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
     # Check if the next block is a marker for the language
     # We don't want block.next_adjacent_block because that'll go "too far"
     # and it has trouble with definition lists.
-    my_index = block.parent.blocks.find_index block
-    return unless my_index
+    return unless (my_index = block.parent.blocks.find_index block)
 
     next_block = block.parent.blocks[my_index + 1]
     return unless next_block && next_block.context == :pass
-
-    match = LANG_OVERRIDE_RX.match(next_block.source)
-    return unless match
-
-    lang = LANG_MAPPING[match[1]]
-    snippet = match[2]
-    return unless lang # Not a language we handle
+    return unless (match = LANG_OVERRIDE_RX.match(next_block.source))
+    return unless (lang = LANG_MAPPING[match[1]]) # Not a language we handle
 
     block.set_attr 'language', lang
-    block.set_attr 'snippet', snippet
+    block.set_attr 'snippet', match[2]
 
     block.parent.blocks.delete next_block
     block.parent.reindex_sections

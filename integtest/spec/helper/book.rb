@@ -12,12 +12,17 @@ class Book
   # Should this book build with asciidoctor (true) or asciidoc (false).
   attr_accessor :asciidoctor
 
+  ##
+  # The list of branches to build
+  attr_accessor :branches
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
     @index = 'index.asciidoc'
     @asciidoctor = true
     @sources = []
+    @branches = ['master']
   end
 
   ##
@@ -47,7 +52,7 @@ class Book
       title:      #{@title}
       prefix:     #{@prefix}
       current:    master
-      branches:   [ master ]
+      branches:   [ #{@branches.join ', '} ]
       index:      #{@index}
       tags:       test tag
       subject:    Test
@@ -61,7 +66,9 @@ class Book
   # The html for a link to a particular branch of this book.
   def link_to(branch)
     url = "#{@prefix}/#{branch}/index.html"
-    %(<a class="ulink" href="#{url}" target="_top">#{@title}</a>)
+    decoration = ''
+    decoration = ' [master]' unless @branches.length == 1
+    %(<a class="ulink" href="#{url}" target="_top">#{@title}#{decoration}</a>)
   end
 
   private

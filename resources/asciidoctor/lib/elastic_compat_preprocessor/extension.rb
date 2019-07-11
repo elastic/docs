@@ -209,7 +209,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
           if line != @code_block_start
             line.replace(@code_block_start)
             migration_warn @document, cursor, 'delimiter-mismatch',
-              "code block end doesn't match start"
+                           "code block end doesn't match start"
           end
           @code_block_start = nil
         else

@@ -8,7 +8,7 @@ require 'asciidoctor/extensions'
 class TreeProcessorScaffold < Asciidoctor::Extensions::TreeProcessor
   def process_block(_document)
     raise ::NotImplementedError,
-      %(TreeProcessorScaffold subclass must implement ##{__method__} method)
+          %(#{self.class} subclass must implement ##{__method__} method)
   end
 
   def process(document)
