@@ -167,6 +167,11 @@ class Dest
       self
     end
 
+    def announce_preview(preview_location)
+      @cmd += ['--announce_preview', preview_location]
+      self
+    end
+
     def skip_link_check
       @cmd += ['--skiplinkcheck']
       self
