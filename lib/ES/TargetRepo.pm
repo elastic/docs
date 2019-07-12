@@ -43,15 +43,19 @@ sub checkout_minimal {
 #===================================
     my ( $self ) = @_;
 
+    # Whether or not we'll need to force push the target branch.
+    $self->{rebuilding_target_branch} = 0;
+
     my $original_pwd = Cwd::cwd();
     eval {
         my $out = run qw(git clone --no-checkout),
             $self->git_dir, $self->{destination};
 
-        # This if statement will *either* put the repo on the branch we want
-        # and exit or the branch we want doesn't exist and we need to fork it
-        # from master. In that case it'll put the repo on the master branch
-        # and fall out.
+        # This if stement handles empty repositories in a way that works with
+        # different target branches. It always checks out the master
+        # branch. If the target branch is `master` then it will return early.
+        # If the target branch isn't master it'll delete the existing copy
+        # of the branch.
         if ( $out =~ /You appear to have cloned an empty repository./) {
             $self->{started_empty} = 1;
             printf(" - %20s: Initializing empty master for empty repo\n",
@@ -65,11 +69,11 @@ sub checkout_minimal {
             chdir $self->{destination};
             run qw(git config core.sparseCheckout true);
             $self->_write_sparse_config("/*\n!html/*/\n");
-            if ( $self->_branch_exists( 'origin/' . $self->{branch} ) ) {
-                run qw(git checkout), $self->{branch};
-                return 1;
-            }
             run qw(git checkout master);
+            return 1 if $self->{branch} eq 'master';
+            if ( $self->_branch_exists( 'origin/' . $self->{branch} ) ) {
+                $self->{rebuilding_target_branch} = 1;
+            }
         }
 
         printf(" - %20s: Forking <%s> from master\n",
@@ -131,12 +135,15 @@ sub push_changes {
     my ( $self ) = @_;
     local $ENV{GIT_WORK_TREE} = $self->{destination};
     local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
+    my @push_branch = qw(git push origin);
+    push @push_branch, '--force' if $self->{rebuilding_target_branch};
+    push @push_branch, $self->{branch};
 
     run qw(git push origin master) if $self->{initialized_empty_master};
-    run qw(git push origin), $self->{branch};
+    run @push_branch;
     local $ENV{GIT_DIR} = $self->{git_dir};
     run qw(git push origin master) if $self->{initialized_empty_master};
-    run qw(git push origin), $self->{branch};
+    run @push_branch;
 }
 
 #===================================
