@@ -46,10 +46,17 @@ const requestHandler = (request, response) => {
       return;
     }
 
+    if (stdout.trim() === 'tree') {
+      response.statusCode = 301;
+      const sep = requestedObject.endsWith('/') ? '' : '/';
+      response.setHeader('Location', `${parsedUrl.pathname}${sep}index.html`);
+      response.end();
+      return;
+    }
+
     response.setHeader('Transfer-Encoding', 'chunked');
-    const showGitObject = gitShowObject(requestedObject, stdout.trim());
     const child = child_process.spawn(
-      'git', ['cat-file', 'blob', showGitObject], catOpts
+      'git', ['cat-file', 'blob', requestedObject], catOpts
     );
 
     // We spool stderr into a string because it is never super big.
@@ -92,19 +99,6 @@ const requestHandler = (request, response) => {
       response.end(err.message);
     });
   });
-}
-
-function gitShowObject(requestedObject, type) {
-  switch (type) {
-    case 'tree':
-      const sep = requestedObject.endsWith('/') ? '' : '/';
-      return `${requestedObject}${sep}index.html`;
-    case 'blob':
-      return requestedObject;
-    default:
-      console.warn('received request for object of type', type, 'at', requestedObject);
-      return 'HEAD:html/en/index.html';
-  }
 }
 
 function gitBranch(host) {
