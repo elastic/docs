@@ -15,8 +15,8 @@ require 'asciidoctor/extensions'
 class CareAdmonition < Asciidoctor::Extensions::Group
   def activate(registry)
     [
-        [:beta, 'beta'],
-        [:experimental, 'experimental'],
+      [:beta, 'beta'],
+      [:experimental, 'experimental'],
     ].each do |(name, role)|
       registry.block_macro ChangeAdmonitionBlock.new(role), name
       registry.inline_macro ChangeAdmonitionInline.new(role), name
@@ -35,13 +35,15 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     end
 
     def process(parent, _target, attrs)
-      Asciidoctor::Block.new(parent, :admonition,
-          source: attrs[:passtext],
-          attributes: {
-            'role' => @role,
-            'name' => 'warning',
-            'style' => 'warning',
-          })
+      Asciidoctor::Block.new(
+        parent, :admonition,
+        source: attrs[:passtext],
+        attributes: {
+          'role' => @role,
+          'name' => 'warning',
+          'style' => 'warning',
+        }
+      )
     end
   end
 

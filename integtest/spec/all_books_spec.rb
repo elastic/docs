@@ -217,6 +217,25 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'when run with --announce_preview' do
+    target_branch = 'foo_1'
+    preview_location = "http://#{target_branch}.docs-preview.app.elstc.co/guide"
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      dest.prepare_convert_all(src.conf)
+          .target_branch(target_branch)
+          .announce_preview(preview_location)
+          .convert
+    end
+    it 'logs the location of the preview' do
+      expect(outputs[0]).to include(
+        "A preview will soon be available at #{preview_location}"
+      )
+    end
+  end
+
   context "when the index for the book isn't in the repo" do
     convert_before do |src, dest|
       repo = src.repo_with_index 'src', 'words'

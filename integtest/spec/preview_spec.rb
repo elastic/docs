@@ -76,6 +76,9 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:very_large) do
       get watermark, branch, "#{current_url}/resources/very_large.jpg"
     end
+    let(:directory) do
+      get watermark, branch, 'guide'
+    end
   end
 
   it 'logs that the built docs are ready' do
@@ -117,6 +120,12 @@ RSpec.describe 'previewing built docs', order: :defined do
     end
     it 'serves a very large file' do
       expect(very_large).to serve(eq(very_large_text))
+    end
+    context 'when you request a directory' do
+      it 'redirects to index.html' do
+        expect(directory.code).to eq('301')
+        expect(directory['Location']).to eq('/guide/index.html')
+      end
     end
   end
   describe 'for the test branch' do
