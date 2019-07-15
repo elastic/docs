@@ -60,6 +60,8 @@ alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-m
 # Solutions 
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
 
+alias docbldup='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
+
 alias docbldsec='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
 
 # Curator
