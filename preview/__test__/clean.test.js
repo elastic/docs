@@ -4,8 +4,7 @@ const Cleaner = require('../clean.js');
 const fs = require('fs').promises;
 const nock = require('nock');
 const os = require('os');
-const path = require('path');
-const rimraf = require('rimraf');
+const rmfr = require('rmfr');
 
 const tmp = `${os.tmpdir()}/preview_cleaner`;
 
@@ -53,17 +52,7 @@ function github_result(is_closed) {
   });
 }
 
-afterAll(() => {
-  return new Promise((resolve, reject) => {
-    rimraf(tmp, err => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-});
+afterAll(() => rmfr(tmp));
 
 describe('Cleaner.clone', () => {
   let out;
