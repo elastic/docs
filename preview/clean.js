@@ -9,33 +9,25 @@ const path = require('path');
 module.exports = { Cleaner, exec_git };
 
 function Cleaner(token, repo, cache_dir, tmp_dir) {
-  this.repo = repo;
   let repo_name = path.basename(repo);
   if (!repo_name.endsWith('.git')) {
     repo_name += '.git';
   }
-  this.local_path = `${tmp_dir}/${repo_name}`;
+  const local_path = `${tmp_dir}/${repo_name}`;
 
-  this.run = () => {
-    return this.clone()
-      .then(this.show_heads)
-      .then(this.heads_to_prs)
-      .then(this.cleanup_closed_prs);
-  }
-
-  this.clone = () => {
+  const clone = () => {
     return exec_git([
       'clone',
       '--bare',
       '--reference', `${cache_dir}/${repo_name}`,
-      repo, this.local_path])
+      repo, local_path])
   }
 
-  this.show_heads = () => {
-    return exec_git(['show-ref', '--heads'], {cwd: this.local_path});
+  const show_heads = () => {
+    return exec_git(['show-ref', '--heads'], {cwd: local_path});
   }
 
-  this.heads_to_prs = (heads) => {
+  const heads_to_prs = (heads) => {
     return heads
       .split('\n')
       .map(line => {
@@ -60,10 +52,10 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
       });
   }
 
-  this.cleanup_closed_prs = async prs => {
+  const cleanup_closed_prs = async prs => {
     for (let pr of prs) {
       const url = `https://www.github.com/elastic/${pr.repo}/pull/${pr.number}`;
-      if (await this.is_pr_closed(pr)) {
+      if (await is_pr_closed(pr)) {
         console.info(`Deleting ${pr.branch} for closed pr at ${url}`);
         if (pr.branch === 'master' || pr.branch === 'staging') {
           // Just for super double ultra paranoia.
@@ -71,7 +63,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
         }
         await exec_git(
           ['push', 'origin', '--delete', pr.branch],
-          {cwd: this.local_path}
+          {cwd: local_path}
         );
       } else {
         console.info(`Preserving ${pr.branch} for open pr at ${url}`);
@@ -79,7 +71,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
     }
   }
 
-  this.is_pr_closed = function(pr) {
+  const is_pr_closed = function(pr) {
     return new Promise((resolve, reject) => {
       const body = {
         query: `
@@ -146,6 +138,20 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
       req.end();
     });
   }
+
+  return {
+    run: () => {
+      return clone()
+        .then(show_heads)
+        .then(heads_to_prs)
+        .then(cleanup_closed_prs);
+    },
+    clone: clone,
+    is_pr_closed: is_pr_closed,
+
+    repo: repo,
+    local_path: local_path,
+  };
 }
 
 function exec_git(opts, env = {}) {
