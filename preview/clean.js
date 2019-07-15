@@ -6,8 +6,7 @@ const https = require('https');
 const os = require('os');
 const path = require('path');
 
-module.exports = Cleaner;
-module.exports.exec_git = exec_git;
+module.exports = { Cleaner, exec_git };
 
 function Cleaner(token, repo, cache_dir, tmp_dir) {
   this.repo = repo;

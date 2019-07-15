@@ -1,6 +1,6 @@
 'use strict';
 
-const Cleaner = require('../clean.js');
+const { Cleaner, exec_git } = require('../clean.js');
 const fs = require('fs').promises;
 const nock = require('nock');
 const os = require('os');
@@ -22,16 +22,16 @@ async function prepare_cleaner(extra_branches = []) {
       'GIT_COMMITTER_EMAIL': 'test@example.com',
     },
   };
-  await Cleaner.exec_git(['init'], opts);
-  await Cleaner.exec_git(['commit', '--allow-empty', '-m', 'init'], opts);
+  await exec_git(['init'], opts);
+  await exec_git(['commit', '--allow-empty', '-m', 'init'], opts);
   for (let branch of extra_branches) {
-    await Cleaner.exec_git(['branch', branch], opts);
+    await exec_git(['branch', branch], opts);
   }
 
   // Create the local cache which is required by the cleaner scripit
   const cache_dir = await fs.mkdtemp(`${tmp}/cache`);
   opts.cwd = cache_dir;
-  await Cleaner.exec_git(['clone', '--mirror', repo], opts);
+  await exec_git(['clone', '--mirror', repo], opts);
 
   // Setup the cleaner
   const tmp_dir = await fs.mkdtemp(`${tmp}/tmp`);
@@ -127,7 +127,7 @@ describe('Cleaner.run', () => {
     repo = cleaner.repo;
   });
   function show_branch(branch) {
-    return Cleaner.exec_git(
+    return exec_git(
       ['show-ref', '--verify', `refs/heads/${branch}`],
       {cwd:repo}
     );
