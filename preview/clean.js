@@ -30,17 +30,17 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   const heads_to_prs = (heads) => {
     return heads
       .split('\n')
-      .map(line => {
+      .reduce((acc, line) => {
         const found = line.match(/^.+ refs\/heads\/((.+)_(\d+))$/);
         if (found) {
-          return {
+          acc.push({
             branch: found[1],
             repo: found[2],
             number: Number(found[3]),
-          };
+          });
         }
-      })
-      .filter(a => a)
+        return acc;
+      }, [])
       .sort((lhs, rhs) => {
         if (lhs.repo < rhs.repo) {
           return -1;
