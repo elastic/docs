@@ -70,6 +70,10 @@ class EditMe < TreeProcessorScaffold
         return url if url
       end
 
+      edit_url_by_path
+    end
+
+    def edit_url_by_path
       # || '<stdin>' allows us to not blow up when translating strings that
       # aren't associated with any particular file. '<stdin>' is asciidoctor's
       # standard name for such strings.
