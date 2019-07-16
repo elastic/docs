@@ -51,7 +51,7 @@ sub checkout_minimal {
         my $out = run qw(git clone --no-checkout),
             $self->git_dir, $self->{destination};
 
-        # This if stement handles empty repositories in a way that works with
+        # This if statement handles empty repositories in a way that works with
         # different target branches. It always checks out the master
         # branch. If the target branch is `master` then it will return early.
         # If the target branch isn't master it'll delete the existing copy
