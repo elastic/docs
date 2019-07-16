@@ -153,6 +153,57 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'when a book overrides edit_me' do
+    def self.index
+      <<~ASCIIDOC
+        = Test
+
+        :edit_url: overridden
+        [[chapter]]
+        == Chapter
+
+        Words.
+      ASCIIDOC
+    end
+
+    def self.override_edit_me(respect)
+      convert_all_before_context target_branch: 'new_branch' do |src|
+        repo = src.repo_with_file 'repo', 'index.asciidoc', index
+        book = src.book 'Test'
+        book.respect_edit_url_overrides = true if respect
+        book.source repo, 'index.asciidoc'
+      end
+    end
+    let(:edit_me) do
+      <<~HTML.lines.map { |l| ' ' + l.strip }.join.strip
+        <a href="#{edit_url}"
+           class="edit_me"
+           title="Edit this page on GitHub"
+           rel="nofollow">edit</a>
+      HTML
+    end
+    let(:latest_revision) { 'init' }
+    context "when respect_edit_url_overrides isn't specified" do
+      override_edit_me false
+      let(:repo) { @src.repo 'repo' }
+      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      page_context 'the book index', 'html/test/master/chapter.html' do
+        it 'contains the standard edit_me link' do
+          expect(body).to include(edit_me)
+        end
+      end
+    end
+    context 'when respect_edit_url_overrides is specified' do
+      override_edit_me true
+      let(:edit_url) { 'overridden' }
+      page_context 'the book index', 'html/test/master/chapter.html' do
+        it 'contains the overridden edit_me link' do
+          expect(body).to include(edit_me)
+        end
+      end
+    end
+  end
+
   context 'when one source is private' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', <<~ASCIIDOC
