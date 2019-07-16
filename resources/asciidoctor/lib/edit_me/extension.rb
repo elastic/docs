@@ -66,6 +66,7 @@ class EditMe < TreeProcessorScaffold
     def edit_url
       if @document.attributes['respect_edit_url_overrides']
         url = @document.attributes['edit_url']
+        return false if url == ''
         return url if url
       end
 

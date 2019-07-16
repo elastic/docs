@@ -87,7 +87,7 @@ RSpec.describe EditMe do
       title_start ||= '<title>'
       title_end ||= '</title>'
       context "for a document with #{type}s" do
-        shared_examples 'has edit links' do
+        shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
             expect(converted).to include(
@@ -109,7 +109,7 @@ RSpec.describe EditMe do
               include::resources/edit_me/#{type}2.adoc[]
             ASCIIDOC
           end
-          include_examples 'has edit links'
+          include_examples 'has standard edit links'
         end
         context 'that overrides edit_url' do
           let(:input) do
@@ -140,9 +140,29 @@ RSpec.describe EditMe do
                 "#{title_start}#{type.capitalize} 2#{link}#{title_end}"
               )
             end
+            context 'when overriding to an empty string' do
+              let(:input) do
+                <<~ASCIIDOC
+                  :edit_url:
+                  include::resources/edit_me/#{type}1.adoc[]
+
+                  include::resources/edit_me/#{type}2.adoc[]
+                ASCIIDOC
+              end
+              it "doesn't add edit links to #{type} 1" do
+                expect(converted).to include(
+                  "#{title_start}#{type.capitalize} 1#{title_end}"
+                )
+              end
+              it "doesn't add edit links to #{type} 2" do
+                expect(converted).to include(
+                  "#{title_start}#{type.capitalize} 2#{title_end}"
+                )
+              end
+            end
           end
           context "when overriding the edit_url isn't allowed" do
-            include_examples 'has edit links'
+            include_examples 'has standard edit links'
           end
         end
       end
