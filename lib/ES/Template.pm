@@ -13,6 +13,7 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $self = bless {
+        compiled_JS  => 0,
         defaults     => $args{defaults},
         abs_urls     => $args{abs_urls} || 0,
     }, $class;
@@ -54,6 +55,8 @@ sub apply {
         $file->spew( iomode => '>:utf8', join "", @parts );
     }
 
+    $self->_build_js();
+
     # Copy stylesheet
     fcopy( 'resources/web/styles.css', $dir )
         or die "Couldn't copy <styles.css> to <$dir>: $!";
@@ -72,6 +75,19 @@ my $Autosense_RE = qr{
         )
         :(?:CONSOLE|AUTOSENSE|KIBANA):
     }xs;
+
+#===================================
+sub _build_js {
+#===================================
+    my ( $self ) = (@_);
+
+    if ($self->{compiled_JS} == 0) {
+        print "Building docs.js\n";
+        `node_modules/parcel/bin/cli.js build resources/web/docs_js/index.js --no-minify -d resources/web -o docs.js`;
+    }
+
+    $self->{compiled_JS} = 1;
+}
 
 #===================================
 sub _autosense_snippets {

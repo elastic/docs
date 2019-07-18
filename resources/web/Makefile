@@ -9,4 +9,6 @@ check: jest
 
 .PHONY: jest
 jest:
-	/node_modules/jest/bin/jest.js
+	rm -rf tests
+	/node_modules/parcel/bin/cli.js build ./docs_js/__tests__/* -d ./tests/ --target node --no-minify --no-source-maps
+	/node_modules/jest/bin/jest.js ./tests/
