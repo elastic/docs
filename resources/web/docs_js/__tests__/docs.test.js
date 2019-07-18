@@ -1,9 +1,9 @@
 const jQuery = require('jquery');
 import dedent from "dedent";
 import * as docs from "../index";
-import {lang_strings} from "../utils";
+import * as l from "../localization";
 
-const LangStrings = lang_strings('en');
+const LangStrings = l.lang_strings('en');
 
 function pageWithConsole(name, consoleText, extraTextAssertions) {
   describe(name, () => {
@@ -178,5 +178,32 @@ describe('On This Page', () => {
       expect(link).toHaveLength(1);
       expect(link.text().trim()).toEqual('Cluster');
     });
+  });
+});
+
+describe("Open current TOC", () => {
+  beforeEach(() => {
+    document.body.innerHTML = dedent `
+      <div class="toc">
+        <a href="lists.html">Lists</a>
+        <ul class="toc">
+          <li class="collapsible">
+            <a href="blocks.html">Blocks</a>
+          </li>
+        </ul>
+      </div>
+    `;
+
+    docs.open_current("/guide/blocks.html");
+  });
+
+  test("It adds the current_page class to the correct element", () => {
+    const el = jQuery('div.toc a[href="blocks.html"]');
+    expect(el.hasClass("current_page")).toBe(true);
+  });
+
+  test("It adds the show class to the correct parent element", () => {
+    const li = jQuery("li.collapsible");
+    expect(li.hasClass("show")).toBe(true);
   });
 });

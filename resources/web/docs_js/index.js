@@ -1,5 +1,6 @@
 import Cookies from "js-cookie";
-import {lang_strings, get_base_url, console_regex} from "./utils.js";
+import {get_base_url, console_regex} from "./utils.js";
+import {lang_strings} from "./localization.js";
 import * as events from "./events.js";
 import $ from "jquery";
 
@@ -15,7 +16,7 @@ var sense_url;
 export function init_headers(right_col, lang_strings) {
   // Add on-this-page block
   var this_page = $('<div id="this_page"></div>').prependTo(right_col);
-  this_page.append('<h2>' + lang_strings['On this page'] + '</h2>');
+  this_page.append('<h2>' + lang_strings('On this page') + '</h2>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
 
@@ -49,19 +50,19 @@ export function console_settings(lang_strings) {
   var div = $('<div id="console_settings">'
     + '<form>'
     + '<label for="console_url">'
-    + lang_strings['Enter the URL of the Console editor']
+    + lang_strings('Enter the URL of the Console editor')
     + '</label>'
     + '<input id="console_url" type="text" value="'
     + console_url
     + '" />'
     + '<button id="save_url"    type="button">'
-    + lang_strings['Save']
+    + lang_strings('Save')
     + '</button>'
     + '<button id="reset_url"   type="button">'
-    + lang_strings['Default Console URL']
+    + lang_strings('Default Console URL')
     + '</button>'
     + '<p>'
-    + lang_strings['Or install Kibana']
+    + lang_strings('Or install Kibana')
     + '</p>'
     + '</form></div>');
   $('body').prepend(div);
@@ -93,11 +94,11 @@ export function init_console_widgets(console_url, lang_strings) {
     var div = $(this);
     var snippet = div.attr('data-snippet');
     div.html('<a class="sense_widget copy_as_curl" data-curl-host="localhost:9200">'
-      + lang_strings['Copy as cURL']
+      + lang_strings('Copy as cURL')
       + '</a>'
       + '<a class="console_widget" target="console" '
       + 'title="'
-      + lang_strings['Open snippet in Console']
+      + lang_strings('Open snippet in Console')
       + '" '
       + 'href="'
       + console_url
@@ -105,10 +106,10 @@ export function init_console_widgets(console_url, lang_strings) {
       + base_url
       + snippet
       + '">'
-      + lang_strings['View in Console']
+      + lang_strings('View in Console')
       + '</a>'
       + '<a class="console_settings" title="'
-      + lang_strings['Configure Console URL']
+      + lang_strings('Configure Console URL')
       + '">&nbsp;</a>');
     div.find('a.console_settings').click(function(_) {
       console_settings(lang_strings);
@@ -125,11 +126,11 @@ export function init_sense_widgets(sense_url, lang_strings) {
     var div = $(this);
     var snippet = div.attr('data-snippet');
     div.html('<a class="sense_widget copy_as_curl" data-curl-host="localhost:9200">'
-      + lang_strings['Copy as cURL']
+      + lang_strings('Copy as cURL')
       + '</a>'
       + '<a class="sense_widget" target="sense" '
       + 'title="'
-      + lang_strings['Open snippet in Sense']
+      + lang_strings('Open snippet in Sense')
       + '" '
       + 'href="'
       + sense_url
@@ -137,10 +138,10 @@ export function init_sense_widgets(sense_url, lang_strings) {
       + base_url
       + snippet
       + '">'
-      + lang_strings['View in Sense']
+      + lang_strings('View in Sense')
       + '</a>'
       + '<a class="sense_settings" title="'
-      + lang_strings['Configure Sense URL']
+      + lang_strings('Configure Sense URL')
       + '">&nbsp;</a>');
 
     div.find('a.sense_settings').click(function(_) {
@@ -158,10 +159,10 @@ function init_kibana_widgets(kibana_url, lang_strings) {
     div.html('<a class="kibana_widget copy_as_curl" data-curl-host="'
       + kibana_url
       + '" data-kibana="true">'
-      + lang_strings['Copy as cURL']
+      + lang_strings('Copy as cURL')
       + '</a>'
       + '<a class="kibana_settings" title="'
-      + lang_strings['Configure Kibana URL']
+      + lang_strings('Configure Kibana URL')
       + '">&nbsp</a>'
     );
 
@@ -180,19 +181,19 @@ function sense_settings(lang_strings) {
   var div = $('<div id="sense_settings">'
     + '<form>'
     + '<label for="sense_url">'
-    + lang_strings['Enter the URL of the Sense editor']
+    + lang_strings('Enter the URL of the Sense editor')
     + '</label>'
     + '<input id="sense_url" type="text" value="'
     + sense_url
     + '" />'
     + '<button id="save_url" type="button">'
-    + lang_strings['Save']
+    + lang_strings('Save')
     + '</button>'
     + '<button id="reset_url" type="button">'
-    + lang_strings['Default Sense URL']
+    + lang_strings('Default Sense URL')
     + '</button>'
     + '<p>'
-    + lang_strings['Or install Sense2']
+    + lang_strings('Or install Sense2')
     + '</p>'
     + '</form></div>');
 
@@ -226,19 +227,19 @@ function kibana_settings(lang_strings) {
   }
 
   var div = $('<div id="kibana_settings"><form><label for="kibana_url">'
-    + lang_strings['Enter the URL of Kibana']
+    + lang_strings('Enter the URL of Kibana')
     + ':</label>'
     + '<input id="kibana_url" type="text" value="'
     + kibana_url
     + '" />'
     + '<button id="save_url" type="button">'
-    + lang_strings['Save']
+    + lang_strings('Save')
     + '</button>'
     + '<button id="reset_url" type="button">'
-    + lang_strings['Default Kibana URL']
+    + lang_strings('Default Kibana URL')
     + '</button>'
     + '<p>'
-    + lang_strings['Or install Kibana']
+    + lang_strings('Or install Kibana')
     + '</p></form></div>'
   );
 
@@ -317,15 +318,15 @@ function init_toc(lang_strings) {
        var version = title.find('option:selected').val();
        get_current_page_in_version(version).fail(function() {
          v_selected.attr('selected', 'selected');
-         alert(lang_strings['This page is not available in the docs for version:']
+         alert(lang_strings('This page is not available in the docs for version:')
                + version);
        });
      });
 }
 
 // Expand ToC to current page (without #)
-export function open_current() {
-  var page = location.pathname.match(/[^\/]+$/)[0];
+export function open_current(pathname) {
+  var page = pathname.match(/[^\/]+$/)[0];
   var current = $('div.toc a[href="' + page + '"]');
   current.addClass('current_page');
   current.parentsUntil('ul.toc', 'li.collapsible').addClass('show');
@@ -359,7 +360,7 @@ $(function() {
     var toc = $.get(url, {}, function(data) {
       right_col.append(data);
       init_toc(LangStrings);
-      open_current();
+      open_current(location.pathname);
     }).always(function() {
       init_headers(right_col, LangStrings);
     });

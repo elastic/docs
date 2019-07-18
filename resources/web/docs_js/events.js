@@ -90,7 +90,7 @@ export function copy_as_curl(lang_strings) {
     var success = document.execCommand('copy');
     temp.remove();
     if (false == success) {
-      console.error(lang_strings["Couldn't automatically copy!"]);
+      console.error(lang_strings("Couldn't automatically copy!"));
       console.error(curlText);
     }
   };
