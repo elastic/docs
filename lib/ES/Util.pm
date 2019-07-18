@@ -602,7 +602,7 @@ http {
 
   server {
     listen 8000;
-    location /guide {
+    location ~/(guide|diff) {
       proxy_pass http://0.0.0.0:3000;
       proxy_http_version 1.1;
       proxy_set_header Host \$host;
