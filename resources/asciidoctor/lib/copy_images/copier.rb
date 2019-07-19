@@ -32,11 +32,15 @@ module CopyImages
         # Delegate to a proc for copying if one is defined. Used for testing.
         copy_image_proc.call(uri, source)
       else
-        destination = ::File.join block.document.options[:to_dir], uri
-        destination_dir = ::File.dirname destination
-        FileUtils.mkdir_p destination_dir
-        FileUtils.cp source, destination
+        perform_copy block, uri, source
       end
+    end
+
+    def perform_copy(block, uri, source)
+      destination = File.join block.document.options[:to_dir], uri
+      destination_dir = File.dirname destination
+      FileUtils.mkdir_p destination_dir
+      FileUtils.cp source, destination
     end
 
     ##
@@ -52,12 +56,7 @@ module CopyImages
         return checked.last if File.readable? checked.last
         next unless Dir.exist?(dir)
 
-        Dir.new(dir).each do |f|
-          next if ['.', '..'].include? f
-
-          f = File.join(dir, f)
-          to_check << f if File.directory?(f)
-        end
+        to_check += subdirs(dir)
       end
 
       log_missing(block, checked)
@@ -82,6 +81,13 @@ module CopyImages
         )
       )
       to_check
+    end
+
+    def subdirs(dir)
+      Dir.new(dir)
+         .reject { |f| ['.', '..'].include? f }
+         .map { |f| File.join dir, f }
+         .select { |f| File.directory?(f) }
     end
 
     ##

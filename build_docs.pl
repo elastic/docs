@@ -626,6 +626,10 @@ sub push_changes {
         $target_repo->commit;
         say "Pushing changes";
         $target_repo->push_changes;
+        if ( $Opts->{announce_preview} ) {
+            say "A preview will soon be available at " .
+                $Opts->{announce_preview};
+        }
     } else {
         say "No changes to push";
     }
@@ -811,11 +815,13 @@ sub command_line_opts {
         'out=s',
         'pdf',
         'resource=s@',
+        'respect_edit_url_overrides',
         'single',
         'suppress_migration_warnings',
         'toc',
         # Options only compatible with --all
         'all',
+        'announce_preview=s',
         'target_branch=s',
         'target_repo=s',
         'keep_hash',
@@ -855,6 +861,8 @@ sub usage {
           --out dest/dir/   Defaults to ./html_docs.
           --pdf             Generate a PDF file instead of HTML
           --resource        Path to image dir - may be repeated
+          --respect_edit_url_overrides
+                            Respects `:edit_url:` overrides in the book.
           --single          Generate a single HTML page, instead of
                             a chunking into a file per chapter
           --suppress_migration_warnings
@@ -871,6 +879,9 @@ sub usage {
           --keep_hash       Build docs from the same commit hash as last time
           --linkcheckonly   Skips the documentation builds. Checks links only.
           --push            Commit the updated docs and push to origin
+          --announce_preview <host>
+                            Causes the build to log a line about where to find
+                            a preview of the build if anything is pushed.
           --rebuild         Rebuild all branches of every book regardless of
                             what has changed
           --reference       Directory of `--mirror` clones to use as a
@@ -928,6 +939,7 @@ sub check_opts {
         die('--out only compatible with --doc') if $Opts->{out};
         die('--pdf only compatible with --doc') if $Opts->{pdf};
         die('--resource only compatible with --doc') if $Opts->{resource};
+        die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
         die('--single only compatible with --doc') if $Opts->{single};
         die('--toc only compatible with --doc') if $Opts->{toc};
     }
@@ -935,6 +947,7 @@ sub check_opts {
         die('--keep_hash only compatible with --all') if $Opts->{keep_hash};
         die('--linkcheckonly only compatible with --all') if $Opts->{linkcheckonly};
         die('--push only compatible with --all') if $Opts->{push};
+        die('--announce_preview only compatible with --all') if $Opts->{announce_preview};
         die('--rebuild only compatible with --all') if $Opts->{rebuild};
         die('--reference only compatible with --all') if $Opts->{reference};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};

@@ -60,13 +60,13 @@ RSpec.describe EditMe do
   end
 
   context 'when edit_urls is configured' do
-    let(:convert_attributes) do
-      edit_urls = <<~CSV
+    let(:edit_urls) do
+      <<~CSV
         <stdin>,www.example.com/stdin
         #{spec_dir},www.example.com/spec_dir
       CSV
-      { 'edit_urls' => edit_urls }
     end
+    let(:convert_attributes) { { 'edit_urls' => edit_urls } }
     let(:stdin_link) do
       '<ulink role="edit_me" url="www.example.com/stdin">Edit me</ulink>'
     end
@@ -87,24 +87,83 @@ RSpec.describe EditMe do
       title_start ||= '<title>'
       title_end ||= '</title>'
       context "for a document with #{type}s" do
-        let(:input) do
-          <<~ASCIIDOC
-            include::resources/edit_me/#{type}1.adoc[]
+        shared_examples 'has standard edit links' do
+          it "adds a link to #{type} 1" do
+            link = spec_dir_link "#{type}1.adoc"
+            expect(converted).to include(
+              "#{title_start}#{type.capitalize} 1#{link}#{title_end}"
+            )
+          end
+          it "adds a link to #{type} 2" do
+            link = spec_dir_link "#{type}2.adoc"
+            expect(converted).to include(
+              "#{title_start}#{type.capitalize} 2#{link}#{title_end}"
+            )
+          end
+        end
+        context "that doesn't override edit_url" do
+          let(:input) do
+            <<~ASCIIDOC
+              include::resources/edit_me/#{type}1.adoc[]
 
-            include::resources/edit_me/#{type}2.adoc[]
-          ASCIIDOC
+              include::resources/edit_me/#{type}2.adoc[]
+            ASCIIDOC
+          end
+          include_examples 'has standard edit links'
         end
-        it "adds a link to #{type} 1" do
-          link = spec_dir_link "#{type}1.adoc"
-          expect(converted).to include(
-            "#{title_start}#{type.capitalize} 1#{link}#{title_end}"
-          )
-        end
-        it "adds a link to #{type} 2" do
-          link = spec_dir_link "#{type}2.adoc"
-          expect(converted).to include(
-            "#{title_start}#{type.capitalize} 2#{link}#{title_end}"
-          )
+        context 'that overrides edit_url' do
+          let(:input) do
+            <<~ASCIIDOC
+              :edit_url: foo
+              include::resources/edit_me/#{type}1.adoc[]
+
+              :edit_url: bar
+              include::resources/edit_me/#{type}2.adoc[]
+            ASCIIDOC
+          end
+          context 'when overriding the edit_url is allowed' do
+            let(:convert_attributes) do
+              {
+                'edit_urls' => edit_urls,
+                'respect_edit_url_overrides' => 'true',
+              }
+            end
+            it "adds a link to #{type} 1" do
+              link = '<ulink role="edit_me" url="foo">Edit me</ulink>'
+              expect(converted).to include(
+                "#{title_start}#{type.capitalize} 1#{link}#{title_end}"
+              )
+            end
+            it "adds a link to #{type} 2" do
+              link = '<ulink role="edit_me" url="bar">Edit me</ulink>'
+              expect(converted).to include(
+                "#{title_start}#{type.capitalize} 2#{link}#{title_end}"
+              )
+            end
+            context 'when overriding to an empty string' do
+              let(:input) do
+                <<~ASCIIDOC
+                  :edit_url:
+                  include::resources/edit_me/#{type}1.adoc[]
+
+                  include::resources/edit_me/#{type}2.adoc[]
+                ASCIIDOC
+              end
+              it "doesn't add edit links to #{type} 1" do
+                expect(converted).to include(
+                  "#{title_start}#{type.capitalize} 1#{title_end}"
+                )
+              end
+              it "doesn't add edit links to #{type} 2" do
+                expect(converted).to include(
+                  "#{title_start}#{type.capitalize} 2#{title_end}"
+                )
+              end
+            end
+          end
+          context "when overriding the edit_url isn't allowed" do
+            include_examples 'has standard edit links'
+          end
         end
       end
     end
@@ -126,7 +185,7 @@ RSpec.describe EditMe do
           include::resources/edit_me/section2.adoc[]
         ASCIIDOC
       end
-      it 'uses the last match' do
+      it 'uses the longest match' do
         url = 'www.example.com/section2'
         link = %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
         expect(converted).to include("<title>Section 2#{link}</title>")

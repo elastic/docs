@@ -28,7 +28,8 @@ class EditMe < TreeProcessorScaffold
       url = url[0..-2] if url.end_with? '/'
       edit_urls << { toplevel: toplevel, url: url }
     end
-    edit_urls.reverse!
+    # Prefer the longest matching edit url
+    edit_urls = edit_urls.sort_by { |e| [-e[:toplevel].length, e[:toplevel]] }
     document.attributes['edit_urls'] = edit_urls
     super
   end
@@ -36,30 +37,7 @@ class EditMe < TreeProcessorScaffold
   def process_block(block)
     return unless %i[preamble section floating_title].include? block.context
 
-    def block.title
-      # || '<stdin>' allows us to not blow up when translating strings that
-      # aren't associated with any particular file. '<stdin>' is asciidoctor's
-      # standard name for such strings.
-      path = source_path || '<stdin>'
-
-      edit_urls = @document.attributes['edit_urls']
-      edit_url = edit_urls.find { |e| path.start_with? e[:toplevel] }
-      unless edit_url
-        logger.warn(
-          message_with_context(
-            "couldn't find edit url for #{path}",
-            source_location: source_location
-          )
-        )
-        return super
-      end
-
-      url = edit_url[:url]
-      return super if url == '<disable>'
-
-      url += path[edit_url[:toplevel].length..-1]
-      "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"
-    end
+    block.extend WithEditLink
     if block.context == :preamble
       def block.source_path
         # source_location.path doesn't work for relative includes outside of
@@ -71,6 +49,59 @@ class EditMe < TreeProcessorScaffold
         # source_location.path doesn't work for relative includes outside of
         # the base_dir which we use when we build books from many repos.
         source_location.file
+      end
+    end
+  end
+
+  ##
+  # Extension to blocks that need an "edit me" link.
+  module WithEditLink
+    def title
+      if (url = edit_url)
+        "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"
+      else
+        super
+      end
+    end
+
+    def edit_url
+      if @document.attributes['respect_edit_url_overrides']
+        url = @document.attributes['edit_url']
+        if url == ''
+          false
+        elsif url
+          url
+        else
+          edit_url_by_path
+        end
+      else
+        edit_url_by_path
+      end
+    end
+
+    def edit_url_by_path
+      # || '<stdin>' allows us to not blow up when translating strings that
+      # aren't associated with any particular file. '<stdin>' is asciidoctor's
+      # standard name for such strings.
+      path = source_path || '<stdin>'
+
+      edit_urls = @document.attributes['edit_urls']
+      entry = edit_urls.find { |e| path.start_with? e[:toplevel] }
+      if entry
+        url = entry[:url]
+        if url == '<disable>'
+          false
+        else
+          url + path[entry[:toplevel].length..-1]
+        end
+      else
+        logger.warn(
+          message_with_context(
+            "couldn't find edit url for #{path}",
+            source_location: source_location
+          )
+        )
+        false
       end
     end
   end
