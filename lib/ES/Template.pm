@@ -14,9 +14,8 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $self = bless {
-        compiled_js  => 0,
-        defaults     => $args{defaults},
-        abs_urls     => $args{abs_urls} || 0,
+        defaults => $args{defaults},
+        abs_urls => $args{abs_urls} || 0,
     }, $class;
     $self->_init;
 }
@@ -80,14 +79,8 @@ my $Autosense_RE = qr{
 #===================================
 sub _build_js {
 #===================================
-    my ( $self ) = (@_);
-
-    if ($self->{compiled_js} == 0) {
-        print "Building docs.js\n";
-        run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js';
-    }
-
-    $self->{compiled_js} = 1;
+    print "Building docs.js\n";
+    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js';
 }
 
 #===================================
