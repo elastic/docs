@@ -1,5 +1,5 @@
 import * as l from "../localization";
-import R from "ramda";
+import R from "../../../../../node_modules/ramda";
 
 describe("Localization of strings", () => {
   const specs = R.toPairs(l.lang_spec);

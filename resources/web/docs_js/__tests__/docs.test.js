@@ -1,5 +1,4 @@
-const jQuery = require('jquery');
-import dedent from "dedent";
+import {jQuery, dedent} from "../deps" ;
 import * as docs from "../index";
 import * as l from "../localization";
 

@@ -24,4 +24,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec spec/all_books_broken_link_detection_spec.rb
+	rspec

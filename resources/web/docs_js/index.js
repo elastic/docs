@@ -1,8 +1,7 @@
-import Cookies from "js-cookie";
+import {Cookies, $} from "./deps";
 import {get_base_url} from "./utils.js";
 import {lang_strings} from "./localization.js";
 import * as events from "./events.js";
-import $ from "jquery";
 
 const default_kibana_url = 'http://localhost:5601',
       default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
