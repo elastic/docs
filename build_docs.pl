@@ -815,6 +815,7 @@ sub command_line_opts {
         'out=s',
         'pdf',
         'resource=s@',
+        'respect_edit_url_overrides',
         'single',
         'suppress_migration_warnings',
         'toc',
@@ -860,6 +861,8 @@ sub usage {
           --out dest/dir/   Defaults to ./html_docs.
           --pdf             Generate a PDF file instead of HTML
           --resource        Path to image dir - may be repeated
+          --respect_edit_url_overrides
+                            Respects `:edit_url:` overrides in the book.
           --single          Generate a single HTML page, instead of
                             a chunking into a file per chapter
           --suppress_migration_warnings
@@ -936,6 +939,7 @@ sub check_opts {
         die('--out only compatible with --doc') if $Opts->{out};
         die('--pdf only compatible with --doc') if $Opts->{pdf};
         die('--resource only compatible with --doc') if $Opts->{resource};
+        die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
         die('--single only compatible with --doc') if $Opts->{single};
         die('--toc only compatible with --doc') if $Opts->{toc};
     }

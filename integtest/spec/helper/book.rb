@@ -16,6 +16,10 @@ class Book
   # The list of branches to build
   attr_accessor :branches
 
+  ##
+  # Should this book allow overriding :edit_url:? Defaults to false.
+  attr_accessor :respect_edit_url_overrides
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
@@ -23,6 +27,7 @@ class Book
     @asciidoctor = true
     @sources = []
     @branches = ['master']
+    @respect_edit_url_overrides = false
   end
 
   ##
@@ -48,7 +53,17 @@ class Book
   def conf
     # We can't use to_yaml here because it emits yaml 1.2 but the docs build
     # only supports 1.0.....
-    indent(<<~YAML, '    ')
+    conf = standard_conf
+    conf += "respect_edit_url_overrides: true\n" if @respect_edit_url_overrides
+    conf += <<~YAML
+      sources:
+      #{sources_conf}
+    YAML
+    indent conf, '    '
+  end
+
+  def standard_conf
+    <<~YAML
       title:      #{@title}
       prefix:     #{@prefix}
       current:    master
@@ -57,8 +72,6 @@ class Book
       tags:       test tag
       subject:    Test
       asciidoctor: #{@asciidoctor}
-      sources:
-      #{sources_conf}
     YAML
   end
 

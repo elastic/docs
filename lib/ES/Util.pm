@@ -48,6 +48,7 @@ sub build_chunked {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
+    my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -107,6 +108,7 @@ sub build_chunked {
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
+                $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -188,6 +190,7 @@ sub build_single {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
+    my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -238,6 +241,7 @@ sub build_single {
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
+                $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
