@@ -57,20 +57,26 @@ class EditMe < TreeProcessorScaffold
   # Extension to blocks that need an "edit me" link.
   module WithEditLink
     def title
-      url = edit_url
-      return super unless url
-
-      "#{super}<ulink role=\"edit_me\" url=\"#{edit_url}\">Edit me</ulink>"
+      if (url = edit_url)
+        "#{super}<ulink role=\"edit_me\" url=\"#{url}\">Edit me</ulink>"
+      else
+        super
+      end
     end
 
     def edit_url
       if @document.attributes['respect_edit_url_overrides']
         url = @document.attributes['edit_url']
-        return false if url == ''
-        return url if url
+        if url == ''
+          false
+        elsif url
+          url
+        else
+          edit_url_by_path
+        end
+      else
+        edit_url_by_path
       end
-
-      edit_url_by_path
     end
 
     def edit_url_by_path
@@ -81,20 +87,22 @@ class EditMe < TreeProcessorScaffold
 
       edit_urls = @document.attributes['edit_urls']
       entry = edit_urls.find { |e| path.start_with? e[:toplevel] }
-      unless entry
+      if entry
+        url = entry[:url]
+        if url == '<disable>'
+          false
+        else
+          url + path[entry[:toplevel].length..-1]
+        end
+      else
         logger.warn(
           message_with_context(
             "couldn't find edit url for #{path}",
             source_location: source_location
           )
         )
-        return false
+        false
       end
-
-      url = entry[:url]
-      return false if url == '<disable>'
-
-      url + path[entry[:toplevel].length..-1]
     end
   end
 end
