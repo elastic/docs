@@ -29,7 +29,7 @@ const requestHandler = (request, response) => {
   const parsedUrl = url.parse(request.url);
   const branch = gitBranch(request.headers['host']);
   if (parsedUrl.pathname === '/diff') {
-    serve_diff(branch, response);
+    serveDiff(branch, response);
     return;
   }
   if (!parsedUrl.pathname.startsWith('/guide')) {
@@ -63,11 +63,11 @@ const requestHandler = (request, response) => {
     const child = child_process.spawn(
       'git', ['cat-file', 'blob', requestedObject], catOpts
     );
-    rig_handlers(child, response, child.stdout, response => {});
+    rigHandlers(child, response, child.stdout, response => {});
   });
 }
 
-function serve_diff(branch, response) {
+function serveDiff(branch, response) {
   const child = child_process.spawn(
     'git',
     ['diff-tree', '-z', '--find-renames', '--numstat', branch, '--'],
@@ -92,6 +92,17 @@ function serve_diff(branch, response) {
     let removed;
     let path;
     let movedToPath;
+
+    if (first) {
+      out = dedent `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Diff for ${branch}</title>
+        </head>
+        <body><ul>\n`
+      first = false;
+    }
 
     while (true) {
       /* When this loop starts nextNul is either -1 or the end of the last
@@ -124,7 +135,6 @@ function serve_diff(branch, response) {
           return out;
         }
         movedToPath = chunk.substring(moveToPathStat, nextNul);
-        out += 'asdfaf ' + path + ' ' + movedToPath + '  ';
         break;
       case 1:
         // The commit hash. Ignore it.
@@ -148,24 +158,13 @@ function serve_diff(branch, response) {
         movedToPath === null ? null : movedToPath.substring('html/'.length);
 
       // Build the output html
-      let prefix = '';
-      if (first) {
-        prefix = dedent `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Diff for ${branch}</title>
-          </head>
-          <body><ul>\n`;
-        first = false;
-      }
       const diff = `+${added} -${removed}`;
       const linkText =
         movedToPath === null ? path : `${path} -> ${movedToPath}`;
       const linkTarget =
         "/guide/" + (movedToPath === null ? path : movedToPath);
       const link = `<a href="${linkTarget}">${linkText}</a>`;
-      out += `${prefix}  <li>${diff} ${link}\n`;
+      out += `  <li>${diff} ${link}\n`;
     }
   };
 
@@ -178,7 +177,7 @@ function serve_diff(branch, response) {
   });
 
   const pipeline = child.stdout.pipe(handle);
-  rig_handlers(child, response, pipeline, response => {
+  rigHandlers(child, response, pipeline, response => {
     response.write(handleChunk());
     if (chunk !== '') {
       console.error('unprocessed results from git', chunk);
@@ -192,7 +191,7 @@ function serve_diff(branch, response) {
   });
 }
 
-function rig_handlers(child, response, pipeline, endHandler) {
+function rigHandlers(child, response, pipeline, endHandler) {
   response.setHeader('Transfer-Encoding', 'chunked');
 
   // We spool stderr into a string because it is never super big.
