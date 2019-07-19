@@ -5,6 +5,9 @@ export const lang_spec = {
   "Configure Sense URL": {
     "zh_cn": "配置 Sense URL"
   },
+  "Configure Kibana URL": {
+    "zh_cn": "配置 Kibana URL"
+  },
   "Copy as cURL": {
     "zh_cn": "拷贝为 cURL"
   },
