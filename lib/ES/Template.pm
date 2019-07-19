@@ -6,6 +6,7 @@ use v5.10;
 use Encode qw(encode_utf8);
 use Path::Class qw(file);
 use File::Copy::Recursive qw(fcopy);
+use ES::Util qw(run);
 
 #===================================
 sub new {
@@ -13,7 +14,7 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $self = bless {
-        compiled_JS  => 0,
+        compiled_js  => 0,
         defaults     => $args{defaults},
         abs_urls     => $args{abs_urls} || 0,
     }, $class;
@@ -81,12 +82,12 @@ sub _build_js {
 #===================================
     my ( $self ) = (@_);
 
-    if ($self->{compiled_JS} == 0) {
+    if ($self->{compiled_js} == 0) {
         print "Building docs.js\n";
-        `node_modules/parcel/bin/cli.js build resources/web/docs_js/index.js --no-minify -d resources/web -o docs.js`;
+        run 'node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '-d', 'resources/web', '-o', 'docs.js';
     }
 
-    $self->{compiled_JS} = 1;
+    $self->{compiled_js} = 1;
 }
 
 #===================================
