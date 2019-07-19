@@ -8,11 +8,11 @@
 set -e
 
 cd $(git rev-parse --show-toplevel)
-docker build -t docker.elastic.co/docs/preview:1 -f preview/Dockerfile .
+docker build -t docker.elastic.co/docs/preview:3 -f preview/Dockerfile .
 id=$(docker run --rm \
            --publish 8000:8000/tcp \
            -d \
-           docker.elastic.co/docs/preview:1)
+           docker.elastic.co/docs/preview:3)
 echo "Started the preview. Some useful commands:"
 echo "   docker kill $id"
 echo "   docker logs -tf $id"
