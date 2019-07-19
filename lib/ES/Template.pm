@@ -84,7 +84,7 @@ sub _build_js {
 
     if ($self->{compiled_js} == 0) {
         print "Building docs.js\n";
-        run 'node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '-d', 'resources/web', '-o', 'docs.js';
+        run '/node_modules/parcel/bin/cli.js', 'build', '/build_docs/resources/web/docs_js/index.js', '-d', '/build_docs/resources/web', '-o', 'docs.js';
     }
 
     $self->{compiled_js} = 1;
