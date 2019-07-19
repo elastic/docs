@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import {get_base_url, console_regex} from "./utils.js";
+import {get_base_url} from "./utils.js";
 import {lang_strings} from "./localization.js";
 import * as events from "./events.js";
 import $ from "jquery";
