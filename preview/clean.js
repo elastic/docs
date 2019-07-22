@@ -111,7 +111,15 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
             let closed;
             try {
               const parsed = JSON.parse(data);
-              closed = parsed.data.repository.pullRequest.closed;
+              const repo = parsed.data.repository;
+              if (repo) {
+                closed = repo.pullRequest.closed;
+              } else {
+                console.warn(pr.branch,
+                  "looks like a PR but isn't for a repo we manage so we assume",
+                  'it is open');
+                closed = false;
+              }
             } catch (e) {
               reject(e);
               return;
@@ -123,7 +131,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
             if (res.headers['x-ratelimit-remaining'] < 100) {
               const until = res.headers['x-ratelimit-reset'];
               const millis = until * 1000 - Date.now().getTime();
-              console.info('rate limited for', millis, 'milliseconds');
+              console.info('Rate limited for', millis, 'milliseconds');
               setTimeout(() => resolve(closed), millis);
             } else {
               resolve(closed);
