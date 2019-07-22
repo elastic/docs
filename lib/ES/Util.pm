@@ -704,7 +704,6 @@ sub timestamp {
 #===================================
 sub build_docs_js {
 #===================================
-    print "Building docs.js\n";
     run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js';
 }
 
