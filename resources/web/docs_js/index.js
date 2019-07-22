@@ -1,6 +1,7 @@
 import {Cookies, $} from "./deps";
 import {get_base_url} from "./utils.js";
 import {lang_strings} from "./localization.js";
+import {settings_modal} from "./components/settings_modal";
 import * as events from "./events.js";
 
 const default_kibana_url = 'http://localhost:5601',
@@ -41,51 +42,6 @@ export function init_headers(right_col, lang_strings) {
   }
 }
 
-export function console_settings(lang_strings) {
-  if ($('#console_settings').length > 0) {
-    return;
-  }
-
-  var div = $('<div id="console_settings">'
-    + '<form>'
-    + '<label for="console_url">'
-    + lang_strings('Enter the URL of the Console editor')
-    + '</label>'
-    + '<input id="console_url" type="text" value="'
-    + console_url
-    + '" />'
-    + '<button id="save_url"    type="button">'
-    + lang_strings('Save')
-    + '</button>'
-    + '<button id="reset_url"   type="button">'
-    + lang_strings('Default Console URL')
-    + '</button>'
-    + '<p>'
-    + lang_strings('Or install Kibana')
-    + '</p>'
-    + '</form></div>');
-  $('body').prepend(div);
-
-  div.find('#save_url').click(function(e) {
-    var new_url = $('#console_url').val() || default_console_url;
-    if (new_url === default_console_url) {
-      Cookies.set('console_url', '');
-    } else {
-      Cookies.set('console_url', new_url, {
-        expires : 365
-      });
-    }
-    console_url = new_url;
-    init_console_widgets(console_url, lang_strings);
-    div.remove();
-    e.stopPropagation();
-  });
-  div.find('#reset_url').click(function(e) {
-    $('#console_url').val(default_console_url);
-    e.stopPropagation();
-  });
-}
-
 export function init_console_widgets(console_url, lang_strings) {
   var base_url = get_base_url(window.location.href);
 
@@ -111,7 +67,16 @@ export function init_console_widgets(console_url, lang_strings) {
       + lang_strings('Configure Console URL')
       + '">&nbsp;</a>');
     div.find('a.console_settings').click(function(_) {
-      console_settings(lang_strings);
+      settings_modal({label_text: lang_strings('Enter the URL of the Console editor'),
+                      url_value: console_url,
+                      button_text: lang_strings('Default Console URL'),
+                      install_text: lang_strings('Or install Kibana'),
+                      default_url: default_console_url,
+                      cookie_key: "console_url",
+                      update_value: new_url => {
+                        console_url = new_url;
+                        init_console_widgets(console_url, lang_strings);},
+                      lang_strings: lang_strings});
     });
   });
 
@@ -144,7 +109,16 @@ export function init_sense_widgets(sense_url, lang_strings) {
       + '">&nbsp;</a>');
 
     div.find('a.sense_settings').click(function(_) {
-      sense_settings(lang_strings);
+      settings_modal({label_text: lang_strings('Enter the URL of the Sense editor'),
+                      url_value: sense_url,
+                      button_text: lang_strings('Default Sense URL'),
+                      install_text: lang_strings('Or install Sense2'),
+                      default_url: default_sense_url,
+                      cookie_key: "sense_url",
+                      update_value: new_url => {
+                        sense_url = new_url;
+                        init_sense_widgets(sense_url, lang_strings);},
+                      lang_strings: lang_strings});
     });
   });
 }
@@ -166,101 +140,17 @@ function init_kibana_widgets(kibana_url, lang_strings) {
     );
 
     div.find('a.kibana_settings').click(function(_) {
-      kibana_settings(lang_strings)
+      settings_modal({label_text: lang_strings('Enter the URL of Kibana'),
+                      url_value: kibana_url,
+                      button_text: lang_strings('Default Kibana URL'),
+                      install_text: lang_strings('Or install Kibana'),
+                      default_url: default_kibana_url,
+                      cookie_key: "kibana_url",
+                      update_value: new_url => {
+                        kibana_url = new_url;
+                        init_kibana_widgets(kibana_url, lang_strings);},
+                      lang_strings: lang_strings});
     });
-  });
-}
-
-
-function sense_settings(lang_strings) {
-  if ($('#sense_settings').length > 0) {
-    return;
-  }
-
-  var div = $('<div id="sense_settings">'
-    + '<form>'
-    + '<label for="sense_url">'
-    + lang_strings('Enter the URL of the Sense editor')
-    + '</label>'
-    + '<input id="sense_url" type="text" value="'
-    + sense_url
-    + '" />'
-    + '<button id="save_url" type="button">'
-    + lang_strings('Save')
-    + '</button>'
-    + '<button id="reset_url" type="button">'
-    + lang_strings('Default Sense URL')
-    + '</button>'
-    + '<p>'
-    + lang_strings('Or install Sense2')
-    + '</p>'
-    + '</form></div>');
-
-  $('body').prepend(div);
-
-  div.find('#save_url').click(function(e) {
-    var new_url = $('#sense_url').val() || default_sense_url;
-    if (new_url === default_sense_url) {
-      Cookies.set('sense_url', '');
-    } else {
-      Cookies.set('sense_url', new_url, {
-        expires : 365
-      });
-    }
-    sense_url = new_url;
-    init_sense_widgets(sense_url, lang_strings);
-    div.remove();
-    e.stopPropagation();
-  });
-
-  div.find('#reset_url').click(function(e) {
-    $('#sense_url').val(default_sense_url);
-    e.stopPropagation();
-  });
-}
-
-
-function kibana_settings(lang_strings) {
-  if ($('#kibana_settings').length > 0) {
-    return;
-  }
-
-  var div = $('<div id="kibana_settings"><form><label for="kibana_url">'
-    + lang_strings('Enter the URL of Kibana')
-    + ':</label>'
-    + '<input id="kibana_url" type="text" value="'
-    + kibana_url
-    + '" />'
-    + '<button id="save_url" type="button">'
-    + lang_strings('Save')
-    + '</button>'
-    + '<button id="reset_url" type="button">'
-    + lang_strings('Default Kibana URL')
-    + '</button>'
-    + '<p>'
-    + lang_strings('Or install Kibana')
-    + '</p></form></div>'
-  );
-
-  $('body').prepend(div);
-
-  div.find('#save_url').click(function(e) {
-    var new_url = $('#kibana_url').val() || default_kibana_url;
-    if (new_url === default_kibana_url) {
-      Cookies.set('kibana_url', '');
-    } else {
-      Cookies.set('kibana_url', new_url, {
-        expires : 365
-      });
-    }
-    kibana_url = new_url;
-    init_kibana_widgets(kibana_url);
-    div.remove();
-    e.stopPropagation();
-  });
-  div.find('#reset_url').click(function(e) {
-    $('#kibana_url').val(default_kibana_url);
-    e.stopPropagation();
   });
 }
 
