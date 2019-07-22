@@ -102,11 +102,12 @@ sub build_local {
         die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
     }
 
+    build_docs_js();
+
     my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
-        build_docs_js();
         build_single( $index, $dir, %$Opts,
                 latest => $latest
         );
