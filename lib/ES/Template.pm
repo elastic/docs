@@ -55,8 +55,6 @@ sub apply {
         $file->spew( iomode => '>:utf8', join "", @parts );
     }
 
-    $self->_build_js();
-
     # Copy stylesheet
     fcopy( 'resources/web/styles.css', $dir )
         or die "Couldn't copy <styles.css> to <$dir>: $!";
@@ -75,13 +73,6 @@ my $Autosense_RE = qr{
         )
         :(?:CONSOLE|AUTOSENSE|KIBANA):
     }xs;
-
-#===================================
-sub _build_js {
-#===================================
-    print "Building docs.js\n";
-    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js';
-}
 
 #===================================
 sub _autosense_snippets {

@@ -34,6 +34,7 @@ use ES::Util qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
+    build_docs_js
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -105,6 +106,7 @@ sub build_local {
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
+        build_docs_js();
         build_single( $index, $dir, %$Opts,
                 latest => $latest
         );
@@ -238,6 +240,8 @@ sub build_all {
         say "Skipping documentation builds."
     }
     else {
+        build_docs_js();
+
         say "Building docs";
         build_entries( $build_dir, $temp_dir, $toc, @$contents );
 
@@ -923,7 +927,7 @@ USAGE
 
     Run rubocop on our extensions to Asciidoctor:
         $name --self-test -C resources/asciidoctor rubocop
-    
+
 USAGE
     }
 }
