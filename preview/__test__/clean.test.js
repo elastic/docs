@@ -86,6 +86,12 @@ describe('Cleaner.is_pr_closed', () => {
     mock_github().reply(200, github_result(false));
     await expect(cleaner.is_pr_closed({repo: 'r', number: 1})).resolves.toBe(false);
   });
+  test("returns false if github doesn't return repo", async () => {
+    mock_github().reply(200, JSON.stringify({
+      data: {}
+    }));
+    await expect(cleaner.is_pr_closed({branch: 'r_1', repo: 'r', number: 1})).resolves.toBe(false);
+  });
   test('complains if github returns invalid json', async () => {
     mock_github().reply(200, 'pure garbage');
     await expect(cleaner.is_pr_closed({repo: 'r', number: 1})).rejects
@@ -94,11 +100,11 @@ describe('Cleaner.is_pr_closed', () => {
   test('complains if github returns unexpect json', async () => {
     mock_github().reply(200, JSON.stringify({
       data: {
-        whatever: 'asdf'
+        repository: 'asdf'
       }
     }));
     await expect(cleaner.is_pr_closed({repo: 'r', number: 1})).rejects
-      .toThrow(/Cannot read property 'pullRequest'/);
+      .toThrow(/Cannot read property 'closed' of undefined/);
   });
   test("backs off if there aren't many requests remaining", async () => {
     // Mock setTimeout to immediately run. We don't use jest.useFakeTimers
