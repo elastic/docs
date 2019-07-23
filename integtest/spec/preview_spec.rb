@@ -70,6 +70,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:watermark) { watermark }
     let(:current_url) { 'guide/test/current' }
     let(:diff) { get watermark, branch, 'diff' }
+    let(:robots_txt) { get watermark, branch, 'robots.txt' }
     let(:root) { get watermark, branch, 'guide/index.html' }
     let(:cat_image) do
       get watermark, branch, "#{current_url}/resources/cat.jpg"
@@ -97,6 +98,13 @@ RSpec.describe 'previewing built docs', order: :defined do
       expect(logs).to include(<<~LOGS)
         #{watermark} #{branch} GET /guide/index.html HTTP/1.1 200
       LOGS
+    end
+    it 'serves a "go away" robots.txt' do
+      expect(robots_txt).to serve(eq(<<~TXT))
+        User-agent: *
+        Disallow: /
+      TXT
+      expect(robots_txt['Content-Type']).to eq('text/plain')
     end
   end
   shared_examples '404s' do
