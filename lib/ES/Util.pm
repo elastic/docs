@@ -24,7 +24,6 @@ our @EXPORT_OK = qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
-    build_docs_js
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -702,12 +701,6 @@ sub timestamp {
     $mon++;
     sprintf "%04d-%02d-%02dT%02d:%02d:%02d+00:00", $year, $mon, $mday, $hour,
         $min, $sec;
-}
-
-#===================================
-sub build_docs_js {
-#===================================
-    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js';
 }
 
 1
