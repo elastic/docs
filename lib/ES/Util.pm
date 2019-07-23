@@ -606,6 +606,9 @@ http {
 
   server {
     listen 8000;
+    location = /robots.txt {
+      return 200 "User-agent: *\nDisallow: /\n";
+    }
     location ~/(guide|diff) {
       proxy_pass http://0.0.0.0:3000;
       proxy_http_version 1.1;
