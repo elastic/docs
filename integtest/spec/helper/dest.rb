@@ -2,6 +2,7 @@
 
 require 'open3'
 
+require_relative 'opened_docs'
 require_relative 'preview'
 require_relative 'sh'
 
@@ -37,15 +38,22 @@ class Dest
   end
 
   ##
+  # Create the fluent builder that you can use to convert a single book.
+  def prepare_convert_single(from, to)
+    ConvertSingle.new from, to, self
+  end
+
+  ##
   # Convert a single book.
   def convert_single(from, to,
                      expect_failure: false,
                      suppress_migration_warnings: false,
                      asciidoctor:)
-    cmd = %W[--doc #{from} --out #{path(to)}]
-    cmd += ['--asciidoctor'] if asciidoctor
-    cmd += ['--suppress_migration_warnings'] if suppress_migration_warnings
-    run_convert(cmd, expect_failure)
+    # TODO: replace all calls with prepare_convert_single
+    convert = prepare_convert_single from, to
+    convert.asciidoctor if asciidoctor
+    convert.suppress_migration_warnings if suppress_migration_warnings
+    convert.convert expect_failure: expect_failure
   end
 
   def prepare_convert_all(conf)
@@ -59,42 +67,6 @@ class Dest
     convert = ConvertAll.new conf, bare_repo, self
     convert.target_branch target_branch if target_branch
     convert.convert expect_failure: expect_failure
-  end
-
-  class ConvertAll
-    def initialize(conf, target_repo, dest)
-      @cmd = %W[
-        --all
-        --push
-        --target_repo #{target_repo}
-        --conf #{conf}
-      ]
-      @dest = dest
-    end
-
-    def convert(expect_failure: false)
-      @dest.run_convert(@cmd, expect_failure)
-    end
-
-    def target_branch(target_branch)
-      @cmd += ['--target_branch', target_branch]
-      self
-    end
-
-    def skip_link_check
-      @cmd += ['--skiplinkcheck']
-      self
-    end
-
-    def keep_hash
-      @cmd += ['--keep_hash']
-      self
-    end
-
-    def sub_dir(repo, branch)
-      @cmd += ['--sub_dir', "#{repo.name}:#{branch}:#{repo.root}"]
-      self
-    end
   end
 
   ##
@@ -141,5 +113,78 @@ class Dest
 
     @convert_outputs << out
     @convert_statuses << status.exitstatus
+  end
+
+  def run_convert_and_open(cmd)
+    cmd.unshift '/docs_build/build_docs.pl', '--in_standard_docker'
+    cmd += ['--open']
+    OpenedDocs.new cmd
+  end
+
+  class CmdBuilder
+    def open
+      @dest.run_convert_and_open @cmd
+    end
+
+    def convert(expect_failure: false)
+      @dest.run_convert @cmd, expect_failure
+    end
+  end
+
+  class ConvertSingle < CmdBuilder
+    def initialize(from, to, dest)
+      @cmd = %W[
+        --doc #{from}
+        --out #{dest.path(to)}
+      ]
+      @dest = dest
+    end
+
+    def asciidoctor
+      @cmd += ['--asciidoctor']
+      self
+    end
+
+    def suppress_migration_warnings
+      @cmd += ['--suppress_migration_warnings']
+      self
+    end
+  end
+
+  class ConvertAll < CmdBuilder
+    def initialize(conf, target_repo, dest)
+      @cmd = %W[
+        --all
+        --push
+        --target_repo #{target_repo}
+        --conf #{conf}
+      ]
+      @dest = dest
+    end
+
+    def target_branch(target_branch)
+      @cmd += ['--target_branch', target_branch]
+      self
+    end
+
+    def announce_preview(preview_location)
+      @cmd += ['--announce_preview', preview_location]
+      self
+    end
+
+    def skip_link_check
+      @cmd += ['--skiplinkcheck']
+      self
+    end
+
+    def keep_hash
+      @cmd += ['--keep_hash']
+      self
+    end
+
+    def sub_dir(repo, branch)
+      @cmd += ['--sub_dir', "#{repo.name}:#{branch}:#{repo.root}"]
+      self
+    end
   end
 end

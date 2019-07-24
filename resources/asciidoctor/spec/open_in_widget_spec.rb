@@ -172,9 +172,10 @@ RSpec.describe OpenInWidget do
         LOG
       end
       it 'copies the file' do
-        expect(copied).to eq([
-          ["snippets/snippet.#{lang}", "#{spec_dir}/snippets/snippet.#{lang}"],
-        ])
+        expect(copied).to eq(
+          [["snippets/snippet.#{lang}",
+            "#{spec_dir}/snippets/snippet.#{lang}"]]
+        )
       end
       context 'when you disable the migration warning' do
         let(:input) do

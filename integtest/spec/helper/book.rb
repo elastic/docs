@@ -12,12 +12,22 @@ class Book
   # Should this book build with asciidoctor (true) or asciidoc (false).
   attr_accessor :asciidoctor
 
+  ##
+  # The list of branches to build
+  attr_accessor :branches
+
+  ##
+  # Should this book allow overriding :edit_url:? Defaults to false.
+  attr_accessor :respect_edit_url_overrides
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
     @index = 'index.asciidoc'
     @asciidoctor = true
     @sources = []
+    @branches = ['master']
+    @respect_edit_url_overrides = false
   end
 
   ##
@@ -43,17 +53,25 @@ class Book
   def conf
     # We can't use to_yaml here because it emits yaml 1.2 but the docs build
     # only supports 1.0.....
-    indent(<<~YAML, '    ')
+    conf = standard_conf
+    conf += "respect_edit_url_overrides: true\n" if @respect_edit_url_overrides
+    conf += <<~YAML
+      sources:
+      #{sources_conf}
+    YAML
+    indent conf, '    '
+  end
+
+  def standard_conf
+    <<~YAML
       title:      #{@title}
       prefix:     #{@prefix}
       current:    master
-      branches:   [ master ]
+      branches:   [ #{@branches.join ', '} ]
       index:      #{@index}
       tags:       test tag
       subject:    Test
       asciidoctor: #{@asciidoctor}
-      sources:
-      #{sources_conf}
     YAML
   end
 
@@ -61,7 +79,9 @@ class Book
   # The html for a link to a particular branch of this book.
   def link_to(branch)
     url = "#{@prefix}/#{branch}/index.html"
-    %(<a class="ulink" href="#{url}" target="_top">#{@title}</a>)
+    decoration = ''
+    decoration = ' [master]' unless @branches.length == 1
+    %(<a class="ulink" href="#{url}" target="_top">#{@title}#{decoration}</a>)
   end
 
   private

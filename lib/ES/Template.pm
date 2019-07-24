@@ -6,6 +6,7 @@ use v5.10;
 use Encode qw(encode_utf8);
 use Path::Class qw(file);
 use File::Copy::Recursive qw(fcopy);
+use ES::Util qw(run);
 
 #===================================
 sub new {
@@ -13,8 +14,8 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $self = bless {
-        defaults     => $args{defaults},
-        abs_urls     => $args{abs_urls} || 0,
+        defaults => $args{defaults},
+        abs_urls => $args{abs_urls} || 0,
     }, $class;
     $self->_init;
 }

@@ -18,9 +18,9 @@ require 'asciidoctor/extensions'
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   def activate(registry)
     [
-        [:added, 'added', 'note'],
-        [:coming, 'changed', 'note'],
-        [:deprecated, 'deleted', 'warning'],
+      [:added, 'added', 'note'],
+      [:coming, 'changed', 'note'],
+      [:deprecated, 'deleted', 'warning'],
     ].each do |(name, revisionflag, tag)|
       registry.block_macro ChangeAdmonitionBlock.new(revisionflag, tag), name
       registry.inline_macro ChangeAdmonitionInline.new(revisionflag), name
@@ -45,15 +45,23 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       # that won't render the revisionflag or the revision. So we have to
       # go with this funny compound pass thing.
       admon = Asciidoctor::Block.new(parent, :pass, content_model: :compound)
-      admon << Asciidoctor::Block.new(admon, :pass,
+      admon << Asciidoctor::Block.new(
+        admon, :pass,
         attributes: { 'revisionflag' => @revisionflag },
-        source: "<#{@tag} " \
-                "revisionflag=\"#{@revisionflag}\" " \
-                "revision=\"#{version}\">")
-      admon << Asciidoctor::Block.new(admon, :paragraph,
+        source: tag_source(version)
+      )
+      admon << Asciidoctor::Block.new(
+        admon, :paragraph,
         source: attrs[:passtext],
-        subs: Asciidoctor::Substitutors::NORMAL_SUBS)
+        subs: Asciidoctor::Substitutors::NORMAL_SUBS
+      )
       admon << Asciidoctor::Block.new(admon, :pass, source: "</#{@tag}>")
+    end
+
+    def tag_source(version)
+      <<~HTML
+        <#{@tag} revisionflag="#{@revisionflag}" revision="#{version}">
+      HTML
     end
   end
 

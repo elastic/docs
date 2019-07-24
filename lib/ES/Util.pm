@@ -24,6 +24,7 @@ our @EXPORT_OK = qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
+    build_docs_js
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -48,6 +49,7 @@ sub build_chunked {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
+    my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -107,6 +109,7 @@ sub build_chunked {
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
+                $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -188,6 +191,7 @@ sub build_single {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
+    my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -238,6 +242,7 @@ sub build_single {
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
+                $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -561,7 +566,6 @@ http {
     rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
-    set \$guide_root "http://localhost:8000/guide";
     $redirects_line
   }
 }
@@ -602,11 +606,16 @@ http {
 
   server {
     listen 8000;
-    location /guide {
+    location = /robots.txt {
+      return 200 "User-agent: *\nDisallow: /\n";
+    }
+    location ~/(guide|diff) {
       proxy_pass http://0.0.0.0:3000;
       proxy_http_version 1.1;
       proxy_set_header Host \$host;
       proxy_cache_bypass \$http_upgrade;
+      proxy_buffering off;
+      gzip on;
       add_header 'Access-Control-Allow-Origin' '*';
       if (\$request_method = 'OPTIONS') {
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
@@ -692,6 +701,12 @@ sub timestamp {
     $mon++;
     sprintf "%04d-%02d-%02dT%02d:%02d:%02d+00:00", $year, $mon, $mday, $hour,
         $min, $sec;
+}
+
+#===================================
+sub build_docs_js {
+#===================================
+    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js';
 }
 
 1

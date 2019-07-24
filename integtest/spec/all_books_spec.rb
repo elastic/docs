@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'net/http'
+
 RSpec.describe 'building all books' do
   shared_examples 'book basics' do |title, prefix|
     context "for the #{title} book" do
@@ -150,6 +152,58 @@ RSpec.describe 'building all books' do
       expect(out).to include('target_repo: Forking <new_branch> from master')
     end
   end
+
+  context 'when a book overrides edit_me' do
+    def self.index
+      <<~ASCIIDOC
+        = Test
+
+        :edit_url: overridden
+        [[chapter]]
+        == Chapter
+
+        Words.
+      ASCIIDOC
+    end
+
+    def self.override_edit_me(respect)
+      convert_all_before_context target_branch: 'new_branch' do |src|
+        repo = src.repo_with_file 'repo', 'index.asciidoc', index
+        book = src.book 'Test'
+        book.respect_edit_url_overrides = true if respect
+        book.source repo, 'index.asciidoc'
+      end
+    end
+    let(:edit_me) do
+      <<~HTML.lines.map { |l| ' ' + l.strip }.join.strip
+        <a href="#{edit_url}"
+           class="edit_me"
+           title="Edit this page on GitHub"
+           rel="nofollow">edit</a>
+      HTML
+    end
+    let(:latest_revision) { 'init' }
+    context "when respect_edit_url_overrides isn't specified" do
+      override_edit_me false
+      let(:repo) { @src.repo 'repo' }
+      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      page_context 'the book index', 'html/test/master/chapter.html' do
+        it 'contains the standard edit_me link' do
+          expect(body).to include(edit_me)
+        end
+      end
+    end
+    context 'when respect_edit_url_overrides is specified' do
+      override_edit_me true
+      let(:edit_url) { 'overridden' }
+      page_context 'the book index', 'html/test/master/chapter.html' do
+        it 'contains the overridden edit_me link' do
+          expect(body).to include(edit_me)
+        end
+      end
+    end
+  end
+
   context 'when one source is private' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', <<~ASCIIDOC
@@ -180,6 +234,74 @@ RSpec.describe 'building all books' do
       it "doesn't contain an edit link because it is from a private source" do
         expect(body).not_to include(%(title="Edit this page on GitHub"))
       end
+    end
+  end
+
+  context 'when run with --open' do
+    include_context 'source and dest'
+    before(:context) do
+      repo = @src.repo_with_index 'repo', 'Words'
+      book = @src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      @opened_docs = @dest.prepare_convert_all(@src.conf).open
+    end
+    after(:context) do
+      @opened_docs.exit
+    end
+
+    let(:root) { 'http://localhost:8000/guide/' }
+    let(:index) { Net::HTTP.get_response(URI(root)) }
+    let(:legacy_redirect) do
+      Net::HTTP.get_response(URI("#{root}reference/setup/"))
+    end
+
+    it 'serves the book' do
+      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+        <a class="ulink" href="test/current/index.html" target="_top">Test
+      HTML
+    end
+    it 'serves a legacy redirect' do
+      expect(legacy_redirect.code).to eq('301')
+      expect(legacy_redirect['location']).to eq(
+        "#{root}en/elasticsearch/reference/current/setup.html"
+      )
+    end
+  end
+
+  context 'when run with --announce_preview' do
+    target_branch = 'foo_1'
+    preview_location = "http://#{target_branch}.docs-preview.app.elstc.co/guide"
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      dest.prepare_convert_all(src.conf)
+          .target_branch(target_branch)
+          .announce_preview(preview_location)
+          .convert
+    end
+    it 'logs the location of the preview' do
+      expect(outputs[0]).to include(
+        "A preview will soon be available at #{preview_location}"
+      )
+    end
+  end
+
+  context "when the index for the book isn't in the repo" do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', 'words'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.index = 'not_index.asciidoc'
+      dest.prepare_convert_all(src.conf).convert(expect_failure: true)
+    end
+    it 'fails with an appropriate error status' do
+      expect(statuses[0]).to eq(2)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to match(%r{
+        Can't\ find\ index\ \[.+/src/not_index.asciidoc\]
+      }x)
     end
   end
 end

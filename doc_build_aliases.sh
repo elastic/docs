@@ -30,7 +30,7 @@ alias docbldkb=docbldkbx
 alias docbldkbold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
-alias docbldlsx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
+alias docbldlsx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
 
 alias docbldls=docbldlsx
 
@@ -59,6 +59,8 @@ alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-m
 
 # Solutions 
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
+
+alias docbldup='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
 
 alias docbldsec='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
 

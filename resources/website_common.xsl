@@ -98,6 +98,20 @@
 
   <xsl:template match="ulink[@role='edit_me']" mode="no.anchor.mode" />
 
+  <!-- Fix an issue where the links to bridgeheads render their edit_me links.-->
+  <xsl:template match="bridgehead" mode="title.markup">
+    <xsl:param name="allow-anchors" select="0"/>
+
+    <xsl:choose>
+      <xsl:when test="$allow-anchors != 0">
+        <xsl:apply-templates/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:apply-templates mode="no.anchor.mode"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
  <!--  head title element with version -->
 
     <xsl:template name="user.header.content">

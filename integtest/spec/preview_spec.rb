@@ -10,14 +10,18 @@ require 'securerandom'
 # and the preview is designed to update itself as its target repo changes so
 # we start it once and play with the target repo during the tests.
 RSpec.describe 'previewing built docs', order: :defined do
+  very_large_text = 'muchtext' * 1024 * 1024 * 5 # 40mb
   repo_root = File.expand_path '../../', __dir__
+
   convert_before do |src, dest|
     repo = src.repo_with_index 'repo', <<~ASCIIDOC
       Some text.
 
       image::resources/cat.jpg[A cat]
+      image::resources/very_large.jpg[Not a jpg but very big]
     ASCIIDOC
     repo.cp "#{repo_root}/resources/cat.jpg", 'resources/cat.jpg'
+    repo.write 'resources/very_large.jpg', very_large_text
     repo.commit 'add cat image'
     book = src.book 'Test'
     book.source repo, 'index.asciidoc'
@@ -64,10 +68,18 @@ RSpec.describe 'previewing built docs', order: :defined do
   shared_context 'docs for branch' do
     watermark = SecureRandom.uuid
     let(:watermark) { watermark }
-    let(:root) { get watermark, branch, 'guide/index.html' }
     let(:current_url) { 'guide/test/current' }
+    let(:diff) { get watermark, branch, 'diff' }
+    let(:robots_txt) { get watermark, branch, 'robots.txt' }
+    let(:root) { get watermark, branch, 'guide/index.html' }
     let(:cat_image) do
       get watermark, branch, "#{current_url}/resources/cat.jpg"
+    end
+    let(:very_large) do
+      get watermark, branch, "#{current_url}/resources/very_large.jpg"
+    end
+    let(:directory) do
+      get watermark, branch, 'guide'
     end
   end
 
@@ -87,6 +99,13 @@ RSpec.describe 'previewing built docs', order: :defined do
         #{watermark} #{branch} GET /guide/index.html HTTP/1.1 200
       LOGS
     end
+    it 'serves a "go away" robots.txt' do
+      expect(robots_txt).to serve(eq(<<~TXT))
+        User-agent: *
+        Disallow: /
+      TXT
+      expect(robots_txt['Content-Type']).to eq('text/plain')
+    end
   end
   shared_examples '404s' do
     it '404s for the docs root' do
@@ -98,6 +117,41 @@ RSpec.describe 'previewing built docs', order: :defined do
         #{watermark} #{branch} GET /guide/index.html HTTP/1.1 404
       LOGS
     end
+    it '404s for the diff' do
+      expect(diff.code).to eq('404')
+    end
+    it 'logs the access to the diff' do
+      wait_for_access watermark, branch, '/diff'
+      expect(logs).to include(<<~LOGS)
+        #{watermark} #{branch} GET /diff HTTP/1.1 404
+      LOGS
+    end
+  end
+  shared_examples 'valid diff' do
+    it 'has the html5 doctype' do
+      expect(diff).to serve(include('<!DOCTYPE html>'))
+    end
+    it 'has the branch in the title' do
+      expect(diff).to serve(include("<title>Diff for #{branch}</title>"))
+    end
+    it "doesn't contain a link to the sitemap" do
+      expect(diff).not_to serve(include('sitemap.xml'))
+    end
+    it "doesn't contain a link to the revision file" do
+      expect(diff).not_to serve(include('revisions.txt'))
+    end
+    it "doesn't contain a link to the branch tracker file" do
+      expect(diff).not_to serve(include('branches.yaml'))
+    end
+    it "doesn't warn about unprocesed output" do
+      expect(diff).not_to serve(include('Unprocessed results from git'))
+    end
+    it 'logs access to the diff when it is accessed' do
+      wait_for_access watermark, branch, '/diff'
+      expect(logs).to include(<<~LOGS)
+        #{watermark} #{branch} GET /diff HTTP/1.1 200
+      LOGS
+    end
   end
 
   describe 'for the master branch' do
@@ -106,7 +160,16 @@ RSpec.describe 'previewing built docs', order: :defined do
     include_examples 'serves the docs root'
     it 'serves an image' do
       bytes = File.open("#{repo_root}/resources/cat.jpg", 'rb', &:read)
-      expect(cat_image).to serve(doc_body(eq(bytes)))
+      expect(cat_image).to serve(eq(bytes))
+    end
+    it 'serves a very large file' do
+      expect(very_large).to serve(eq(very_large_text))
+    end
+    context 'when you request a directory' do
+      it 'redirects to index.html' do
+        expect(directory.code).to eq('301')
+        expect(directory['Location']).to eq('/guide/index.html')
+      end
     end
   end
   describe 'for the test branch' do
@@ -118,7 +181,13 @@ RSpec.describe 'previewing built docs', order: :defined do
   describe 'when we commit to the test branch of the target repo' do
     before(:context) do
       repo = @src.repo 'repo'
-      repo.write 'index.asciidoc', 'Some text.'
+      repo.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[moved_chapter]]
+        == Chapter
+        Some text.
+      ASCIIDOC
       repo.commit 'test change for test branch'
       @dest.convert_all @src.conf, target_branch: 'test'
     end
@@ -135,6 +204,19 @@ RSpec.describe 'previewing built docs', order: :defined do
       let(:branch) { 'test' }
       include_context 'docs for branch'
       include_examples 'serves the docs root'
+      context 'the diff' do
+        include_examples 'valid diff'
+        it 'contains a link to the index which has changed' do
+          expect(diff).to serve(include(<<~HTML))
+            +4 -4 <a href="/guide/test/master/index.html">test/master/index.html</a>
+          HTML
+        end
+        it 'contains a link to the moved chapter' do
+          expect(diff).to serve(include(<<~HTML))
+            +1 -1 <a href="/guide/test/master/moved_chapter.html">test/master/chapter.html -> test/master/moved_chapter.html</a>
+          HTML
+        end
+      end
     end
   end
   describe 'after we remove the test branch from the target repo' do
@@ -154,6 +236,43 @@ RSpec.describe 'previewing built docs', order: :defined do
       let(:branch) { 'test' }
       include_context 'docs for branch'
       include_examples '404s'
+    end
+  end
+  describe 'when we commit a noop change' do
+    before(:context) do
+      repo = @src.repo 'repo'
+      repo.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[chapter]]
+        == Chapter
+        Some text.
+
+        image::resources/cat.jpg[A cat]
+        image::resources/very_large.jpg[Not a jpg but very big]
+      ASCIIDOC
+      repo.commit 'test change for test_noop branch2'
+      @dest.convert_all @src.conf, target_branch: 'test_noop'
+    end
+    it 'logs the fetch' do
+      wait_for_logs(/\[new branch\]\s+test_noop\s+->\s+test_noop/)
+      # The leading space in the second line is important because it causes
+      # filebeat to group the two log lines.
+      expect(logs).to include("\n" + <<~LOGS)
+        From #{repo}
+         * [new branch]      test_noop  -> test_noop
+      LOGS
+    end
+    describe 'for the test branch' do
+      let(:branch) { 'test_noop' }
+      include_context 'docs for branch'
+      include_examples 'serves the docs root'
+      context 'the diff' do
+        include_examples 'valid diff'
+        it 'is empty' do
+          expect(diff).to serve(include("<ul>\n</ul>"))
+        end
+      end
     end
   end
 end

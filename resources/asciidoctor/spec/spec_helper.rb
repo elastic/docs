@@ -18,17 +18,17 @@ $VERBOSE = true
 ##
 # Used by the `convert with logs` and `convert without logs` contexts
 def internal_convert(input, convert_logger, extra_attributes)
-  attributes = {
-    'docdir' => File.dirname(__FILE__),
-  }
+  attributes = { 'docdir' => File.dirname(__FILE__) }
   attributes.merge! extra_attributes
-  Asciidoctor.convert input,
+  Asciidoctor.convert(
+    input,
     safe: :unsafe, # Used to include "funny" files.
     backend: :docbook45,
     logger: convert_logger,
     doctype: :book,
     attributes: attributes,
     sourcemap: true
+  )
 end
 
 ##

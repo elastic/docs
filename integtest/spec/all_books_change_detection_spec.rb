@@ -206,15 +206,9 @@ RSpec.describe 'building all books' do
           )
           include_examples 'second build is noop'
         end
-        context 'even when there is a target_branch' do
-          build_one_book_out_of_one_repo_twice(
-            before_first_build: lambda do |_src, config|
-              config.target_branch = 'new_target'
-            end
-          )
-          include_examples 'second build is noop'
-        end
         context 'even when there is a new target branch' do
+          # Since we fork the target_branch to master we won't have anything
+          # to commit if the book doesn't change
           build_one_book_out_of_one_repo_twice(
             before_second_build: lambda do |_src, config|
               config.target_branch = 'new_target'
@@ -269,6 +263,30 @@ RSpec.describe 'building all books' do
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
+        context 'because there is a target_branch and we have changes' do
+          # We always fork the target_branch from master so if the target
+          # branch contains any changes from master we rebuild them every time.
+          build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |_src, config|
+              config.target_branch = 'new_target'
+            end
+          )
+          let(:latest_revision) { 'init' }
+          let(:new_text) { 'Some text.' }
+          include_examples 'second build is not a noop'
+          context 'the first build' do
+            let(:out) { outputs[0] }
+            it 'logs that it is forking from master' do
+              expect(out).to include('Forking <new_target> from master')
+            end
+          end
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            it 'logs that it is forking from master' do
+              expect(out).to include('Forking <new_target> from master')
+            end
+          end
+        end
         context 'because we remove the target_branch' do
           # Removing the target branch causes us to build into the *empty*
           # master branch. Being empty, there aren't any books in it to
@@ -284,6 +302,58 @@ RSpec.describe 'building all books' do
           let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
+        end
+        context 'because we add a branch to the book' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, _config|
+              repo = src.repo 'repo'
+              repo.switch_to_new_branch 'foo'
+              book = src.book 'Test'
+              book.branches.push 'foo'
+            end
+          )
+          let(:latest_revision) { 'init' }
+          let(:new_text) { 'Some text.' }
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+          end
+          file_context 'html/branches.yaml' do
+            it 'includes the original branch' do
+              expect(contents).to include('Test/index.asciidoc/master')
+            end
+            it 'includes the added branch' do
+              expect(contents).to include('Test/index.asciidoc/foo')
+            end
+          end
+        end
+        context 'because we remove a branch from the book' do
+          build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              repo = src.repo 'repo'
+              repo.switch_to_new_branch 'foo'
+              book = src.book 'Test'
+              book.branches.push 'foo'
+            end,
+            before_second_build: lambda do |src, _config|
+              book = src.book 'Test'
+              book.branches.delete 'foo'
+            end
+          )
+          let(:latest_revision) { 'init' }
+          let(:new_text) { 'Some text.' }
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+          end
+          file_context 'html/branches.yaml' do
+            it 'includes the built branch' do
+              expect(contents).to include('Test/index.asciidoc/master')
+            end
+            it "doesn't include the removed branch" do
+              expect(contents).not_to include('Test/index.asciidoc/foo')
+            end
+          end
         end
       end
     end

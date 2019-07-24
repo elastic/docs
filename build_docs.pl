@@ -34,6 +34,7 @@ use ES::Util qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
+    build_docs_js
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -100,6 +101,8 @@ sub build_local {
     if ( $Opts->{asciidoctor} && !$running_in_standard_docker ) {
         die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
     }
+
+    build_docs_js();
 
     my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
@@ -220,7 +223,8 @@ sub build_all {
 
     say "Updating repositories";
     my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
-    init_repos( $repos_dir, $temp_dir, $reference_dir, $target_repo );
+    my $tracker = init_repos(
+            $repos_dir, $temp_dir, $reference_dir, $target_repo );
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
@@ -237,6 +241,8 @@ sub build_all {
         say "Skipping documentation builds."
     }
     else {
+        build_docs_js();
+
         say "Building docs";
         build_entries( $build_dir, $temp_dir, $toc, @$contents );
 
@@ -259,6 +265,8 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
+    $tracker->prune_out_of_date( @$contents );
+    $tracker->write;
     push_changes( $build_dir, $target_repo ) if $Opts->{push};
     serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
 
@@ -553,7 +561,7 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    return $target_repo;
+    return $tracker;
 }
 
 
@@ -598,7 +606,7 @@ sub preview {
         } else {
             close STDIN;
             open( STDIN, "</dev/null" );
-            exec( qw(node /docs_build/preview/preview.js) );
+            exec( qw(node --max-old-space-size=128 /docs_build/preview/preview.js) );
         }
     } else {
         close STDIN;
@@ -623,6 +631,10 @@ sub push_changes {
         $target_repo->commit;
         say "Pushing changes";
         $target_repo->push_changes;
+        if ( $Opts->{announce_preview} ) {
+            say "A preview will soon be available at " .
+                $Opts->{announce_preview};
+        }
     } else {
         say "No changes to push";
     }
@@ -762,8 +774,9 @@ sub serve_and_open_browser {
     if ( my $pid = fork ) {
         # parent
         $SIG{INT} = sub {
-            kill -9, $pid;
+            kill 'TERM', $pid;
         };
+        $SIG{TERM} = $SIG{INT};
         if ( not $running_in_standard_docker ) {
             sleep 1;
             say "Press Ctrl-C to exit the web server";
@@ -771,7 +784,7 @@ sub serve_and_open_browser {
         }
 
         wait;
-        say "\nExiting";
+        say 'Terminated preview services';
         exit;
     }
     else {
@@ -807,11 +820,13 @@ sub command_line_opts {
         'out=s',
         'pdf',
         'resource=s@',
+        'respect_edit_url_overrides',
         'single',
         'suppress_migration_warnings',
         'toc',
         # Options only compatible with --all
         'all',
+        'announce_preview=s',
         'target_branch=s',
         'target_repo=s',
         'keep_hash',
@@ -851,6 +866,8 @@ sub usage {
           --out dest/dir/   Defaults to ./html_docs.
           --pdf             Generate a PDF file instead of HTML
           --resource        Path to image dir - may be repeated
+          --respect_edit_url_overrides
+                            Respects `:edit_url:` overrides in the book.
           --single          Generate a single HTML page, instead of
                             a chunking into a file per chapter
           --suppress_migration_warnings
@@ -867,6 +884,9 @@ sub usage {
           --keep_hash       Build docs from the same commit hash as last time
           --linkcheckonly   Skips the documentation builds. Checks links only.
           --push            Commit the updated docs and push to origin
+          --announce_preview <host>
+                            Causes the build to log a line about where to find
+                            a preview of the build if anything is pushed.
           --rebuild         Rebuild all branches of every book regardless of
                             what has changed
           --reference       Directory of `--mirror` clones to use as a
@@ -908,7 +928,7 @@ USAGE
 
     Run rubocop on our extensions to Asciidoctor:
         $name --self-test -C resources/asciidoctor rubocop
-    
+
 USAGE
     }
 }
@@ -924,6 +944,7 @@ sub check_opts {
         die('--out only compatible with --doc') if $Opts->{out};
         die('--pdf only compatible with --doc') if $Opts->{pdf};
         die('--resource only compatible with --doc') if $Opts->{resource};
+        die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
         die('--single only compatible with --doc') if $Opts->{single};
         die('--toc only compatible with --doc') if $Opts->{toc};
     }
@@ -931,6 +952,7 @@ sub check_opts {
         die('--keep_hash only compatible with --all') if $Opts->{keep_hash};
         die('--linkcheckonly only compatible with --all') if $Opts->{linkcheckonly};
         die('--push only compatible with --all') if $Opts->{push};
+        die('--announce_preview only compatible with --all') if $Opts->{announce_preview};
         die('--rebuild only compatible with --all') if $Opts->{rebuild};
         die('--reference only compatible with --all') if $Opts->{reference};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
