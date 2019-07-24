@@ -566,7 +566,6 @@ http {
     rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
-    set \$guide_root "http://localhost:8000/guide";
     $redirects_line
   }
 }
