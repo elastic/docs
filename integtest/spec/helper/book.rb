@@ -26,6 +26,7 @@ class Book
     @index = 'index.asciidoc'
     @asciidoctor = true
     @sources = []
+    @examples = []
     @branches = ['master']
     @respect_edit_url_overrides = false
   end
@@ -39,12 +40,14 @@ class Book
   #                repo when the book is building a particular branch
   # is_private - Configure the source to be private so it doesn't get edit
   #              urls. Defaults to false.
-  def source(repo, path, map_branches: nil, is_private: false)
+  def source(repo, path,
+      map_branches: nil, is_private: false, example_lang: nil)
     @sources.push(
       repo: repo.name,
       path: path,
       map_branches: map_branches,
-      is_private: is_private
+      is_private: is_private,
+      example_lang: example_lang
     )
   end
 
@@ -99,7 +102,8 @@ class Book
       repo:    #{config[:repo]}
       path:    #{config[:path]}
     YAML
-    yaml += 'private: true' if config[:is_private]
+    yaml += "example_lang: #{config[:example_lang]}\n" if config[:example_lang]
+    yaml += "private: true\n" if config[:is_private]
     yaml += map_branches_conf config[:map_branches]
     indent yaml, '  '
   end

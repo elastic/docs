@@ -237,6 +237,94 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'for a book with examples' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "foo bar" <1>
+        }
+        ----------------------------------
+        <1> Example
+
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "missing"
+        }
+        ----------------------------------
+      ASCIIDOC
+      examples = "#{__dir__}/../readme_examples/"
+      js_repo = src.repo 'js'
+      js_repo.cp(
+        "#{examples}/js/8a7e0a79b1743d5fd94d79a7106ee930.adoc",
+        'examples/8a7e0a79b1743d5fd94d79a7106ee930.adoc'
+      )
+      js_repo.commit 'add example'
+      csharp_repo = src.repo 'csharp'
+      csharp_repo.write 'dummy', 'dummy'
+      csharp_repo.commit 'init'
+      csharp_repo.switch_to_new_branch 'mapped'
+      csharp_repo.cp(
+        "#{examples}/csharp/8a7e0a79b1743d5fd94d79a7106ee930.adoc",
+        'examples/8a7e0a79b1743d5fd94d79a7106ee930.adoc'
+      )
+      csharp_repo.commit 'add example'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.source js_repo, 'examples', example_lang: 'js'
+      book.source csharp_repo, 'examples',
+        map_branches: {'master': 'mapped'},
+        example_lang: 'csharp'
+    end
+    let(:latest_revision) { 'init' }
+    page_context 'html/test/master/chapter.html' do
+      it 'contains the default example' do
+        expect(body).to include(<<~HTML.strip)
+          <pre class="default programlisting prettyprint lang-console">GET /_search
+          {
+              "query": "foo bar" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          }</pre></div>
+        HTML
+      end
+      it 'contains the js example' do
+        expect(body).to include(<<~HTML.strip)
+        <div class="pre_wrapper alternate lang-js"><pre class="alternate programlisting prettyprint lang-js">const result = await client.search({
+          body: { query: 'foo bar' }
+        })</pre></div>
+        HTML
+      end
+      it 'contains the csharp example' do
+        expect(body).to include(<<~HTML.strip)
+          <div class="pre_wrapper alternate lang-csharp"><pre class="alternate programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
+              .Query(q =&gt; q
+                  .QueryString(m =&gt; m
+                      .Query("foo bar")
+                  )
+              )
+          );</pre></div>
+        HTML
+      end
+      file_context 'html/test/master/missing_examples/console/js' do
+        it 'contains only the missing example' do
+          expect(contents).to eq(<<~LOG)
+            * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 15
+          LOG
+        end
+      end
+      file_context 'html/test/master/missing_examples/console/csharp' do
+        it 'contains only the missing example' do
+          expect(contents).to eq(<<~LOG)
+            * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 15
+          LOG
+        end
+      end
+    end
+  end
+
   context 'when run with --open' do
     include_context 'source and dest'
     before(:context) do

@@ -486,6 +486,9 @@ sub format_examples {
 #===================================
     my $examples = shift;
 
+    use Data::Dumper qw(Dumper);
+    say Dumper( $examples );
+
     # We'd be better off using a csv library for this but we don't want to add
     # more dependencies to the pl until we go docker-only.
     return 'alternate_language_lookups=' . join(
