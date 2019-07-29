@@ -1,8 +1,9 @@
-import {Cookies, $} from "./deps";
-import {get_base_url} from "./utils.js";
-import {lang_strings} from "./localization.js";
+import {mount_console} from "./components/copy_as_curl";
 import {settings_modal} from "./components/settings_modal";
+import {Cookies, $} from "./deps";
 import * as events from "./events.js";
+import {lang_strings} from "./localization";
+import {get_base_url} from "./utils.js";
 
 const default_kibana_url = 'http://localhost:5601',
       default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
@@ -47,26 +48,8 @@ export function init_console_widgets(console_url, lang_strings) {
 
   $('div.console_widget').each(function() {
     var div = $(this);
-    var snippet = div.attr('data-snippet');
-    div.html('<a class="sense_widget copy_as_curl" data-curl-host="localhost:9200">'
-      + lang_strings('Copy as cURL')
-      + '</a>'
-      + '<a class="console_widget" target="console" '
-      + 'title="'
-      + lang_strings('Open snippet in Console')
-      + '" '
-      + 'href="'
-      + console_url
-      + '?load_from='
-      + base_url
-      + snippet
-      + '">'
-      + lang_strings('View in Console')
-      + '</a>'
-      + '<a class="console_settings" title="'
-      + lang_strings('Configure Console URL')
-      + '">&nbsp;</a>');
-    div.find('a.console_settings').click(function(_) {
+
+    const handle_config_click = () =>
       settings_modal({label_text: lang_strings('Enter the URL of the Console editor'),
                       url_value: console_url,
                       button_text: lang_strings('Default Console URL'),
@@ -77,10 +60,12 @@ export function init_console_widgets(console_url, lang_strings) {
                         console_url = new_url;
                         init_console_widgets(console_url, lang_strings);},
                       lang_strings: lang_strings});
-    });
-  });
 
-  $('#guide').on('click', 'a.copy_as_curl', events.copy_as_curl(lang_strings));
+    mount_console({lang_strings,
+                   base_url,
+                   console_url,
+                   config_on_click: handle_config_click});
+  });
 }
 
 export function init_sense_widgets(sense_url, lang_strings) {
@@ -88,27 +73,7 @@ export function init_sense_widgets(sense_url, lang_strings) {
 
   $('div.sense_widget').each(function() {
     var div = $(this);
-    var snippet = div.attr('data-snippet');
-    div.html('<a class="sense_widget copy_as_curl" data-curl-host="localhost:9200">'
-      + lang_strings('Copy as cURL')
-      + '</a>'
-      + '<a class="sense_widget" target="sense" '
-      + 'title="'
-      + lang_strings('Open snippet in Sense')
-      + '" '
-      + 'href="'
-      + sense_url
-      + '?load_from='
-      + base_url
-      + snippet
-      + '">'
-      + lang_strings('View in Sense')
-      + '</a>'
-      + '<a class="sense_settings" title="'
-      + lang_strings('Configure Sense URL')
-      + '">&nbsp;</a>');
-
-    div.find('a.sense_settings').click(function(_) {
+    const handle_config_click = () =>
       settings_modal({label_text: lang_strings('Enter the URL of the Sense editor'),
                       url_value: sense_url,
                       button_text: lang_strings('Default Sense URL'),
@@ -119,7 +84,15 @@ export function init_sense_widgets(sense_url, lang_strings) {
                         sense_url = new_url;
                         init_sense_widgets(sense_url, lang_strings);},
                       lang_strings: lang_strings});
-    });
+
+    mount_console({lang_strings,
+                   base_url,
+                   console_url: sense_url,
+                   widget_title: "Open snippet in Sense",
+                   url: sense_url,
+                   widget_text: "View in Sense",
+                   console_title: "Configure Sense URL",
+                   config_on_click: handle_config_click});
   });
 }
 

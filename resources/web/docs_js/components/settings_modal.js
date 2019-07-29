@@ -12,24 +12,19 @@ export function settings_modal({label_text,
     return;
   }
 
-  var div = $('<div id="settings_modal">'
-    + '<form>'
-    + '<label for="url">'
-    + label_text
-    + '</label>'
-    + '<input id="url" type="text" value="'
-    + url_value
-    + '" />'
-    + '<button id="save_url" type="button">'
-    + lang_strings('Save')
-    + '</button>'
-    + '<button id="reset_url" type="button">'
-    + button_text
-    + '</button>'
-    + '<p>'
-    + install_text
-    + '</p>'
-    + '</form></div>');
+  const settings_template = `
+    <div id="settings_modal">
+      <form>
+        <label for="url">${label_text}</label>
+        <input id="url" type="text" value="${url_value}" />
+        <button id="save_url" type="button">${lang_strings("Save")}</button>
+        <button id="reset_url" type="button">${button_text}</button>
+        <p>${install_text}</p>
+      </form>
+    </div>
+  `;
+
+  var div = $(settings_template);
 
   $('body').prepend(div);
 
