@@ -389,6 +389,50 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/callouts/2.png'
   end
 
+  context 'for a book with examples' do
+    convert_before do |src, dest|
+      repo = src.repo 'src'
+      root = File.expand_path('../../', __dir__)
+      repo.cp "#{root}/resources/cat.jpg", 'resources/cat.jpg'
+      txt = File.open("#{root}/README.asciidoc", 'r:UTF-8', &:read)
+      from = repo.write 'index.asciidoc', txt
+      repo.commit 'commit outstanding'
+      dest.prepare_convert_single(from, '.')
+        .asciidoctor
+        .examples('js', "#{root}/integtest/readme_examples/js")
+        .examples('csharp', "#{root}/integtest/readme_examples/csharp")
+        .convert
+    end
+    page_context 'blocks.html' do
+      it 'contains the default example' do
+        expect(body).to include(<<~HTML.strip)
+          <pre class="default programlisting prettyprint lang-console">GET /_search
+          {
+              "query": "foo bar" <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          }</pre></div>
+        HTML
+      end
+      it 'contains the js example' do
+        expect(body).to include(<<~HTML.strip)
+        <div class="pre_wrapper alternate lang-js"><pre class="alternate programlisting prettyprint lang-js">const result = await client.search({
+          body: { query: 'foo bar' }
+        })</pre></div>
+        HTML
+      end
+      it 'contains the csharp example' do
+        expect(body).to include(<<~HTML.strip)
+          <div class="pre_wrapper alternate lang-csharp"><pre class="alternate programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
+              .Query(q =&gt; q
+                  .QueryString(m =&gt; m
+                      .Query("foo bar")
+                  )
+              )
+          );</pre></div>
+        HTML
+      end
+    end
+  end
+
   context 'when run with --open' do
     include_context 'source and dest'
     before(:context) do

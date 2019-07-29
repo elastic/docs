@@ -170,6 +170,18 @@ def run_build_docs(args):
             build_docs_args.append(mount_docs_repo_and_dockerify_path(
                     dirname(doc_file), doc_file))
             saw_doc = True
+        elif arg == '--examples':
+            examples = args.next_arg_or_err()
+            split = examples.split(':')
+            if len(split) != 2:
+                err = "--examples must be <lang>:<path> but was %s" % examples
+                raise ArgError(err)
+            examples_dir = realpath(split[1])
+            if not isdir(examples_dir):
+                raise ArgError("Can't find --example %s" % example_dir)
+            mounted = mount_docs_repo_and_dockerify_path(
+                    examples_dir, examples_dir)
+            build_docs_args.append("%s:%s" % (split[0], mounted))
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
             open_browser = True

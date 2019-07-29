@@ -305,8 +305,8 @@
     <xsl:variable name="class">
       pre_wrapper
       <!-- Alternates -->
-      <xsl:if test="@role = 'default'">default <xsl:value-of select="@language"/></xsl:if>
-      <xsl:if test="@role = 'alternate'">alternate <xsl:value-of select="@language"/></xsl:if>
+      <xsl:if test="@role = 'default'">default lang-<xsl:value-of select="@language"/></xsl:if>
+      <xsl:if test="@role = 'alternate'">alternate lang-<xsl:value-of select="@language"/></xsl:if>
     </xsl:variable>
     <div class="{normalize-space($class)}">
       <xsl:apply-imports />
