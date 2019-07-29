@@ -390,9 +390,8 @@ RSpec.describe 'building a single book' do
   end
 
   context 'for a book with console alternatives' do
-    convert_before do |src, dest|
-      repo = src.repo 'src'
-      from = repo.write 'index.asciidoc', <<~ASCIIDOC
+    def self.index
+      <<~ASCIIDOC
         [[example]]
         == Example
         [source,console]
@@ -412,34 +411,38 @@ RSpec.describe 'building a single book' do
         }
         ----------------------------------
       ASCIIDOC
+    end
+    convert_before do |src, dest|
+      repo = src.repo 'src'
+      from = repo.write 'index.asciidoc', index
       repo.commit 'commit outstanding'
       dest.prepare_convert_single(from, '.')
-        .asciidoctor
-        .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
-        .alternatives(
-          'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
-        )
-        .convert
+          .asciidoctor
+          .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
+          .alternatives(
+            'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
+          )
+          .convert
     end
     page_context 'example.html' do
       it 'contains the default example' do
         expect(body).to include(<<~HTML.strip)
-        <div class="pre_wrapper default lang-js"><pre class="programlisting prettyprint lang-console">GET /_search
+          <pre class="default programlisting prettyprint lang-console">GET /_search
           {
               "query": "foo bar" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          }</pre></div>
+          }</pre>
         HTML
       end
       it 'contains the js example' do
         expect(body).to include(<<~HTML.strip)
-        <div class="pre_wrapper alternative lang-js"><pre class="programlisting prettyprint lang-js">const result = await client.search({
-          body: { query: 'foo bar' }
-        })</pre></div>
+          <pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
+            body: { query: 'foo bar' }
+          })</pre>
         HTML
       end
       it 'contains the csharp example' do
         expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper alternative lang-csharp"><pre class="programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
+          <pre class="alternative programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
               .Query(q =&gt; q
                   .QueryString(m =&gt; m
                       .Query("foo bar")
