@@ -104,6 +104,7 @@ sub build_local {
 
     my @examples;
     if ( $Opts->{examples} ) {
+        die '--examples requires --asciidoctor' unless $Opts->{asciidoctor};
         for ( @{ $Opts->{examples} } ) {
             my @parts = split /:/;
             die "examples must contain only one : but was [$_]" unless scalar @parts == 2;

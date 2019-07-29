@@ -392,23 +392,39 @@ RSpec.describe 'building a single book' do
   context 'for a book with examples' do
     convert_before do |src, dest|
       repo = src.repo 'src'
-      root = File.expand_path('../../', __dir__)
-      repo.cp "#{root}/resources/cat.jpg", 'resources/cat.jpg'
-      txt = File.open("#{root}/README.asciidoc", 'r:UTF-8', &:read)
-      from = repo.write 'index.asciidoc', txt
+      from = repo.write 'index.asciidoc', <<~ASCIIDOC
+        [[example]]
+        == Example
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "foo bar" <1>
+        }
+        ----------------------------------
+        <1> Example
+
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "missing"
+        }
+        ----------------------------------
+      ASCIIDOC
       repo.commit 'commit outstanding'
       dest.prepare_convert_single(from, '.')
         .asciidoctor
-        .examples('js', "#{root}/integtest/readme_examples/js")
-        .examples('csharp', "#{root}/integtest/readme_examples/csharp")
+        .examples('js', "#{__dir__}/../readme_examples/js")
+        .examples('csharp', "#{__dir__}/../readme_examples/csharp")
         .convert
     end
-    page_context 'blocks.html' do
+    page_context 'example.html' do
       it 'contains the default example' do
         expect(body).to include(<<~HTML.strip)
           <pre class="default programlisting prettyprint lang-console">GET /_search
           {
-              "query": "foo bar" <a id="CO6-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+              "query": "foo bar" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
           }</pre></div>
         HTML
       end
@@ -429,6 +445,20 @@ RSpec.describe 'building a single book' do
               )
           );</pre></div>
         HTML
+      end
+      file_context 'missing_examples/console/js' do
+        it 'contains only the missing example' do
+          expect(contents).to eq(<<~LOG)
+            * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 13
+          LOG
+        end
+      end
+      file_context 'missing_examples/console/csharp' do
+        it 'contains only the missing example' do
+          expect(contents).to eq(<<~LOG)
+            * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 13
+          LOG
+        end
       end
     end
   end
