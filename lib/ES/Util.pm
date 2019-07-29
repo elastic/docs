@@ -50,6 +50,7 @@ sub build_chunked {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
+    my $examples  = $opts{examples}      || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -110,6 +111,10 @@ sub build_chunked {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
+                $examples ? (
+                    '-a' => format_examples($examples),
+                    '-a' => "alternate_language_report_dir=$dest/missing_examples"
+                ) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -192,6 +197,7 @@ sub build_single {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
+    my $examples  = $opts{examples}      || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -243,6 +249,10 @@ sub build_single {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
+                $examples ? (
+                    '-a' => format_examples($examples),
+                    '-a' => "alternate_language_report_dir=$dest/missing_examples"
+                ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -471,6 +481,18 @@ sub edit_urls_for_asciidoctor {
     return join("\n", map { "$_,$edit_urls->{$_}" } keys %{$edit_urls});
 }
 
+#===================================
+sub format_examples {
+#===================================
+    my $examples = shift;
+
+    # We'd be better off using a csv library for this but we don't want to add
+    # more dependencies to the pl until we go docker-only.
+    return 'alternate_language_lookups=' . join(
+        "\n",
+        map { 'console,' . $_->{lang} . ',' . $_->{dir} } @{ $examples }
+    );
+}
 
 #===================================
 sub write_html_redirect {

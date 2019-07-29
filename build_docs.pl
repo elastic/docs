@@ -102,6 +102,15 @@ sub build_local {
         die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
     }
 
+    my @examples;
+    if ( $Opts->{examples} ) {
+        for ( @{ $Opts->{examples} } ) {
+            my @parts = split /:/;
+            die "examples must contain only one : but was [$_]" unless scalar @parts == 2;
+            push @examples, { lang => $parts[0], dir => $parts[1] };
+        }
+    }
+
     build_docs_js();
 
     my $latest = !$Opts->{suppress_migration_warnings};
@@ -109,12 +118,14 @@ sub build_local {
         $dir->rmtree;
         $dir->mkpath;
         build_single( $index, $dir, %$Opts,
-                latest => $latest
+                latest   => $latest,
+                examples => \@examples,
         );
     }
     else {
         build_chunked( $index, $dir, %$Opts,
-                latest => $latest
+                latest   => $latest,
+                examples => \@examples,
         );
     }
 
@@ -815,6 +826,7 @@ sub command_line_opts {
         'doc=s',
         'asciidoctor',
         'chunk=i',
+        'examples=s@',
         'lang=s',
         'lenient',
         'out=s',
@@ -861,6 +873,8 @@ sub usage {
         Opts:
           --asciidoctor     Use asciidoctor instead of asciidoc.
           --chunk 1         Also chunk sections into separate files
+          --examples <lang>:<dir>
+                            Directory containing alternate example languages.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
@@ -939,6 +953,7 @@ sub check_opts {
     if ( !$Opts->{doc} ) {
         die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
+        die('--examples only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
         die('--lenient only compatible with --doc') if $Opts->{lenient};
         die('--out only compatible with --doc') if $Opts->{out};

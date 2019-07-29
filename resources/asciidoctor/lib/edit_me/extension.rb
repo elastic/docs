@@ -14,7 +14,13 @@ class EditMe < TreeProcessorScaffold
     logger.error('sourcemap is required') unless document.sourcemap
     edit_urls_string = document.attributes['edit_urls']
     return unless edit_urls_string
+    return unless edit_urls_string.is_a? String
 
+    document.attributes['edit_urls'] = parse_edit_urls edit_urls_string
+    super
+  end
+
+  def parse_edit_urls(edit_urls_string)
     edit_urls = []
     CSV.parse edit_urls_string do |toplevel, url|
       unless toplevel
@@ -29,9 +35,7 @@ class EditMe < TreeProcessorScaffold
       edit_urls << { toplevel: toplevel, url: url }
     end
     # Prefer the longest matching edit url
-    edit_urls = edit_urls.sort_by { |e| [-e[:toplevel].length, e[:toplevel]] }
-    document.attributes['edit_urls'] = edit_urls
-    super
+    edit_urls.sort_by { |e| [-e[:toplevel].length, e[:toplevel]] }
   end
 
   def process_block(block)
