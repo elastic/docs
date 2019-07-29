@@ -6,39 +6,38 @@ require 'fileutils'
 require_relative '../scaffold'
 
 ##
-# TreeProcessor extension to automatically add "Edit Me" links to appropriate
-# spots in the documentation.
+# TreeProcessor extension find alternative languages for snippets.
 #
-class AlternateLanguageLookup < TreeProcessorScaffold
+class AlternativeLanguageLookup < TreeProcessorScaffold
   include Asciidoctor::Logging
 
   def process(document)
-    lookups_string = document.attr 'alternate_language_lookups'
+    lookups_string = document.attr 'alternative_language_lookups'
     return unless lookups_string
     return unless lookups_string.is_a? String
 
     lookups = parse_lookups lookups_string
-    document.attributes['alternate_language_lookups'] = lookups
+    document.attributes['alternative_language_lookups'] = lookups
     super
   end
 
   def parse_lookups(lookups_string)
     lookups = {}
-    CSV.parse lookups_string do |source_lang, alternate_lang, dir|
+    CSV.parse lookups_string do |source_lang, alternative_lang, dir|
       unless source_lang
-        error('invalid alternate_language_lookups, no source_lang')
+        error('invalid alternative_language_lookups, no source_lang')
         next
       end
-      unless alternate_lang
-        error('invalid alternate_language_lookups, no alternate_lang')
+      unless alternative_lang
+        error('invalid alternative_language_lookups, no alternative_lang')
         next
       end
       unless Dir.exist? dir
-        error("invalid alternate_language_lookups, [#{dir}] doesn't exist")
+        error("invalid alternative_language_lookups, [#{dir}] doesn't exist")
         next
       end
       lookups[source_lang] = [] unless lookups[source_lang]
-      lookups[source_lang] << { lang: alternate_lang, dir: dir }
+      lookups[source_lang] << { lang: alternative_lang, dir: dir }
     end
     lookups
   end
@@ -47,27 +46,27 @@ class AlternateLanguageLookup < TreeProcessorScaffold
     return unless block.context == :listing && block.style == 'source'
 
     source_lang = block.attr 'language'
-    lookups = block.document.attr 'alternate_language_lookups'
-    alternates = lookups[source_lang]
-    process_listing block, source_lang, alternates if alternates
+    lookups = block.document.attr 'alternative_language_lookups'
+    alternatives = lookups[source_lang]
+    process_listing block, source_lang, alternatives if alternatives
   end
 
-  def process_listing(block, source_lang, alternates)
+  def process_listing(block, source_lang, alternatives)
     start_index = block.parent.blocks.find_index(block) + 1
     next_index = start_index
     digest = Digest::MurmurHash3_x64_128.hexdigest block.lines.join "\n"
-    alternates.each do |alternate|
-      dir = alternate[:dir]
+    alternatives.each do |alternative|
+      dir = alternative[:dir]
       basename = "#{digest}.adoc"
       unless File.exist? File.join(dir, basename)
         basename = "#{digest}.asciidoc"
         unless File.exist? File.join(dir, basename)
-          report_missing block, source_lang, alternate, digest
+          report_missing block, source_lang, alternative, digest
           next
         end
       end
 
-      new_script = build_alternate block, alternate, dir, basename
+      new_script = build_alternative block, alternative, dir, basename
       block.attributes['role'] = 'default'
       block.parent.blocks.insert next_index, new_script
       next_index += 1
@@ -75,12 +74,12 @@ class AlternateLanguageLookup < TreeProcessorScaffold
     block.parent.reindex_sections unless next_index == start_index
   end
 
-  def build_alternate(block, alternate, dir, basename)
+  def build_alternative(block, alternative, dir, basename)
     # Parse the included portion as asciidoc but not as a "child" document
     # because that is for parsing text we've already parsed once. This is
     # text that we're detecting very late in the process.
     source = <<~ASCIIDOC
-      [source,#{alternate[:lang]}]
+      [source,#{alternative[:lang]}]
       ----
       include::#{basename}[]
       ----
@@ -98,16 +97,16 @@ class AlternateLanguageLookup < TreeProcessorScaffold
 
     new_script = child.parse.blocks[0]
     new_script.parent = block.parent
-    new_script.attributes['role'] = 'alternate'
+    new_script.attributes['role'] = 'alternative'
     new_script
   end
 
-  def report_missing(block, source_lang, alternate, digest)
-    return unless (report_dir = block.attr 'alternate_language_report_dir')
+  def report_missing(block, source_lang, alternative, digest)
+    return unless (report_dir = block.attr 'alternative_language_report_dir')
 
     dir = File.join report_dir, source_lang
     FileUtils.mkdir_p dir
-    file = File.join dir, alternate[:lang]
+    file = File.join dir, alternative[:lang]
     File.open file, 'a' do |f|
       f.puts <<~TXT
         * #{digest}.adoc: #{block.source_location}

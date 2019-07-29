@@ -25,7 +25,7 @@ sub new {
             exclude => { map { $_ => 1 } @{ $_->{exclude_branches} || [] } },
             map_branches => $_->{map_branches} || {},
             private => $_->{private} || 0,
-            example_lang => $_->{example_lang} || 0,
+            console_alternative => $_->{console_alternative} || 0,
         };
     }
 
@@ -96,7 +96,7 @@ sub prepare {
     my $checkout = Path::Class::tempdir( DIR => $self->temp_dir );
     my %edit_urls = ();
     my $first_path = 0;
-    my @examples;
+    my @console_alternatives;
 
     # need to handle repo name here, not in Repo
     for my $source ( $self->_sources_for_branch($branch) ) {
@@ -110,14 +110,14 @@ sub prepare {
         $edit_urls{ $source_checkout->absolute } = $source->{private} ?
             '<disable>' : $repo->edit_url($repo_branch);
         $first_path = $source_checkout unless $first_path;
-        if ( $source->{example_lang} ) {
-            push @examples, {
-                lang => $source->{example_lang}, # NOCOMMIT rename to console_alternate?
+        if ( $source->{console_alternative} ) {
+            push @console_alternatives, {
+                lang => $source->{console_alternative},
                 dir  => $source_checkout->subdir( $source->{path} ),
             };
         }
     }
-    return ( $checkout, \%edit_urls, $first_path, \@examples );
+    return ( $checkout, \%edit_urls, $first_path, \@console_alternatives );
 }
 
 #===================================

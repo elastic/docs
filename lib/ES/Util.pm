@@ -50,7 +50,7 @@ sub build_chunked {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
-    my $examples  = $opts{examples}      || [];
+    my $alternatives = $opts{alternatives} || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -111,9 +111,9 @@ sub build_chunked {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
-                $examples ? (
-                    '-a' => format_examples($examples),
-                    '-a' => "alternate_language_report_dir=$dest/missing_examples"
+                $alternatives ? (
+                    '-a' => _format_alternatives($alternatives),
+                    '-a' => "alternative_language_report_dir=$dest/missing_alternatives"
                 ) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
@@ -197,7 +197,7 @@ sub build_single {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
-    my $examples  = $opts{examples}      || [];
+    my $alternatives = $opts{alternatives} || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -249,9 +249,9 @@ sub build_single {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
-                $examples ? (
-                    '-a' => format_examples($examples),
-                    '-a' => "alternate_language_report_dir=$dest/missing_examples"
+                $alternatives ? (
+                    '-a' => _format_alternatives($alternatives),
+                    '-a' => "alternative_language_report_dir=$dest/missing_alternatives"
                 ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
@@ -482,18 +482,14 @@ sub edit_urls_for_asciidoctor {
 }
 
 #===================================
-sub format_examples {
+sub _format_alternatives {
 #===================================
-    my $examples = shift;
+    my $alternatives = shift;
 
-    use Data::Dumper qw(Dumper);
-    say Dumper( $examples );
-
-    # We'd be better off using a csv library for this but we don't want to add
-    # more dependencies to the pl until we go docker-only.
-    return 'alternate_language_lookups=' . join(
+    # We'd be better off using a csv library for this but it'll be ok for now.
+    return 'alternative_language_lookups=' . join(
         "\n",
-        map { 'console,' . $_->{lang} . ',' . $_->{dir} } @{ $examples }
+        map { $_->{source_lang} . ',' . $_->{alternative_lang} . ',' . $_->{dir} } @{ $alternatives }
     );
 }
 

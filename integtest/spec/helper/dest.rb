@@ -150,8 +150,8 @@ class Dest
       self
     end
 
-    def examples(lang, dir)
-      @cmd += ['--examples', "#{lang}:#{dir}"]
+    def alternatives(source_lang, dest_lang, dir)
+      @cmd += ['--alternatives', "#{source_lang}:#{dest_lang}:#{dir}"]
       self
     end
   end

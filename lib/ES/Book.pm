@@ -260,7 +260,7 @@ sub _build_book {
     return 0 unless $rebuild ||
         $source->has_changed( $self->title, $branch, $self->asciidoctor );
 
-    my ( $checkout, $edit_urls, $first_path, $examples ) =
+    my ( $checkout, $edit_urls, $first_path, $console_alternatives ) =
         $source->prepare($self->title, $branch);
 
     $pm->start($branch) and return 1;
@@ -288,7 +288,7 @@ sub _build_book {
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
-                examples      => $examples,
+                console_alternatives => $console_alternatives,
             );
         }
         else {
@@ -311,7 +311,7 @@ sub _build_book {
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
-                examples      => $examples,
+                console_alternatives => $console_alternatives,
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }

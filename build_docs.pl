@@ -102,13 +102,19 @@ sub build_local {
         die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
     }
 
-    my @examples;
-    if ( $Opts->{examples} ) {
-        die '--examples requires --asciidoctor' unless $Opts->{asciidoctor};
-        for ( @{ $Opts->{examples} } ) {
+    my @alternatives;
+    if ( $Opts->{alternatives} ) {
+        die '--alternatives requires --asciidoctor' unless $Opts->{asciidoctor};
+        for ( @{ $Opts->{alternatives} } ) {
             my @parts = split /:/;
-            die "examples must contain only one : but was [$_]" unless scalar @parts == 2;
-            push @examples, { lang => $parts[0], dir => $parts[1] };
+            unless (scalar @parts == 3) {
+                die "alternatives must contain exactly two :s but was [$_]";
+            }
+            push @alternatives, {
+                source_lang => $parts[0],
+                alternative_lang => $parts[1],
+                dir => $parts[2],
+            };
         }
     }
 
@@ -119,14 +125,14 @@ sub build_local {
         $dir->rmtree;
         $dir->mkpath;
         build_single( $index, $dir, %$Opts,
-                latest   => $latest,
-                examples => \@examples,
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
     else {
         build_chunked( $index, $dir, %$Opts,
-                latest   => $latest,
-                examples => \@examples,
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
 
@@ -825,9 +831,9 @@ sub command_line_opts {
     return [
         # Options only compatible with --doc
         'doc=s',
+        'alternatives=s@',
         'asciidoctor',
         'chunk=i',
-        'examples=s@',
         'lang=s',
         'lenient',
         'out=s',
@@ -874,8 +880,8 @@ sub usage {
         Opts:
           --asciidoctor     Use asciidoctor instead of asciidoc.
           --chunk 1         Also chunk sections into separate files
-          --examples <lang>:<dir>
-                            Directory containing alternate example languages.
+          --alternatives <source_lang>:<alternative_lang>:<dir>
+                            Examples in alternative languages.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
@@ -952,9 +958,9 @@ USAGE
 sub check_opts {
 #===================================
     if ( !$Opts->{doc} ) {
+        die('--alternatives only compatible with --doc') if $Opts->{alternatives};
         die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
-        die('--examples only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
         die('--lenient only compatible with --doc') if $Opts->{lenient};
         die('--out only compatible with --doc') if $Opts->{out};

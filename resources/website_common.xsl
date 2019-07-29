@@ -302,13 +302,7 @@
   </xsl:template>
 
   <xsl:template match="programlisting">
-    <xsl:variable name="class">
-      pre_wrapper
-      <!-- Alternates -->
-      <xsl:if test="@role = 'default'">default lang-<xsl:value-of select="@language"/></xsl:if>
-      <xsl:if test="@role = 'alternate'">alternate lang-<xsl:value-of select="@language"/></xsl:if>
-    </xsl:variable>
-    <div class="{normalize-space($class)}">
+    <div class="pre_wrapper">
       <xsl:apply-imports />
     </div>
     <!-- Asciidoctor's CONSOLE widget -->

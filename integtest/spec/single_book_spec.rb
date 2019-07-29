@@ -389,7 +389,7 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/callouts/2.png'
   end
 
-  context 'for a book with examples' do
+  context 'for a book with console alternatives' do
     convert_before do |src, dest|
       repo = src.repo 'src'
       from = repo.write 'index.asciidoc', <<~ASCIIDOC
@@ -415,14 +415,16 @@ RSpec.describe 'building a single book' do
       repo.commit 'commit outstanding'
       dest.prepare_convert_single(from, '.')
         .asciidoctor
-        .examples('js', "#{__dir__}/../readme_examples/js")
-        .examples('csharp', "#{__dir__}/../readme_examples/csharp")
+        .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
+        .alternatives(
+          'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
+        )
         .convert
     end
     page_context 'example.html' do
       it 'contains the default example' do
         expect(body).to include(<<~HTML.strip)
-          <pre class="default programlisting prettyprint lang-console">GET /_search
+        <div class="pre_wrapper default lang-js"><pre class="programlisting prettyprint lang-console">GET /_search
           {
               "query": "foo bar" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
           }</pre></div>
@@ -430,14 +432,14 @@ RSpec.describe 'building a single book' do
       end
       it 'contains the js example' do
         expect(body).to include(<<~HTML.strip)
-        <div class="pre_wrapper alternate lang-js"><pre class="alternate programlisting prettyprint lang-js">const result = await client.search({
+        <div class="pre_wrapper alternative lang-js"><pre class="programlisting prettyprint lang-js">const result = await client.search({
           body: { query: 'foo bar' }
         })</pre></div>
         HTML
       end
       it 'contains the csharp example' do
         expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper alternate lang-csharp"><pre class="alternate programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
+          <div class="pre_wrapper alternative lang-csharp"><pre class="programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
               .Query(q =&gt; q
                   .QueryString(m =&gt; m
                       .Query("foo bar")
@@ -446,14 +448,14 @@ RSpec.describe 'building a single book' do
           );</pre></div>
         HTML
       end
-      file_context 'missing_examples/console/js' do
+      file_context 'missing_alternatives/console/js' do
         it 'contains only the missing example' do
           expect(contents).to eq(<<~LOG)
             * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 13
           LOG
         end
       end
-      file_context 'missing_examples/console/csharp' do
+      file_context 'missing_alternatives/console/csharp' do
         it 'contains only the missing example' do
           expect(contents).to eq(<<~LOG)
             * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 13

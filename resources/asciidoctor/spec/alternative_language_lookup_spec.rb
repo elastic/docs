@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require 'tmpdir'
-require 'alternate_language_lookup/extension'
+require 'alternative_language_lookup/extension'
 
-RSpec.describe AlternateLanguageLookup do
+RSpec.describe AlternativeLanguageLookup do
   before(:each) do
     Asciidoctor::Extensions.register do
-      treeprocessor AlternateLanguageLookup
+      treeprocessor AlternativeLanguageLookup
     end
   end
 
@@ -15,7 +15,9 @@ RSpec.describe AlternateLanguageLookup do
   end
 
   let(:spec_dir) { File.dirname(__FILE__) }
-  let(:example_alternates) { "#{spec_dir}/resources/alternate_language_lookup" }
+  let(:example_alternatives) do
+    "#{spec_dir}/resources/alternative_language_lookup"
+  end
 
   let(:one_snippet) do
     <<~ASCIIDOC
@@ -45,7 +47,7 @@ RSpec.describe AlternateLanguageLookup do
   end
   context 'when it is configured to an empty string' do
     include_context 'convert without logs'
-    let(:convert_attributes) { { 'alternate_language_lookups' => '' } }
+    let(:convert_attributes) { { 'alternative_language_lookups' => '' } }
     let(:input) { one_snippet }
     let(:snippet_contents) { 'GET /' }
     include_examples "doesn't modify the output"
@@ -54,16 +56,16 @@ RSpec.describe AlternateLanguageLookup do
     include_context 'convert with logs'
     let(:config) do
       <<~CSV
-        console,missing,#{example_alternates}/missing
+        console,missing,#{example_alternatives}/missing
       CSV
     end
-    let(:convert_attributes) { { 'alternate_language_lookups' => config } }
+    let(:convert_attributes) { { 'alternative_language_lookups' => config } }
     let(:input) { one_snippet }
     let(:snippet_contents) { 'GET /' }
     include_examples "doesn't modify the output"
     it 'logs an error for the missing directory' do
       expect(logs).to eq(<<~LOG.strip)
-        ERROR: invalid alternate_language_lookups, [#{example_alternates}/missing] doesn't exist
+        ERROR: invalid alternative_language_lookups, [#{example_alternatives}/missing] doesn't exist
       LOG
     end
   end
@@ -71,10 +73,10 @@ RSpec.describe AlternateLanguageLookup do
     include_context 'convert without logs'
     let(:config) do
       <<~CSV
-        missing,js,#{example_alternates}/js
+        missing,js,#{example_alternatives}/js
       CSV
     end
-    let(:convert_attributes) { { 'alternate_language_lookups' => config } }
+    let(:convert_attributes) { { 'alternative_language_lookups' => config } }
     let(:input) { one_snippet }
     let(:snippet_contents) { 'GET /' }
     include_examples "doesn't modify the output"
@@ -83,9 +85,9 @@ RSpec.describe AlternateLanguageLookup do
   context 'when it is configured' do
     let(:config) do
       <<~CSV
-        console,js,#{example_alternates}/js
-        console,csharp,#{example_alternates}/csharp
-        console,java,#{example_alternates}/java
+        console,js,#{example_alternatives}/js
+        console,csharp,#{example_alternatives}/csharp
+        console,java,#{example_alternatives}/java
       CSV
     end
     after(:each) do
@@ -93,94 +95,94 @@ RSpec.describe AlternateLanguageLookup do
     end
     let(:convert_attributes) do
       {
-        'alternate_language_lookups' => config,
-        'alternate_language_report_dir' => Dir.mktmpdir('lang_report'),
+        'alternative_language_lookups' => config,
+        'alternative_language_report_dir' => Dir.mktmpdir('lang_report'),
       }
     end
     let(:report_dir) do
       # read the result of the conversion to populate the dir
       converted
       # return the dir
-      convert_attributes['alternate_language_report_dir']
+      convert_attributes['alternative_language_report_dir']
     end
-    context "when there aren't any alternates" do
+    context "when there aren't any alternatives" do
       include_context 'convert without logs'
       let(:input) { one_snippet }
-      let(:snippet_contents) { 'GET /no_alternates' }
+      let(:snippet_contents) { 'GET /no_alternatives' }
       include_examples "doesn't modify the output"
       let(:expected_log) do
         <<~LOG
-          * 8b9717c0c5b44be5ff1fcbdc00979f1a.adoc: <stdin>: line 2
+          * 3fcdfa6097c68c04f3e175dcf3934af6.adoc: <stdin>: line 2
         LOG
       end
-      it 'creates a missing alternate report for js' do
+      it 'creates a missing alternatives report for js' do
         expect(File.read("#{report_dir}/console/js")).to eq(expected_log)
       end
-      it 'creates a missing alternate report for c#' do
+      it 'creates a missing alternatives report for c#' do
         expect(File.read("#{report_dir}/console/csharp")).to eq(expected_log)
       end
-      it 'creates a missing alternate report for java' do
+      it 'creates a missing alternative report for java' do
         expect(File.read("#{report_dir}/console/java")).to eq(expected_log)
       end
     end
-    context 'when there is a single alternate' do
+    context 'when there is a single alternative' do
       include_context 'convert without logs'
       let(:input) { one_snippet }
-      let(:snippet_contents) { 'GET /just_js_alternate' }
-      it 'adds the alternate' do
+      let(:snippet_contents) { 'GET /just_js_alternative' }
+      it 'adds the alternative' do
         expect(converted).to eq(<<~DOCBOOK.strip)
           <preface>
           <title></title>
           <programlisting role="default" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
-          <programlisting role="alternate" language="js" linenumbering="unnumbered">console.info('just js alternate');</programlisting>
+          <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('just js alternative');</programlisting>
           </preface>
         DOCBOOK
       end
       let(:expected_log) do
         <<~LOG
-          * 10fa89ac4f5f65a6daebfdb7f9051448.adoc: <stdin>: line 2
+          * 39f76498cca438ba11af18a7075d24c9.adoc: <stdin>: line 2
         LOG
       end
-      it "doesn't create a missing alternate report for js" do
+      it "doesn't create a missing alternative report for js" do
         expect(File).not_to exist("#{report_dir}/console/js")
       end
-      it 'creates a missing alternate report for c#' do
+      it 'creates a missing alternative report for c#' do
         expect(File.read("#{report_dir}/console/csharp")).to eq(expected_log)
       end
-      it 'creates a missing alternate report for java' do
+      it 'creates a missing alternative report for java' do
         expect(File.read("#{report_dir}/console/java")).to eq(expected_log)
       end
     end
-    context 'when all alternates exist' do
+    context 'when all alternatives exist' do
       include_context 'convert without logs'
       let(:input) { one_snippet }
-      let(:snippet_contents) { 'GET /all_alternates' }
-      it 'adds the alternate' do
+      let(:snippet_contents) { 'GET /all_alternatives' }
+      it 'adds the alternative' do
         expect(converted).to eq(<<~DOCBOOK.strip)
           <preface>
           <title></title>
           <programlisting role="default" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
-          <programlisting role="alternate" language="js" linenumbering="unnumbered">console.info('all alternates');</programlisting>
-          <programlisting role="alternate" language="csharp" linenumbering="unnumbered">Console.WriteLine("all alternates");</programlisting>
-          <programlisting role="alternate" language="java" linenumbering="unnumbered">System.out.println("all alternates");</programlisting>
+          <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('all alternatives');</programlisting>
+          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("all alternatives");</programlisting>
+          <programlisting role="alternative" language="java" linenumbering="unnumbered">System.out.println("all alternatives");</programlisting>
           </preface>
         DOCBOOK
       end
-      it "doesn't create a missing alternate report for js" do
+      it "doesn't create a missing alternative report for js" do
         expect(File).not_to exist("#{report_dir}/console/js")
       end
-      it "doesn't create a missing alternate report for c#" do
+      it "doesn't create a missing alternative report for c#" do
         expect(File).not_to exist("#{report_dir}/console/csharp")
       end
-      it "doesn't create a missing alternate report for java" do
+      it "doesn't create a missing alternative report for java" do
         expect(File).not_to exist("#{report_dir}/console/java")
       end
     end
-    context 'when the alternate has characters that must be escaped' do
+    context 'when the alternative has characters that must be escaped' do
       include_context 'convert without logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /has_<' }
-      it 'adds the alternate' do
+      it 'adds the alternative' do
         expect(converted).to include(<<~DOCBOOK.strip)
           var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
               .Query(q =&gt; q
@@ -192,30 +194,30 @@ RSpec.describe AlternateLanguageLookup do
         DOCBOOK
       end
     end
-    context 'when the alternate includes another file' do
+    context 'when the alternative includes another file' do
       include_context 'convert without logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /has_include' }
-      it 'adds the alternate' do
+      it 'adds the alternative' do
         expect(converted).to include(<<~CSHARP.strip)
           Console.WriteLine("Hello World!");
         CSHARP
       end
     end
-    # NOCOMMIT alternate has matching callouts
-    # NOCOMMIT alternate has non-matching callouts (error!)
-    context 'when there is an error in the alternate' do
+    # NOCOMMIT alternative has matching callouts
+    # NOCOMMIT alternative has non-matching callouts (error!)
+    context 'when there is an error in the alternative' do
       include_context 'convert with logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /has_error' }
-      it 'adds the alternate' do
+      it 'adds the alternative' do
         expect(converted).to include(<<~DOCBOOK.strip)
           Unresolved directive in ded0ba409b7c66489d5833dc6aa5f696.adoc - include::missing.adoc[]
         DOCBOOK
       end
       it 'logs an error' do
         expect(logs).to eq(<<~LOG.strip)
-          ERROR: ded0ba409b7c66489d5833dc6aa5f696.adoc: line 1: include file not found: #{example_alternates}/csharp/missing.adoc
+          ERROR: ded0ba409b7c66489d5833dc6aa5f696.adoc: line 1: include file not found: #{example_alternatives}/csharp/missing.adoc
         LOG
       end
     end
