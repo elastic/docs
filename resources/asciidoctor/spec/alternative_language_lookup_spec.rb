@@ -133,7 +133,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         expect(converted).to eq(<<~DOCBOOK.strip)
           <preface>
           <title></title>
-          <programlisting role="default" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
+          <programlisting role="default has-js" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
           <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('just js alternative');</programlisting>
           </preface>
         DOCBOOK
@@ -161,7 +161,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         expect(converted).to eq(<<~DOCBOOK.strip)
           <preface>
           <title></title>
-          <programlisting role="default" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
+          <programlisting role="default has-js has-csharp has-java" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
           <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('all alternatives');</programlisting>
           <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("all alternatives");</programlisting>
           <programlisting role="alternative" language="java" linenumbering="unnumbered">System.out.println("all alternatives");</programlisting>
@@ -218,8 +218,8 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
       it 'inserts the alternatives below the callouts' do
         expect(converted).to include(<<~DOCBOOK.strip)
-          <programlisting role="default" language="console" linenumbering="unnumbered">GET /there_are_callouts <co id="CO1-1"/> <co id="CO1-2"/></programlisting>
-          <calloutlist role="default lang-console">
+          <programlisting role="default has-csharp" language="console" linenumbering="unnumbered">GET /there_are_callouts <co id="CO1-1"/> <co id="CO1-2"/></programlisting>
+          <calloutlist role="default has-csharp lang-console">
           <callout arearefs="CO1-1">
           <para>a</para>
           </callout>
@@ -273,4 +273,5 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
     end
   end
+  # NOCOMMIT fail if there are multiple copies of the same language pairs
 end

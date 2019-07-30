@@ -3,14 +3,15 @@
 RSpec.shared_examples 'README-like console alternatives' do |path|
   page_context "#{path}/chapter.html" do
     it 'contains the default example' do
+      has_roles = 'has-js has-csharp'
       console_widget = <<~HTML.strip
-        <div class="console_widget default" data-snippet="snippets/1.console"></div>
+        <div class="console_widget default #{has_roles}" data-snippet="snippets/1.console"></div>
       HTML
       expect(body).to include(<<~HTML.strip)
-        <div class="pre_wrapper default lang-console"><pre class="default programlisting prettyprint lang-console">GET /_search
+        <div class="pre_wrapper default #{has_roles} lang-console"><pre class="default #{has_roles} programlisting prettyprint lang-console">GET /_search
         {
             "query": "foo bar" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-        }</pre></div>#{console_widget}<div class="default lang-console calloutlist">
+        }</pre></div>#{console_widget}<div class="default #{has_roles} lang-console calloutlist">
       HTML
       # The last line is important: we need the snippet to be followed
       # immediately by the console widget and then immediately by the callout
