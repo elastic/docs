@@ -392,8 +392,10 @@ RSpec.describe 'building a single book' do
   context 'for a book with console alternatives' do
     def self.index
       <<~ASCIIDOC
-        [[example]]
-        == Example
+        = Title
+
+        [[chapter]]
+        == Chapter
         [source,console]
         ----------------------------------
         GET /_search
@@ -424,48 +426,7 @@ RSpec.describe 'building a single book' do
           )
           .convert
     end
-    page_context 'example.html' do
-      it 'contains the default example' do
-        expect(body).to include(<<~HTML.strip)
-          <pre class="default programlisting prettyprint lang-console">GET /_search
-          {
-              "query": "foo bar" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
-          }</pre>
-        HTML
-      end
-      it 'contains the js example' do
-        expect(body).to include(<<~HTML.strip)
-          <pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
-            body: { query: 'foo bar' }
-          })</pre>
-        HTML
-      end
-      it 'contains the csharp example' do
-        expect(body).to include(<<~HTML.strip)
-          <pre class="alternative programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
-              .Query(q =&gt; q
-                  .QueryString(m =&gt; m
-                      .Query("foo bar")
-                  )
-              )
-          );</pre></div>
-        HTML
-      end
-      file_context 'missing_alternatives/console/js' do
-        it 'contains only the missing example' do
-          expect(contents).to eq(<<~LOG)
-            * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 13
-          LOG
-        end
-      end
-      file_context 'missing_alternatives/console/csharp' do
-        it 'contains only the missing example' do
-          expect(contents).to eq(<<~LOG)
-            * d21765565081685a36dfc4af89e7cece.adoc: index.asciidoc: line 13
-          LOG
-        end
-      end
-    end
+    include_examples 'README-like console alternatives', '.'
   end
 
   context 'when run with --open' do

@@ -129,7 +129,7 @@ sub build_chunked {
                 file('resources/website_chunked.xsl')->absolute,
                 $dest_xml
             );
-            # unlink $dest_xml;
+            unlink $dest_xml;
             1;
         } or do { $output = $@; $died = 1; };
     }

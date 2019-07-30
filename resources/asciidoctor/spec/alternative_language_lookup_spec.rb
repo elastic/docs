@@ -3,10 +3,10 @@
 require 'tmpdir'
 require 'alternative_language_lookup/extension'
 
-RSpec.describe AlternativeLanguageLookup do
+RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
   before(:each) do
     Asciidoctor::Extensions.register do
-      treeprocessor AlternativeLanguageLookup
+      treeprocessor AlternativeLanguageLookup::AlternativeLanguageLookup
     end
   end
 
@@ -157,7 +157,7 @@ RSpec.describe AlternativeLanguageLookup do
       include_context 'convert without logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /all_alternatives' }
-      it 'adds the alternative' do
+      it 'adds the alternatives' do
         expect(converted).to eq(<<~DOCBOOK.strip)
           <preface>
           <title></title>
@@ -204,44 +204,71 @@ RSpec.describe AlternativeLanguageLookup do
         CSHARP
       end
     end
-    context 'when the alternate has matching callouts' do
+    context 'when there are callouts' do
       include_context 'convert without logs'
       let(:input) do
         <<~ASCIIDOC
           [source,console]
           ----
-          GET /matching_callouts <1> <2>
+          GET /there_are_callouts <1> <2>
           ----
           <1> a
           <2> b
         ASCIIDOC
       end
-      it 'adds the alternative' do
-        expect(converted).to include(<<~CSHARP.strip)
-          Console.WriteLine("Hello World!");
-        CSHARP
+      it 'inserts the alternatives below the callouts' do
+        expect(converted).to include(<<~DOCBOOK.strip)
+          <programlisting role="default" language="console" linenumbering="unnumbered">GET /there_are_callouts <co id="CO1-1"/> <co id="CO1-2"/></programlisting>
+          <calloutlist role="default lang-console">
+          <callout arearefs="CO1-1">
+          <para>a</para>
+          </callout>
+          <callout arearefs="CO1-2">
+          <para>b</para>
+          </callout>
+          </calloutlist>
+          <programlisting role="alternative" language="csharp"
+        DOCBOOK
       end
-      let(:expected_log) do
-        <<~LOG
-          * 39f76498cca438ba11af18a7075d24c9.adoc: <stdin>: line 2
-        LOG
+      it 'adds the alternative including its callouts' do
+        expect(converted).to include(<<~DOCBOOK.strip)
+          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("matching callouts"); <co id="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-1"/> <co id="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-2"/></programlisting>
+          <calloutlist role="alternative lang-csharp">
+          <callout arearefs="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-1">
+          <para>a</para>
+          </callout>
+          <callout arearefs="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-2">
+          <para>b</para>
+          </callout>
+          </calloutlist>
+        DOCBOOK
       end
     end
-    # NOCOMMIT alternative language doesn't match (error!)
-    # NOCOMMIT alternative has an error (error!) with full path
-    # NOCOMMIT check funny escapes like ' coming through without html escaping
     context 'when there is an error in the alternative' do
       include_context 'convert with logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /has_error' }
-      it 'adds the alternative' do
+      it 'adds the alternative with the error text' do
         expect(converted).to include(<<~DOCBOOK.strip)
-          Unresolved directive in ded0ba409b7c66489d5833dc6aa5f696.adoc - include::missing.adoc[]
+          include::missing.adoc[]
         DOCBOOK
       end
       it 'logs an error' do
         expect(logs).to eq(<<~LOG.strip)
-          ERROR: ded0ba409b7c66489d5833dc6aa5f696.adoc: line 1: include file not found: #{example_alternatives}/csharp/missing.adoc
+          ERROR: resources/alternative_language_lookup/csharp/ded0ba409b7c66489d5833dc6aa5f696.adoc: line 3: include file not found: #{example_alternatives}/csharp/missing.adoc
+        LOG
+      end
+    end
+    context 'when the alternative has a missing callout' do
+      include_context 'convert with logs'
+      let(:input) { one_snippet }
+      let(:snippet_contents) { 'GET /bad_language' }
+      it "doesn't add the alternative" do
+        expect(converted).not_to include('Console.WriteLine')
+      end
+      it 'logs a warning' do
+        expect(logs).to eq(<<~LOG.strip)
+          WARN: resources/alternative_language_lookup/csharp/fcac4757ba45b9b14f316eb9bda58584.adoc: line 2: Alternative language source must have lang=csharp but was not_csharp.
         LOG
       end
     end

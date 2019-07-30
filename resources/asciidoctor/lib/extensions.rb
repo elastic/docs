@@ -26,7 +26,7 @@ Asciidoctor::Extensions.register do
   treeprocessor ElasticCompatTreeProcessor
   # The tree processors after this must come after ElasticComptTreeProcessor
   # or they won't see the right tree.
-  treeprocessor AlternativeLanguageLookup
+  treeprocessor AlternativeLanguageLookup::AlternativeLanguageLookup
   treeprocessor OpenInWidget
   include_processor ElasticIncludeTagged
 end
