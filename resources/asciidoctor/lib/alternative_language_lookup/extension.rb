@@ -159,11 +159,34 @@ class AlternativeLanguageLookup < TreeProcessorScaffold
 
   def munge_child(alternative, digest, source, colist)
     source.attributes['role'] = 'alternative'
-    colist.attributes['role'] = "alternative lang-#{alternative[:lang]}"
     # Munge the callouts so they don't collide with the parent doc
     source.document.callouts.current_list.each do |co|
-      co[:id] = "#{alternative[:lang]}-#{digest}-#{co[:id]}"
+      co[:id] = munge_coid alternative, digest, co[:id]
     end
+    if colist
+      colist.attributes['role'] = "alternative lang-#{alternative[:lang]}"
+      munge_list_coids alternative, digest, colist
+    end
+  end
+
+  ##
+  # Munge the link targets so they link properly to the munged ids in the
+  # alternate example
+  def munge_list_coids(alternative, digest, colist)
+    colist.items.each do |item|
+      coids = item.attr 'coids'
+      next unless coids
+
+      newcoids = []
+      coids.split(' ').each do |coid|
+        newcoids << munge_coid(alternative, digest, coid)
+      end
+      item.attributes['coids'] = newcoids.join(' ')
+    end
+  end
+
+  def munge_coid(alternative, digest, coid)
+    "#{alternative[:lang]}-#{digest}-#{coid}"
   end
 
   def report_missing(block, source_lang, alternative, digest)
