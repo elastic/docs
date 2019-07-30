@@ -11,6 +11,10 @@ require_relative '../scaffold'
 class AlternativeLanguageLookup < TreeProcessorScaffold
   include Asciidoctor::Logging
 
+  LAYOUT_DESCRIPTION = <<~LOG.freeze
+    Alternative language must be a code block followed optionally by a callout list
+  LOG
+
   def process(document)
     lookups_string = document.attr 'alternative_language_lookups'
     return unless lookups_string
@@ -52,37 +56,54 @@ class AlternativeLanguageLookup < TreeProcessorScaffold
   end
 
   def process_listing(block, source_lang, alternatives)
+    # Find the right spot in the parent's blocks to add any alternatives: right
+    # after this block's callouts if it has any, otherwise just after
+    # this block.
     start_index = block.parent.blocks.find_index(block) + 1
+    if (block_colist = block.parent.blocks[start_index])&.context == :colist
+      start_index += 1
+    else
+      block_colist = nil
+    end
     next_index = start_index
+
     digest = Digest::MurmurHash3_x64_128.hexdigest block.lines.join "\n"
     alternatives.each do |alternative|
-      dir = alternative[:dir]
-      basename = "#{digest}.adoc"
-      unless File.exist? File.join(dir, basename)
-        basename = "#{digest}.asciidoc"
-        unless File.exist? File.join(dir, basename)
-          report_missing block, source_lang, alternative, digest
-          next
-        end
+      found = find_alternative(block, alternative, digest)
+      if found
+        block.parent.blocks.insert next_index, found
+        next_index += 1
       end
-
-      new_script = build_alternative block, alternative, dir, basename
-      block.attributes['role'] = 'default'
-      block.parent.blocks.insert next_index, new_script
-      next_index += 1
     end
-    block.parent.reindex_sections unless next_index == start_index
+    unless next_index == start_index
+      block.parent.reindex_sections
+      block.attributes['role'] = 'default'
+      block_colist.attributes['role'] = 'default' if block_colist
+    end
   end
 
-  def build_alternative(block, alternative, dir, basename)
+  def find_alternative(block, alternative, digest)
+    basename = "#{digest}.adoc"
+    if File.exist? File.join(alternative[:dir], basename)
+      build_alternative block, alternative, digest, basename
+    else
+      basename = "#{digest}.asciidoc"
+      if File.exist? File.join(alternative[:dir], basename)
+        build_alternative block, alternative, digest, basename
+      else
+        report_missing block, source_lang, alternative, digest
+      end
+    end
+  end
+
+  def build_alternative(block, alternative, digest, basename)
     # Parse the included portion as asciidoc but not as a "child" document
     # because that is for parsing text we've already parsed once. This is
     # text that we're detecting very late in the process.
+    next_index = block.parent.blocks.find_index(block) + 1
+
     source = <<~ASCIIDOC
-      [source,#{alternative[:lang]}]
-      ----
       include::#{basename}[]
-      ----
     ASCIIDOC
     child = Asciidoctor::Document.new(
       source,
@@ -91,14 +112,58 @@ class AlternativeLanguageLookup < TreeProcessorScaffold
       backend: block.document.backend,
       doctype: Asciidoctor::DEFAULT_DOCTYPE,
       sourcemap: block.document.sourcemap,
-      base_dir: dir,
-      cursor: Asciidoctor::Reader::Cursor.new(basename, dir)
+      base_dir: alternative[:dir],
+      to_dir: block.document.options[:to_dir]
     )
+    if (child = prep_child(alternative, digest, child.parse))
+      Asciidoctor::Block.new(block.parent, :pass, source: child.convert)
+    else
+      nil
+    end
+  end
 
-    new_script = child.parse.blocks[0]
-    new_script.parent = block.parent
-    new_script.attributes['role'] = 'alternative'
-    new_script
+  def prep_child(alternative, digest, child)
+    ok = true
+    unless [1, 2].include?(child.blocks.length)
+      warn_child child.source_location, <<~LOG
+        #{LAYOUT_DESCRIPTION} but was:
+        #{child.blocks}
+      LOG
+      ok = false
+    end
+    unless (source = child.blocks[0]).context == :listing
+      warn_child source.source_location, <<~LOG
+        #{LAYOUT_DESCRIPTION} but the first block was a #{source.context}.
+      LOG
+      ok = false
+    end
+    unless (colist = child.blocks[1]).context == :colist
+      warn_child colist.source_location, <<~LOG
+        #{LAYOUT_DESCRIPTION} but the second block was a #{colist.context}.
+      LOG
+      ok = false
+    end
+    unless (lang = source.attr 'language') == alternative[:lang]
+      warn_child source.source_location, <<~LOG
+        Alternative language source must have lang=#{alternative[:lang]} but was #{lang}.
+      LOG
+      ok = false
+    end
+    if ok
+      munge_child alternative, digest, source, colist
+      child
+    else
+      nil
+    end
+  end
+
+  def munge_child(alternative, digest, source, colist)
+    source.attributes['role'] = 'alternative'
+    colist.attributes['role'] = "alternative lang-#{alternative[:lang]}"
+    # Munge the callouts so they don't collide with the parent doc
+    source.document.callouts.current_list.each do |co|
+      co[:id] = "#{alternative[:lang]}-#{digest}-#{co[:id]}"
+    end
   end
 
   def report_missing(block, source_lang, alternative, digest)
@@ -116,5 +181,9 @@ class AlternativeLanguageLookup < TreeProcessorScaffold
 
   def error(message)
     logger.error message_with_context(message)
+  end
+
+  def warn_child(location, message)
+    logger.warn message_with_context message, source_location: location
   end
 end

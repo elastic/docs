@@ -204,8 +204,32 @@ RSpec.describe AlternativeLanguageLookup do
         CSHARP
       end
     end
-    # NOCOMMIT alternative has matching callouts
-    # NOCOMMIT alternative has non-matching callouts (error!)
+    context 'when the alternate has matching callouts' do
+      include_context 'convert without logs'
+      let(:input) do
+        <<~ASCIIDOC
+          [source,console]
+          ----
+          GET /matching_callouts <1> <2>
+          ----
+          <1> a
+          <2> b
+        ASCIIDOC
+      end
+      it 'adds the alternative' do
+        expect(converted).to include(<<~CSHARP.strip)
+          Console.WriteLine("Hello World!");
+        CSHARP
+      end
+      let(:expected_log) do
+        <<~LOG
+          * 39f76498cca438ba11af18a7075d24c9.adoc: <stdin>: line 2
+        LOG
+      end
+    end
+    # NOCOMMIT alternative language doesn't match (error!)
+    # NOCOMMIT alternative has an error (error!) with full path
+    # NOCOMMIT check funny escapes like ' coming through without html escaping
     context 'when there is an error in the alternative' do
       include_context 'convert with logs'
       let(:input) { one_snippet }
