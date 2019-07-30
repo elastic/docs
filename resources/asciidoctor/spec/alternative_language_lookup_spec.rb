@@ -272,6 +272,21 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         LOG
       end
     end
+    context 'when the configuration has duplicates' do
+      include_context 'convert with logs'
+      let(:config) do
+        <<~CSV
+          console,js,#{example_alternatives}/js
+          console,js,#{example_alternatives}/js
+        CSV
+      end
+      let(:input) { one_snippet }
+      let(:snippet_contents) { 'GET /will_fail' }
+      it 'logs an error' do
+        expect(logs).to eq(<<~LOG.strip)
+          ERROR: invalid alternative_language_lookups, duplicate alternative_lang [js]
+        LOG
+      end
+    end
   end
-  # NOCOMMIT fail if there are multiple copies of the same language pairs
 end

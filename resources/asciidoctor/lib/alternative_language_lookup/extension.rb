@@ -25,18 +25,26 @@ module AlternativeLanguageLookup
       lookups = {}
       CSV.parse lookups_string do |source_lang, alternative_lang, dir|
         unless source_lang
-          error('invalid alternative_language_lookups, no source_lang')
+          error 'invalid alternative_language_lookups, no source_lang'
           next
         end
         unless alternative_lang
-          error('invalid alternative_language_lookups, no alternative_lang')
+          error 'invalid alternative_language_lookups, no alternative_lang'
           next
         end
         unless Dir.exist? dir
-          error("invalid alternative_language_lookups, [#{dir}] doesn't exist")
+          error "invalid alternative_language_lookups, [#{dir}] doesn't exist"
           next
         end
-        lookups[source_lang] = [] unless lookups[source_lang]
+        if lookups[source_lang]
+          if lookups[source_lang].index { |a| a[:lang] == alternative_lang }
+            error <<~LOG.strip
+              invalid alternative_language_lookups, duplicate alternative_lang [#{alternative_lang}]
+            LOG
+          end
+        else
+          lookups[source_lang] = []
+        end
         lookups[source_lang] << { lang: alternative_lang, dir: dir }
       end
       lookups
