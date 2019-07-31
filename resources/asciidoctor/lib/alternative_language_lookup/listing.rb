@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'alternative'
+
 module AlternativeLanguageLookup
   ##
   # Information about a listing.
@@ -29,7 +31,7 @@ module AlternativeLanguageLookup
       @alternatives.each do |a|
         next unless (found = find_alternative a[:dir])
 
-        alt = LoadedAlternative.new(self, a[:lang], a[:dir], found).block
+        alt = Alternative.new(self, a[:lang], a[:dir], found).block
         next unless alt
 
         insert alt

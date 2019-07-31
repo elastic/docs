@@ -3,7 +3,6 @@
 require 'csv'
 require 'digest/murmurhash'
 require_relative '../scaffold'
-require_relative 'loaded_alternative'
 require_relative 'listing'
 require_relative 'report'
 

@@ -7,7 +7,7 @@ module AlternativeLanguageLookup
   # Load alternative examples in alternative languages. This class
   # is "one shot" because it dirties it local variables as part of the find
   # process. Make one, call find, and throw it away.
-  class LoadedAlternative
+  class Alternative
     include AlternativeValidation
 
     def initialize(listing, lang, dir, basename)
@@ -18,9 +18,9 @@ module AlternativeLanguageLookup
       @counter = listing.document.attr 'alternative_language_counter', 0
       @loaded = false
       load
-      return unless validate_child
+      return unless validate
 
-      munge_child
+      munge
       @loaded = true
       listing.document.attributes['alternative_language_counter'] = @counter + 1
     end
@@ -48,9 +48,7 @@ module AlternativeLanguageLookup
       @child.parse
     end
 
-    ##
-    # Validate and prepare the child
-    def validate_child
+    def validate
       unless [1, 2].include?(@child.blocks.length)
         warn_child @child.source_location, <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but was:
@@ -64,9 +62,7 @@ module AlternativeLanguageLookup
       check_listing & check_colist
     end
 
-    ##
-    # Modify the parsed child before converting it so it'll "fit" in the parent.
-    def munge_child
+    def munge
       @listing.attributes['role'] = 'alternative'
       # Munge the callouts so they don't collide with the parent doc
       @listing.document.callouts.current_list.each do |co|
