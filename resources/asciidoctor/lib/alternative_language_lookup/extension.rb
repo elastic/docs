@@ -66,45 +66,7 @@ module AlternativeLanguageLookup
     def process_block(block)
       return unless block.context == :listing && block.style == 'source'
 
-      listing = Listing.new(block)
-      process_listing listing if listing.alternatives
-    end
-
-    def process_listing(listing)
-      # Find the right spot in the parent's blocks to add any alternatives:
-      # right after this block's callouts if it has any, otherwise just after
-      # this block.
-      next_index = listing.parent.blocks.find_index(listing.block) + 1
-      if (block_colist = listing.parent.blocks[next_index])&.context == :colist
-        next_index += 1
-      else
-        block_colist = nil
-      end
-      found_langs = []
-
-      listing.alternatives.each do |alternative|
-        next unless (found = listing.find_alternative alternative[:dir])
-
-        alt = LoadedAlternative.new(
-          listing, alternative[:lang], alternative[:dir], found
-        ).block
-        next unless alt
-
-        listing.parent.blocks.insert next_index, alt
-        next_index += 1
-        found_langs << alternative[:lang]
-      end
-      report = listing.document.attr 'alternative_language_report'
-      report&.report listing, found_langs
-      return if found_langs.empty?
-
-      has_roles = found_langs.map { |lang| "has-#{lang}" }.join ' '
-      listing.parent.reindex_sections
-      listing.block.attributes['role'] = "default #{has_roles}"
-      return unless block_colist
-
-      block_colist.attributes['role'] =
-        "default #{has_roles} lang-#{listing.lang}"
+      Listing.new(block).process
     end
 
     def error(message)
