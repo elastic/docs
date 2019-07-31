@@ -303,13 +303,19 @@
 
   <xsl:template match="programlisting">
     <!-- Insert classes on the wrapper so we can hide alternatives or the default -->
-    <div class="pre_wrapper {@role} lang-{@language}">
+    <xsl:variable name="wrapper_class">
+      pre_wrapper <xsl:value-of select="@role"/> lang-<xsl:value-of select="@language"/>
+    </xsl:variable>
+    <div class="{normalize-space($wrapper_class)}">
       <xsl:apply-imports />
     </div>
     <!-- Asciidoctor's CONSOLE widget -->
     <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana'">
+      <xsl:variable name="widget_class">
+        <xsl:value-of select="@language"/>_widget <xsl:value-of select="@role"/>
+      </xsl:variable>
       <div
-        class="{@language}_widget {@role}"
+        class="{normalize-space($widget_class)}"
         data-snippet="{ulink[@type='snippet']/@url}"/>
     </xsl:if>
   </xsl:template>
