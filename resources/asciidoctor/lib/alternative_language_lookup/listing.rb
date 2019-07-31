@@ -31,10 +31,10 @@ module AlternativeLanguageLookup
       @alternatives.each do |a|
         next unless (found = find_alternative a[:dir])
 
-        alt = Alternative.new(self, a[:lang], a[:dir], found).block
-        next unless alt
+        alternative = Alternative.new(self, a[:lang], a[:dir], found).block
+        next unless alternative
 
-        insert alt
+        insert alternative
         found_langs << a[:lang]
       end
       report = document.attr 'alternative_language_report'

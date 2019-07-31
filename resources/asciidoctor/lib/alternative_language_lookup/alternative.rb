@@ -2,9 +2,7 @@
 
 module AlternativeLanguageLookup
   ##
-  # Load alternative examples in alternative languages. This class
-  # is "one shot" because it dirties it local variables as part of the find
-  # process. Make one, call find, and throw it away.
+  # Load alternative examples in alternative languages.
   class Alternative
     include Asciidoctor::Logging
 
@@ -27,6 +25,9 @@ module AlternativeLanguageLookup
       listing.document.attributes['alternative_language_counter'] = @counter + 1
     end
 
+    ##
+    # A block that can be inserted into the main document if we've successfully
+    # loaded, validated, and munged the alternative. nil otherwise.
     def block
       return unless @loaded
 
@@ -52,7 +53,7 @@ module AlternativeLanguageLookup
 
     def validate
       unless [1, 2].include?(@child.blocks.length)
-        warn_child @child.source_location, <<~LOG.strip
+        log_warn @child.source_location, <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but was:
           #{@child.blocks}
         LOG
@@ -69,13 +70,13 @@ module AlternativeLanguageLookup
     # otherwise invalid. Otherwise returns true.
     def check_listing
       unless @listing.context == :listing
-        warn_child @listing.source_location, <<~LOG.strip
+        log_warn @listing.source_location, <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but the first block was a #{@source.context}.
         LOG
         return false
       end
       unless (listing_lang = @listing.attr 'language') == @lang
-        warn_child @listing.source_location, <<~LOG.strip
+        log_warn @listing.source_location, <<~LOG.strip
           Alternative language listing must have lang=#{@lang} but was #{listing_lang}.
         LOG
         return false
@@ -91,7 +92,7 @@ module AlternativeLanguageLookup
       return true unless @colist
 
       unless @colist.context == :colist
-        warn_child @colist.source_location, <<~LOG.strip
+        log_warn @colist.source_location, <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but the second block was a #{@colist.context}.
         LOG
         return false
@@ -99,10 +100,15 @@ module AlternativeLanguageLookup
       true
     end
 
-    def warn_child(location, message)
+    ##
+    # Warn that there is some problem with this alternative.
+    def log_warn(location, message)
       logger.warn message_with_context message, source_location: location
     end
 
+    ##
+    # Munge the loaded document into something we can include in the
+    # main document.
     def munge
       @listing.attributes['role'] = 'alternative'
       # Munge the callouts so they don't collide with the parent doc
