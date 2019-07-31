@@ -113,7 +113,7 @@ sub build_chunked {
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 $alternatives ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report_dir=$dest/missing_alternatives"
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
                 ) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
@@ -251,7 +251,7 @@ sub build_single {
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 $alternatives ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report_dir=$dest/missing_alternatives"
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
                 ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'fileutils'
 require_relative 'alternative_validation'
 
 module AlternativeLanguageLookup
@@ -9,9 +8,8 @@ module AlternativeLanguageLookup
   class AlternativeFinder
     include AlternativeValidation
 
-    def initialize(block, source_lang, alternative, digest, counter)
+    def initialize(block, alternative, digest, counter)
       @block = block
-      @source_lang = source_lang
       @alternative = alternative
       @digest = digest
       @counter = counter
@@ -26,7 +24,6 @@ module AlternativeLanguageLookup
         if File.exist? File.join(@alternative[:dir], @basename)
           build_alternative
         else
-          report_missing
           nil
         end
       end
@@ -85,19 +82,6 @@ module AlternativeLanguageLookup
 
     def munge_coid(coid)
       "#{@alternative[:lang]}-#{@counter}-#{coid}"
-    end
-
-    def report_missing
-      return unless (report_dir = @block.attr 'alternative_language_report_dir')
-
-      dir = File.join report_dir, @source_lang
-      FileUtils.mkdir_p dir
-      file = File.join dir, @alternative[:lang]
-      File.open file, 'a' do |f|
-        f.puts <<~TXT
-          * #{@digest}.adoc: #{@block.source_location}
-        TXT
-      end
     end
   end
 end

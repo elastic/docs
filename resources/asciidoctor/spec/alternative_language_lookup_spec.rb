@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'tmpdir'
+require 'tempfile'
 require 'alternative_language_lookup/extension'
 
 RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
@@ -96,14 +96,15 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
     let(:convert_attributes) do
       {
         'alternative_language_lookups' => config,
-        'alternative_language_report_dir' => Dir.mktmpdir('lang_report'),
+        'alternative_language_report' =>
+          Tempfile.new('alternative_report').path,
       }
     end
-    let(:report_dir) do
+    let(:report) do
       # read the result of the conversion to populate the dir
       converted
       # return the dir
-      convert_attributes['alternative_language_report_dir']
+      convert_attributes['alternative_language_report']
     end
     context "when there aren't any alternatives" do
       include_context 'convert without logs'
