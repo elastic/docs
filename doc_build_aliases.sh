@@ -57,7 +57,7 @@ alias docbldso='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-do
 # Deploying Azure
 alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
-# Solutions 
+# Solutions
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
 
 alias docbldup='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
@@ -161,5 +161,13 @@ alias docbldx='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/x-pack/do
 # ECS
 alias docbldecs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
 
-# GKE 
+# GKE
 alias docbldgke='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
+
+# Build all
+alias docbldall='GIT_HOME/docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git'
+# NOTE: To build all books and pick up un-merged changes from your local repos,
+# use one or more --sub_dir options. Specify the repo and branch you want to
+# override and the directory that contains your changes.
+# For example:
+# --sub_dir elasticsearch:master:./elasticsearch
