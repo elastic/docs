@@ -19,7 +19,6 @@ module AlternativeLanguageLookup
     end
 
     def report(listing, found_langs)
-      lang_header = listing.alternatives.map { |a| "| #{a[:lang]}" }.join ' '
       @file.puts <<~ASCIIDOC
         === #{listing.source_location}: #{listing.digest}
         [source,#{listing.lang}]
@@ -27,15 +26,20 @@ module AlternativeLanguageLookup
         #{listing.source.gsub(/<([^>])>/, '\\<\1>')}
         ----
         |===
-        #{lang_header}
+        #{lang_header listing}
 
-        #{lang_line listing.alternatives, found_langs}
+        #{lang_line listing, found_langs}
         |===
       ASCIIDOC
     end
 
-    def lang_line(alternatives, found_langs)
-      alternatives
+    def lang_header(listing)
+      listing.alternatives.map { |a| "| #{a[:lang]}" }.join ' '
+    end
+
+    def lang_line(listing, found_langs)
+      listing
+        .alternatives
         .map { |a| found_langs.include?(a[:lang]) ? '| &check;' : '| &cross;' }
         .join ' '
     end
