@@ -18,6 +18,7 @@ module AlternativeLanguageLookup
 
       lookups = parse_lookups lookups_string
       document.attributes['alternative_language_lookups'] = lookups
+      document.attributes['alternative_language_counter'] = 0
       super
     end
 
@@ -72,16 +73,21 @@ module AlternativeLanguageLookup
       alternative_langs = []
 
       digest = Digest::MurmurHash3_x64_128.hexdigest block.lines.join "\n"
+      counter = block.document.attr 'alternative_language_counter'
       alternatives.each do |alternative|
-        finder = AlternativeFinder.new block, source_lang, alternative, digest
+        finder = AlternativeFinder.new(
+          block, source_lang, alternative, digest, counter
+        )
         next unless (found = finder.find)
 
         block.parent.blocks.insert next_index, found
         next_index += 1
+        counter += 1
         alternative_langs << alternative[:lang]
       end
       return if alternative_langs.empty?
 
+      block.document.attributes['alternative_language_counter'] = counter
       has_roles = alternative_langs.map { |lang| "has-#{lang}" }.join ' '
       block.parent.reindex_sections
       block.attributes['role'] = "default #{has_roles}"

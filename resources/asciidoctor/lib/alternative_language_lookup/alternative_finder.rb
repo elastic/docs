@@ -9,11 +9,12 @@ module AlternativeLanguageLookup
   class AlternativeFinder
     include AlternativeValidation
 
-    def initialize(block, source_lang, alternative, digest)
+    def initialize(block, source_lang, alternative, digest, counter)
       @block = block
       @source_lang = source_lang
       @alternative = alternative
       @digest = digest
+      @counter = counter
     end
 
     def find
@@ -83,7 +84,7 @@ module AlternativeLanguageLookup
     end
 
     def munge_coid(coid)
-      "#{@alternative[:lang]}-#{@digest}-#{coid}"
+      "#{@alternative[:lang]}-#{@counter}-#{coid}"
     end
 
     def report_missing
