@@ -20,9 +20,9 @@ module AlternativeLanguageLookup
         LOG
         return false
       end
-      unless (lang = @listing.attr 'language') == @alternative[:lang]
+      unless (listing_lang = @listing.attr 'language') == @lang
         warn_child @listing.source_location, <<~LOG.strip
-          Alternative language listing must have lang=#{@alternative[:lang]} but was #{lang}.
+          Alternative language listing must have lang=#{@lang} but was #{listing_lang}.
         LOG
         return false
       end

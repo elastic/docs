@@ -234,12 +234,12 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
       it 'adds the alternative including its callouts' do
         expect(converted).to include(<<~DOCBOOK.strip)
-          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("matching callouts"); <co id="csharp-0-CO1-1"/> <co id="csharp-0-CO1-2"/></programlisting>
+          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("matching callouts"); <co id="A0-CO1-1"/> <co id="A0-CO1-2"/></programlisting>
           <calloutlist role="alternative lang-csharp">
-          <callout arearefs="csharp-0-CO1-1">
+          <callout arearefs="A0-CO1-1">
           <para>a</para>
           </callout>
-          <callout arearefs="csharp-0-CO1-2">
+          <callout arearefs="A0-CO1-2">
           <para>b</para>
           </callout>
           </calloutlist>

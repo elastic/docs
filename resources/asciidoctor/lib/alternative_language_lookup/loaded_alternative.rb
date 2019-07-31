@@ -12,7 +12,8 @@ module AlternativeLanguageLookup
 
     def initialize(listing, alternative, basename)
       @listing = listing
-      @alternative = alternative
+      @dir = alternative[:dir]
+      @lang = alternative[:lang]
       @basename = basename
       @counter = listing.document.attr 'alternative_language_counter', 0
       @loaded = false
@@ -35,7 +36,7 @@ module AlternativeLanguageLookup
       # because that is for parsing text we've already parsed once. This is
       # text that we're detecting very late in the process.
       @child = Asciidoctor::Document.new(
-        "include::#{@alternative[:dir]}/#{@basename}[]",
+        "include::#{@dir}/#{@basename}[]",
         attributes: @listing.document.attributes.dup,
         safe: @listing.document.safe,
         backend: @listing.document.backend,
@@ -73,7 +74,7 @@ module AlternativeLanguageLookup
       end
       return unless @colist
 
-      @colist.attributes['role'] = "alternative lang-#{@alternative[:lang]}"
+      @colist.attributes['role'] = "alternative lang-#{@lang}"
       munge_list_coids
     end
 
@@ -94,7 +95,7 @@ module AlternativeLanguageLookup
     end
 
     def munge_coid(coid)
-      "#{@alternative[:lang]}-#{@counter}-#{coid}"
+      "A#{@counter}-#{coid}"
     end
   end
 end
