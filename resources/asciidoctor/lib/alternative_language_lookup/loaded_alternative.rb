@@ -10,10 +10,10 @@ module AlternativeLanguageLookup
   class LoadedAlternative
     include AlternativeValidation
 
-    def initialize(listing, alternative, basename)
+    def initialize(listing, lang, dir, basename)
       @listing = listing
-      @dir = alternative[:dir]
-      @lang = alternative[:lang]
+      @lang = lang
+      @dir = dir
       @basename = basename
       @counter = listing.document.attr 'alternative_language_counter', 0
       @loaded = false

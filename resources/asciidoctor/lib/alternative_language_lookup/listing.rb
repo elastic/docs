@@ -12,6 +12,7 @@ module AlternativeLanguageLookup
       @block = block
       @source = @block.source
       @digest = Digest::MurmurHash3_x64_128.hexdigest @source
+      # TODO: add lang
     end
 
     def find_alternative(dir)

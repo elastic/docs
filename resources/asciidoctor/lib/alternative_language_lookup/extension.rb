@@ -88,7 +88,9 @@ module AlternativeLanguageLookup
       alternatives.each do |alternative|
         next unless (found = listing.find_alternative alternative[:dir])
 
-        alt = LoadedAlternative.new(listing, alternative, found).block
+        alt = LoadedAlternative.new(
+          listing, alternative[:lang], alternative[:dir], found
+        ).block
         next unless alt
 
         block.parent.blocks.insert next_index, alt
