@@ -11,34 +11,18 @@ module AlternativeLanguageLookup
     LOG
 
     ##
-    # Validate and prepare the child
-    def validate_child
-      unless [1, 2].include?(@child.blocks.length)
-        warn_child @child.source_location, <<~LOG.strip
-          #{LAYOUT_DESCRIPTION} but was:
-          #{@child.blocks}
-        LOG
-        return false
-      end
-
-      @source = @child.blocks[0]
-      @colist = @child.blocks[1]
-      check_source & check_colist
-    end
-
-    ##
-    # Return false if the block in source position isn't a listing or is
+    # Return false if the block in listing position isn't a listing or is
     # otherwise invalid. Otherwise returns true.
-    def check_source
-      unless @source.context == :listing
-        warn_child @source.source_location, <<~LOG.strip
+    def check_listing
+      unless @listing.context == :listing
+        warn_child @listing.source_location, <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but the first block was a #{@source.context}.
         LOG
         return false
       end
-      unless (lang = @source.attr 'language') == @alternative[:lang]
-        warn_child @source.source_location, <<~LOG.strip
-          Alternative language source must have lang=#{@alternative[:lang]} but was #{lang}.
+      unless (lang = @listing.attr 'language') == @alternative[:lang]
+        warn_child @listing.source_location, <<~LOG.strip
+          Alternative language listing must have lang=#{@alternative[:lang]} but was #{lang}.
         LOG
         return false
       end

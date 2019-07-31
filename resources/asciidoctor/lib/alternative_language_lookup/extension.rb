@@ -3,7 +3,9 @@
 require 'csv'
 require 'digest/murmurhash'
 require_relative '../scaffold'
-require_relative 'alternative_finder'
+require_relative 'loaded_alternative'
+require_relative 'listing'
+require_relative 'report'
 
 module AlternativeLanguageLookup
   ##
@@ -14,12 +16,22 @@ module AlternativeLanguageLookup
     def process(document)
       lookups_string = document.attr 'alternative_language_lookups'
       return unless lookups_string
-      return unless lookups_string.is_a? String
 
-      lookups = parse_lookups lookups_string
-      document.attributes['alternative_language_lookups'] = lookups
-      document.attributes['alternative_language_counter'] = 0
-      super
+      if lookups_string.is_a? String
+        document.attributes['alternative_language_lookups'] =
+          parse_lookups lookups_string
+      end
+
+      report_path = document.attr 'alternative_language_report'
+      if report_path&.is_a? String
+        Report.open report_path do |report|
+          # TODO: It'd be cleaner if scaffold took a block
+          document.attributes['alternative_language_report'] = report
+          super
+        end
+      else
+        super
+      end
     end
 
     def parse_lookups(lookups_string)
@@ -64,6 +76,7 @@ module AlternativeLanguageLookup
       # Find the right spot in the parent's blocks to add any alternatives:
       # right after this block's callouts if it has any, otherwise just after
       # this block.
+      listing = Listing.new block
       next_index = block.parent.blocks.find_index(block) + 1
       if (block_colist = block.parent.blocks[next_index])&.context == :colist
         next_index += 1
@@ -72,22 +85,20 @@ module AlternativeLanguageLookup
       end
       found_langs = []
 
-      source = block.lines.join "\n"
-      digest = Digest::MurmurHash3_x64_128.hexdigest source
-      counter = block.document.attr 'alternative_language_counter'
       alternatives.each do |alternative|
-        finder = AlternativeFinder.new block, alternative, digest, counter
-        next unless (found = finder.find)
+        next unless (found = listing.find_alternative alternative[:dir])
 
-        block.parent.blocks.insert next_index, found
+        alt = LoadedAlternative.new(listing, alternative, found).block
+        next unless alt
+
+        block.parent.blocks.insert next_index, alt
         next_index += 1
-        counter += 1
         found_langs << alternative[:lang]
       end
-      report block, source_lang, alternatives, source, digest, found_langs
+      report = block.document.attr 'alternative_language_report'
+      report&.report listing, source_lang, alternatives, found_langs
       return if found_langs.empty?
 
-      block.document.attributes['alternative_language_counter'] = counter
       has_roles = found_langs.map { |lang| "has-#{lang}" }.join ' '
       block.parent.reindex_sections
       block.attributes['role'] = "default #{has_roles}"
@@ -95,36 +106,6 @@ module AlternativeLanguageLookup
 
       block_colist.attributes['role'] =
         "default #{has_roles} lang-#{source_lang}"
-    end
-
-    def report(block, source_lang, alternatives, source, digest, found_langs)
-      return unless (file = block.attr 'alternative_language_report')
-
-      exist = File.exist? file
-      File.open file, 'a' do |f|
-        unless exist
-          f.puts <<~ASCIIDOC
-            == Alternatives Report
-
-          ASCIIDOC
-        end
-        lang_header = alternatives.map { |a| "| #{a[:lang]}" }.join ' '
-        lang_line = alternatives
-          .map { |a| found_langs.include?(a[:lang]) ? '| &check;' : '| &cross;' }
-          .join ' '
-        f.puts <<~ASCIIDOC
-          === #{block.source_location}: #{digest}
-          [source,#{source_lang}]
-          ----
-          #{source.gsub /<([^>])>/, '\\<\1>'}
-          ----
-          |===
-          #{lang_header}
-
-          #{lang_line}
-          |===
-        ASCIIDOC
-      end
     end
 
     def error(message)

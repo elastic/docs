@@ -90,9 +90,6 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         console,java,#{example_alternatives}/java
       CSV
     end
-    after(:each) do
-      FileUtils.remove_entry report_dir
-    end
     let(:convert_attributes) do
       {
         'alternative_language_lookups' => config,
@@ -104,7 +101,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       # read the result of the conversion to populate the dir
       converted
       # return the dir
-      convert_attributes['alternative_language_report']
+      File.read(convert_attributes['alternative_language_report'])
     end
     context "when there aren't any alternatives" do
       include_context 'convert without logs'
@@ -116,14 +113,23 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           * 3fcdfa6097c68c04f3e175dcf3934af6.adoc: <stdin>: line 2
         LOG
       end
-      it 'creates a missing alternatives report for js' do
-        expect(File.read("#{report_dir}/console/js")).to eq(expected_log)
-      end
-      it 'creates a missing alternatives report for c#' do
-        expect(File.read("#{report_dir}/console/csharp")).to eq(expected_log)
-      end
-      it 'creates a missing alternative report for java' do
-        expect(File.read("#{report_dir}/console/java")).to eq(expected_log)
+      context 'the alternatives report' do
+        it 'contains the source' do
+          expect(report).to include(<<~ASCIIDOC)
+            === <stdin>: line 2: 3fcdfa6097c68c04f3e175dcf3934af6
+            [source,console]
+            ----
+            GET /no_alternatives
+            ----
+          ASCIIDOC
+        end
+        it 'shows all languages as missing' do
+          expect(report).to include(<<~ASCIIDOC)
+            | js | csharp | java
+
+            | &cross; | &cross; | &cross;
+          ASCIIDOC
+        end
       end
     end
     context 'when there is a single alternative' do
@@ -139,19 +145,14 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           </preface>
         DOCBOOK
       end
-      let(:expected_log) do
-        <<~LOG
-          * 39f76498cca438ba11af18a7075d24c9.adoc: <stdin>: line 2
-        LOG
-      end
-      it "doesn't create a missing alternative report for js" do
-        expect(File).not_to exist("#{report_dir}/console/js")
-      end
-      it 'creates a missing alternative report for c#' do
-        expect(File.read("#{report_dir}/console/csharp")).to eq(expected_log)
-      end
-      it 'creates a missing alternative report for java' do
-        expect(File.read("#{report_dir}/console/java")).to eq(expected_log)
+      context 'the alternatives report' do
+        it 'shows only js populated' do
+          expect(report).to include(<<~ASCIIDOC)
+            | js | csharp | java
+
+            | &check; | &cross; | &cross;
+          ASCIIDOC
+        end
       end
     end
     context 'when all alternatives exist' do
@@ -169,14 +170,14 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           </preface>
         DOCBOOK
       end
-      it "doesn't create a missing alternative report for js" do
-        expect(File).not_to exist("#{report_dir}/console/js")
-      end
-      it "doesn't create a missing alternative report for c#" do
-        expect(File).not_to exist("#{report_dir}/console/csharp")
-      end
-      it "doesn't create a missing alternative report for java" do
-        expect(File).not_to exist("#{report_dir}/console/java")
+      context 'the alternatives report' do
+        it 'shows all languages populated' do
+          expect(report).to include(<<~ASCIIDOC)
+            | js | csharp | java
+
+            | &check; | &check; | &check;
+          ASCIIDOC
+        end
       end
     end
     context 'when the alternative has characters that must be escaped' do
@@ -233,12 +234,12 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
       it 'adds the alternative including its callouts' do
         expect(converted).to include(<<~DOCBOOK.strip)
-          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("matching callouts"); <co id="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-1"/> <co id="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-2"/></programlisting>
+          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("matching callouts"); <co id="csharp-0-CO1-1"/> <co id="csharp-0-CO1-2"/></programlisting>
           <calloutlist role="alternative lang-csharp">
-          <callout arearefs="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-1">
+          <callout arearefs="csharp-0-CO1-1">
           <para>a</para>
           </callout>
-          <callout arearefs="csharp-9e01493a85c06a5100ff712f6b3eead4-CO1-2">
+          <callout arearefs="csharp-0-CO1-2">
           <para>b</para>
           </callout>
           </calloutlist>
@@ -260,7 +261,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         LOG
       end
     end
-    context 'when the alternative has a missing callout' do
+    context 'when the alternative has the wrong language' do
       include_context 'convert with logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /bad_language' }
@@ -269,7 +270,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
       it 'logs a warning' do
         expect(logs).to eq(<<~LOG.strip)
-          WARN: resources/alternative_language_lookup/csharp/fcac4757ba45b9b14f316eb9bda58584.adoc: line 2: Alternative language source must have lang=csharp but was not_csharp.
+          WARN: resources/alternative_language_lookup/csharp/fcac4757ba45b9b14f316eb9bda58584.adoc: line 2: Alternative language listing must have lang=csharp but was not_csharp.
         LOG
       end
     end
