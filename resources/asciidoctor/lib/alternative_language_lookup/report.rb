@@ -18,18 +18,18 @@ module AlternativeLanguageLookup
       ASCIIDOC
     end
 
-    def report(listing, source_lang, alternatives, found_langs)
-      lang_header = alternatives.map { |a| "| #{a[:lang]}" }.join ' '
+    def report(listing, found_langs)
+      lang_header = listing.alternatives.map { |a| "| #{a[:lang]}" }.join ' '
       @file.puts <<~ASCIIDOC
         === #{listing.source_location}: #{listing.digest}
-        [source,#{source_lang}]
+        [source,#{listing.lang}]
         ----
         #{listing.source.gsub(/<([^>])>/, '\\<\1>')}
         ----
         |===
         #{lang_header}
 
-        #{lang_line alternatives, found_langs}
+        #{lang_line listing.alternatives, found_langs}
         |===
       ASCIIDOC
     end

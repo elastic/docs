@@ -66,26 +66,23 @@ module AlternativeLanguageLookup
     def process_block(block)
       return unless block.context == :listing && block.style == 'source'
 
-      source_lang = block.attr 'language'
-      lookups = block.document.attr 'alternative_language_lookups'
-      alternatives = lookups[source_lang]
-      process_listing block, source_lang, alternatives if alternatives
+      listing = Listing.new(block)
+      process_listing listing if listing.alternatives
     end
 
-    def process_listing(block, source_lang, alternatives)
+    def process_listing(listing)
       # Find the right spot in the parent's blocks to add any alternatives:
       # right after this block's callouts if it has any, otherwise just after
       # this block.
-      listing = Listing.new block
-      next_index = block.parent.blocks.find_index(block) + 1
-      if (block_colist = block.parent.blocks[next_index])&.context == :colist
+      next_index = listing.parent.blocks.find_index(listing.block) + 1
+      if (block_colist = listing.parent.blocks[next_index])&.context == :colist
         next_index += 1
       else
         block_colist = nil
       end
       found_langs = []
 
-      alternatives.each do |alternative|
+      listing.alternatives.each do |alternative|
         next unless (found = listing.find_alternative alternative[:dir])
 
         alt = LoadedAlternative.new(
@@ -93,21 +90,21 @@ module AlternativeLanguageLookup
         ).block
         next unless alt
 
-        block.parent.blocks.insert next_index, alt
+        listing.parent.blocks.insert next_index, alt
         next_index += 1
         found_langs << alternative[:lang]
       end
-      report = block.document.attr 'alternative_language_report'
-      report&.report listing, source_lang, alternatives, found_langs
+      report = listing.document.attr 'alternative_language_report'
+      report&.report listing, found_langs
       return if found_langs.empty?
 
       has_roles = found_langs.map { |lang| "has-#{lang}" }.join ' '
-      block.parent.reindex_sections
-      block.attributes['role'] = "default #{has_roles}"
+      listing.parent.reindex_sections
+      listing.block.attributes['role'] = "default #{has_roles}"
       return unless block_colist
 
       block_colist.attributes['role'] =
-        "default #{has_roles} lang-#{source_lang}"
+        "default #{has_roles} lang-#{listing.lang}"
     end
 
     def error(message)
