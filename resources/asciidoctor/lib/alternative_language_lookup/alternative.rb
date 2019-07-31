@@ -1,14 +1,16 @@
 # frozen_string_literal: true
 
-require_relative 'alternative_validation'
-
 module AlternativeLanguageLookup
   ##
   # Load alternative examples in alternative languages. This class
   # is "one shot" because it dirties it local variables as part of the find
   # process. Make one, call find, and throw it away.
   class Alternative
-    include AlternativeValidation
+    include Asciidoctor::Logging
+
+    LAYOUT_DESCRIPTION = <<~LOG
+      Alternative language must be a code block followed optionally by a callout list
+    LOG
 
     def initialize(listing, lang, dir, basename)
       @listing = listing
@@ -60,6 +62,45 @@ module AlternativeLanguageLookup
       @listing = @child.blocks[0]
       @colist = @child.blocks[1]
       check_listing & check_colist
+    end
+
+    ##
+    # Return false if the block in listing position isn't a listing or is
+    # otherwise invalid. Otherwise returns true.
+    def check_listing
+      unless @listing.context == :listing
+        warn_child @listing.source_location, <<~LOG.strip
+          #{LAYOUT_DESCRIPTION} but the first block was a #{@source.context}.
+        LOG
+        return false
+      end
+      unless (listing_lang = @listing.attr 'language') == @lang
+        warn_child @listing.source_location, <<~LOG.strip
+          Alternative language listing must have lang=#{@lang} but was #{listing_lang}.
+        LOG
+        return false
+      end
+
+      true
+    end
+
+    ##
+    # Return false if block in the colist position isn't a colist.
+    # Otherwise returns true.
+    def check_colist
+      return true unless @colist
+
+      unless @colist.context == :colist
+        warn_child @colist.source_location, <<~LOG.strip
+          #{LAYOUT_DESCRIPTION} but the second block was a #{@colist.context}.
+        LOG
+        return false
+      end
+      true
+    end
+
+    def warn_child(location, message)
+      logger.warn message_with_context message, source_location: location
     end
 
     def munge
