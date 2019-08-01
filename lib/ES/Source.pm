@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use v5.10;
 
-use Data::Dumper qw(Dumper);
 use Path::Class qw(dir file);
 use ES::Repo();
 use File::Copy::Recursive qw(fcopy rcopy);
@@ -36,10 +35,7 @@ sub new {
         };
     }
 
-    bless {
-        sources  => \@sources,
-        temp_dir => $args{temp_dir},
-    }, $class;
+    bless { sources  => \@sources, temp_dir => $args{temp_dir} }, $class;
 }
 
 #===================================
