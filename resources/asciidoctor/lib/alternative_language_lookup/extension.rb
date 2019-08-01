@@ -24,7 +24,6 @@ module AlternativeLanguageLookup
       report_path = document.attr 'alternative_language_report'
       if report_path&.is_a? String
         Report.open report_path do |report|
-          # TODO: It'd be cleaner if scaffold took a block
           document.attributes['alternative_language_report'] = report
           super
         end
