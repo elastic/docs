@@ -1,20 +1,9 @@
 import ConsoleWidget from "./components/console_widget";
 import mount from "./components/mount";
-import {mount_console} from "./components/copy_as_curl";
-import {settings_modal} from "./components/settings_modal";
 import {Cookies, $} from "./deps";
 import {lang_strings} from "./localization";
 import store from "./store";
-import {get_base_url} from "./utils.js";
-
-const default_kibana_url = 'http://localhost:5601',
-      default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
-      default_sense_url = default_kibana_url + '/app/sense/';
-
-// Global variables -- TODO improve
-var kibana_url;
-var console_url;
-var sense_url;
+import {get_base_url, open_current} from "./utils.js";
 
 export function init_headers(right_col, lang_strings) {
   // Add on-this-page block
@@ -45,104 +34,48 @@ export function init_headers(right_col, lang_strings) {
   }
 }
 
-export function init_console_widgets(console_url, lang_strings) {
-  var base_url = get_base_url(window.location.href);
-
+export function init_console_widgets() {
   $('div.console_widget').each(function() {
     const div         = $(this),
           snippet     = div.attr('data-snippet'),
           consoleText = div.prev().text() + '\n';
 
-    return mount(div, ConsoleWidget, {consoleText,
-                                      snippet,
-                                      widgetTitle: "Open snippet in Console",
-                                      widgetText: "View in Console",
-                                      consoleTitle: "Configure Console URL"});
-
-    /*
-    const handle_config_click = () =>
-      settings_modal({label_text: lang_strings('Enter the URL of the Console editor'),
-                      url_value: console_url,
-                      button_text: lang_strings('Default Console URL'),
-                      install_text: lang_strings('Or install Kibana'),
-                      default_url: default_console_url,
-                      cookie_key: "console_url",
-                      update_value: new_url => {
-                        console_url = new_url;
-                        init_console_widgets(console_url, lang_strings);},
-                      lang_strings: lang_strings});
-
-    return mount_console({lang_strings,
-                          base_url,
-                          mount_point: div,
-                          console_url: console_url,
-                          widget_title: "Open snippet in Console",
-                          url: console_url,
-                          widget_text: "View in Console",
-                          console_title: "Configure Console URL",
-                          config_on_click: handle_config_click});
-                          */
-
+    return mount(div, ConsoleWidget, {setting: "console_url",
+                                      url_label: 'Enter the URL of the Console editor',
+                                      view_in_text: 'View in Console',
+                                      configure_text: 'Configure Console URL',
+                                      consoleText,
+                                      snippet});
   });
 }
 
-export function init_sense_widgets(sense_url, lang_strings) {
-  var base_url = get_base_url(window.location.href);
-
+export function init_sense_widgets() {
   $('div.sense_widget').each(function() {
-    var div = $(this);
-    const handle_config_click = () =>
-      settings_modal({label_text: lang_strings('Enter the URL of the Sense editor'),
-                      url_value: sense_url,
-                      button_text: lang_strings('Default Sense URL'),
-                      install_text: lang_strings('Or install Sense2'),
-                      default_url: default_sense_url,
-                      cookie_key: "sense_url",
-                      update_value: new_url => {
-                        sense_url = new_url;
-                        init_sense_widgets(sense_url, lang_strings);},
-                      lang_strings: lang_strings});
+    const div         = $(this),
+          snippet     = div.attr('data-snippet'),
+          consoleText = div.prev().text() + '\n';
 
-    return mount_console({lang_strings,
-                          base_url,
-                          mount_point: div,
-                          console_url: sense_url,
-                          widget_title: "Open snippet in Sense",
-                          url: sense_url,
-                          widget_text: "View in Sense",
-                          console_title: "Configure Sense URL",
-                          config_on_click: handle_config_click});
+    return mount(div, ConsoleWidget, {setting: "sense_url",
+                                      url_label: 'Enter the URL of the Sense editor',
+                                      view_in_text: 'View in Sense',
+                                      configure_text: 'Configure Sense URL',
+                                      consoleText,
+                                      snippet});
   });
 }
 
-function init_kibana_widgets(kibana_url, lang_strings) {
-  var base_url = get_base_url(window.location.href);
-
+function init_kibana_widgets() {
   $('div.kibana_widget').each(function() {
-    var div = $(this);
-    var snippet = div.attr('data-snippet');
-    div.html('<a class="kibana_widget copy_as_curl" data-curl-host="'
-      + kibana_url
-      + '" data-kibana="true">'
-      + lang_strings('Copy as cURL')
-      + '</a>'
-      + '<a class="kibana_settings" title="'
-      + lang_strings('Configure Kibana URL')
-      + '">&nbsp</a>'
-    );
+    const div         = $(this),
+          snippet     = div.attr('data-snippet'),
+          consoleText = div.prev().text() + '\n';
 
-    div.find('a.kibana_settings').click(function(_) {
-      settings_modal({label_text: lang_strings('Enter the URL of Kibana'),
-                      url_value: kibana_url,
-                      button_text: lang_strings('Default Kibana URL'),
-                      install_text: lang_strings('Or install Kibana'),
-                      default_url: default_kibana_url,
-                      cookie_key: "kibana_url",
-                      update_value: new_url => {
-                        kibana_url = new_url;
-                        init_kibana_widgets(kibana_url, lang_strings);},
-                      lang_strings: lang_strings});
-    });
+    return mount(div, ConsoleWidget, {setting: "kibana_url",
+                                      isKibana: true,
+                                      url_label: 'Enter the URL of Kibana',
+                                      configure_text: 'Configure Kibana URL',
+                                      consoleText,
+                                      snippet});
   });
 }
 
@@ -205,24 +138,15 @@ function init_toc(lang_strings) {
      });
 }
 
-// Expand ToC to current page (without #)
-export function open_current(pathname) {
-  var page = pathname.match(/[^\/]+$/)[0];
-  var current = $('div.toc a[href="' + page + '"]');
-  current.addClass('current_page');
-  current.parentsUntil('ul.toc', 'li.collapsible').addClass('show');
-}
-
 // Main function, runs on DOM ready
 $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
-  var base_url = get_base_url(window.location.href);
-  var LangStrings = lang_strings(lang);
 
-  // Set global variables - Remove eventually
-  kibana_url  = Cookies.get('kibana_url') || default_kibana_url;
-  console_url = Cookies.get('console_url') || default_console_url;
-  sense_url   = Cookies.get('sense_url') || default_sense_url;
+  const default_kibana_url  = 'http://localhost:5601',
+        default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
+        default_sense_url   = default_kibana_url + '/app/sense/',
+        base_url            = get_base_url(window.location.href),
+        LangStrings         = lang_strings(lang);
 
   // Capturing the various global variables into the store
   const initialStoreState = {
@@ -230,9 +154,9 @@ $(function() {
       language: lang,
       langStrings: LangStrings,
       baseUrl: base_url,
-      kibana_url,
-      console_url,
-      sense_url,
+      kibana_url: Cookies.get('kibana_url') || default_kibana_url,
+      console_url: Cookies.get("console_url") || default_console_url,
+      sense_url: Cookies.get("sense_url") || default_sense_url,
       curl_host: Cookies.get("curl_host") || "localhost:9200",
       curl_user: Cookies.get("curl_user"),
       curl_password: Cookies.get("curl_password")
@@ -249,9 +173,9 @@ $(function() {
   });
 
   // Enable Sense widget
-  init_sense_widgets(sense_url, LangStrings);
-  init_console_widgets(console_url, LangStrings);
-  init_kibana_widgets(kibana_url, LangStrings);
+  init_sense_widgets();
+  init_console_widgets();
+  init_kibana_widgets();
 
   var div = $('div.toc');
 

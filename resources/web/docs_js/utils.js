@@ -5,6 +5,14 @@ export function get_base_url(href) {
              .replace(/^http:/, 'https:');
 }
 
+// Expand ToC to current page (without #)
+export function open_current(pathname) {
+  var page = pathname.match(/[^\/]+$/)[0];
+  var current = $('div.toc a[href="' + page + '"]');
+  current.addClass('current_page');
+  current.parentsUntil('ul.toc', 'li.collapsible').addClass('show');
+}
+
 export function console_regex() {
   // Port of
   // https://github.com/elastic/elasticsearch/blob/master/buildSrc/src/main/groovy/org/elasticsearch/gradle/doc/RestTestsFromSnippetsTask.groovy#L71-L79

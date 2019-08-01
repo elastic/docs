@@ -14,6 +14,10 @@ const copyAsCurl = ({consoleText, isKibana}) => (_, getState) => {
                          "curl_user",
                          "curl_password"], state.settings);
 
+  if (isKibana) {
+    settings.curl_host = state.settings.kibana_url;
+  }
+
   const curlText = utils.getCurlText(merge(settings, {consoleText, isKibana}))
 
   return utils.copyText(curlText, settings.langStrings);
@@ -22,7 +26,7 @@ const copyAsCurl = ({consoleText, isKibana}) => (_, getState) => {
 export class _ConsoleForm extends Component {
   componentWillMount() {
     if (this.props.console_url) {
-      this.setState({console_url: this.props.console_url,
+      this.setState({[this.props.setting]: this.props[this.props.setting],
                      curl_host: this.props.curl_host,
                      curl_user: this.props.curl_user,
                      curl_password: this.props.curl_password})
@@ -31,8 +35,8 @@ export class _ConsoleForm extends Component {
 
   render(props, state) {
     return <form>
-      <label for="url">{props.langStrings('Enter the URL of the Console editor')}</label>
-      <input id="url" type="text" value={state.console_url} onInput={linkState(this, "console_url")} />
+      <label for="url">{props.langStrings(props.url_label)}</label>
+      <input id="url" type="text" value={state[props.setting]} onInput={linkState(this, props.setting)} />
 
       <label for="curl_host">cURL Host</label>
       <input id="curl_host" type="text" value={state.curl_host} onInput={linkState(this, "curl_host")} />
@@ -47,11 +51,12 @@ export class _ConsoleForm extends Component {
         {props.langStrings("Save")}
       </button>
 
-      <button id="reset" onClick={e => this.setState({console_url: props.console_url,
-                                                          curl_host: props.curl_host,
-                                                          curl_user: props.curl_user,
-                                                          curl_password: props.curl_password})} type="button">Reset</button>
+      <button id="reset" onClick={e => this.setState({[props.setting]: props[props.setting],
+                                                      curl_host: props.curl_host,
+                                                      curl_user: props.curl_user,
+                                                      curl_password: props.curl_password})} type="button">Reset</button>
       <p>
+        {/* TODO what's the Sense text here */}
         {props.langStrings('Or install')}
         <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>{props.langStrings('.')}
       </p>
@@ -59,9 +64,9 @@ export class _ConsoleForm extends Component {
   }
 }
 
-export const ConsoleForm = connect(state =>
+export const ConsoleForm = connect((state, props) =>
   pick(["langStrings",
-        "console_url",
+        props.setting,
         "curl_host",
         "curl_user",
         "curl_password"], state.settings)
@@ -70,19 +75,22 @@ export const ConsoleForm = connect(state =>
 export const ConsoleWidget = props => {
   return <div>
     <a className="sense_widget copy_as_curl"
-       onClick={e => props.copyAsCurl({consoleText: props.consoleText,
-                                       isKibana: props.isKibana})}>
+       onClick={e => props.copyAsCurl({consoleText: props.consoleText})}>
       {props.langStrings('Copy as cURL')}
     </a>
-    <a className="console_widget"
-       target="console"
-       title={props.langStrings(props.widgetTitle)}
-       href={`${props.console_url}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.widgetText)}</a>
-    <a className="console_settings" onClick={props.openModal} title={props.langStrings(props.consoleTitle)}>&nbsp;</a>
-    <Modal><ConsoleForm /></Modal>
+    {props.view_in_text &&
+      <a className="console_widget"
+         target="console"
+         title={props.langStrings(props.view_in_text)}
+         href={`${props[props.setting]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
+    }
+    <a className="console_settings" onClick={props.openModal} title={props.langStrings(props.configure_text)}>&nbsp;</a>
+    <Modal>
+      <ConsoleForm setting={props.setting} url_label={props.url_label} />
+    </Modal>
   </div>
 }
 
-export default connect(state =>
-  pick(["langStrings", "baseUrl", "console_url"], state.settings)
+export default connect((state, props) =>
+  pick(["langStrings", "baseUrl", props.setting], state.settings)
 , {copyAsCurl, openModal})(ConsoleWidget)
