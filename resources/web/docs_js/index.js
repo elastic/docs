@@ -3,7 +3,7 @@ import mount from "./components/mount";
 import {Cookies, $} from "./deps";
 import {lang_strings} from "./localization";
 import store from "./store";
-import {get_base_url, open_current} from "./utils.js";
+import * as utils from "./utils.js";
 
 export function init_headers(right_col, lang_strings) {
   // Add on-this-page block
@@ -79,14 +79,6 @@ function init_kibana_widgets() {
   });
 }
 
-function get_current_page_in_version(version) {
-  var url = location.href;
-  var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version + "/$1");
-  return $.get(url).done(function() {
-    location.href = url
-  });
-}
-
 function init_toc(lang_strings) {
   var title = $('#book_title');
 
@@ -130,7 +122,7 @@ function init_toc(lang_strings) {
     .find('select')
     .change(function() {
        var version = title.find('option:selected').val();
-       get_current_page_in_version(version).fail(function() {
+       utils.get_current_page_in_version(version).fail(function() {
          v_selected.attr('selected', 'selected');
          alert(lang_strings('This page is not available in the docs for version:')
                + version);
@@ -145,7 +137,7 @@ $(function() {
   const default_kibana_url  = 'http://localhost:5601',
         default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
         default_sense_url   = default_kibana_url + '/app/sense/',
-        base_url            = get_base_url(window.location.href),
+        base_url            = utils.get_base_url(window.location.href),
         LangStrings         = lang_strings(lang);
 
   // Capturing the various global variables into the store
@@ -169,7 +161,7 @@ $(function() {
   var right_col = $('#right_col'); // Move rtp container to top right and make visible
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
-    get_current_page_in_version('current');
+    utils.get_current_page_in_version('current');
   });
 
   // Enable Sense widget
@@ -185,7 +177,7 @@ $(function() {
     var toc = $.get(url, {}, function(data) {
       right_col.append(data);
       init_toc(LangStrings);
-      open_current(location.pathname);
+      utils.open_current(location.pathname);
     }).always(function() {
       init_headers(right_col, LangStrings);
     });

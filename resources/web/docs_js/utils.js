@@ -5,6 +5,14 @@ export function get_base_url(href) {
              .replace(/^http:/, 'https:');
 }
 
+export function get_current_page_in_version(version) {
+  var url = location.href;
+  var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version + "/$1");
+  return $.get(url).done(function() {
+    location.href = url
+  });
+}
+
 // Expand ToC to current page (without #)
 export function open_current(pathname) {
   var page = pathname.match(/[^\/]+$/)[0];
@@ -29,7 +37,6 @@ export function console_regex() {
     comment).replace('$nonComment', nonComment), 'g');
 }
 
-// Returns a thunk to preserve jQuery's `this` value but
 export function copyText(text, langStrings) {
   var temp = $('<textarea>');
   $('body').append(temp);
