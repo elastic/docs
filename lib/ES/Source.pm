@@ -35,7 +35,7 @@ sub new {
         };
     }
 
-    bless { sources  => \@sources, temp_dir => $args{temp_dir} }, $class;
+    bless { sources => \@sources, temp_dir => $args{temp_dir} }, $class;
 }
 
 #===================================
