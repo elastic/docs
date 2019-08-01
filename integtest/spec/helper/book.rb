@@ -103,9 +103,20 @@ class Book
       repo:    #{config[:repo]}
       path:    #{config[:path]}
     YAML
+    yaml += alternatives_conf config[:alternatives]
     yaml += "private: true\n" if config[:is_private]
     yaml += map_branches_conf config[:map_branches]
     indent yaml, '  '
+  end
+
+  def alternatives_conf(conf)
+    return '' unless conf
+
+    yaml = ''
+    yaml += "alternatives:\n"
+    yaml += "  source_lang: #{conf[:source_lang]}\n"
+    yaml += "  alternative_lang: #{conf[:alternative_lang]}\n"
+    yaml
   end
 
   def map_branches_conf(map_branches)
