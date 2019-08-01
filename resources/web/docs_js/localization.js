@@ -41,14 +41,11 @@ export const lang_spec = {
   "Open snippet in Sense": {
     "zh_cn": "在 Sense 中打开代码片段"
   },
-  "Or install Kibana": {
-    "en": 'Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>.',
-    "zh_cn": '或安装 <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>。'
+  "Or install": {
+    "en": 'Or install ',
+    "zh_cn": '或安装 '
   },
-  "Or install Sense2": {
-    "en": 'Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 editor</a>.',
-    "zh_cn": '或安装 <a href="https://www.elastic.co/guide/en/sense/current/installing.html">Sense 2 编辑器</a>。'
-  },
+  ".": {"zh_cn": "。"},
   "Save": {
     "zh_cn": "保存"
   },

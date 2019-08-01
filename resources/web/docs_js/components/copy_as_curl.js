@@ -1,6 +1,4 @@
 import {$, Cookies} from "../deps";
-import * as events from "../events";
-
 
 export const mount_console = ({mount_point,
                               config_on_click,
@@ -25,7 +23,6 @@ export const mount_console = ({mount_point,
 
   mount_point.html(tpl);
   mount_point.find('a.console_settings').click(config_on_click);
-  mount_point.find('a.copy_as_curl').click(events.copy_as_curl(lang_strings));
 
   return mount_point;
 }

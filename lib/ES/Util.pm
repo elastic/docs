@@ -706,7 +706,7 @@ sub timestamp {
 #===================================
 sub build_docs_js {
 #===================================
-    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js';
+    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js', '--experimental-scope-hoisting';
 }
 
 1

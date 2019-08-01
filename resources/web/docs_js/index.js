@@ -1,8 +1,10 @@
+import ConsoleWidget from "./components/console_widget";
+import mount from "./components/mount";
 import {mount_console} from "./components/copy_as_curl";
 import {settings_modal} from "./components/settings_modal";
 import {Cookies, $} from "./deps";
-import * as events from "./events.js";
 import {lang_strings} from "./localization";
+import store from "./store";
 import {get_base_url} from "./utils.js";
 
 const default_kibana_url = 'http://localhost:5601',
@@ -47,8 +49,17 @@ export function init_console_widgets(console_url, lang_strings) {
   var base_url = get_base_url(window.location.href);
 
   $('div.console_widget').each(function() {
-    var div = $(this);
+    const div         = $(this),
+          snippet     = div.attr('data-snippet'),
+          consoleText = div.prev().text() + '\n';
 
+    return mount(div, ConsoleWidget, {consoleText,
+                                      snippet,
+                                      widgetTitle: "Open snippet in Console",
+                                      widgetText: "View in Console",
+                                      consoleTitle: "Configure Console URL"});
+
+    /*
     const handle_config_click = () =>
       settings_modal({label_text: lang_strings('Enter the URL of the Console editor'),
                       url_value: console_url,
@@ -61,10 +72,17 @@ export function init_console_widgets(console_url, lang_strings) {
                         init_console_widgets(console_url, lang_strings);},
                       lang_strings: lang_strings});
 
-    mount_console({lang_strings,
-                   base_url,
-                   console_url,
-                   config_on_click: handle_config_click});
+    return mount_console({lang_strings,
+                          base_url,
+                          mount_point: div,
+                          console_url: console_url,
+                          widget_title: "Open snippet in Console",
+                          url: console_url,
+                          widget_text: "View in Console",
+                          console_title: "Configure Console URL",
+                          config_on_click: handle_config_click});
+                          */
+
   });
 }
 
@@ -85,14 +103,15 @@ export function init_sense_widgets(sense_url, lang_strings) {
                         init_sense_widgets(sense_url, lang_strings);},
                       lang_strings: lang_strings});
 
-    mount_console({lang_strings,
-                   base_url,
-                   console_url: sense_url,
-                   widget_title: "Open snippet in Sense",
-                   url: sense_url,
-                   widget_text: "View in Sense",
-                   console_title: "Configure Sense URL",
-                   config_on_click: handle_config_click});
+    return mount_console({lang_strings,
+                          base_url,
+                          mount_point: div,
+                          console_url: sense_url,
+                          widget_title: "Open snippet in Sense",
+                          url: sense_url,
+                          widget_text: "View in Sense",
+                          console_title: "Configure Sense URL",
+                          config_on_click: handle_config_click});
   });
 }
 
@@ -197,13 +216,33 @@ export function open_current(pathname) {
 // Main function, runs on DOM ready
 $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
+  var base_url = get_base_url(window.location.href);
   var LangStrings = lang_strings(lang);
-  var right_col = $('#right_col'); // Move rtp container to top right and make visible
 
-  // Set global variables - TODO improve
+  // Set global variables - Remove eventually
   kibana_url  = Cookies.get('kibana_url') || default_kibana_url;
   console_url = Cookies.get('console_url') || default_console_url;
   sense_url   = Cookies.get('sense_url') || default_sense_url;
+
+  // Capturing the various global variables into the store
+  const initialStoreState = {
+    settings: {
+      language: lang,
+      langStrings: LangStrings,
+      baseUrl: base_url,
+      kibana_url,
+      console_url,
+      sense_url,
+      curl_host: Cookies.get("curl_host") || "localhost:9200",
+      curl_user: Cookies.get("curl_user"),
+      curl_password: Cookies.get("curl_password")
+    }
+  };
+
+  // first call to store initializes it
+  store(initialStoreState);
+
+  var right_col = $('#right_col'); // Move rtp container to top right and make visible
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
     get_current_page_in_version('current');
