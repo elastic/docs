@@ -111,7 +111,7 @@ sub build_chunked {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
-                $alternatives ? (
+                @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
                     '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
                 ) : (),
@@ -249,7 +249,7 @@ sub build_single {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
-                $alternatives ? (
+                @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
                     '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
                 ) : (),
