@@ -7,10 +7,10 @@ module AlternativeLanguageLookup
   # Information about a listing.
   class Listing
     attr_reader :block
-    attr_reader :source
-    attr_reader :digest
     attr_reader :lang
     attr_reader :alternatives
+    attr_reader :source
+    attr_reader :digest
 
     def initialize(block)
       @block = block

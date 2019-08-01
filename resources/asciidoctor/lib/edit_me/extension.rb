@@ -14,9 +14,10 @@ class EditMe < TreeProcessorScaffold
     logger.error('sourcemap is required') unless document.sourcemap
     edit_urls_string = document.attributes['edit_urls']
     return unless edit_urls_string
-    return unless edit_urls_string.is_a? String
 
-    document.attributes['edit_urls'] = parse_edit_urls edit_urls_string
+    if edit_urls_string.is_a? String
+      document.attributes['edit_urls'] = parse_edit_urls edit_urls_string
+    end
     super
   end
 
