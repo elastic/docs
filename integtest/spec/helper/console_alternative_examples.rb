@@ -41,7 +41,7 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
   file_context "#{path}/alternatives_report.adoc" do
     it 'has a report on the example with all alternatives' do
       expect(contents).to include(<<~ASCIIDOC)
-        === index.asciidoc: line 6: 8a7e0a79b1743d5fd94d79a7106ee930
+        === index.asciidoc: line 6: 8a7e0a79b1743d5fd94d79a7106ee930.adoc
         [source,console]
         ----
         GET /_search
@@ -58,7 +58,7 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
     end
     it 'has a report on the example without any alternatives' do
       expect(contents).to include(<<~ASCIIDOC)
-        === index.asciidoc: line 15: d21765565081685a36dfc4af89e7cece
+        === index.asciidoc: line 15: d21765565081685a36dfc4af89e7cece.adoc
         [source,console]
         ----
         GET /_search

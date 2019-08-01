@@ -20,7 +20,7 @@ module AlternativeLanguageLookup
 
     def report(listing, found_langs)
       @file.puts <<~ASCIIDOC
-        === #{listing.source_location}: #{listing.digest}
+        === #{listing.source_location}: #{listing.digest}.adoc
         [source,#{listing.lang}]
         ----
         #{listing.source.gsub(/<([^>])>/, '\\<\1>')}

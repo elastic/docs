@@ -116,7 +116,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       context 'the alternatives report' do
         it 'contains the source' do
           expect(report).to include(<<~ASCIIDOC)
-            === <stdin>: line 2: 3fcdfa6097c68c04f3e175dcf3934af6
+            === <stdin>: line 2: 3fcdfa6097c68c04f3e175dcf3934af6.adoc
             [source,console]
             ----
             GET /no_alternatives
