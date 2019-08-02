@@ -38,13 +38,13 @@ export class _ConsoleForm extends Component {
       <label for="url">{props.langStrings(props.url_label)}</label>
       <input id="url" type="text" value={state[props.setting]} onInput={linkState(this, props.setting)} />
 
-      <label for="curl_host">cURL Host</label>
+      <label for="curl_host">cURL {props.langStrings('host')}</label>
       <input id="curl_host" type="text" value={state.curl_host} onInput={linkState(this, "curl_host")} />
 
-      <label for="curl_username">cURL Username</label>
+      <label for="curl_username">cURL {props.langStrings('username')}</label>
       <input id="curl_username" type="text" value={state.curl_user} onInput={linkState(this, "curl_user")} />
 
-      <label for="curl_pw">cURL Password</label>
+      <label for="curl_pw">cURL {props.langStrings('password')}</label>
       <input id="curl_pw" type="text" value={state.curl_password} onInput={linkState(this, "curl_password")} />
 
       <button id="save_url" type="button" onClick={e => props.saveSettings(this.state)}>
@@ -56,9 +56,12 @@ export class _ConsoleForm extends Component {
                                                       curl_user: props.curl_user,
                                                       curl_password: props.curl_password})} type="button">Reset</button>
       <p>
-        {/* TODO what's the Sense text here */}
         {props.langStrings('Or install')}
-        <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>{props.langStrings('.')}
+        {props.setting === "sense_url"
+         ? <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 {props.langStrings('editor')}</a>
+         : <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>
+        }
+         {props.langStrings('.')}
       </p>
     </form>
   }

@@ -46,6 +46,10 @@ export const lang_spec = {
     "zh_cn": '或安装 '
   },
   ".": {"zh_cn": "。"},
+  "editor": {"zh_cn": "编辑器"},
+  "host": {"zh_cn": "主办"},
+  "username": {"zh_cn": "用户名"},
+  "password": {"zh_cn": "密码"},
   "Save": {
     "zh_cn": "保存"
   },
