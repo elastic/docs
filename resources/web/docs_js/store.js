@@ -1,4 +1,4 @@
-import thunk from 'redux-thunk';
+import thunk from '../../../../node_modules/redux-thunk';
 import { createStore, applyMiddleware } from '../../../../node_modules/redux';
 import reducer from "./actions";
 
@@ -11,5 +11,3 @@ export default (initialState) => {
 
   return __store;
 }
-
-window.getStore = () => __store;
