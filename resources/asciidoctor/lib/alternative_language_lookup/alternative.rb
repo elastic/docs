@@ -52,7 +52,7 @@ module AlternativeLanguageLookup
     end
 
     def validate
-      unless [1, 2].include?(@child.blocks.length)
+      unless @child.blocks.length == 1 || @child.blocks.length == 2
         log_warn @child.source_location, <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but was:
           #{@child.blocks}

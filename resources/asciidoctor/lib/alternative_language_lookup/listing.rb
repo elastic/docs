@@ -6,6 +6,8 @@ module AlternativeLanguageLookup
   ##
   # Information about a listing.
   class Listing
+    include Asciidoctor::Logging
+
     attr_reader :block
     attr_reader :lang
     attr_reader :alternatives
@@ -39,14 +41,8 @@ module AlternativeLanguageLookup
       end
       report = document.attr 'alternative_language_report'
       report&.report self, found_langs
-      return if found_langs.empty?
 
-      has_roles = found_langs.map { |lang| "has-#{lang}" }.join ' '
-      parent.reindex_sections
-      @block.attributes['role'] = "default #{has_roles}"
-      return unless @colist
-
-      @colist.attributes['role'] = "default #{has_roles} lang-#{@lang}"
+      cleanup_original_after_add found_langs unless found_langs.empty?
     end
 
     def find_alternative(dir)
@@ -63,6 +59,13 @@ module AlternativeLanguageLookup
         # right after this block's callouts if it has any, otherwise just after
         # this block.
         @next_index = parent.blocks.find_index(@block) + 1
+        unless @next_index
+          message = "Invalid document: parent doesn't include child!"
+          logger.error(message_with_context(message, @block.source_location))
+          # In grand Asciidoctor tradition we'll *try* to make some
+          # output though
+          @next_index = 0
+        end
         if (colist = parent.blocks[@next_index])&.context == :colist
           @next_index += 1
           @colist = colist
@@ -73,6 +76,21 @@ module AlternativeLanguageLookup
 
       parent.blocks.insert @next_index, alternative
       @next_index += 1
+    end
+
+    def cleanup_original_after_add(found_langs)
+      # We're obligated to reindex the sections inside parent because we've
+      # chaged its blocks.
+      parent.reindex_sections
+
+      # Add some roles which will translate into classes to the original
+      # listing block and the callout. We'll use these to hide the default
+      # language when you pick an override language.
+      has_roles = found_langs.map { |lang| "has-#{lang}" }.join ' '
+      @block.attributes['role'] = "default #{has_roles}"
+      return unless @colist
+
+      @colist.attributes['role'] = "default #{has_roles} lang-#{@lang}"
     end
 
     def parent
