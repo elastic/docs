@@ -6,14 +6,19 @@ const SAVE_SETTING = "SAVE_SETTING";
 
 export const setCookies = forEach(([k, v]) => Cookies.set(k, v));
 
-export const saveSettings = m => dispatch => {
-  setCookies(toPairs(m));
-  dispatch(closeModal());
-  return dispatch({
-    type: SAVE_SETTING,
-    settings: m
-  });
-}
+// this is used as a factory so we can mock it up during tests
+// the function used in the app is setup below
+export const _saveSettings = setCookies =>
+  m => dispatch => {
+    setCookies(toPairs(m));
+    dispatch(closeModal());
+    return dispatch({
+      type: SAVE_SETTING,
+      settings: m
+    });
+  };
+
+export const saveSettings = _saveSettings(setCookies);
 
 const initialState = {
   /*
