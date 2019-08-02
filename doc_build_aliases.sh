@@ -136,6 +136,8 @@ alias docbldejv='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elastic
 
 alias docbldejs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
+alias docbldejs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
+
 alias docbldegr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
 alias docbldego='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --single'
@@ -147,8 +149,6 @@ alias docbldphp='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elastic
 alias docbldepl='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/perl/index.asciidoc --single'
 
 alias docbldepy='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/python/index.asciidoc --single'
-
-alias docblderb='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/ruby/index.asciidoc'
 
 alias docbldecc='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single'
 
