@@ -6,7 +6,7 @@ export const Modal = props => {
   return props.isOpen && (
     <div id="settings_modal_bg">
       <div id="settings_modal">
-        <div class="settings_modal-close" onClick={props.closeModal}>&times;</div>
+        <div className="settings_modal-close" onClick={props.closeModal}>&times;</div>
         {props.children}
       </div>
     </div>
