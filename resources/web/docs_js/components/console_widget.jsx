@@ -1,4 +1,4 @@
-import * as utils from "../utils.js";
+import * as utils from "../utils";
 import {pick, merge} from "../../../../../node_modules/ramda";
 import {h, Component} from "../../../../../node_modules/preact";
 import linkState from "../../../../../node_modules/linkstate";
