@@ -237,6 +237,70 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'for a book with console alternatives' do
+    def self.index
+      <<~ASCIIDOC
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "foo bar" <1>
+        }
+        ----------------------------------
+        <1> Example
+
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "missing"
+        }
+        ----------------------------------
+      ASCIIDOC
+    end
+
+    def self.examples_dir
+      "#{__dir__}/../readme_examples/"
+    end
+
+    def self.setup_example(repo, lang)
+      repo.cp(
+        "#{examples_dir}/#{lang}/8a7e0a79b1743d5fd94d79a7106ee930.adoc",
+        'examples/8a7e0a79b1743d5fd94d79a7106ee930.adoc'
+      )
+      repo.commit 'add example'
+    end
+
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', index
+
+      js_repo = src.repo 'js'
+      setup_example js_repo, 'js'
+
+      csharp_repo = src.repo 'csharp'
+      csharp_repo.write 'dummy', 'dummy'
+      csharp_repo.commit 'init'
+      csharp_repo.switch_to_new_branch 'mapped'
+      setup_example csharp_repo, 'csharp'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.source(
+        js_repo,
+        'examples',
+        alternatives: { source_lang: 'console', alternative_lang: 'js' }
+      )
+      book.source(
+        csharp_repo,
+        'examples',
+        map_branches: { 'master': 'mapped' },
+        alternatives: { source_lang: 'console', alternative_lang: 'csharp' }
+      )
+    end
+    let(:latest_revision) { 'init' }
+    include_examples 'README-like console alternatives', 'html/test/master'
+  end
+
   context 'when run with --open' do
     include_context 'source and dest'
     before(:context) do

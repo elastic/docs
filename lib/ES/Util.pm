@@ -50,6 +50,7 @@ sub build_chunked {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
+    my $alternatives = $opts{alternatives} || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -110,6 +111,10 @@ sub build_chunked {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
+                @{ $alternatives } ? (
+                    '-a' => _format_alternatives($alternatives),
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                ) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -192,6 +197,7 @@ sub build_single {
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
+    my $alternatives = $opts{alternatives} || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -243,6 +249,10 @@ sub build_single {
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
+                @{ $alternatives } ? (
+                    '-a' => _format_alternatives($alternatives),
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -471,6 +481,17 @@ sub edit_urls_for_asciidoctor {
     return join("\n", map { "$_,$edit_urls->{$_}" } keys %{$edit_urls});
 }
 
+#===================================
+sub _format_alternatives {
+#===================================
+    my $alternatives = shift;
+
+    # We'd be better off using a csv library for this but it'll be ok for now.
+    return 'alternative_language_lookups=' . join(
+        "\n",
+        map { $_->{source_lang} . ',' . $_->{alternative_lang} . ',' . $_->{dir} } @{ $alternatives }
+    );
+}
 
 #===================================
 sub write_html_redirect {

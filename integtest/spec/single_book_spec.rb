@@ -389,6 +389,46 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/callouts/2.png'
   end
 
+  context 'for a book with console alternatives' do
+    def self.index
+      <<~ASCIIDOC
+        = Title
+
+        [[chapter]]
+        == Chapter
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "foo bar" <1>
+        }
+        ----------------------------------
+        <1> Example
+
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "missing"
+        }
+        ----------------------------------
+      ASCIIDOC
+    end
+    convert_before do |src, dest|
+      repo = src.repo 'src'
+      from = repo.write 'index.asciidoc', index
+      repo.commit 'commit outstanding'
+      dest.prepare_convert_single(from, '.')
+          .asciidoctor
+          .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
+          .alternatives(
+            'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
+          )
+          .convert
+    end
+    include_examples 'README-like console alternatives', '.'
+  end
+
   context 'when run with --open' do
     include_context 'source and dest'
     before(:context) do

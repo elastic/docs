@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'alternative_language_lookup/extension'
 require_relative 'care_admonition/extension'
 require_relative 'change_admonition/extension'
 require_relative 'copy_images/extension'
@@ -23,6 +24,9 @@ Asciidoctor::Extensions.register do
   treeprocessor CopyImages::CopyImages
   treeprocessor EditMe
   treeprocessor ElasticCompatTreeProcessor
+  # The tree processors after this must come after ElasticComptTreeProcessor
+  # or they won't see the right tree.
+  treeprocessor AlternativeLanguageLookup::AlternativeLanguageLookup
   treeprocessor OpenInWidget
   include_processor ElasticIncludeTagged
 end
