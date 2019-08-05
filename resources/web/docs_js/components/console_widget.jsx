@@ -79,7 +79,7 @@ export const ConsoleWidget = props => {
       <a className="view_in_link u-upperCase"
          target="console"
          title={props.langStrings(props.view_in_text)}
-         href={`${props[props.setting]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
+         href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
     }
     <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
   </div>
