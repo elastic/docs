@@ -206,6 +206,16 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         CSHARP
       end
     end
+    context 'when the alternative is in a subdirectory' do
+      include_context 'convert without logs'
+      let(:input) { one_snippet }
+      let(:snippet_contents) { 'GET /in_subdir' }
+      it 'adds the alternative' do
+        expect(converted).to include(<<~CSHARP.strip)
+          Console.WriteLine("In subdir");
+        CSHARP
+      end
+    end
     context 'when there are callouts' do
       include_context 'convert without logs'
       let(:input) do
