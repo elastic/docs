@@ -33,7 +33,6 @@ module AlternativeLanguageLookup
       @alternatives.each do |a|
         next unless (found = a[:index][@digest])
 
-        found[:hits] += 1
         # TODO: we can probably cache this. There are lots of dupes.
         alternative = Alternative.new document, a[:lang], found[:path]
         alternative_block = alternative.block @block
