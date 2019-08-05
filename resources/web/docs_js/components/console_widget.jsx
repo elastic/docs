@@ -1,57 +1,53 @@
 import * as utils from "../utils";
-import {pick, merge} from "../../../../../node_modules/ramda";
+import {prop, pick, merge, omit} from "../../../../../node_modules/ramda";
 import {h, Component} from "../../../../../node_modules/preact";
 import linkState from "../../../../../node_modules/linkstate";
 import {connect} from "../../../../../node_modules/preact-redux";
 import {openModal} from "../actions/modal";
 import {saveSettings} from "../actions/settings";
 
-const copyAsCurl = ({consoleText, isKibana}) => (_, getState) => {
-  const state = getState();
-  const settings = pick(["langStrings",
-                         "curl_host",
-                         "curl_user",
-                         "curl_password"], state.settings);
+const copyAsCurl = ({setting, consoleText, isKibana}) => (_, getState) => {
+  const state       = getState();
+  const langStrings = state.settings.langStrings;
 
-  if (isKibana) {
-    settings.curl_host = state.settings.kibana_url;
-  }
+  const curlVals = {
+    curl_host:     prop(setting + "_curl_host", state.settings),
+    curl_user:     prop(setting + "_curl_user", state.settings),
+    curl_password: prop(setting + "_curl_password", state.settings)
+  };
 
-  const curlText = utils.getCurlText(merge(settings, {consoleText, isKibana}))
-
-  return utils.copyText(curlText, settings.langStrings);
+  const curlText = utils.getCurlText(merge(curlVals, {consoleText, isKibana, langStrings}))
+  return utils.copyText(curlText, langStrings);
 }
 
 export class _ConsoleForm extends Component {
   componentWillMount() {
-    this.setState({[this.props.setting]: this.props[this.props.setting],
-                   curl_host: this.props.curl_host,
-                   curl_user: this.props.curl_user,
-                   curl_password: this.props.curl_password})
+    const defaultVals = omit(['langStrings', 'saveSettings', 'url_label', 'setting'], this.props);
+    this.setState(defaultVals);
   }
 
   render(props, state) {
+    const getValueFromState = field => state[`${props.setting}_${field}`]
+    const getFieldName = field => `${props.setting}_${field}`
+
     return <form>
       <label for="url">{props.langStrings(props.url_label)}</label>
-      <input id="url" type="text" value={state[props.setting]} onInput={linkState(this, props.setting)} />
+      <input id="url" type="text" value={getValueFromState("url")} onInput={linkState(this, getFieldName("url"))} />
 
       <label for="curl_host">cURL {props.langStrings('host')}</label>
-      <input id="curl_host" type="text" value={state.curl_host} onInput={linkState(this, "curl_host")} />
+      <input id="curl_host" type="text" value={getValueFromState("curl_host")} onInput={linkState(this, getFieldName("curl_host"))} />
 
       <label for="curl_username">cURL {props.langStrings('username')}</label>
-      <input id="curl_username" type="text" value={state.curl_user} onInput={linkState(this, "curl_user")} />
+      <input id="curl_username" type="text" value={getValueFromState("curl_user")} onInput={linkState(this, getFieldName("curl_user"))} />
 
-      <label for="curl_pw">cURL {props.langStrings('password')}</label>
-      <input id="curl_pw" type="text" value={state.curl_password} onInput={linkState(this, "curl_password")} />
+      <label for="curl_pw" title={props.langStrings("curl_pw_title")}>cURL {props.langStrings('password')}</label>
+      <input id="curl_pw" title={props.langStrings("curl_pw_title")} type="text" value={getValueFromState("curl_password")} onInput={linkState(this, getFieldName("curl_password"))} />
 
       <button id="save_url" type="button" onClick={e => props.saveSettings(this.state)}>
         {props.langStrings("Save")}
       </button>
 
-      <button id="reset" onClick={e => this.setState({[props.setting]: props[props.setting],
-                                                      curl_host: props.curl_host,
-                                                      curl_user: props.curl_user,
-                                                      curl_password: props.curl_password})} type="button">Reset</button>
+      <button id="reset" onClick={e => this.setState(omit(['langStrings', 'saveSettings', 'url_label', 'setting'], props))} type="button">Reset</button>
       <p>
         {props.langStrings('Or install')}
         {props.setting === "sense_url"
@@ -66,17 +62,17 @@ export class _ConsoleForm extends Component {
 
 export const ConsoleForm = connect((state, props) =>
   pick(["langStrings",
-        props.setting,
-        "curl_host",
-        "curl_user",
-        "curl_password"], state.settings)
+        `${props.setting}_url`,
+        `${props.setting}_curl_host`,
+        `${props.setting}_curl_user`,
+        `${props.setting}_curl_password`], state.settings)
 , {saveSettings})(_ConsoleForm);
 
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   return <div>
     <a className="sense_widget copy_as_curl u-upperCase"
-       onClick={e => props.copyAsCurl({consoleText: props.consoleText})}>
+       onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
       {props.langStrings('Copy as cURL')}
     </a>
     {props.view_in_text &&
@@ -90,5 +86,5 @@ export const ConsoleWidget = props => {
 }
 
 export default connect((state, props) =>
-  pick(["langStrings", "baseUrl", props.setting], state.settings)
+  pick(["langStrings", "baseUrl", `${props.setting}_url`], state.settings)
 , {copyAsCurl, openModal})(ConsoleWidget)

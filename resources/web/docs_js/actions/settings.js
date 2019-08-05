@@ -1,5 +1,5 @@
 import Cookies from "../../../../../node_modules/js-cookie";
-import {merge, toPairs, forEach} from "../../../../../node_modules/ramda";
+import {omit, merge, toPairs, forEach} from "../../../../../node_modules/ramda";
 import {closeModal} from "./modal";
 
 const SAVE_SETTING = "SAVE_SETTING";
@@ -10,7 +10,8 @@ export const setCookies = forEach(([k, v]) => Cookies.set(k, v));
 // the function used in the app is setup below
 export const _saveSettings = setCookies =>
   m => dispatch => {
-    setCookies(toPairs(m));
+    const values = omit(["console_curl_password", "kibana_curl_password", "sense_curl_password"], m);
+    setCookies(toPairs(values));
     dispatch(closeModal());
     return dispatch({
       type: SAVE_SETTING,

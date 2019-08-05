@@ -41,7 +41,7 @@ export function init_console_widgets() {
           snippet     = div.attr('data-snippet'),
           consoleText = div.prev().text() + '\n';
 
-    return mount(div, ConsoleWidget, {setting: "console_url",
+    return mount(div, ConsoleWidget, {setting: "console",
                                       url_label: 'Enter the URL of the Console editor',
                                       view_in_text: 'View in Console',
                                       configure_text: 'Configure Console URL',
@@ -56,7 +56,7 @@ export function init_sense_widgets() {
           snippet     = div.attr('data-snippet'),
           consoleText = div.prev().text() + '\n';
 
-    return mount(div, ConsoleWidget, {setting: "sense_url",
+    return mount(div, ConsoleWidget, {setting: "sense",
                                       url_label: 'Enter the URL of the Sense editor',
                                       view_in_text: 'View in Sense',
                                       configure_text: 'Configure Sense URL',
@@ -71,7 +71,7 @@ function init_kibana_widgets() {
           snippet     = div.attr('data-snippet'),
           consoleText = div.prev().text() + '\n';
 
-    return mount(div, ConsoleWidget, {setting: "kibana_url",
+    return mount(div, ConsoleWidget, {setting: "kibana",
                                       isKibana: true,
                                       url_label: 'Enter the URL of Kibana',
                                       configure_text: 'Configure Kibana URL',
@@ -148,11 +148,17 @@ $(function() {
       langStrings: LangStrings,
       baseUrl: base_url,
       kibana_url: Cookies.get("kibana_url") || default_kibana_url,
+      kibana_curl_host: Cookies.get("kibana_curl_host") || "localhost:9200",
+      kibana_curl_user: Cookies.get("kibana_curl_user"),
+      kibana_curl_password: "",
       console_url: Cookies.get("console_url") || default_console_url,
+      console_curl_host: Cookies.get("console_curl_host") || "localhost:9200",
+      console_curl_user: Cookies.get("console_curl_user"),
+      console_curl_password: "",
       sense_url: Cookies.get("sense_url") || default_sense_url,
-      curl_host: Cookies.get("curl_host") || "localhost:9200",
-      curl_user: Cookies.get("curl_user"),
-      curl_password: Cookies.get("curl_password")
+      sense_curl_host: Cookies.get("sense_curl_host") || "localhost:9200",
+      sense_curl_user: Cookies.get("sense_curl_user"),
+      sense_curl_password: ""//TODO Cookies.get("curl_password")
     }
   };
 

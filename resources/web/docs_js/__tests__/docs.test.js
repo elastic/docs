@@ -17,7 +17,7 @@ function pageWithConsole(name, consoleText, extraTextAssertions) {
           langStrings: LangStrings,
           console_url: "localhost:5601/app/kibana#/dev_tools/console",
           baseUrl: "https://localhost:8000/guide/",
-          curl_host: "localhost:9200"
+          console_curl_host: "localhost:9200"
         }
       });
 

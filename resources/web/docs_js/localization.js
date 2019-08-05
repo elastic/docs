@@ -61,6 +61,10 @@ export const lang_spec = {
   },
   "View in Console": {
     "zh_cn": "在 Console 中查看"
+  },
+  "curl_pw_title": {
+    "en": "The password is stored in memory and will be reset after a page reload",
+    "zh_cn": "密码存储在内存中，并在页面重新加载后重置"
   }
 }
 
