@@ -102,6 +102,22 @@ sub build_local {
         die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
     }
 
+    my @alternatives;
+    if ( $Opts->{alternatives} ) {
+        die '--alternatives requires --asciidoctor' unless $Opts->{asciidoctor};
+        for ( @{ $Opts->{alternatives} } ) {
+            my @parts = split /:/;
+            unless (scalar @parts == 3) {
+                die "alternatives must contain exactly two :s but was [$_]";
+            }
+            push @alternatives, {
+                source_lang => $parts[0],
+                alternative_lang => $parts[1],
+                dir => $parts[2],
+            };
+        }
+    }
+
     build_docs_js();
 
     my $latest = !$Opts->{suppress_migration_warnings};
@@ -109,12 +125,14 @@ sub build_local {
         $dir->rmtree;
         $dir->mkpath;
         build_single( $index, $dir, %$Opts,
-                latest => $latest
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
     else {
         build_chunked( $index, $dir, %$Opts,
-                latest => $latest
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
 
@@ -813,6 +831,7 @@ sub command_line_opts {
     return [
         # Options only compatible with --doc
         'doc=s',
+        'alternatives=s@',
         'asciidoctor',
         'chunk=i',
         'lang=s',
@@ -861,6 +880,8 @@ sub usage {
         Opts:
           --asciidoctor     Use asciidoctor instead of asciidoc.
           --chunk 1         Also chunk sections into separate files
+          --alternatives <source_lang>:<alternative_lang>:<dir>
+                            Examples in alternative languages.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
@@ -937,6 +958,7 @@ USAGE
 sub check_opts {
 #===================================
     if ( !$Opts->{doc} ) {
+        die('--alternatives only compatible with --doc') if $Opts->{alternatives};
         die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.

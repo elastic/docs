@@ -39,12 +39,16 @@ class Book
   #                repo when the book is building a particular branch
   # is_private - Configure the source to be private so it doesn't get edit
   #              urls. Defaults to false.
-  def source(repo, path, map_branches: nil, is_private: false)
+  # alternatives - Marks this source as a source of alternative examples. Must
+  #                be a hash containing :source_lang and :alternative_lang.
+  def source(repo, path,
+             map_branches: nil, is_private: false, alternatives: nil)
     @sources.push(
       repo: repo.name,
       path: path,
       map_branches: map_branches,
-      is_private: is_private
+      is_private: is_private,
+      alternatives: alternatives
     )
   end
 
@@ -99,9 +103,20 @@ class Book
       repo:    #{config[:repo]}
       path:    #{config[:path]}
     YAML
-    yaml += 'private: true' if config[:is_private]
+    yaml += alternatives_conf config[:alternatives]
+    yaml += "private: true\n" if config[:is_private]
     yaml += map_branches_conf config[:map_branches]
     indent yaml, '  '
+  end
+
+  def alternatives_conf(conf)
+    return '' unless conf
+
+    yaml = ''
+    yaml += "alternatives:\n"
+    yaml += "  source_lang: #{conf[:source_lang]}\n"
+    yaml += "  alternative_lang: #{conf[:alternative_lang]}\n"
+    yaml
   end
 
   def map_branches_conf(map_branches)

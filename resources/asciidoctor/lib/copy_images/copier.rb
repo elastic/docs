@@ -12,6 +12,8 @@ module CopyImages
     include Asciidoctor::Logging
 
     def initialize
+      # TODO: store this set on the document so we don't duplicate copies
+      # for sub-documents caused by alternative examples
       @copied = Set[]
     end
 
