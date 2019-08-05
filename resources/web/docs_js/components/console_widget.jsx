@@ -5,7 +5,6 @@ import linkState from "../../../../../node_modules/linkstate";
 import {connect} from "../../../../../node_modules/preact-redux";
 import {openModal} from "../actions/modal";
 import {saveSettings} from "../actions/settings";
-import Modal from "./modal";
 
 const copyAsCurl = ({consoleText, isKibana}) => (_, getState) => {
   const state = getState();
@@ -25,12 +24,10 @@ const copyAsCurl = ({consoleText, isKibana}) => (_, getState) => {
 
 export class _ConsoleForm extends Component {
   componentWillMount() {
-    if (this.props.console_url) {
-      this.setState({[this.props.setting]: this.props[this.props.setting],
-                     curl_host: this.props.curl_host,
-                     curl_user: this.props.curl_user,
-                     curl_password: this.props.curl_password})
-    }
+    this.setState({[this.props.setting]: this.props[this.props.setting],
+                   curl_host: this.props.curl_host,
+                   curl_user: this.props.curl_user,
+                   curl_password: this.props.curl_password})
   }
 
   render(props, state) {
@@ -76,21 +73,19 @@ export const ConsoleForm = connect((state, props) =>
 , {saveSettings})(_ConsoleForm);
 
 export const ConsoleWidget = props => {
+  const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   return <div>
-    <a className="sense_widget copy_as_curl"
+    <a className="sense_widget copy_as_curl u-upperCase"
        onClick={e => props.copyAsCurl({consoleText: props.consoleText})}>
       {props.langStrings('Copy as cURL')}
     </a>
     {props.view_in_text &&
-      <a className="console_widget"
+      <a className="view_in_link u-upperCase"
          target="console"
          title={props.langStrings(props.view_in_text)}
          href={`${props[props.setting]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
     }
-    <a className="console_settings" onClick={props.openModal} title={props.langStrings(props.configure_text)}>&nbsp;</a>
-    <Modal>
-      <ConsoleForm setting={props.setting} url_label={props.url_label} />
-    </Modal>
+    <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
   </div>
 }
 

@@ -1,4 +1,5 @@
 import ConsoleWidget from "./components/console_widget";
+import Modal from "./components/modal";
 import mount from "./components/mount";
 import {Cookies, $} from "./deps";
 import {lang_strings} from "./localization";
@@ -146,7 +147,7 @@ $(function() {
       language: lang,
       langStrings: LangStrings,
       baseUrl: base_url,
-      kibana_url: Cookies.get('kibana_url') || default_kibana_url,
+      kibana_url: Cookies.get("kibana_url") || default_kibana_url,
       console_url: Cookies.get("console_url") || default_console_url,
       sense_url: Cookies.get("sense_url") || default_sense_url,
       curl_host: Cookies.get("curl_host") || "localhost:9200",
@@ -157,6 +158,9 @@ $(function() {
 
   // first call to store initializes it
   store(initialStoreState);
+
+  // One modal component for N mini-apps
+  mount($('body'), Modal);
 
   var right_col = $('#right_col'); // Move rtp container to top right and make visible
 
