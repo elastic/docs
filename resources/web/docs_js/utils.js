@@ -59,81 +59,83 @@ export const getCurlText = ({consoleText,
       curlText = '',
       match;
 
-    while (match = regex.exec(consoleText)) {
-      var comment = match[1];
-      var method = match[2];
-      var path = match[3];
-      var body = match[4];
-      if (comment) {
-        curlText += comment + '\n';
+  while (match = regex.exec(consoleText)) {
+    var comment = match[1];
+    var method = match[2];
+    var path = match[3];
+    var body = match[4];
+    if (comment) {
+      curlText += comment + '\n';
+    } else {
+      path = path.replace(/^\//, '').replace(/\s+$/,'');
+      if (method === "HEAD") {
+        curlText += 'curl -I ';
       } else {
-        path = path.replace(/^\//, '').replace(/\s+$/,'');
-        if (method === "HEAD") {
-          curlText += 'curl -I ';
-        } else {
-          curlText += 'curl -X ' + method + ' ';
-        }
-
-        if (curl_user && curl_password) {
-          curlText += `-u ${curl_user}:${curl_password} `;
-        }
-
-        curlText += '"' + curl_host + '/' + path + '"';
-
-        if (isKibana) {
-          curlText += " -H 'kbn-xsrf: true'";
-        } else {
-          path += path.includes('?') ? '&pretty' : '?pretty';
-        }
-
-        if (body) {
-          body = body.replace(/\'/g, '\\u0027');
-          body = body.replace(/\s*$/,"\n");
-          curlText += " -H 'Content-Type: application/json'";
-          curlText += " -d'";
-          var start = body.indexOf('"""');
-          if (start < 0) {
-            curlText += body;
-          } else {
-            var startOfNormal = 0;
-            while (start >= 0) {
-              var end = body.indexOf('"""', start + 3);
-              if (end < 0) {
-                end = body.length();
-              }
-              curlText += body.substring(startOfNormal, start);
-              curlText += '"';
-              var quoteBody = body.substring(start + 3, end);
-              // Trim leading newline if there is one
-              quoteBody = quoteBody.replace(/^\n+/, '');
-              // Trim leading whitespace off of each line
-              // But not more whitespace than is on the first line
-              var leadingWhitespace = quoteBody.search(/\S/);
-              if (leadingWhitespace > 0) {
-                var leadingString = '^';
-                for (var i = 0; i < leadingWhitespace; i++) {
-                  leadingString += ' ';
-                }
-                quoteBody = quoteBody.replace(new RegExp(leadingString, 'gm'), '');
-              }
-              // Trim trailing whitespace
-              quoteBody = quoteBody.replace(/\s+$/, '');
-              // Escape for json
-              quoteBody = quoteBody
-                  .replace(/"/g, '\\"')
-                  .replace(/\n/g, '\\n');
-              curlText += quoteBody;
-              curlText += '"';
-              startOfNormal = end + 3;
-              start = body.indexOf('"""', startOfNormal);
-            }
-            curlText += body.substring(startOfNormal);
-          }
-          curlText += "'";
-        }
-        curlText += '\n';
+        curlText += 'curl -X ' + method + ' ';
       }
-    }
 
-    return curlText;
+      if (curl_user && curl_password) {
+        curlText += `-u ${curl_user}:${curl_password} `;
+      }
+
+      if (!isKibana) {
+        path += path.includes('?') ? '&pretty' : '?pretty';
+      }
+
+      curlText += '"' + curl_host + '/' + path + '"';
+
+      if (isKibana) {
+        curlText += " -H 'kbn-xsrf: true'";
+      }
+
+      if (body) {
+        body = body.replace(/\'/g, '\\u0027');
+        body = body.replace(/\s*$/,"\n");
+        curlText += " -H 'Content-Type: application/json'";
+        curlText += " -d'";
+        var start = body.indexOf('"""');
+        if (start < 0) {
+          curlText += body;
+        } else {
+          var startOfNormal = 0;
+          while (start >= 0) {
+            var end = body.indexOf('"""', start + 3);
+            if (end < 0) {
+              end = body.length();
+            }
+            curlText += body.substring(startOfNormal, start);
+            curlText += '"';
+            var quoteBody = body.substring(start + 3, end);
+            // Trim leading newline if there is one
+            quoteBody = quoteBody.replace(/^\n+/, '');
+            // Trim leading whitespace off of each line
+            // But not more whitespace than is on the first line
+            var leadingWhitespace = quoteBody.search(/\S/);
+            if (leadingWhitespace > 0) {
+              var leadingString = '^';
+              for (var i = 0; i < leadingWhitespace; i++) {
+                leadingString += ' ';
+              }
+              quoteBody = quoteBody.replace(new RegExp(leadingString, 'gm'), '');
+            }
+            // Trim trailing whitespace
+            quoteBody = quoteBody.replace(/\s+$/, '');
+            // Escape for json
+            quoteBody = quoteBody
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n');
+            curlText += quoteBody;
+            curlText += '"';
+            startOfNormal = end + 3;
+            start = body.indexOf('"""', startOfNormal);
+          }
+          curlText += body.substring(startOfNormal);
+        }
+        curlText += "'";
+      }
+      curlText += '\n';
+    }
+  }
+
+  return curlText;
 }

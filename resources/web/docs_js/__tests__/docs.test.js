@@ -1,4 +1,5 @@
-import {jQuery, dedent} from "../deps";
+import {jQuery} from "../deps";
+import dedent from "../../../../../node_modules/dedent";
 import {init_console_widgets, init_headers} from "../index";
 import * as utils from "../utils";
 import * as l from "../localization";
@@ -75,7 +76,7 @@ describe('console widget', () => {
         expect(document.copied).toMatch(/-X GET/);
       });
       test('includes the url', () => {
-        expect(document.copied).toMatch(/"localhost:9200\/_cat\/health\?v"/);
+        expect(document.copied).toMatch(/"localhost:9200\/_cat\/health\?v&pretty"/);
       });
     });
 
@@ -93,7 +94,7 @@ describe('console widget', () => {
         expect(document.copied).toMatch(/-X PUT/);
       });
       test('includes the url', () => {
-        expect(document.copied).toMatch(/"localhost:9200\/twitter\/_doc\/1"/);
+        expect(document.copied).toMatch(/"localhost:9200\/twitter\/_doc\/1\?pretty"/);
       });
       test('includes the body', () => {
         expect(document.copied).toEqual(expect.stringContaining(dedent `
