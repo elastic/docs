@@ -91,7 +91,7 @@ module AlternativeLanguageLookup
           next unless ['.asciidoc', '.adoc'].include? extension
 
           basename = File.basename path, extension
-          index[basename] = {path: path}
+          index[basename] = { path: path }
         end
       end
 
