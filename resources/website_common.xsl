@@ -33,6 +33,10 @@
   <xsl:param name="generate.toc"></xsl:param>
   <xsl:param name="toc.list.type"           select="'ul'"/>
 
+  <!-- Disable breaks after formal examples because they come *before* the
+       callout lists that come after them, making them look terrible. -->
+  <xsl:param name="formal.object.break.after">0</xsl:param>
+
   <!-- meta elements -->
   <xsl:template name="user.head.content">
     <xsl:variable name="meta-description">
