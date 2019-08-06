@@ -2,7 +2,10 @@
 
 module AlternativeLanguageLookup
   ##
-  # Load alternative examples in alternative languages.
+  # Load alternative examples in alternative languages. Creating this class is
+  # comparatively heavy because it parses the example. It'll also log warnings
+  # if there are problems with the example. So only create it if you plan to
+  # use the example.
   class Alternative
     include Asciidoctor::Logging
 
