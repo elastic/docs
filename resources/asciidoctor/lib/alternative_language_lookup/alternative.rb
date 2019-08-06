@@ -2,7 +2,10 @@
 
 module AlternativeLanguageLookup
   ##
-  # Load alternative examples in alternative languages.
+  # Load alternative examples in alternative languages. Creating this class is
+  # comparatively heavy because it parses the example. It'll also log warnings
+  # if there are problems with the example. So only create it if you plan to
+  # use the example.
   class Alternative
     include Asciidoctor::Logging
 
@@ -10,28 +13,27 @@ module AlternativeLanguageLookup
       Alternative language must be a code block followed optionally by a callout list
     LOG
 
-    def initialize(listing, lang, dir, basename)
-      @listing = listing
+    def initialize(document, lang, path)
+      @document = document
       @lang = lang
-      @dir = dir
-      @basename = basename
-      @counter = listing.document.attr 'alternative_language_counter', 0
-      @loaded = false
+      @path = path
+      @counter = @document.attr 'alternative_language_counter', 0
+      @text = nil
       load
       return unless validate
 
       munge
-      @loaded = true
-      listing.document.attributes['alternative_language_counter'] = @counter + 1
+      @document.attributes['alternative_language_counter'] = @counter + 1
+      @text = @child.convert
     end
 
     ##
     # A block that can be inserted into the main document if we've successfully
     # loaded, validated, and munged the alternative. nil otherwise.
-    def block
-      return unless @loaded
+    def block(parent)
+      return unless @text
 
-      Asciidoctor::Block.new @listing.parent, :pass, source: @child.convert
+      Asciidoctor::Block.new parent, :pass, source: @text
     end
 
     def load
@@ -39,14 +41,14 @@ module AlternativeLanguageLookup
       # because that is for parsing text we've already parsed once. This is
       # text that we're detecting very late in the process.
       @child = Asciidoctor::Document.new(
-        "include::#{@dir}/#{@basename}[]",
-        attributes: @listing.document.attributes.dup,
-        safe: @listing.document.safe,
-        backend: @listing.document.backend,
+        "include::#{@path}[]",
+        attributes: @document.attributes.dup,
+        safe: @document.safe,
+        backend: @document.backend,
         doctype: Asciidoctor::DEFAULT_DOCTYPE,
-        sourcemap: @listing.document.sourcemap,
-        base_dir: @listing.document.base_dir,
-        to_dir: @listing.document.options[:to_dir]
+        sourcemap: @document.sourcemap,
+        base_dir: @document.base_dir,
+        to_dir: @document.options[:to_dir]
       )
       @child.parse
     end
@@ -71,7 +73,7 @@ module AlternativeLanguageLookup
     def check_listing
       unless @listing.context == :listing
         log_warn @listing.source_location, <<~LOG.strip
-          #{LAYOUT_DESCRIPTION} but the first block was a #{@source.context}.
+          #{LAYOUT_DESCRIPTION} but the first block was a #{@listing.context}.
         LOG
         return false
       end

@@ -4,7 +4,7 @@ require_relative 'alternative'
 
 module AlternativeLanguageLookup
   ##
-  # Information about a listing.
+  # Information about a listing in the original document.
   class Listing
     include Asciidoctor::Logging
 
@@ -31,26 +31,20 @@ module AlternativeLanguageLookup
       found_langs = []
 
       @alternatives.each do |a|
-        next unless (found = find_alternative a[:dir])
+        next unless (found = a[:index][@digest])
 
-        alternative = Alternative.new(self, a[:lang], a[:dir], found).block
-        next unless alternative
+        # TODO: we can probably cache this. There are lots of dupes.
+        alternative = Alternative.new document, a[:lang], found[:path]
+        alternative_block = alternative.block @block
+        next unless alternative_block
 
-        insert alternative
+        insert alternative_block
         found_langs << a[:lang]
       end
       report = document.attr 'alternative_language_report'
       report&.report self, found_langs
 
       cleanup_original_after_add found_langs unless found_langs.empty?
-    end
-
-    def find_alternative(dir)
-      basename = "#{@digest}.adoc"
-      return basename if File.exist? File.join(dir, basename)
-
-      basename = "#{@digest}.asciidoc"
-      return basename if File.exist? File.join(dir, basename)
     end
 
     def insert(alternative)
