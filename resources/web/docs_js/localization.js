@@ -41,14 +41,15 @@ export const lang_spec = {
   "Open snippet in Sense": {
     "zh_cn": "在 Sense 中打开代码片段"
   },
-  "Or install Kibana": {
-    "en": 'Or install <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>.',
-    "zh_cn": '或安装 <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>。'
+  "Or install": {
+    "en": 'Or install ',
+    "zh_cn": '或安装 '
   },
-  "Or install Sense2": {
-    "en": 'Or install <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 editor</a>.',
-    "zh_cn": '或安装 <a href="https://www.elastic.co/guide/en/sense/current/installing.html">Sense 2 编辑器</a>。'
-  },
+  ".": {"zh_cn": "。"},
+  "editor": {"zh_cn": "编辑器"},
+  "host": {"zh_cn": "主办"},
+  "username": {"zh_cn": "用户名"},
+  "password": {"zh_cn": "密码"},
   "Save": {
     "zh_cn": "保存"
   },
@@ -60,6 +61,10 @@ export const lang_spec = {
   },
   "View in Console": {
     "zh_cn": "在 Console 中查看"
+  },
+  "curl_pw_title": {
+    "en": "The password is stored in memory and will be reset after a page reload",
+    "zh_cn": "密码存储在内存中，并在页面重新加载后重置"
   }
 }
 
