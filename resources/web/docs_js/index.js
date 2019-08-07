@@ -5,9 +5,9 @@ import {Cookies, $} from "./deps";
 import {lang_strings} from "./localization";
 import store from "./store";
 import * as utils from "./utils.js";
-import PR from "../prettify/prettify";
-import "../prettify/lang-sql";
-import "../prettify/lang-yaml";
+import PR from "../lib/prettify/prettify";
+import "../lib/prettify/lang-sql";
+import "../lib/prettify/lang-yaml";
 
 export function init_headers(right_col, lang_strings) {
   // Add on-this-page block

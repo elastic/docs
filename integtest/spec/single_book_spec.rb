@@ -37,6 +37,29 @@ RSpec.describe 'building a single book' do
           expect(title).to eq('Chapter')
         end
       end
+      file_context 'docs.js' do
+        def self.has_license(name, heading)
+          it "has license for #{name}" do
+            expect(contents).to include(<<~TXT)
+              /* #{name}
+               * #{heading}
+            TXT
+          end
+        end
+        has_license 'code-prettify', 'The Apache 2.0 License'
+        has_license "code-prettify's lang-sql", 'The Apache 2.0 License'
+        has_license "code-prettify's lang-yaml", 'The Apache 2.0 License'
+        has_license 'js-cookie', 'The MIT License (MIT)'
+        has_license 'linkstate', 'The MIT License (MIT)'
+        has_license 'loose-envify', 'The MIT License (MIT)'
+        has_license 'preact', 'The MIT License (MIT)'
+        has_license 'preact-context', 'The Apache 2.0 License'
+        has_license 'preact-redux', 'The MIT License (MIT)'
+        has_license 'ramda', 'The MIT License (MIT)'
+        has_license 'redux', 'The MIT License (MIT)'
+        has_license 'redux-thunk', 'The MIT License (MIT)'
+        has_license 'symbol-observable', 'The MIT License (MIT)'
+      end
     end
 
     context 'when the file ends in .asciidoc' do

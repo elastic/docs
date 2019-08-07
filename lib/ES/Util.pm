@@ -727,7 +727,14 @@ sub timestamp {
 #===================================
 sub build_docs_js {
 #===================================
-    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js', '--experimental-scope-hoisting';
+    run '/node_modules/parcel/bin/cli.js', 'build',
+        'resources/web/docs_js/index.js', '/node_modules',
+        '-d', 'resources/web', '-o', 'docs.js',
+        '--experimental-scope-hoisting';
+    my $docs = file('resources/web/docs.js');
+    my $licenses = file('resources/web/docs.js.licenses')->slurp;
+    my $minified = $docs->slurp;
+    $docs->spew($licenses . $minified);
 }
 
 1
