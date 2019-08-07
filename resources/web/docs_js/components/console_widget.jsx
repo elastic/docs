@@ -40,9 +40,10 @@ export class _ConsoleForm extends Component {
       <label for="curl_username">cURL {props.langStrings('username')}</label>
       <input id="curl_username" type="text" value={getValueFromState("curl_user")} onInput={linkState(this, getFieldName("curl_user"))} />
 
+      {/* TODO
       <label for="curl_pw" title={props.langStrings("curl_pw_title")}>cURL {props.langStrings('password')}</label>
       <input id="curl_pw" title={props.langStrings("curl_pw_title")} type="text" value={getValueFromState("curl_password")} onInput={linkState(this, getFieldName("curl_password"))} />
-
+       */}
       <button id="save_url" type="button" onClick={e => props.saveSettings(this.state)}>
         {props.langStrings("Save")}
       </button>
