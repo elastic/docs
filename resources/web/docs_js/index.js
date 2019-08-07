@@ -150,15 +150,15 @@ $(function() {
       kibana_url: Cookies.get("kibana_url") || default_kibana_url,
       kibana_curl_host: Cookies.get("kibana_curl_host") || "localhost:9200",
       kibana_curl_user: Cookies.get("kibana_curl_user"),
-      kibana_curl_password: "",
+      kibana_curl_password: "$KIBANA_PW",
       console_url: Cookies.get("console_url") || default_console_url,
       console_curl_host: Cookies.get("console_curl_host") || "localhost:9200",
       console_curl_user: Cookies.get("console_curl_user"),
-      console_curl_password: "",
+      console_curl_password: "$CONSOLE_PW",
       sense_url: Cookies.get("sense_url") || default_sense_url,
       sense_curl_host: Cookies.get("sense_curl_host") || "localhost:9200",
       sense_curl_user: Cookies.get("sense_curl_user"),
-      sense_curl_password: ""//TODO Cookies.get("curl_password")
+      sense_curl_password: "$SENSE_PW"//TODO Cookies.get("curl_password")
     }
   };
 

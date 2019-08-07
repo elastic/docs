@@ -49,8 +49,6 @@ export function copyText(text, langStrings) {
   }
 }
 
-export const PW_PLACEHOLDER = "<your_password>";
-
 export const getCurlText = ({consoleText,
                              curl_host,
                              curl_user,
@@ -76,8 +74,8 @@ export const getCurlText = ({consoleText,
         curlText += 'curl -X ' + method + ' ';
       }
 
-      if (curl_user) {
-        curlText += `-u ${curl_user}:${PW_PLACEHOLDER} `;
+      if (curl_user && curl_password) {
+        curlText += `-u ${curl_user}:${curl_password} `;
       }
 
       if (!isKibana) {

@@ -16,12 +16,33 @@ describe("get_base_url", () => {
 describe("getCurlText", () => {
   const langStrings = lang_strings("en");
 
-  test("it adds curl user and password only when user is present", () => {
-    const result = utils.getCurlText({consoleText: snippetGen(),
+  test("it adds curl user and password only when both are present", () => {
+    const result1 = utils.getCurlText({consoleText: snippetGen(),
                                        curl_host: "http://localhost:9200",
                                        curl_user: "elastic",
                                        langStrings});
-    const expected = `curl -X GET -u elastic:${utils.PW_PLACEHOLDER} "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
+    const result2 = utils.getCurlText({consoleText: snippetGen(),
+                                       curl_host: "http://localhost:9200",
+                                       curl_pw: "elastic",
+                                       langStrings});
+    const expected = `curl -X GET "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+    "query": "foo bar" 
+}
+'
+`;
+
+    expect(result1).toBe(expected);
+    expect(result2).toBe(expected);
+  });
+
+  test("it adds user and password when curl_user and curl_password are present", () => {
+    const result = utils.getCurlText({consoleText: snippetGen(),
+                                      curl_host: "http://localhost:9200",
+                                      curl_user: "elastic",
+                                      curl_password: "abcde",
+                                      langStrings});
+    const expected = `curl -X GET -u elastic:abcde "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -38,7 +59,7 @@ describe("getCurlText", () => {
                                       curl_password: "abcde",
                                       curl_host: "http://localhost:9200",
                                       langStrings});
-    const expected = `curl -X GET -u elastic:${utils.PW_PLACEHOLDER} "http://localhost:9200/_search" -H 'kbn-xsrf: true' -H 'Content-Type: application/json' -d'
+    const expected = `curl -X GET -u elastic:abcde "http://localhost:9200/_search" -H 'kbn-xsrf: true' -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
