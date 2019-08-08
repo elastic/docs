@@ -149,6 +149,11 @@ class Dest
       @cmd += ['--suppress_migration_warnings']
       self
     end
+
+    def alternatives(source_lang, dest_lang, dir)
+      @cmd += ['--alternatives', "#{source_lang}:#{dest_lang}:#{dir}"]
+      self
+    end
   end
 
   class ConvertAll < CmdBuilder

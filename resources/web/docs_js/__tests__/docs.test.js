@@ -1,6 +1,9 @@
-import {jQuery, dedent} from "../deps" ;
-import * as docs from "../index";
+import {jQuery} from "../deps";
+import dedent from "../../../../../node_modules/dedent";
+import {init_console_widgets, init_headers} from "../index";
+import * as utils from "../utils";
 import * as l from "../localization";
+import store from "../store";
 
 const LangStrings = l.lang_strings('en');
 
@@ -8,6 +11,16 @@ function pageWithConsole(name, consoleText, extraTextAssertions) {
   describe(name, () => {
     let copyAsCurl;
     beforeEach(() => {
+      store({
+        settings: {
+          language: "en",
+          langStrings: LangStrings,
+          console_url: "localhost:5601/app/kibana#/dev_tools/console",
+          baseUrl: "https://localhost:8000/guide/",
+          console_curl_host: "localhost:9200"
+        }
+      });
+
       document.body.innerHTML = dedent `
         <div id="guide">
           <div class="pre_wrapper">
@@ -19,7 +32,7 @@ function pageWithConsole(name, consoleText, extraTextAssertions) {
         </div>
       `;
 
-      docs.init_console_widgets('localhost:5601/app/kibana#/dev_tools/console', LangStrings);
+      init_console_widgets();
       copyAsCurl = jQuery('.copy_as_curl');
     });
 
@@ -32,7 +45,7 @@ function pageWithConsole(name, consoleText, extraTextAssertions) {
           document.copied = jQuery('textarea').val();
           return true;
         });
-        copyAsCurl.click();
+        copyAsCurl[0].click();
       });
       test('copies a curl command to the clipboard', () => {
         expect(document.execCommand).toHaveBeenCalledWith('copy');
@@ -63,7 +76,7 @@ describe('console widget', () => {
         expect(document.copied).toMatch(/-X GET/);
       });
       test('includes the url', () => {
-        expect(document.copied).toMatch(/"localhost:9200\/_cat\/health\?v"/);
+        expect(document.copied).toMatch(/"localhost:9200\/_cat\/health\?v&pretty"/);
       });
     });
 
@@ -75,12 +88,13 @@ describe('console widget', () => {
           "message" : "trying out Elasticsearch"
       }
     `
+
     pageWithConsole('a snippet with a body', withBody, () => {
       test('includes the method', () => {
         expect(document.copied).toMatch(/-X PUT/);
       });
       test('includes the url', () => {
-        expect(document.copied).toMatch(/"localhost:9200\/twitter\/_doc\/1"/);
+        expect(document.copied).toMatch(/"localhost:9200\/twitter\/_doc\/1\?pretty"/);
       });
       test('includes the body', () => {
         expect(document.copied).toEqual(expect.stringContaining(dedent `
@@ -110,7 +124,7 @@ function describeInitHeaders(name, guideBody, onThisPageAssertions) {
       `;
 
       const rightCol = jQuery('#right_col');
-      docs.init_headers(rightCol, LangStrings);
+      init_headers(rightCol, LangStrings);
     });
 
     describe('the "On This Page" section', () => {
@@ -193,7 +207,7 @@ describe("Open current TOC", () => {
       </div>
     `;
 
-    docs.open_current("/guide/blocks.html");
+    utils.open_current("/guide/blocks.html");
   });
 
   test("It adds the current_page class to the correct element", () => {

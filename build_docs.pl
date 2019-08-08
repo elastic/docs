@@ -40,7 +40,6 @@ use ES::Util qw(
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
-use Browser::Open qw(open_browser);
 use Sys::Hostname;
 
 use ES::BranchTracker();
@@ -55,13 +54,10 @@ GetOptions($Opts, @{ command_line_opts() }) || exit usage();
 check_opts();
 
 our $Conf = LoadFile(pick_conf());
-# The script supports running outside of docker, in any docker container *and*
-# running in a docker container that we maintain. If we run in a docker
-# container that we maintain then the script will change how it functions
-# to support all of its command line arguments properly. At some point we
-# will drop support for running outside of our docker image and this will
-# always be true, but we aren't there yet.
-our $running_in_standard_docker = $Opts->{in_standard_docker};
+# We no longer support running outside of our "standard" docker container.
+# `build_docs` signals to us that it is in the standard docker container by
+# passing this argument.
+die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_standard_docker};
 
 init_env();
 
@@ -98,8 +94,20 @@ sub build_local {
 
     _guess_opts_from_file($index);
 
-    if ( $Opts->{asciidoctor} && !$running_in_standard_docker ) {
-        die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
+    my @alternatives;
+    if ( $Opts->{alternatives} ) {
+        die '--alternatives requires --asciidoctor' unless $Opts->{asciidoctor};
+        for ( @{ $Opts->{alternatives} } ) {
+            my @parts = split /:/;
+            unless (scalar @parts == 3) {
+                die "alternatives must contain exactly two :s but was [$_]";
+            }
+            push @alternatives, {
+                source_lang => $parts[0],
+                alternative_lang => $parts[1],
+                dir => $parts[2],
+            };
+        }
     }
 
     build_docs_js();
@@ -109,12 +117,14 @@ sub build_local {
         $dir->rmtree;
         $dir->mkpath;
         build_single( $index, $dir, %$Opts,
-                latest => $latest
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
     else {
         build_chunked( $index, $dir, %$Opts,
-                latest => $latest
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
 
@@ -457,7 +467,7 @@ sub init_dirs {
     $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
-    my $temp_dir = $running_in_standard_docker ? dir('/tmp/docsbuild') : $repos_dir->subdir('.temp');
+    my $temp_dir = dir('/tmp/docsbuild');
     $temp_dir = $temp_dir->absolute;
     $temp_dir->rmtree;
     $temp_dir->mkpath;
@@ -569,8 +579,6 @@ sub init_repos {
 sub preview {
 #===================================
     die "--target_repo is required with --preview" unless $Opts->{target_repo};
-    die "--preview is only supported by build_docs and not by build_docs.pl"
-        unless $running_in_standard_docker;
 
     my $nginx_config = file('/tmp/nginx.conf');
     write_nginx_preview_config( $nginx_config );
@@ -652,101 +660,96 @@ sub init_env {
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
 
-    if ( $running_in_standard_docker ) {
-        if (exists $ENV{SSH_AUTH_SOCK}
-                && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
-            print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
-            while (<>) {
-                # Read from stdin waiting for the signal that we're ready. We
-                # use stdin here because it prevents us from leaving the docker
-                # container running if something goes wrong with the forwarding
-                # process. The mechanism of action is that when something goes
-                # wrong build_docs will die, closing stdin. That will cause us
-                # to drop out of this loop and cause the process to terminate.
-                last if ($_ eq "ready\n");
-            }
-            die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
-            print "Found ssh auth\n";
+    if (exists $ENV{SSH_AUTH_SOCK}
+            && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
+        print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
+        while (<>) {
+            # Read from stdin waiting for the signal that we're ready. We
+            # use stdin here because it prevents us from leaving the docker
+            # container running if something goes wrong with the forwarding
+            # process. The mechanism of action is that when something goes
+            # wrong build_docs will die, closing stdin. That will cause us
+            # to drop out of this loop and cause the process to terminate.
+            last if ($_ eq "ready\n");
         }
+        die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
+        print "Found ssh auth\n";
+    }
 
-        if ( $Opts->{preview} ) {
-            # `--preview` is run in k8s it doesn't *want* a tty
-            # so it should avoid doing housekeeping below.
-            return;
-        }
+    if ( $Opts->{preview} ) {
+        # `--preview` is run in k8s it doesn't *want* a tty
+        # so it should avoid doing housekeeping below.
+        return;
+    }
 
-        # If we're in docker we're relying on closing stdin to cause an orderly
-        # shutdown because it is really the only way for us to know for sure
-        # that the python build_docs process thats on the host is dead.
-        # Since perl's threads are "not recommended" we fork early in the run
-        # process and have the parent synchronously wait read from stdin. A few
-        # things can happen here and each has a comment below:
-        if ( my $child_pid = fork ) {
-            $SIG{CHLD} = sub {
-                # The child process exits so we should exit with whatever
-                # exit code it gave us. This can also come about because the
-                # child process is killed.
-                use POSIX ":sys_wait_h";
-                my $child_status = 'missing';
-                while ((my $child = waitpid(-1, WNOHANG)) > 0) {
-                    my $status = $? >> 8;
-                    if ( $child == $child_pid ) {
-                        $child_status = $status;
-                    } else {
-                        # Some other subprocess died on us. The calling code
-                        # will handle it.
-                    }
+    # If we're in docker we're relying on closing stdin to cause an orderly
+    # shutdown because it is really the only way for us to know for sure
+    # that the python build_docs process thats on the host is dead.
+    # Since perl's threads are "not recommended" we fork early in the run
+    # process and have the parent synchronously wait read from stdin. A few
+    # things can happen here and each has a comment below:
+    if ( my $child_pid = fork ) {
+        $SIG{CHLD} = sub {
+            # The child process exits so we should exit with whatever
+            # exit code it gave us. This can also come about because the
+            # child process is killed.
+            use POSIX ":sys_wait_h";
+            my $child_status = 'missing';
+            while ((my $child = waitpid(-1, WNOHANG)) > 0) {
+                my $status = $? >> 8;
+                if ( $child == $child_pid ) {
+                    $child_status = $status;
+                } else {
+                    # Some other subprocess died on us. The calling code
+                    # will handle it.
                 }
-                exit $child_status unless ( $child_status eq 'missing');
-            };
-            $SIG{INT} = sub {
-                # We're interrupted. This'll happen if we somehow end up in
-                # the foreground. It isn't likely, but if it does happen we
-                # should interrupt the child just in case it wasn't already
-                # interrupted and then exit with whatever code the child exits
-                # with.
-                kill 'INT', $child_pid;
-                wait;
-                exit $? >> 8;
-            };
-            $SIG{TERM} = sub {
-                # We're terminated. We should pass on the love to the
-                # child process and return its exit code.
-                kill 'TERM', $child_pid;
-                wait;
-                exit $? >> 8;
-            };
-            while (<>) {}
-            # STDIN is closed. This'll happen if the python build_docs process
-            # on the host dies for some reason. When the host process dies we
-            # should do our best to die too so the docker container exits and
-            # is removed. We do that by interrupting the child and exiting with
-            # whatever exit code it exits with.
+            }
+            exit $child_status unless ( $child_status eq 'missing');
+        };
+        $SIG{INT} = sub {
+            # We're interrupted. This'll happen if we somehow end up in
+            # the foreground. It isn't likely, but if it does happen we
+            # should interrupt the child just in case it wasn't already
+            # interrupted and then exit with whatever code the child exits
+            # with.
+            kill 'INT', $child_pid;
+            wait;
+            exit $? >> 8;
+        };
+        $SIG{TERM} = sub {
+            # We're terminated. We should pass on the love to the
+            # child process and return its exit code.
             kill 'TERM', $child_pid;
             wait;
             exit $? >> 8;
-        }
-
-        # If we're running in docker then we won't have a useful username
-        # so we hack one into place with nss wrapper.
-        open(my $override, '>', '/tmp/passwd')
-            or dir("Couldn't write override user file");
-        # We use the `id` command here because it fetches the id. The native
-        # perl way to do this (getpwuid($<)) doesn't work because it needs a
-        # complete user. And we *aren't* one.
-        my $uid = `id -u`;
-        my $gid = `id -g`;
-        chomp($uid);
-        chomp($gid);
-        print $override "docker:x:$uid:$gid:docker:/tmp:/bin/bash\n";
-        close $override;
-        $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
-        $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
-        $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
+        };
+        while (<>) {}
+        # STDIN is closed. This'll happen if the python build_docs process
+        # on the host dies for some reason. When the host process dies we
+        # should do our best to die too so the docker container exits and
+        # is removed. We do that by interrupting the child and exiting with
+        # whatever exit code it exits with.
+        kill 'TERM', $child_pid;
+        wait;
+        exit $? >> 8;
     }
 
-    eval { run( 'xsltproc', '--version' ) }
-        or die "Please install <xsltproc>";
+    # If we're running in docker then we won't have a useful username
+    # so we hack one into place with nss wrapper.
+    open(my $override, '>', '/tmp/passwd')
+        or dir("Couldn't write override user file");
+    # We use the `id` command here because it fetches the id. The native
+    # perl way to do this (getpwuid($<)) doesn't work because it needs a
+    # complete user. And we *aren't* one.
+    my $uid = `id -u`;
+    my $gid = `id -g`;
+    chomp($uid);
+    chomp($gid);
+    print $override "docker:x:$uid:$gid:docker:/tmp:/bin/bash\n";
+    close $override;
+    $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
+    $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
+    $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
 }
 
 #===================================
@@ -777,33 +780,17 @@ sub serve_and_open_browser {
             kill 'TERM', $pid;
         };
         $SIG{TERM} = $SIG{INT};
-        if ( not $running_in_standard_docker ) {
-            sleep 1;
-            say "Press Ctrl-C to exit the web server";
-            open_browser("http://localhost:8000/");
-        }
 
         wait;
         say 'Terminated preview services';
         exit;
     }
     else {
-        if ( $running_in_standard_docker ) {
-            # We use nginx to serve files instead of the python built in web server
-            # when we're running inside docker because the python web server performs
-            # badly there. nginx is fine.
-            my $nginx_config = file('/tmp/nginx.conf');
-            write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            exec( qw(nginx -c), $nginx_config );
-        } else {
-            my $http = dir( 'resources', 'http.py' )->absolute;
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            chdir $docs_dir;
-            exec( $http '8000' );
-        }
+        my $nginx_config = file('/tmp/nginx.conf');
+        write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
+        close STDIN;
+        open( STDIN, "</dev/null" );
+        exec( qw(nginx -c), $nginx_config );
     }
 }
 
@@ -813,6 +800,7 @@ sub command_line_opts {
     return [
         # Options only compatible with --doc
         'doc=s',
+        'alternatives=s@',
         'asciidoctor',
         'chunk=i',
         'lang=s',
@@ -851,16 +839,17 @@ sub command_line_opts {
 #===================================
 sub usage {
 #===================================
-    my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
     say <<USAGE;
 
     Build local docs:
 
-        $name --doc path/to/index.asciidoc [opts]
+        build_docs --doc path/to/index.asciidoc [opts]
 
         Opts:
           --asciidoctor     Use asciidoctor instead of asciidoc.
           --chunk 1         Also chunk sections into separate files
+          --alternatives <source_lang>:<alternative_lang>:<dir>
+                            Examples in alternative languages.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
@@ -878,7 +867,7 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        $name --all --target_repo <target> [opts]
+        build_docs --all --target_repo <target> [opts]
 
         Opts:
           --keep_hash       Build docs from the same commit hash as last time
@@ -909,34 +898,30 @@ sub usage {
                             to 3
           --verbose         Output more logs
 
-USAGE
-    if ( $Opts->{in_standard_docker} ) {
-        say <<USAGE;
     Self Test:
 
-        $name --self-test <args to pass to make>
+        build_docs --self-test <args to pass to make>
 
     `--self-test` is a wrapper around `make` which is used exclusively for
     testing. Like `make`, the current directory selects the `Makefile` and
     you can make specific targets. Some examples:
 
     Execute all tests:
-        $name --self-test
+        build_docs --self-test
 
     Execute all of the tests for our extensions to Asciidoctor:
-        $name --self-test -C resources/asciidoctor
+        build_docs --self-test -C resources/asciidoctor
 
     Run rubocop on our extensions to Asciidoctor:
-        $name --self-test -C resources/asciidoctor rubocop
-
+        build_docs --self-test -C resources/asciidoctor rubocop
 USAGE
-    }
 }
 
 #===================================
 sub check_opts {
 #===================================
     if ( !$Opts->{doc} ) {
+        die('--alternatives only compatible with --doc') if $Opts->{alternatives};
         die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
