@@ -351,6 +351,21 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'when there is a NODE_NAME in the environment' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'repo', 'Some text.'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      dest.prepare_convert_all(src.conf)
+          .node_name('my-node-name')
+          .convert
+    end
+    let(:commit_info) { @dest.commit_info }
+    it 'adds the NODE_NAME to the commit message' do
+      expect(commit_info).to include('my-node-name')
+    end
+  end
+
   context "when the index for the book isn't in the repo" do
     convert_before do |src, dest|
       repo = src.repo_with_index 'src', 'words'

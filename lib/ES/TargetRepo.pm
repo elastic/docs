@@ -124,7 +124,11 @@ sub commit {
     local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
 
     run qw(git add -A);
-    run qw(git commit -m), 'Updated docs';
+    my $commit_msg = 'Updated docs';
+    if ( $ENV{NODE_NAME} ) {
+        $commit_msg .= "\n\nBuilt on $ENV{NODE_NAME}";
+    }
+    run qw(git commit -m), $commit_msg;
 }
 
 #===================================

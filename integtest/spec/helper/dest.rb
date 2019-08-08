@@ -78,6 +78,14 @@ class Dest
   end
 
   ##
+  # Executes `git show`.
+  def commit_info
+    Dir.chdir bare_repo do
+      sh 'git show'
+    end
+  end
+
+  ##
   # Start the preview service.
   def start_preview
     Preview.new(bare_repo)
@@ -100,11 +108,11 @@ class Dest
     @bare_dest
   end
 
-  def run_convert(cmd, expect_failure)
+  def run_convert(env, cmd, expect_failure)
     cmd.unshift '/docs_build/build_docs.pl', '--in_standard_docker'
     # Use popen here instead of capture to keep stdin open to appease the
     # docker-image-always-removed paranoia in build_docs.pl
-    _stdin, out, wait_thr = Open3.popen2e(*cmd)
+    _stdin, out, wait_thr = Open3.popen2e(env, *cmd)
     status = wait_thr.value
     out = out.read
     ok = status.success?
@@ -122,17 +130,29 @@ class Dest
   end
 
   class CmdBuilder
+    def initialize
+      @env = {}
+    end
+
     def open
+      raise 'env unsupported' unless @env.empty?
+
       @dest.run_convert_and_open @cmd
     end
 
+    def node_name(node_name)
+      @env['NODE_NAME'] = node_name
+      self
+    end
+
     def convert(expect_failure: false)
-      @dest.run_convert @cmd, expect_failure
+      @dest.run_convert @env, @cmd, expect_failure
     end
   end
 
   class ConvertSingle < CmdBuilder
     def initialize(from, to, dest)
+      super()
       @cmd = %W[
         --doc #{from}
         --out #{dest.path(to)}
@@ -158,6 +178,7 @@ class Dest
 
   class ConvertAll < CmdBuilder
     def initialize(conf, target_repo, dest)
+      super()
       @cmd = %W[
         --all
         --push
