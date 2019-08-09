@@ -580,6 +580,7 @@ http {
   error_log /dev/stdout crit;
   log_format short '[\$time_local] "\$request" \$status';
   access_log /dev/stdout short;
+
   server {
     listen 8000;
     $web_conf
