@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 
 # Build the docs with docker!
 #
@@ -77,6 +78,42 @@ def build_docker_image():
             for line in acc:
                 docker_logger.error(line)
             raise subprocess.CalledProcessError(build.returncode, cmd)
+
+
+class OpenBrowserState:
+    def __init__(self):
+        self.need_nginx = True
+        self.need_parcel = False
+        self.opened = False
+
+    def building_single_book(self):
+        """
+        If we're building a single book we need to wait for Parcel to finish
+        building the CSS and JS for the first time so we can be sure its server
+        is up and running. If we're building all books we run parcel as part
+        of the build before starting nginx so we don't have to wait for it.
+        """
+        self.need_parcel = True
+
+    def on_line(self, line):
+        if self.opened:
+            return
+        if 'start worker processes' in line:
+            # Wait for nginx or nothing will be listening
+            self.need_nginx = False
+        if '✨  Built in ' in line:
+            # Wait for parcel to finish building for the first time or the
+            # server might not yet be up and nginx will fail to proxy to it.
+            self.need_parcel = False
+        if not self.need_nginx and not self.need_parcel:
+            if platform == "darwin" and 'BROWSER' not in environ:
+                # On mac webbrowser seeem to want to default to safari which
+                # is weird. If we tell it that the browser's name is `open`
+                # we'll get whatever the user set as their default browser.
+                environ['BROWSER'] = 'open'
+            webbrowser.open('http://localhost:8000/guide',
+                            new=1, autoraise=False)
+            self.opened = True
 
 
 def run_build_docs(args):
@@ -187,7 +224,8 @@ def run_build_docs(args):
             saw_doc = True
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
-            open_browser = True
+            docker_args.extend(['--publish', '8001:8001/tcp'])
+            open_browser = OpenBrowserState()
         elif arg == '--out':
             out_dir = realpath(args.next_arg_or_err())
             docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
@@ -249,16 +287,14 @@ def run_build_docs(args):
     # stdin close which it will use as a signal to die.
     docker_run = common_popen(cmd, subprocess.PIPE)
 
+    if open_browser and saw_doc:
+        print("waiting on parcel")
+        open_browser.building_single_book()
+
     def handle_line(line):
         logger.info(line)
-        if open_browser and 'start worker processes' in line:
-            if platform == "darwin" and 'BROWSER' not in environ:
-                # On mac webbrowser seeem to want to default to safari which
-                # is weird. If we tell it that the browser's name is `open`
-                # we'll get whatever the user set as their default browser.
-                environ['BROWSER'] = 'open'
-            webbrowser.open('http://localhost:8000/guide',
-                            new=1, autoraise=False)
+        if open_browser:
+            open_browser.on_line(line)
         if 'Bind for 0.0.0.0:8000 failed: port is already allocated.' in line:
             logger.error('Another process has port 8000. Is there already a '
                          'docs build running with --open?')

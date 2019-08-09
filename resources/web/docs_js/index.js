@@ -194,4 +194,11 @@ $(function() {
   } else {
     init_toc(LangStrings);
   }
+
+  // Setup hot module replacement for css if we're in dev mode.
+  if (module.hot) {
+    var hotcss = document.createElement('script');
+    hotcss.setAttribute('src', '/guide/static/styles.js');
+    document.head.appendChild(hotcss);
+  }
 });
