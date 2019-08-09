@@ -201,4 +201,6 @@ $(function() {
     hotcss.setAttribute('src', '/guide/static/styles.js');
     document.head.appendChild(hotcss);
   }
+
+  // Test comment used to detect unminifed JS in tests
 });

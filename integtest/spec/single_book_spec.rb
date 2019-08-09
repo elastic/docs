@@ -457,7 +457,7 @@ RSpec.describe 'building a single book' do
     context 'the js' do
       it 'is unminified' do
         expect(js).to serve(include(<<~JS))
-          // Main function, runs on DOM ready
+          // Test comment used to detect unminifed JS in tests
         JS
       end
       it 'include hot module replacement for the css' do
@@ -468,9 +468,7 @@ RSpec.describe 'building a single book' do
     end
     it 'serves the css unminified' do
       expect(css).to serve(include(<<~CSS))
-        * {
-          font-family: Inter, sans-serif;
-        }
+        /* test comment used to detect unminified source */
       CSS
     end
   end
