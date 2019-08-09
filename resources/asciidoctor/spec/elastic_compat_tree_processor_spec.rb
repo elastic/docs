@@ -15,63 +15,35 @@ RSpec.describe ElasticCompatTreeProcessor do
     Asciidoctor::Extensions.unregister_all
   end
 
-  it "fixes up asciidoc style listings" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      ["source","java",subs="attributes,callouts,macros"]
-      --------------------------------------------------
-      long count = response.count(); <1>
-      List<CategoryDefinition> categories = response.categories(); <2>
-      --------------------------------------------------
-      <1> The count of categories that were matched
-      <2> The categories retrieved
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">long count = response.count(); <co id="CO1-1"/>
-      List&lt;CategoryDefinition&gt; categories = response.categories(); <co id="CO1-2"/></programlisting>
-      <calloutlist>
-      <callout arearefs="CO1-1">
-      <para>The count of categories that were matched</para>
-      </callout>
-      <callout arearefs="CO1-2">
-      <para>The categories retrieved</para>
-      </callout>
-      </calloutlist>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  include_context 'convert without logs'
+
+  context 'when there are listings with `specialcharacters`' do
+    let(:input) do
+      <<~ASCIIDOC
+        ["source","java",subs="attributes,callouts,macros"]
+        --------------------------------------------------
+        List<CategoryDefinition> categories = response.categories();
+        --------------------------------------------------
+      ASCIIDOC
+    end
+    it 'processes specialcharacters anyway' do
+      expect(converted).to include('List&lt;CategoryDefinition&gt; categories')
+    end
   end
 
-  it "doesn't mind missing definitions" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      `thing1`::
+  context 'when there is a definition list without a definition' do
+    let(:input) do
+      <<~ASCIIDOC
+        `thing1`::
 
-        def1
+          def1
 
-      `thing2`::
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <variablelist>
-      <varlistentry>
-      <term><literal>thing1</literal></term>
-      <listitem>
-      <simpara>def1</simpara>
-      </listitem>
-      </varlistentry>
-      <varlistentry>
-      <term><literal>thing2</literal></term>
-      <listitem>
-      </listitem>
-      </varlistentry>
-      </variablelist>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        `thing2`::
+      ASCIIDOC
+    end
+    it 'successfully converts the text anyway' do
+      expect(converted).to include('<term><literal>thing2</literal></term>')
+    end
   end
 
   shared_examples 'snippet language' do |override, lang|
@@ -96,8 +68,8 @@ RSpec.describe ElasticCompatTreeProcessor do
         end
       end
       context 'when it is alone' do
-        let(:converted) do
-          convert <<~ASCIIDOC
+        let(:input) do
+          <<~ASCIIDOC
             == Example
             #{snippet}
           ASCIIDOC
@@ -105,8 +77,8 @@ RSpec.describe ElasticCompatTreeProcessor do
         include_examples 'has the expected language'
       end
       context 'when it is followed by a paragraph' do
-        let(:converted) do
-          convert <<~ASCIIDOC
+        let(:input) do
+          <<~ASCIIDOC
             == Example
             #{snippet}
 
@@ -114,13 +86,13 @@ RSpec.describe ElasticCompatTreeProcessor do
           ASCIIDOC
         end
         include_examples 'has the expected language'
-        it "the paragraph is intact" do
+        it 'the paragraph is intact' do
           expect(converted).to match(%r{<simpara>Words words words.</simpara>})
         end
       end
       context 'when it is inside a definition list' do
-        let(:converted) do
-          convert <<~ASCIIDOC
+        let(:input) do
+          <<~ASCIIDOC
             == Example
             Term::
             Definition
@@ -133,15 +105,15 @@ RSpec.describe ElasticCompatTreeProcessor do
         include_examples 'has the expected language'
       end
       context 'when it is followed by a callout list' do
-        let(:converted) do
-          convert <<~ASCIIDOC
+        let(:input) do
+          <<~ASCIIDOC
             == Example
             #{snippet}
             <1> foo
           ASCIIDOC
         end
         include_examples 'has the expected language'
-        it "has a working callout list" do
+        it 'has a working callout list' do
           expect(converted).to match(/<callout arearefs="CO1-1">\n<para>foo/)
         end
       end

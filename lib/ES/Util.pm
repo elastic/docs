@@ -23,6 +23,8 @@ our @EXPORT_OK = qw(
     write_html_redirect
     write_nginx_redirects
     write_nginx_test_config
+    write_nginx_preview_config
+    build_docs_js
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -47,6 +49,8 @@ sub build_chunked {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
+    my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
+    my $alternatives = $opts{alternatives} || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -96,7 +100,7 @@ sub build_chunked {
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
-                $private ? () : ( '-a' => "edit_urls=" .
+                $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                     edit_urls_for_asciidoctor($edit_urls) ),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
@@ -106,6 +110,11 @@ sub build_chunked {
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
+                $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
+                @{ $alternatives } ? (
+                    '-a' => _format_alternatives($alternatives),
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                ) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
                 $index
@@ -187,6 +196,8 @@ sub build_single {
     my $page_header = custom_header($index) || $opts{page_header} || '';
     my $asciidoctor = $opts{asciidoctor} || 0;
     my $latest    = $opts{latest};
+    my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
+    my $alternatives = $opts{alternatives} || [];
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -230,13 +241,18 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
-                $private ? () : ( '-a' => "edit_urls=" .
+                $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
                 '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
+                $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
+                @{ $alternatives } ? (
+                    '-a' => _format_alternatives($alternatives),
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
@@ -465,6 +481,17 @@ sub edit_urls_for_asciidoctor {
     return join("\n", map { "$_,$edit_urls->{$_}" } keys %{$edit_urls});
 }
 
+#===================================
+sub _format_alternatives {
+#===================================
+    my $alternatives = shift;
+
+    # We'd be better off using a csv library for this but it'll be ok for now.
+    return 'alternative_language_lookups=' . join(
+        "\n",
+        map { $_->{source_lang} . ',' . $_->{alternative_lang} . ',' . $_->{dir} } @{ $alternatives }
+    );
+}
 
 #===================================
 sub write_html_redirect {
@@ -560,8 +587,72 @@ http {
     rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
-    set \$guide_root "http://localhost:8000/guide";
     $redirects_line
+  }
+}
+CONF
+    $dest->spew( iomode => '>:utf8', $nginx_conf );
+}
+
+#===================================
+# Build an nginx config file useful for serving a preview of all built docs.
+#
+# dest            - file to which to write the test config : Path::Class::file
+#===================================
+sub write_nginx_preview_config {
+#===================================
+    my ( $dest ) = @_;
+
+    # TODO pull redirects from branches
+
+    # We log the X-Opaque-Id which is a header that Elasticsearch uses to mark
+    # requests with an id that is opaque to Elasticsearch. Presumably this is
+    # a standard. Either way we follow along. We use it in our tests so we can
+    # figure out which request came from which test. That is the only reason
+    # we *need* it right now. Presumably we'll find some other use for it later
+    # though. Think of it as a distributed trace id.
+    my $nginx_conf = <<"CONF";
+daemon off;
+error_log /dev/stdout info;
+pid /run/nginx/nginx.pid;
+
+events {
+  worker_connections 64;
+}
+
+http {
+  error_log /dev/stdout crit;
+  log_format short '\$http_x_opaque_id \$http_host \$request \$status';
+  access_log /dev/stdout short;
+
+  server {
+    listen 8000;
+    location = /robots.txt {
+      return 200 "User-agent: *\nDisallow: /\n";
+    }
+    location ~/(guide|diff) {
+      proxy_pass http://0.0.0.0:3000;
+      proxy_http_version 1.1;
+      proxy_set_header Host \$host;
+      proxy_cache_bypass \$http_upgrade;
+      proxy_buffering off;
+      gzip on;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      text/html  html;
+      application/javascript  js;
+      text/css   css;
+    }
+    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
+    rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
+    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
+    rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
+    rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
   }
 }
 CONF
@@ -631,6 +722,12 @@ sub timestamp {
     $mon++;
     sprintf "%04d-%02d-%02dT%02d:%02d:%02d+00:00", $year, $mon, $mday, $hour,
         $min, $sec;
+}
+
+#===================================
+sub build_docs_js {
+#===================================
+    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js', '--experimental-scope-hoisting';
 }
 
 1

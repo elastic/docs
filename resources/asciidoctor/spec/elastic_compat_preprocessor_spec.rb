@@ -61,13 +61,15 @@ RSpec.describe ElasticCompatPreprocessor do
       context 'when the admonition has a `]` in it' do
         let(:invocation_text) { 'link:link.html[Title]' }
         let(:input) { invocation_with_text }
-        include_examples 'invokes the block macro'
         let(:expected) do
           <<~DOCBOOK
             <#{tag_start}>
             <simpara><ulink url="link.html">Title</ulink></simpara>
             </#{tag_end}>
           DOCBOOK
+        end
+        it 'invokes the block macro' do
+          expect(converted).to include(expected)
         end
       end
 
@@ -76,15 +78,15 @@ RSpec.describe ElasticCompatPreprocessor do
           expect(converted).to include("<phrase #{phrase}/>")
         end
       end
-      context "when the admonition is surrounded by other text" do
+      context 'when the admonition is surrounded by other text' do
         let(:input) { "words #{invocation} words" }
         include_examples 'invokes the inline macro'
       end
-      context "when the admonition has text before it" do
+      context 'when the admonition has text before it' do
         let(:input) { "words #{invocation}" }
         include_examples 'invokes the inline macro'
       end
-      context "when the admonition has text after it" do
+      context 'when the admonition has text after it' do
         let(:input) { "#{invocation} words" }
         include_examples 'invokes the inline macro'
       end
@@ -156,243 +158,218 @@ RSpec.describe ElasticCompatPreprocessor do
     end
   end
 
-  it "invokes include-tagged::" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      [source,java]
-      ----
-      include-tagged::resources/elastic_include_tagged/Example.java[t1]
-      ----
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">System.err.println("I'm an example");
-      for (int i = 0; i &lt; 10; i++) {
-          System.err.println(i); <co id="CO1-1"/>
-      }</programlisting>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context 'when the document contains include-tagged::' do
+    # include-tagged:: was a macro we built for AsciiDoc for tagged includes
+    # from files. It doesn't have exactly the same form as the include directive
+    # that we use with asciidoctor so the processor morphs it.
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        [source,java]
+        ----
+        include-tagged::resources/elastic_include_tagged/Example.java[t1]
+        ----
+      ASCIIDOC
+    end
+    it 'it includes the tagged portion of the file' do
+      expect(converted).to include(<<~JAVA.strip)
+        System.err.println("I'm an example");
+        for (int i = 0; i &lt; 10; i++) {
+            System.err.println(i); <co id="CO1-1"/>
+        }
+      JAVA
+    end
   end
 
-  it "un-blocks blocks containing only attributes" do
-    actual = convert <<~ASCIIDOC
-      :inheader: foo
+  context 'when the document a block containing only attributes' do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        :inheader: foo
 
-      = Test
+        = Test
 
-      --
-      :outheader: bar
-      --
+        --
+        :outheader: bar
+        --
 
-      [id="{inheader}-{outheader}"]
-      == Header
+        [id="{inheader}-{outheader}"]
+        == Header
 
-      <<{inheader}-{outheader}>>
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="foo-bar">
-      <title>Header</title>
-      <simpara><xref linkend="foo-bar"/></simpara>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        <<{inheader}-{outheader}>>
+      ASCIIDOC
+    end
+    it 'uses the attributes for the header' do
+      expect(converted).to include('<chapter id="foo-bar">')
+    end
+    it 'uses the attributes outside of the header' do
+      expect(converted).to include('<xref linkend="foo-bar"/>')
+    end
+    context 'when it is followed by other complex processing' do
+      let(:input) do
+        <<~ASCIIDOC
+          :inheader: foo
+
+          = Test
+
+          --
+          :outheader: bar
+          --
+
+          == Header
+          added[some_version]
+        ASCIIDOC
+      end
+      it 'the processing works as expected' do
+        expect(converted).to include(<<~ASCIIDOC.strip)
+          <note revisionflag="added" revision="some_version">
+        ASCIIDOC
+      end
+    end
   end
 
-  it "attribute only blocks don't break further processing" do
-    actual = convert <<~ASCIIDOC
-      :inheader: foo
+  context 'when a block contains no attributes' do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        == Header
 
-      = Test
+        --
+        added[some_version]
+        --
 
-      --
-      :outheader: bar
-      --
-
-      == Header
-      added[some_version]
-
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_header">
-      <title>Header</title>
-      <note revisionflag="added" revision="some_version">
-      <simpara></simpara>
-      </note>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+      ASCIIDOC
+    end
+    it 'the contents of the block are processed normally' do
+      expect(converted).to include(<<~ASCIIDOC.strip)
+        <note revisionflag="added" revision="some_version">
+      ASCIIDOC
+    end
   end
 
-  it "attribute only blocks don't pick up blocks without attributes" do
-    actual = convert <<~ASCIIDOC
-      == Header
+  context 'when a block contains some attributes and other things' do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        --
+        :attr: test
+        added::[some_version]
+        --
 
-      --
-      added[some_version]
-      --
-
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_header">
-      <title>Header</title>
-      <note revisionflag="added" revision="some_version">
-      <simpara></simpara>
-      </note>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+        {attr}
+      ASCIIDOC
+    end
+    it "doesn't remove the block" do
+      # The point here is that the attribute setting *doesn't* apply to the
+      # text because we haven't doctored the block.
+      expect(converted).to include('<simpara>{attr}</simpara>')
+    end
   end
 
-  it "attribute only blocks don't pick up blocks with attributes and other stuff" do
-    actual = convert <<~ASCIIDOC
-      == Header
+  context "when a source block doesn't have callouts" do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        == Example
+        ["source","sh",subs="attributes"]
+        --------------------------------------------
+        cd elasticsearch-{version}/ <1>
+        --------------------------------------------
+        <1> This directory is known as `$ES_HOME`.
+      ASCIIDOC
+    end
+    it 'processes callouts anyway' do
+      expect(converted).to include(<<~ASCIIDOC.strip)
+        cd elasticsearch-{version}/ <co id="CO1-1"/>
+      ASCIIDOC
+    end
+    context 'when the block is skipped' do
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
 
-      --
-      :attr: test
-      added[some_version]
-      --
+          ifeval::["true" == "false"]
+          ["source","sh",subs="attributes"]
+          --------------------------------------------
+          cd elasticsearch-{version}/ <1>
+          --------------------------------------------
+          <1> This directory is known as `$ES_HOME`.
+          endif::[]
+        ASCIIDOC
+      end
+      it 'skips the block' do
+        expect(converted).to eq(<<~DOCBOOK.strip)
+          <chapter id="_example">
+          <title>Example</title>
 
-      [id="{attr}"]
-      == Header
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_header">
-      <title>Header</title>
-      <note revisionflag="added" revision="some_version">
-      <simpara></simpara>
-      </note>
-      </chapter>
-      <chapter id="test">
-      <title>Header</title>
-
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+          </chapter>
+        DOCBOOK
+      end
+    end
   end
 
-  it "adds callouts to substitutions for source blocks if there aren't any" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      ["source","sh",subs="attributes"]
-      --------------------------------------------
-      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
-      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
-      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
-      unzip elasticsearch-{version}.zip
-      cd elasticsearch-{version}/ <2>
-      --------------------------------------------
-      <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
-          `elasticsearch-{version}.zip: OK`.
-      <2> This directory is known as `$ES_HOME`.
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="sh" linenumbering="unnumbered">wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
-      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
-      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <co id="CO1-1"/>
-      unzip elasticsearch-{version}.zip
-      cd elasticsearch-{version}/ <co id="CO1-2"/></programlisting>
-      <calloutlist>
-      <callout arearefs="CO1-1">
-      <para>Compares the SHA of the downloaded <literal>.zip</literal> archive and the published checksum, which should output
-      <literal>elasticsearch-{version}.zip: OK</literal>.</para>
-      </callout>
-      <callout arearefs="CO1-2">
-      <para>This directory is known as <literal>$ES_HOME</literal>.</para>
-      </callout>
-      </calloutlist>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context 'when there is a code block with a mismatched start and end' do
+    include_context 'convert with logs'
+    let(:input) do
+      <<~ASCIIDOC
+        ----
+        foo
+        --------
+      ASCIIDOC
+    end
+    it 'renders the code block' do
+      expect(converted).to include('<screen>foo</screen>')
+    end
+    it 'logs a migration warning' do
+      expect(logs).to eq(<<~LOGS.strip)
+        WARN: <stdin>: line 3: MIGRATION: code block end doesn't match start
+      LOGS
+    end
+    context 'when the block is skipped' do
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          ifeval::["true" == "false"]
+          ----
+          foo
+          --------
+          endif::[]
+        ASCIIDOC
+      end
+      it 'skips the block' do
+        expect(converted).to eq(<<~DOCBOOK.strip)
+          <chapter id="_example">
+          <title>Example</title>
+
+          </chapter>
+        DOCBOOK
+      end
+      it "doesn't log anything" do
+        expect(logs).to eq('')
+      end
+    end
   end
 
-  it "doesn't mind skipped source blocks that are missing callouts" do
-    actual = convert <<~ASCIIDOC
-      == Example
-
-      ifeval::["true" == "false"]
-      ["source","sh",subs="attributes"]
-      --------------------------------------------
-      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip
-      wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{version}.zip.sha512
-      shasum -a 512 -c elasticsearch-{version}.zip.sha512 <1>
-      unzip elasticsearch-{version}.zip
-      cd elasticsearch-{version}/ <2>
-      --------------------------------------------
-      <1> Compares the SHA of the downloaded `.zip` archive and the published checksum, which should output
-          `elasticsearch-{version}.zip: OK`.
-      <2> This directory is known as `$ES_HOME`.
-      endif::[]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
-  end
-
-  it "fixes mismatched fencing on code blocks" do
-    input = <<~ASCIIDOC
-      == Example
-      ----
-      foo
-      --------
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <screen>foo</screen>
-      </chapter>
-    DOCBOOK
-    actual = convert input, {}, match(/WARN: <stdin>: line 4: MIGRATION: code block end doesn't match start/)
-    expect(actual).to eq(expected.strip)
-  end
-
-  it "doesn't doesn't mind skipped mismatched code blocks" do
-    actual = convert <<~ASCIIDOC
-      == Example
-
-      ifeval::["true" == "false"]
-      ----
-      foo
-      --------
-      endif::[]
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
-  end
-
-  it "doesn't break table-style outputs" do
-    actual = convert <<~ASCIIDOC
-      == Example
-      [source,text]
-      --------------------------------------------------
-          author     |     name      |  page_count   | release_date
-      ---------------+---------------+---------------+------------------------
-      Dan Simmons    |Hyperion       |482            |1989-05-26T00:00:00.000Z
-      Frank Herbert  |Dune           |604            |1965-06-01T00:00:00.000Z
-      --------------------------------------------------
-    ASCIIDOC
-    expected = <<~DOCBOOK
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="text" linenumbering="unnumbered">    author     |     name      |  page_count   | release_date
-      ---------------+---------------+---------------+------------------------
-      Dan Simmons    |Hyperion       |482            |1989-05-26T00:00:00.000Z
-      Frank Herbert  |Dune           |604            |1965-06-01T00:00:00.000Z</programlisting>
-      </chapter>
-    DOCBOOK
-    expect(actual).to eq(expected.strip)
+  context 'when a code block contains table-style outputs' do
+    include_context 'convert with logs'
+    let(:table) do
+      <<~TEXT.strip
+            author     |     name      |  page_count   | release_date
+        ---------------+---------------+---------------+------------------------
+        Dan Simmons    |Hyperion       |482            |1989-05-26T00:00:00.000Z
+        Frank Herbert  |Dune           |604            |1965-06-01T00:00:00.000Z
+      TEXT
+    end
+    let(:input) do
+      <<~ASCIIDOC
+        --------------------------------------------------
+        #{table}
+        --------------------------------------------------
+      ASCIIDOC
+    end
+    it 'preservers the table' do
+      expect(converted).to include("<screen>#{table}</screen>")
+    end
   end
 
   shared_context 'general snippet' do |lang, override|
@@ -429,7 +406,7 @@ RSpec.describe ElasticCompatPreprocessor do
       it "has the #{lang} language" do
         expect(converted).to match(has_lang)
       end
-      it "have a link to the snippet" do
+      it 'have a link to the snippet' do
         expect(converted).to match(has_link_to_path)
       end
     end
@@ -476,10 +453,10 @@ RSpec.describe ElasticCompatPreprocessor do
     include_context 'general snippet', 'js', nil
     let(:has_any_link) { /<ulink type="snippet"/ }
 
-    it "has the js language" do
+    it 'has the js language' do
       expect(converted).to match(has_lang)
     end
-    it "not have a link to any snippet" do
+    it 'not have a link to any snippet' do
       expect(converted).not_to match(has_any_link)
     end
   end

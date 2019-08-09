@@ -29,17 +29,17 @@ use ES::Util qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    sha_for
     timestamp
     write_html_redirect
     write_nginx_redirects
     write_nginx_test_config
+    write_nginx_preview_config
+    build_docs_js
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
 use YAML qw(LoadFile);
 use Path::Class qw(dir file);
-use Browser::Open qw(open_browser);
 use Sys::Hostname;
 
 use ES::BranchTracker();
@@ -54,13 +54,10 @@ GetOptions($Opts, @{ command_line_opts() }) || exit usage();
 check_opts();
 
 our $Conf = LoadFile(pick_conf());
-# The script supports running outside of docker, in any docker container *and*
-# running in a docker container that we maintain. If we run in a docker
-# container that we maintain then the script will change how it functions
-# to support all of its command line arguments properly. At some point we
-# will drop support for running outside of our docker image and this will
-# always be true, but we aren't there yet.
-our $running_in_standard_docker = $Opts->{in_standard_docker};
+# We no longer support running outside of our "standard" docker container.
+# `build_docs` signals to us that it is in the standard docker container by
+# passing this argument.
+die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_standard_docker};
 
 init_env();
 
@@ -72,14 +69,16 @@ $Opts->{template} = ES::Template->new(
     abs_urls => $Opts->{doc},
 );
 
-$Opts->{doc}       ? build_local( $Opts->{doc} )
-    : $Opts->{all} ? build_all()
-    :                usage();
+$Opts->{doc}           ? build_local()
+    : $Opts->{all}     ? build_all()
+    : $Opts->{preview} ? preview()
+    :                    usage();
 
 #===================================
 sub build_local {
 #===================================
-    my $doc = shift;
+    my $doc = $Opts->{doc};
+
 
     my $index = file($doc)->absolute($Old_Pwd);
     die "File <$doc> doesn't exist" unless -f $index;
@@ -95,21 +94,37 @@ sub build_local {
 
     _guess_opts_from_file($index);
 
-    if ( $Opts->{asciidoctor} && !$running_in_standard_docker ) {
-        die "--asciidoctor is only supported by build_docs and not by build_docs.pl";
+    my @alternatives;
+    if ( $Opts->{alternatives} ) {
+        die '--alternatives requires --asciidoctor' unless $Opts->{asciidoctor};
+        for ( @{ $Opts->{alternatives} } ) {
+            my @parts = split /:/;
+            unless (scalar @parts == 3) {
+                die "alternatives must contain exactly two :s but was [$_]";
+            }
+            push @alternatives, {
+                source_lang => $parts[0],
+                alternative_lang => $parts[1],
+                dir => $parts[2],
+            };
+        }
     }
+
+    build_docs_js();
 
     my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
         $dir->rmtree;
         $dir->mkpath;
         build_single( $index, $dir, %$Opts,
-                latest => $latest
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
     else {
         build_chunked( $index, $dir, %$Opts,
-                latest => $latest
+                latest       => $latest,
+                alternatives => \@alternatives,
         );
     }
 
@@ -133,19 +148,21 @@ sub _guess_opts_from_file {
 
     my %edit_urls = ();
     my $doc_toplevel = _find_toplevel($index->parent);
-    if ( $doc_toplevel ) {
-        $Opts->{root_dir} = $doc_toplevel;
-        my $edit_url = _guess_edit_url($doc_toplevel);
-        @edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
-    } else {
+    unless ( $doc_toplevel ) {
         $Opts->{root_dir} = $index->parent;
+        # If we can't find the edit url for the document then we're never
+        # going to find it for anyone.
+        return;
     }
+    $Opts->{root_dir} = $doc_toplevel;
+    my $edit_url = _guess_edit_url($doc_toplevel);
+    $edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
     for my $resource ( @{ $Opts->{resource} } ) {
         my $resource_toplevel = _find_toplevel($resource);
         next unless $resource_toplevel;
 
         my $resource_edit_url = _guess_edit_url($resource_toplevel);
-        @edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
+        $edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
     }
     $Opts->{edit_urls} = { %edit_urls };
 }
@@ -206,28 +223,36 @@ sub build_local_pdf {
         say "See: $pdf";
     }
 }
+
 #===================================
 sub build_all {
 #===================================
     die "--target_repo is required with --all" unless ( $Opts->{target_repo} );
 
-    my ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout) = init_repos();
+    my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
+
+    say "Updating repositories";
+    my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+    my $tracker = init_repos(
+            $repos_dir, $temp_dir, $reference_dir, $target_repo );
 
     my $build_dir = $Conf->{paths}{build}
         or die "Missing <paths.build> in config";
-    $build_dir = dir("$target_repo_checkout/$build_dir");
+    $build_dir = $target_repo->destination->subdir( $build_dir );
     $build_dir->mkpath;
 
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
 
     my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
-    my $redirects = dir( $target_repo_checkout )->file( 'redirects.conf' );
+    my $redirects = $target_repo->destination->file( 'redirects.conf' );
 
     if ( $Opts->{linkcheckonly} ){
         say "Skipping documentation builds."
     }
     else {
+        build_docs_js();
+
         say "Building docs";
         build_entries( $build_dir, $temp_dir, $toc, @$contents );
 
@@ -250,7 +275,9 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
-    push_changes($build_dir, $target_repo, $target_repo_checkout) if $Opts->{push};
+    $tracker->prune_out_of_date( @$contents );
+    $tracker->write;
+    push_changes( $build_dir, $target_repo ) if $Opts->{push};
     serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
 
     $temp_dir->rmtree;
@@ -310,21 +337,34 @@ sub check_kibana_links {
     my @branches = sort map { $_->basename }
         grep { $_->is_dir } $build_dir->subdir('en/kibana')->children;
 
+    my $link_check_name = 'link-check-kibana';
+
     for (@branches) {
         $branch = $_;
         next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
         say "  Branch $branch";
+        my $links_file;
         my $source = eval {
-            $repo->show_file( $branch, $src_path . ".js" )
+            $links_file = $src_path . ".js";
+            $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
-            $repo->show_file( $branch, $src_path . ".ts" )
+            $links_file = $src_path . ".ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
-            $repo->show_file( $branch, $legacy_path . ".js" )
-        } ||
-            $repo->show_file( $branch, $legacy_path . ".ts" );
+            $links_file = $legacy_path . ".js";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
+            $links_file = $legacy_path . ".ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        };
+        die "failed to find kibana links file;\n$@" unless $source;
 
         $link_checker->check_source( $source, $extractor,
-            "Kibana [$branch]: $src_path" );
+            "Kibana [$branch]: $links_file" );
+
+        # Mark the file that we need for the link check done so we can use
+        # --keep_hash with it during some other build.
+        $repo->mark_done( $link_check_name, $branch, $links_file, 0 );
     }
 }
 
@@ -416,34 +456,21 @@ ENTRY
 
     say $fh "</urlset>";
     close $fh or die "Couldn't close $sitemap: $!"
-
 }
 
 #===================================
-sub init_repos {
+sub init_dirs {
 #===================================
-    say "Updating repositories";
-
     my $repos_dir = $Conf->{paths}{repos}
         or die "Missing <paths.repos> in config";
 
     $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
-    my %child_dirs = map { $_ => 1 } $repos_dir->children;
-
-    my $temp_dir = $running_in_standard_docker ? dir('/tmp/docsbuild') : $repos_dir->subdir('.temp');
+    my $temp_dir = dir('/tmp/docsbuild');
+    $temp_dir = $temp_dir->absolute;
     $temp_dir->rmtree;
     $temp_dir->mkpath;
-    delete $child_dirs{ $temp_dir->absolute };
-
-    my $conf = $Conf->{repos}
-        or die "Missing <repos> in config";
-
-    my @repo_names = sort keys %$conf;
-
-    my $tracker_path = $Conf->{paths}{branch_tracker}
-        or die "Missing <paths.branch_tracker> in config";
 
     my $reference_dir = dir($Opts->{reference});
     if ( $reference_dir ) {
@@ -451,31 +478,47 @@ sub init_repos {
         die "Missing reference directory $reference_dir" unless -e $reference_dir;
     }
 
-    # Check out the target repo before the other repos so that
-    # we can use the tracker file that it contains.
-    my $target_repo_checkout = "$temp_dir/target_repo";
+    return ( $repos_dir, $temp_dir, $reference_dir );
+}
+
+#===================================
+sub init_target_repo {
+#===================================
+    my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
+
     my $target_repo = ES::TargetRepo->new(
         dir         => $repos_dir,
         user        => $Opts->{user},
         url         => $Opts->{target_repo},
         reference   => $reference_dir,
-        destination => dir( $target_repo_checkout ),
+        destination => dir( "$temp_dir/target_repo" ),
+        branch      => $Opts->{target_branch} || 'master',
     );
+    $target_repo->update_from_remote;
+    return $target_repo;
+}
+
+#===================================
+sub init_repos {
+#===================================
+    my ( $repos_dir, $temp_dir, $reference_dir, $target_repo ) = @_;
+
+    printf(" - %20s: Checking out minimal\n", 'target_repo');
+    $target_repo->checkout_minimal();
+
+    my %child_dirs = map { $_ => 1 } $repos_dir->children;
+    delete $child_dirs{ $temp_dir->absolute };
+
+    my $conf = $Conf->{repos}
+        or die "Missing <repos> in config";
+
+    my @repo_names = sort keys %$conf;
+
     delete $child_dirs{ $target_repo->git_dir->absolute };
-    $tracker_path = "$target_repo_checkout/$tracker_path";
-    eval {
-        $target_repo->update_from_remote();
-        printf(" - %20s: Checking out minimal\n", 'target_repo');
-        $target_repo->checkout_minimal();
-        1;
-    } or do {
-        # If creds are invalid, explicitly reject them to try to clear the cache
-        my $error = $@;
-        if ( $error =~ /Invalid username or password/ ) {
-            revoke_github_creds();
-        }
-        die $error;
-    };
+
+    my $tracker_path = $Conf->{paths}{branch_tracker}
+        or die "Missing <paths.branch_tracker> in config";
+    $tracker_path = $target_repo->destination . "/$tracker_path";
 
     # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
@@ -506,17 +549,7 @@ sub init_repos {
         }
         else {
             $pm->start($name) and next;
-            eval {
-                $repo->update_from_remote();
-                1;
-            } or do {
-                # If creds are invalid, explicitly reject them to try to clear the cache
-                my $error = $@;
-                if ( $error =~ /Invalid username or password/ ) {
-                    revoke_github_creds();
-                }
-                die $error;
-            };
+            $repo->update_from_remote();
             $pm->finish;
         }
     }
@@ -538,45 +571,79 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
-    return ($repos_dir, $temp_dir, $target_repo, $target_repo_checkout);
+    return $tracker;
+}
+
+
+#===================================
+sub preview {
+#===================================
+    die "--target_repo is required with --preview" unless $Opts->{target_repo};
+
+    my $nginx_config = file('/tmp/nginx.conf');
+    write_nginx_preview_config( $nginx_config );
+
+    if ( my $node_pid = fork ) {
+        my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
+
+        say "Cloning built docs";
+        my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+        say "Built docs are ready";
+
+        if ( my $nginx_pid = fork ) {
+            $SIG{TERM} = sub {
+                # We should be a good citizen and shut down the subprocesses.
+                # This isn't so important in k8s or docker because we shoot
+                # the entire container when we're done, but it is nice when
+                # testing.
+                say 'Terminating preview services...nginx';
+                kill 'TERM', $nginx_pid;
+                wait;
+                say 'Terminating preview services...node';
+                kill 'TERM', $node_pid;
+                wait;
+                say 'Terminated preview services';
+                exit 0;
+            };
+            while (1) {
+                sleep 1;
+                my $fetch_result = $target_repo->fetch;
+                say "$fetch_result" if ( $fetch_result );
+            }
+            exit;
+        } else {
+            close STDIN;
+            open( STDIN, "</dev/null" );
+            exec( qw(node --max-old-space-size=128 /docs_build/preview/preview.js) );
+        }
+    } else {
+        close STDIN;
+        open( STDIN, "</dev/null" );
+        exec( qw(nginx -c), $nginx_config );
+    }
 }
 
 #===================================
 sub push_changes {
 #===================================
-    my ($build_dir, $target_repo, $target_repo_checkout) = @_;
-
-    local $ENV{GIT_WORK_TREE} = $target_repo_checkout;
-    local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
+    my ($build_dir, $target_repo ) = @_;
 
     say 'Building revision.txt';
     $build_dir->file('revision.txt')
         ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
 
-    say 'Preparing commit';
-    run qw(git add -A);
-
-    if ( run qw(git status -s --) ) {
+    if ( $target_repo->outstanding_changes ) {
+        say 'Preparing commit';
         build_sitemap($build_dir);
-        run qw(git add -A);
         say "Commiting changes";
-        run qw(git commit -m), 'Updated docs';
-    }
-
-    my $remote_sha = eval {
-        my $remote = run qw(git rev-parse --symbolic-full-name @{u});
-        chomp $remote;
-        return sha_for($remote);
-    } || '';
-
-    if ( sha_for('HEAD') ne $remote_sha ) {
-        say "Pushing changes to bare repo";
-        run qw(git push origin HEAD );
-        local $ENV{GIT_DIR} = $target_repo->git_dir if $target_repo;
+        $target_repo->commit;
         say "Pushing changes";
-        run qw(git push origin HEAD );
-    }
-    else {
+        $target_repo->push_changes;
+        if ( $Opts->{announce_preview} ) {
+            say "A preview will soon be available at " .
+                $Opts->{announce_preview};
+        }
+    } else {
         say "No changes to push";
     }
 }
@@ -593,94 +660,96 @@ sub init_env {
         . ":$FindBin::RealBin:"
         . $ENV{PATH};
 
-    if ( $running_in_standard_docker ) {
-        if (exists $ENV{SSH_AUTH_SOCK}
-                && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
-            print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
-            while (<>) {
-                # Read from stdin waiting for the signal that we're ready. We
-                # use stdin here because it prevents us from leaving the docker
-                # container running if something goes wrong with the forwarding
-                # process. The mechanism of action is that when something goes
-                # wrong build_docs will die, closing stdin. That will cause us
-                # to drop out of this loop and cause the process to terminate.
-                last if ($_ eq "ready\n");
-            }
-            die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
-            print "Found ssh auth\n";
+    if (exists $ENV{SSH_AUTH_SOCK}
+            && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
+        print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
+        while (<>) {
+            # Read from stdin waiting for the signal that we're ready. We
+            # use stdin here because it prevents us from leaving the docker
+            # container running if something goes wrong with the forwarding
+            # process. The mechanism of action is that when something goes
+            # wrong build_docs will die, closing stdin. That will cause us
+            # to drop out of this loop and cause the process to terminate.
+            last if ($_ eq "ready\n");
         }
-        # If we're in docker we're relying on closing stdin to cause an orderly
-        # shutdown because it is really the only way for us to know for sure
-        # that the python build_docs process thats on the host is dead.
-        # Since perl's threads are "not recommended" we fork early in the run
-        # process and have the parent synchronously wait read from stdin. A few
-        # things can happen here and each has a comment below:
-        if ( my $child_pid = fork ) {
-            $SIG{CHLD} = sub {
-                # The child process exits so we should exit with whatever
-                # exit code it gave us. This can also come about because the
-                # child process is killed.
-                use POSIX ":sys_wait_h";
-                my $child_status = 'missing';
-                while ((my $child = waitpid(-1, WNOHANG)) > 0) {
-                    my $status = $? >> 8;
-                    if ( $child == $child_pid ) {
-                        $child_status = $status;
-                    } else {
-                        # Some other subprocess died on us. The calling code
-                        # will handle it.
-                    }
+        die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
+        print "Found ssh auth\n";
+    }
+
+    if ( $Opts->{preview} ) {
+        # `--preview` is run in k8s it doesn't *want* a tty
+        # so it should avoid doing housekeeping below.
+        return;
+    }
+
+    # If we're in docker we're relying on closing stdin to cause an orderly
+    # shutdown because it is really the only way for us to know for sure
+    # that the python build_docs process thats on the host is dead.
+    # Since perl's threads are "not recommended" we fork early in the run
+    # process and have the parent synchronously wait read from stdin. A few
+    # things can happen here and each has a comment below:
+    if ( my $child_pid = fork ) {
+        $SIG{CHLD} = sub {
+            # The child process exits so we should exit with whatever
+            # exit code it gave us. This can also come about because the
+            # child process is killed.
+            use POSIX ":sys_wait_h";
+            my $child_status = 'missing';
+            while ((my $child = waitpid(-1, WNOHANG)) > 0) {
+                my $status = $? >> 8;
+                if ( $child == $child_pid ) {
+                    $child_status = $status;
+                } else {
+                    # Some other subprocess died on us. The calling code
+                    # will handle it.
                 }
-                exit $child_status unless ( $child_status eq 'missing');
-            };
-            $SIG{INT} = sub {
-                # We're interrupted. This'll happen if we somehow end up in
-                # the foreground. It isn't likely, but if it does happen we
-                # should interrupt the child just in case it wasn't already
-                # interrupted and then exit with whatever code the child exits
-                # with.
-                kill 'INT', $child_pid;
-                wait;
-                exit $? >> 8;
-            };
-            $SIG{TERM} = sub {
-                # We're terminated. We should pass on the love to the
-                # child process and return its exit code.
-                kill 'TERM', $child_pid;
-                wait;
-                exit $? >> 8;
-            };
-            while (<>) {}
-            # STDIN is closed. This'll happen if the python build_docs process
-            # on the host dies for some reason. When the host process dies we
-            # should do our best to die too so the docker container exits and
-            # is removed. We do that by interrupting the child and exiting with
-            # whatever exit code it exits with.
+            }
+            exit $child_status unless ( $child_status eq 'missing');
+        };
+        $SIG{INT} = sub {
+            # We're interrupted. This'll happen if we somehow end up in
+            # the foreground. It isn't likely, but if it does happen we
+            # should interrupt the child just in case it wasn't already
+            # interrupted and then exit with whatever code the child exits
+            # with.
+            kill 'INT', $child_pid;
+            wait;
+            exit $? >> 8;
+        };
+        $SIG{TERM} = sub {
+            # We're terminated. We should pass on the love to the
+            # child process and return its exit code.
             kill 'TERM', $child_pid;
             wait;
             exit $? >> 8;
-        }
-
-        # If we're running in docker then we won't have a useful username
-        # so we hack one into place with nss wrapper.
-        open(my $override, '>', '/tmp/passwd')
-            or dir("Couldn't write override user file");
-        # We use the `id` command here because it fetches the id. The native
-        # perl way to do this (getpwuid($<)) doesn't work because it needs a
-        # complete user. And we *aren't* one.
-        my $uid = `id -u`;
-        my $gid = `id -g`;
-        chomp($uid);
-        chomp($gid);
-        print $override "docker:x:$uid:$gid:docker:/tmp:/bin/bash\n";
-        close $override;
-        $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
-        $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
-        $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
+        };
+        while (<>) {}
+        # STDIN is closed. This'll happen if the python build_docs process
+        # on the host dies for some reason. When the host process dies we
+        # should do our best to die too so the docker container exits and
+        # is removed. We do that by interrupting the child and exiting with
+        # whatever exit code it exits with.
+        kill 'TERM', $child_pid;
+        wait;
+        exit $? >> 8;
     }
 
-    eval { run( 'xsltproc', '--version' ) }
-        or die "Please install <xsltproc>";
+    # If we're running in docker then we won't have a useful username
+    # so we hack one into place with nss wrapper.
+    open(my $override, '>', '/tmp/passwd')
+        or dir("Couldn't write override user file");
+    # We use the `id` command here because it fetches the id. The native
+    # perl way to do this (getpwuid($<)) doesn't work because it needs a
+    # complete user. And we *aren't* one.
+    my $uid = `id -u`;
+    my $gid = `id -g`;
+    chomp($uid);
+    chomp($gid);
+    print $override "docker:x:$uid:$gid:docker:/tmp:/bin/bash\n";
+    close $override;
+    $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
+    $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
+    $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
 }
 
 #===================================
@@ -708,35 +777,20 @@ sub serve_and_open_browser {
     if ( my $pid = fork ) {
         # parent
         $SIG{INT} = sub {
-            kill -9, $pid;
+            kill 'TERM', $pid;
         };
-        if ( not $running_in_standard_docker ) {
-            sleep 1;
-            say "Press Ctrl-C to exit the web server";
-            open_browser("http://localhost:8000/");
-        }
+        $SIG{TERM} = $SIG{INT};
 
         wait;
-        say "\nExiting";
+        say 'Terminated preview services';
         exit;
     }
     else {
-        if ( $running_in_standard_docker ) {
-            # We use nginx to serve files instead of the python built in web server
-            # when we're running inside docker because the python web server performs
-            # badly there. nginx is fine.
-            my $nginx_config = file('/tmp/nginx.conf');
-            write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            exec( qw(nginx -c), $nginx_config );
-        } else {
-            my $http = dir( 'resources', 'http.py' )->absolute;
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            chdir $docs_dir;
-            exec( $http '8000' );
-        }
+        my $nginx_config = file('/tmp/nginx.conf');
+        write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
+        close STDIN;
+        open( STDIN, "</dev/null" );
+        exec( qw(nginx -c), $nginx_config );
     }
 }
 
@@ -746,6 +800,7 @@ sub command_line_opts {
     return [
         # Options only compatible with --doc
         'doc=s',
+        'alternatives=s@',
         'asciidoctor',
         'chunk=i',
         'lang=s',
@@ -753,11 +808,14 @@ sub command_line_opts {
         'out=s',
         'pdf',
         'resource=s@',
+        'respect_edit_url_overrides',
         'single',
         'suppress_migration_warnings',
         'toc',
         # Options only compatible with --all
         'all',
+        'announce_preview=s',
+        'target_branch=s',
         'target_repo=s',
         'keep_hash',
         'linkcheckonly',
@@ -767,7 +825,9 @@ sub command_line_opts {
         'skiplinkcheck',
         'sub_dir=s@',
         'user=s',
-        # Options that do *something* for either --doc or --all
+        # Options only compatible with --preview
+        'preview',
+        # Options that do *something* for either --doc or --all or --preview
         'conf=s',
         'in_standard_docker',
         'open',
@@ -779,21 +839,24 @@ sub command_line_opts {
 #===================================
 sub usage {
 #===================================
-    my $name = $Opts->{in_standard_docker} ? 'build_docs' : $0;
     say <<USAGE;
 
     Build local docs:
 
-        $name --doc path/to/index.asciidoc [opts]
+        build_docs --doc path/to/index.asciidoc [opts]
 
         Opts:
           --asciidoctor     Use asciidoctor instead of asciidoc.
           --chunk 1         Also chunk sections into separate files
+          --alternatives <source_lang>:<alternative_lang>:<dir>
+                            Examples in alternative languages.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
           --pdf             Generate a PDF file instead of HTML
           --resource        Path to image dir - may be repeated
+          --respect_edit_url_overrides
+                            Respects `:edit_url:` overrides in the book.
           --single          Generate a single HTML page, instead of
                             a chunking into a file per chapter
           --suppress_migration_warnings
@@ -804,12 +867,15 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        $name --all --target_repo <target> [opts]
+        build_docs --all --target_repo <target> [opts]
 
         Opts:
           --keep_hash       Build docs from the same commit hash as last time
           --linkcheckonly   Skips the documentation builds. Checks links only.
           --push            Commit the updated docs and push to origin
+          --announce_preview <host>
+                            Causes the build to log a line about where to find
+                            a preview of the build if anything is pushed.
           --rebuild         Rebuild all branches of every book regardless of
                             what has changed
           --reference       Directory of `--mirror` clones to use as a
@@ -818,6 +884,7 @@ sub usage {
           --sub_dir         Use a directory as a branch of some repo
                             (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
           --target_repo     Repository to which to commit docs
+          --target_branch   Branch to which to commit docs
           --user            Specify which GitHub user to use, if not your own
 
     General Opts:
@@ -831,52 +898,54 @@ sub usage {
                             to 3
           --verbose         Output more logs
 
-USAGE
-    if ( $Opts->{in_standard_docker} ) {
-        say <<USAGE;
     Self Test:
 
-        $name --self-test <args to pass to make>
+        build_docs --self-test <args to pass to make>
 
     `--self-test` is a wrapper around `make` which is used exclusively for
     testing. Like `make`, the current directory selects the `Makefile` and
     you can make specific targets. Some examples:
 
     Execute all tests:
-        $name --self-test
+        build_docs --self-test
 
     Execute all of the tests for our extensions to Asciidoctor:
-        $name --self-test -C resources/asciidoctor
+        build_docs --self-test -C resources/asciidoctor
 
     Run rubocop on our extensions to Asciidoctor:
-        $name --self-test -C resources/asciidoctor rubocop
-    
+        build_docs --self-test -C resources/asciidoctor rubocop
 USAGE
-    }
 }
 
 #===================================
 sub check_opts {
 #===================================
-    if ( $Opts->{doc} ) {
-        die('--keep_hash not compatible with --doc') if $Opts->{keep_hash};
-        die('--linkcheckonly not compatible with --doc') if $Opts->{linkcheckonly};
-        die('--push not compatible with --doc') if $Opts->{push};
-        die('--rebuild not compatible with --doc') if $Opts->{rebuild};
-        die('--reference not compatible with --doc') if $Opts->{reference};
-        die('--skiplinkcheck not compatible with --doc') if $Opts->{skiplinkcheck};
-        die('--sub_dir not compatible with --doc') if $Opts->{sub_dir};
-        die('--target_repo not compatible with --doc') if $Opts->{target_repo};
-        die('--user not compatible with --doc') if $Opts->{user};
-    } else {
-        die('--asciidoctor not compatible with --all') if $Opts->{asciidoctor};
-        die('--chunk not compatible with --all') if $Opts->{chunk};
+    if ( !$Opts->{doc} ) {
+        die('--alternatives only compatible with --doc') if $Opts->{alternatives};
+        die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
+        die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
-        die('--lenient not compatible with --all') if $Opts->{lenient};
-        die('--out not compatible with --all') if $Opts->{out};
-        die('--pdf not compatible with --all') if $Opts->{pdf};
-        die('--resource not compatible with --all') if $Opts->{resource};
-        die('--single not compatible with --all') if $Opts->{single};
-        die('--toc not compatible with --all') if $Opts->{toc};
+        die('--lenient only compatible with --doc') if $Opts->{lenient};
+        die('--out only compatible with --doc') if $Opts->{out};
+        die('--pdf only compatible with --doc') if $Opts->{pdf};
+        die('--resource only compatible with --doc') if $Opts->{resource};
+        die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
+        die('--single only compatible with --doc') if $Opts->{single};
+        die('--toc only compatible with --doc') if $Opts->{toc};
+    }
+    if ( !$Opts->{all} ) {
+        die('--keep_hash only compatible with --all') if $Opts->{keep_hash};
+        die('--linkcheckonly only compatible with --all') if $Opts->{linkcheckonly};
+        die('--push only compatible with --all') if $Opts->{push};
+        die('--announce_preview only compatible with --all') if $Opts->{announce_preview};
+        die('--rebuild only compatible with --all') if $Opts->{rebuild};
+        die('--reference only compatible with --all') if $Opts->{reference};
+        die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
+        die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
+        die('--user only compatible with --all') if $Opts->{user};
+    }
+    if ( !$Opts->{all} && !$Opts->{preview} ) {
+        die('--target_branch only compatible with --all or --preview') if $Opts->{target_branch};
+        die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
     }
 }

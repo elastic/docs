@@ -11,7 +11,7 @@ RSpec.shared_examples "doesn't break line numbers" do
           <1> callout
         ASCIIDOC
       end
-      it "reports the right line for the error" do
+      it 'reports the right line for the error' do
         expect(logs).to eq('WARN: <stdin>: line 3: no callout found for <1>')
       end
     end
@@ -22,7 +22,7 @@ RSpec.shared_examples "doesn't break line numbers" do
       end
       let(:input) { "include::#{included}[]" }
       let(:expected) { "WARN: #{included}: line 3: no callout found for <1>" }
-      it "reports the right line for the error" do
+      it 'reports the right line for the error' do
         expect(logs).to eq(expected)
       end
     end

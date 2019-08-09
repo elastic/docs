@@ -45,7 +45,6 @@ sub new {
 sub update_from_remote {
 #===================================
     my $self = shift;
-
     my $git_dir = $self->git_dir;
     local $ENV{GIT_DIR} = $git_dir;
 
@@ -59,6 +58,15 @@ sub update_from_remote {
         1;
     }
     or die "Error updating repo <$name>: $@";
+}
+
+#===================================
+sub fetch {
+#===================================
+    my $self = shift;
+    local $ENV{GIT_DIR} = $self->git_dir;
+
+    return run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
 }
 
 #===================================
@@ -97,7 +105,7 @@ sub _try_to_fetch {
         return;
     }
     printf(" - %20s: Fetching\n", $self->name);
-    run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
+    $self->fetch();
     return 1;
 }
 
@@ -110,17 +118,6 @@ sub _reference_args {
     say " - Reference missing so not caching: " . $self->{reference_dir};
     $self->{reference_dir} = 0;  # NOCOMMIT check me
     return ();
-}
-
-#===================================
-sub show_file {
-#===================================
-    my $self = shift;
-    my ( $branch, $file ) = @_;
-
-    local $ENV{GIT_DIR} = $self->git_dir;
-
-    return decode_utf8 run( qw (git show ), $branch . ':' . $file );
 }
 
 #===================================

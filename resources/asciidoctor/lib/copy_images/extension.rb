@@ -5,7 +5,8 @@ require_relative 'copier.rb'
 
 module CopyImages
   ##
-  # Copies images that are referenced into the same directory as the output files.
+  # Copies images that are referenced into the same directory as the
+  # output files.
   #
   # It finds the images by looking in a comma separated list of directories
   # defined by the `resources` attribute.
@@ -45,7 +46,7 @@ module CopyImages
     def process_block_image(block)
       return unless block.context == :image
 
-      uri = block.image_uri(block.attr 'target')
+      uri = block.image_uri(block.attr('target'))
       process_image block, uri
     end
 
@@ -78,7 +79,8 @@ module CopyImages
     # using this code but I feel like that'd be slower. For now, we'll stick
     # with this.
     def process_inline_image_from_converted(block)
-      return unless block.context == :list_item && block.parent.context == :olist
+      return unless block.context == :list_item &&
+                    block.parent.context == :olist
 
       block.text.scan(DOCBOOK_IMAGE_RX) do |(target)|
         # We have to resolve attributes inside the target. But there is a
@@ -106,7 +108,9 @@ module CopyImages
       return unless coids
 
       coids.scan(CALLOUT_RX) do |(index)|
-        @copier.copy_image block, "images/icons/callouts/#{index}.#{callout_extension}"
+        @copier.copy_image(
+          block, "images/icons/callouts/#{index}.#{callout_extension}"
+        )
       end
     end
 
@@ -125,7 +129,9 @@ module CopyImages
       style = block.attr 'style'
       return unless style
 
-      @copier.copy_image block, "images/icons/#{style.downcase}.#{admonition_extension}"
+      @copier.copy_image(
+        block, "images/icons/#{style.downcase}.#{admonition_extension}"
+      )
     end
 
     def process_change_admonition(admonition_extension, block)
@@ -134,10 +140,16 @@ module CopyImages
 
       admonition_image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
       if admonition_image
-        @copier.copy_image block, "images/icons/#{admonition_image}.#{admonition_extension}"
+        @copier.copy_image(
+          block, "images/icons/#{admonition_image}.#{admonition_extension}"
+        )
       else
-        logger.warn message_with_context "unknow revisionflag #{revisionflag}",
-          source_location: block.source_location
+        logger.warn(
+          message_with_context(
+            "unknow revisionflag #{revisionflag}",
+            source_location: block.source_location
+          )
+        )
       end
     end
   end

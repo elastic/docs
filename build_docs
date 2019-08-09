@@ -37,6 +37,9 @@ from sys import platform, version_info
 import time
 import webbrowser
 
+# The tag we use for our docker image. This should line up with the tags
+# in preview/Dockerfile and publish_docker.sh
+DOCKER_TAG = 'docker.elastic.co/docs/build:1'
 DOCKER_BUILD_QUIET_TIME = 3  # seconds
 SSH_AGENT_HELP = 'https://help.github.com/en/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#adding-your-ssh-key-to-the-ssh-agent'  # noqa
 
@@ -67,7 +70,7 @@ def build_docker_image():
             else:
                 acc.append(line)
 
-        cmd = ["docker", "image", "build", "-t", "elastic/docs_build", DIR]
+        cmd = ["docker", "image", "build", "-t", DOCKER_TAG, DIR]
         build = common_popen(cmd, dockerfile)
         handle_popen(build, handle_line)
         if build.returncode != 0:
@@ -133,7 +136,7 @@ def run_build_docs(args):
                 raise ArgError('--all requires an agent to be running and ' +
                                'SSH_AUTH_SOCK to be set')
             if not platform.startswith('linux'):
-                docker_args.extend(['--tmpfs', '/run'])
+                docker_args.extend(['--tmpfs', '/run/nginx'])
                 docker_args.extend(['--tmpfs', '/root'])
                 docker_args.extend(['--publish', '8022:22/tcp'])
                 docker_args.extend(
@@ -154,6 +157,21 @@ def run_build_docs(args):
                 docker_args.extend([
                         '-v',
                         '%s:/tmp/.ssh/known_hosts:ro,cached' % known_hosts])
+        elif arg == '--alternatives':
+            alternatives = args.next_arg_or_err()
+            split = alternatives.split(':')
+            if len(split) != 3:
+                err = "--alternatives must be " + \
+                      "<source_lang>:<dest_lang>:<path> but was %s" % examples
+                raise ArgError(err)
+            alternatives_dir = realpath(expanduser(split[2]))
+            if not isdir(alternatives_dir):
+                raise ArgError(
+                    "Can't find --alternatives %s" % alternatives_dir
+                )
+            mounted = mount_docs_repo_and_dockerify_path(
+                    alternatives_dir, alternatives_dir)
+            build_docs_args.append("%s:%s:%s" % (split[0], split[1], mounted))
         elif arg == '--conf':
             conf_file = realpath(args.next_arg_or_err())
             if not exists(conf_file):
@@ -225,7 +243,7 @@ def run_build_docs(args):
     cmd = []
     cmd.extend(['docker', 'run'])
     cmd.extend(docker_args)
-    cmd.extend(['elastic/docs_build', '/docs_build/build_docs.pl'])
+    cmd.extend([DOCKER_TAG, '/docs_build/build_docs.pl'])
     cmd.extend(build_docs_args)
     # Use a PIPE for stdin so if our process dies then the docs build  sees
     # stdin close which it will use as a signal to die.
@@ -241,6 +259,9 @@ def run_build_docs(args):
                 environ['BROWSER'] = 'open'
             webbrowser.open('http://localhost:8000/guide',
                             new=1, autoraise=False)
+        if 'Bind for 0.0.0.0:8000 failed: port is already allocated.' in line:
+            logger.error('Another process has port 8000. Is there already a '
+                         'docs build running with --open?')
         if should_forward_ssh_auth_into_container:
             match = re.match('Waiting for ssh auth to be forwarded to (.+)',
                              line)
@@ -453,6 +474,9 @@ def standard_docker_args():
     # Keep stdin open so the docs build can use closing it as a signal that
     # it needs to die.
     docker_args.append('-i')
+    # Pass the node name into the docker image if it is set
+    if 'NODE_NAME' in environ:
+        docker_args.extend(['-e', 'NODE_NAME=%s' % environ['NODE_NAME']])
     # Ritual to make nginx run (even with -t) as the mapped user
     docker_args.extend(['--tmpfs', '/run/nginx',
                         '--tmpfs', '/var/log/nginx',
@@ -484,7 +508,7 @@ if __name__ == '__main__':
             cmd.extend(['--workdir', docker_cwd])
             if stdout.isatty():
                 cmd.append('-t')
-            cmd.extend(['elastic/docs_build', 'make'])
+            cmd.extend([DOCKER_TAG, 'make'])
             cmd.extend(['--no-builtin-rules'])
             cmd.extend(argv[2:])
             returncode = subprocess.call(cmd)

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+require 'net/http'
+
 RSpec.describe 'building a single book' do
   HEADER = <<~ASCIIDOC
     = Title
@@ -59,7 +62,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
-          <a href="unknown/edit/master/index.asciidoc" class="edit_me"
+          <a href="unknown/edit/master/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
         HTML
       end
     end
@@ -140,6 +143,25 @@ RSpec.describe 'building a single book' do
           # We match on the empty cell followed by the non-empty cell so we
           # can be sure we're matching the right part of the table.
           expect(body).to include("<tr>#{empty_cell}#{non_empty_cell}</tr>")
+        end
+      end
+    end
+    context 'for a book that has a reference to a floating title' do
+      convert_single_before_context do |src|
+        src.write 'index.asciidoc', <<~ASCIIDOC
+          #{HEADER}
+          <<floater>>
+
+          [float]
+          [[floater]]
+          == Floater
+        ASCIIDOC
+      end
+      page_context 'chapter.html' do
+        it "there isn't an edit me link in the link to the section" do
+          expect(body).to include(<<~HTML.strip)
+            <a class="xref" href="chapter.html#floater" title="Floater">Floater</a>
+          HTML
         end
       end
     end
@@ -365,5 +387,146 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/warning.png'
     file_context 'images/icons/callouts/1.png'
     file_context 'images/icons/callouts/2.png'
+  end
+
+  context 'for a book with console alternatives' do
+    def self.index
+      <<~ASCIIDOC
+        = Title
+
+        [[chapter]]
+        == Chapter
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "foo bar" <1>
+        }
+        ----------------------------------
+        <1> Example
+
+        [source,console]
+        ----------------------------------
+        GET /_search
+        {
+            "query": "missing"
+        }
+        ----------------------------------
+      ASCIIDOC
+    end
+    convert_before do |src, dest|
+      repo = src.repo 'src'
+      from = repo.write 'index.asciidoc', index
+      repo.commit 'commit outstanding'
+      dest.prepare_convert_single(from, '.')
+          .asciidoctor
+          .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
+          .alternatives(
+            'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
+          )
+          .convert
+    end
+    include_examples 'README-like console alternatives', '.'
+  end
+
+  context 'when run with --open' do
+    include_context 'source and dest'
+    before(:context) do
+      repo = @src.repo_with_index 'repo', 'Words'
+      @opened_docs =
+        @dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.').open
+    end
+    after(:context) do
+      @opened_docs.exit
+    end
+
+    let(:index) { Net::HTTP.get_response(URI('http://localhost:8000/guide/')) }
+    it 'serves the book' do
+      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+        <a href="chapter.html">Chapter
+      HTML
+    end
+  end
+
+  ##
+  # When you point `build_docs` to a worktree it doesn't properly share the
+  # worktree's parent into the docker container. This test simulates *that*.
+  context 'when building a book in a worktree without its parent' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', <<~ASCIIDOC
+        I am in a worktree.
+      ASCIIDOC
+      worktree = src.path 'worktree'
+      repo.create_worktree worktree, 'HEAD'
+      FileUtils.rm_rf repo.root
+      dest.convert_single "#{worktree}/index.asciidoc", '.', asciidoctor: true
+    end
+    page_context 'chapter.html' do
+      it 'complains about not being able to find the repo toplevel' do
+        expect(outputs[0]).to include("Couldn't find repo toplevel for /tmp/")
+      end
+      it 'has the worktree text' do
+        expect(body).to include('I am in a worktree.')
+      end
+    end
+  end
+
+  context 'when a book contains migration warnings' do
+    shared_context 'convert with migration warnings' do |suppress|
+      convert_before do |src, dest|
+        repo = src.repo_with_index 'src', <<~ASCIIDOC
+          --------
+          CODE HERE
+          ----
+        ASCIIDOC
+        dest.convert_single "#{repo.root}/index.asciidoc", '.',
+                            asciidoctor: true,
+                            expect_failure: !suppress,
+                            suppress_migration_warnings: suppress
+      end
+    end
+    context 'and they are not suppressed' do
+      include_context 'convert with migration warnings', false
+      it 'fails with an appropriate error status' do
+        expect(statuses[0]).to eq(255)
+      end
+      it 'complains about the MIGRATION warning' do
+        expect(outputs[0]).to include(<<~LOG)
+          asciidoctor: WARNING: index.asciidoc: line 7: MIGRATION: code block end doesn't match start
+        LOG
+      end
+    end
+    context 'and they are suppressed' do
+      include_context 'convert with migration warnings', true
+      it "doesn't complain about the MIGRATION warning" do
+        expect(outputs[0]).not_to include(<<~LOG)
+          asciidoctor: WARNING: index.asciidoc: line 7: MIGRATION: code block end doesn't match start
+        LOG
+      end
+      page_context 'chapter.html' do
+        it 'contains the snippet' do
+          expect(body).to include('CODE HERE')
+        end
+      end
+    end
+  end
+
+  context 'when an included file is missing' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', <<~ASCIIDOC
+        include::missing.asciidoc[]
+      ASCIIDOC
+      dest.convert_single "#{repo.root}/index.asciidoc", '.',
+                          asciidoctor: true,
+                          expect_failure: true
+    end
+    it 'fails with an appropriate error status' do
+      expect(statuses[0]).to eq(255)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to include(<<~LOG.strip)
+        ERROR: index.asciidoc: line 5: include file not found: #{@src.repo('src').root}/missing.asciidoc
+      LOG
+    end
   end
 end

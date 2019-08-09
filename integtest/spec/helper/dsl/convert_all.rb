@@ -8,15 +8,14 @@ module Dsl
     # uses it to:
     # 1. Create source repositories and write them
     # 2. Configure the books that should be built
-    def convert_all_before_context
+    def convert_all_before_context(relative_conf: false, target_branch: nil)
       convert_before do |src, dest|
         yield src
-        src.init_repos
-        dest.convert_all src.conf
-        dest.checkout_conversion
+        dest.convert_all src.conf(relative_path: relative_conf),
+                         target_branch: target_branch
+        dest.checkout_conversion branch: target_branch
       end
       include_examples 'convert all'
-      let(:latest_revision) { 'init' }
     end
 
     shared_context 'convert all' do
@@ -31,17 +30,20 @@ module Dsl
       end
       it 'prints that it is building all branches of every book' do
         # TODO: read branches from somewhere when we specify them
-        books.each do |book|
+        books.each_value do |book|
           expect(out).to include("#{book.title}: Building master...")
           expect(out).to include("#{book.title}: Finished master")
         end
       end
       it 'prints that it is copying master to current for every book' do
         # TODO: read branches from somewhere when we specify them
-        books.each do |book|
+        books.each_value do |book|
           expect(out).to include("#{book.title}: Copying master to current")
         end
       end
+      include_examples 'commits changes'
+    end
+    shared_examples 'commits changes' do
       it 'prints that it is commiting changes' do
         expect(out).to include('Commiting changes')
       end
@@ -63,7 +65,7 @@ module Dsl
       end
       page_context 'the global index', 'html/index.html' do
         it 'contains a link to the current verion of each book' do
-          books.each do |book|
+          books.each_value do |book|
             expect(body).to include(book.link_to('current'))
           end
         end

@@ -12,6 +12,8 @@ module CopyImages
     include Asciidoctor::Logging
 
     def initialize
+      # TODO: store this set on the document so we don't duplicate copies
+      # for sub-documents caused by alternative examples
       @copied = Set[]
     end
 
@@ -21,18 +23,26 @@ module CopyImages
       source = find_source block, uri
       return unless source                # Skip images we can't find
 
-      logger.info message_with_context "copying #{source}",
-        source_location: block.source_location
+      logger.info(
+        message_with_context(
+          "copying #{source}",
+          source_location: block.source_location
+        )
+      )
       copy_image_proc = block.document.attr 'copy_image'
       if copy_image_proc
         # Delegate to a proc for copying if one is defined. Used for testing.
         copy_image_proc.call(uri, source)
       else
-        destination = ::File.join block.document.options[:to_dir], uri
-        destination_dir = ::File.dirname destination
-        FileUtils.mkdir_p destination_dir
-        FileUtils.cp source, destination
+        perform_copy block, uri, source
       end
+    end
+
+    def perform_copy(block, uri, source)
+      destination = File.join block.document.options[:to_dir], uri
+      destination_dir = File.dirname destination
+      FileUtils.mkdir_p destination_dir
+      FileUtils.cp source, destination
     end
 
     ##
@@ -48,12 +58,7 @@ module CopyImages
         return checked.last if File.readable? checked.last
         next unless Dir.exist?(dir)
 
-        Dir.new(dir).each do |f|
-          next if ['.', '..'].include? f
-
-          f = File.join(dir, f)
-          to_check << f if File.directory?(f)
-        end
+        to_check += subdirs(dir)
       end
 
       log_missing(block, checked)
@@ -71,9 +76,20 @@ module CopyImages
 
       to_check + CSV.parse_line(resources)
     rescue CSV::MalformedCSVError => error
-      logger.error message_with_context "Error loading [resources]: #{error}",
+      logger.error(
+        message_with_context(
+          "Error loading [resources]: #{error}",
           source_location: block.source_location
+        )
+      )
       to_check
+    end
+
+    def subdirs(dir)
+      Dir.new(dir)
+         .reject { |f| ['.', '..'].include? f }
+         .map { |f| File.join dir, f }
+         .select { |f| File.directory?(f) }
     end
 
     ##
@@ -90,8 +106,12 @@ module CopyImages
           lhs <=> rhs
         end
       end
-      logger.warn message_with_context "can't read image at any of #{checked}",
-        source_location: block.source_location
+      logger.warn(
+        message_with_context(
+          "can't read image at any of #{checked}",
+          source_location: block.source_location
+        )
+      )
     end
   end
 end

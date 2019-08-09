@@ -98,6 +98,20 @@
 
   <xsl:template match="ulink[@role='edit_me']" mode="no.anchor.mode" />
 
+  <!-- Fix an issue where the links to bridgeheads render their edit_me links.-->
+  <xsl:template match="bridgehead" mode="title.markup">
+    <xsl:param name="allow-anchors" select="0"/>
+
+    <xsl:choose>
+      <xsl:when test="$allow-anchors != 0">
+        <xsl:apply-templates/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:apply-templates mode="no.anchor.mode"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
  <!--  head title element with version -->
 
     <xsl:template name="user.header.content">
@@ -288,13 +302,20 @@
   </xsl:template>
 
   <xsl:template match="programlisting">
-    <div class="pre_wrapper">
+    <!-- Insert classes on the wrapper so we can hide alternatives or the default -->
+    <xsl:variable name="wrapper_class">
+      pre_wrapper <xsl:value-of select="@role"/> lang-<xsl:value-of select="@language"/>
+    </xsl:variable>
+    <div class="{normalize-space($wrapper_class)}">
       <xsl:apply-imports />
     </div>
     <!-- Asciidoctor's CONSOLE widget -->
     <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana'">
+      <xsl:variable name="widget_class">
+        <xsl:value-of select="@language"/>_widget <xsl:value-of select="@role"/>
+      </xsl:variable>
       <div
-        class="{@language}_widget"
+        class="{normalize-space($widget_class)}"
         data-snippet="{ulink[@type='snippet']/@url}"/>
     </xsl:if>
   </xsl:template>

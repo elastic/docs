@@ -12,13 +12,13 @@
 
 
 # Elasticsearch
-alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
+alias docbldesx='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
 
 alias docbldes=docbldesx
 
 # Elasticsearch 6.2 and earlier
 
-alias docbldesold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
+alias docbldesold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
 
 # Kibana
 alias docbldkbx='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
@@ -30,7 +30,7 @@ alias docbldkb=docbldkbx
 alias docbldkbold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
-alias docbldlsx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
+alias docbldlsx='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
 
 alias docbldls=docbldlsx
 
@@ -52,12 +52,20 @@ alias docbldgls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-d
 alias docbldgs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
 # Stack Overview
-alias docbldso='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
+alias docbldso='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --resource=$GIT_HOME/beats/libbeat/docs/ --chunk 1'
+
+# Stack Overview versions 6.3-7.2
+alias docbldsoold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
 
 # Deploying Azure
 alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
+# Solutions
 alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
+
+alias docbldup='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
+
+alias docbldsec='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
@@ -66,6 +74,11 @@ alias docbldcr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/curator/
 alias docbldec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
 alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
+
+# Cloud
+alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/heroku/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/saas --chunk 1'
+
+alias docbldk8s='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Beats
 alias docbldbpr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
@@ -126,6 +139,8 @@ alias docbldejv='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elastic
 
 alias docbldejs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
+alias docblderb='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
+
 alias docbldegr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
 alias docbldego='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --single'
@@ -138,18 +153,24 @@ alias docbldepl='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elastic
 
 alias docbldepy='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/python/index.asciidoc --single'
 
-alias docblderb='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/ruby/index.asciidoc'
-
 alias docbldecc='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single'
 
 alias docbldesh='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
 # X-Pack Reference 5.4 to 6.2
 
-alias docbldx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
+alias docbldx='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
 
 # ECS
 alias docbldecs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
 
-# GKE 
+# GKE
 alias docbldgke='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
+
+# Build all
+alias docbldall='GIT_HOME/docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git'
+# NOTE: To build all books and pick up un-merged changes from your local repos,
+# use one or more --sub_dir options. Specify the repo and branch you want to
+# override and the directory that contains your changes.
+# For example:
+# --sub_dir elasticsearch:master:./elasticsearch

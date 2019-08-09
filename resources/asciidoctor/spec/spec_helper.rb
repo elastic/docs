@@ -2,7 +2,7 @@
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
-  config.example_status_persistence_file_path = ".rspec_status"
+  config.example_status_persistence_file_path = '.rspec_status'
 
   # Disable RSpec exposing methods globally on `Module` and `main`
   config.disable_monkey_patching!
@@ -16,41 +16,19 @@ end
 $VERBOSE = true
 
 ##
-# Convert an asciidoc string into docbook.
-def convert(input, extra_attributes = {}, warnings_matcher = eq(''))
-  logger = Asciidoctor::MemoryLogger.new
-  attributes = {
-    'docdir' => File.dirname(__FILE__),
-  }
-  attributes.merge! extra_attributes
-  result = Asciidoctor.convert input,
-      safe: :unsafe, # Used to include "funny" files.
-      backend: :docbook45,
-      logger: logger,
-      doctype: :book,
-      attributes: attributes,
-      sourcemap: true
-  warnings_string = logger.messages
-                          .map { |l| "#{l[:severity]}: #{l[:message].inspect}" }
-                          .join("\n")
-  expect(warnings_string).to warnings_matcher
-  result
-end
-
-##
 # Used by the `convert with logs` and `convert without logs` contexts
 def internal_convert(input, convert_logger, extra_attributes)
-  attributes = {
-    'docdir' => File.dirname(__FILE__),
-  }
+  attributes = { 'docdir' => File.dirname(__FILE__) }
   attributes.merge! extra_attributes
-  Asciidoctor.convert input,
+  Asciidoctor.convert(
+    input,
     safe: :unsafe, # Used to include "funny" files.
     backend: :docbook45,
     logger: convert_logger,
     doctype: :book,
     attributes: attributes,
     sourcemap: true
+  )
 end
 
 ##

@@ -76,7 +76,8 @@ sub new {
 
     my $source = ES::Source->new(
         temp_dir => $temp_dir,
-        sources  => $args{sources}
+        sources  => $args{sources},
+        examples => $args{examples},
     );
 
     my $prefix = $args{prefix}
@@ -128,6 +129,17 @@ sub new {
             die 'asciidoctor must be true or false but was ' . $asciidoctor;
         }
     }
+    my $respect_edit_url_overrides = 0;
+    if (exists $args{respect_edit_url_overrides}) {
+        $respect_edit_url_overrides = $args{respect_edit_url_overrides};
+        if ($respect_edit_url_overrides eq 'true') {
+            $respect_edit_url_overrides = 1;
+        } elsif ($respect_edit_url_overrides eq 'false') {
+            $respect_edit_url_overrides = 0;
+        } else {
+            die 'respect_edit_url_overrides must be true or false but was ' . $respect_edit_url_overrides;
+        }
+    }
 
     bless {
         title         => $title,
@@ -148,6 +160,7 @@ sub new {
         noindex       => $args{noindex} || '',
         lang          => $lang,
         asciidoctor   => $asciidoctor,
+        respect_edit_url_overrides => $respect_edit_url_overrides,
     }, $class;
 }
 
@@ -247,7 +260,8 @@ sub _build_book {
     return 0 unless $rebuild ||
         $source->has_changed( $self->title, $branch, $self->asciidoctor );
 
-    my ( $checkout, $edit_urls, $first_path ) = $source->prepare($self->title, $branch);
+    my ( $checkout, $edit_urls, $first_path, $alternatives ) =
+        $source->prepare($self->title, $branch);
 
     $pm->start($branch) and return 1;
     printf(" - %40.40s: Building %s...\n", $self->title, $branch);
@@ -273,6 +287,8 @@ sub _build_book {
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
+                respect_edit_url_overrides => $self->{respect_edit_url_overrides},
+                alternatives  => $alternatives,
             );
         }
         else {
@@ -294,6 +310,8 @@ sub _build_book {
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
+                respect_edit_url_overrides => $self->{respect_edit_url_overrides},
+                alternatives  => $alternatives,
             );
             $self->_add_title_to_toc( $branch, $branch_dir );
         }
