@@ -9,7 +9,7 @@ check: jest
 
 .PHONY: test_watch
 test_watch: tests
-	# /node_modules/parcel/bin/cli.js watch ./docs_js/__tests__/**/* ./docs_js/__tests__/* -d ./tests/ --target node &
+	/node_modules/parcel/bin/cli.js watch ./docs_js/__tests__/**/* ./docs_js/__tests__/* -d ./tests/ --target node --no-source-maps &
 	/node_modules/jest/bin/jest.js ./tests/** --watch
 
 .PHONY: jest
