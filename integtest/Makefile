@@ -24,4 +24,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec
+	rspec -e 'because we add a branch to the book' -e 'because we change the current branch' -e 'because we remove a branch from the book'

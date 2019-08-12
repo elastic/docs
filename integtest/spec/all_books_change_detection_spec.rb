@@ -145,6 +145,51 @@ RSpec.describe 'building all books' do
       page_context 'html/test/current/chapter.html'
     end
 
+    shared_examples 'the version drop down' do
+      shared_examples 'correct version drop down' do
+        context 'the version drop down' do
+          let(:master_current) { current == 'master' ? ' (current)' : ''}
+          let(:master_option) do
+            <<~HTML.strip
+              <option value="master"#{master_selected}>master#{master_current}</option>
+            HTML
+          end
+          let(:foo_current) { current == 'foo' ? ' (current)' : ''}
+          let(:foo_option) do
+            <<~HTML.strip
+              <option value="foo"#{foo_selected}>foo#{foo_current}</option>
+            HTML
+          end
+          it 'contains all versions' do
+            expect(body).to include("#{master_option}#{foo_option}")
+          end
+        end
+      end
+      shared_examples 'correct version drop down for branch' do |branch|
+        page_context 'index.html', "html/test/#{branch}/index.html" do
+          include_examples 'correct version drop down'
+        end
+        page_context 'toc.html', "html/test/#{branch}/toc.html" do
+          include_examples 'correct version drop down'
+        end
+      end
+      context 'the master branch' do
+        let(:master_selected) { ' selected' }
+        let(:foo_selected) { '' }
+        include_examples 'correct version drop down for branch', 'master'
+      end
+      context 'the current branch' do
+        let(:master_selected) { ' selected' }
+        let(:foo_selected) { '' }
+        include_examples 'correct version drop down for branch', 'current'
+      end
+      context 'the foo branch' do
+        let(:master_selected) { '' }
+        let(:foo_selected) { ' selected' }
+        include_examples 'correct version drop down for branch', 'foo'
+      end
+    end
+
     shared_examples 'second build is noop' do
       context 'the second build' do
         let(:out) { outputs[1] }
@@ -326,18 +371,64 @@ RSpec.describe 'building all books' do
               expect(contents).to include('Test/index.asciidoc/foo')
             end
           end
+          include_examples 'the version drop down'
+          let(:current) { 'master' }
+        end
+        context 'because we change the current branch' do
+          build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              repo = src.repo 'repo'
+              repo.switch_to_new_branch 'foo'
+              repo.write 'index.asciidoc', <<~ASCIIDOC
+                = Title
+        
+                [[chapter]]
+                == Chapter
+                Different text.
+              ASCIIDOC
+              repo.commit 'change foo'
+              book = src.book 'Test'
+              book.branches.push 'foo'
+            end,
+            before_second_build: lambda do |src, _config|
+              book = src.book 'Test'
+              book.current_branch = 'foo'
+            end
+          )
+          let(:latest_revision) { 'init' }
+          let(:new_text) { 'Some text.' }
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+            it 'asdfadsf' do
+              expect(out).to eq('asdfasdf')
+            end
+          end
+          file_context 'html/branches.yaml' do
+            it 'includes the original branch' do
+              expect(contents).to include('Test/index.asciidoc/master')
+            end
+            it 'includes the added branch' do
+              expect(contents).to include('Test/index.asciidoc/foo')
+            end
+          end
+          let(:current) { 'foo' }
+          include_examples 'the version drop down'
+          # NOCOMMIT check that we wrote different text into the current book
         end
         context 'because we remove a branch from the book' do
           build_one_book_out_of_one_repo_twice(
             before_first_build: lambda do |src, _config|
               repo = src.repo 'repo'
               repo.switch_to_new_branch 'foo'
+              repo.switch_to_new_branch 'bar'
               book = src.book 'Test'
               book.branches.push 'foo'
+              book.branches.push 'bar'
             end,
             before_second_build: lambda do |src, _config|
               book = src.book 'Test'
-              book.branches.delete 'foo'
+              book.branches.delete 'bar'
             end
           )
           let(:latest_revision) { 'init' }
@@ -347,13 +438,18 @@ RSpec.describe 'building all books' do
             include_examples 'commits changes'
           end
           file_context 'html/branches.yaml' do
-            it 'includes the built branch' do
+            it 'includes the original master branch' do
               expect(contents).to include('Test/index.asciidoc/master')
             end
+            it 'includes the original extra branch' do
+              expect(contents).to include('Test/index.asciidoc/foo')
+            end
             it "doesn't include the removed branch" do
-              expect(contents).not_to include('Test/index.asciidoc/foo')
+              expect(contents).not_to include('Test/index.asciidoc/bar')
             end
           end
+          include_examples 'the version drop down'
+          let(:current) { 'master' }
         end
       end
     end
