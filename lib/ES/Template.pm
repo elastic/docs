@@ -15,7 +15,6 @@ sub new {
 
     my $self = bless {
         defaults => $args{defaults},
-        abs_urls => $args{abs_urls} || 0,
     }, $class;
     $self->_init;
 }
@@ -54,14 +53,6 @@ sub apply {
 
         $file->spew( iomode => '>:utf8', join "", @parts );
     }
-
-    # Copy stylesheet
-    fcopy( 'resources/web/styles.css', $dir )
-        or die "Couldn't copy <styles.css> to <$dir>: $!";
-
-    # Copy javascript
-    fcopy( 'resources/web/docs.js', $dir )
-        or die "Couldn't copy <docs.js> to <$dir>: $!";
 }
 
 my $Autosense_RE = qr{
@@ -167,19 +158,12 @@ sub _init {
     } or die "Unable to load template: $@";
     my @parts = split /<!-- (DOCS \w+) -->/, $content;
     my $defaults = $self->{defaults};
-    my $abs = $self->{abs_urls} ? 'https://www.elastic.co/' : '';
     my %map;
 
     for my $i ( 0 .. @parts - 1 ) {
         if ( $parts[$i] =~ s/^DOCS (\w+)$// ) {
             $parts[$i] = $defaults->{$1} || '';
             $map{$1} = $i;
-        }
-        if ($abs) {
-            $parts[$i] =~ s{
-                (<(?:script|link|img)[^>]*)
-                (\b(?:src|href)=")/(?=\w)
-            }{$1 $2$abs}xg;
         }
     }
 

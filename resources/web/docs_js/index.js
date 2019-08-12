@@ -153,15 +153,15 @@ $(function() {
       kibana_url: Cookies.get("kibana_url") || default_kibana_url,
       kibana_curl_host: Cookies.get("kibana_curl_host") || "localhost:9200",
       kibana_curl_user: Cookies.get("kibana_curl_user"),
-      kibana_curl_password: "",
+      kibana_curl_password: "$KIBANAPASS",
       console_url: Cookies.get("console_url") || default_console_url,
       console_curl_host: Cookies.get("console_curl_host") || "localhost:9200",
       console_curl_user: Cookies.get("console_curl_user"),
-      console_curl_password: "",
+      console_curl_password: "$ESPASS",
       sense_url: Cookies.get("sense_url") || default_sense_url,
       sense_curl_host: Cookies.get("sense_curl_host") || "localhost:9200",
       sense_curl_user: Cookies.get("sense_curl_user"),
-      sense_curl_password: ""//TODO Cookies.get("curl_password")
+      sense_curl_password: "$ESPASS"//TODO Cookies.get("curl_password")
     }
   };
 
@@ -199,4 +199,13 @@ $(function() {
   }
 
   PR.prettyPrint();
+
+  // Setup hot module replacement for css if we're in dev mode.
+  if (module.hot) {
+    var hotcss = document.createElement('script');
+    hotcss.setAttribute('src', '/guide/static/styles.js');
+    document.head.appendChild(hotcss);
+  }
+
+  // Test comment used to detect unminifed JS in tests
 });

@@ -24,7 +24,8 @@ our @EXPORT_OK = qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
-    build_docs_js
+    start_web_resources_watcher
+    build_web_resources
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -535,7 +536,7 @@ sub write_nginx_redirects {
     $dest->spew( iomode => '>:utf8', $redirects );
 
     my $test_nginx_conf = $temp_dir->file( 'nginx.conf' );
-    write_nginx_test_config( $test_nginx_conf, $docs_dir, $dest );
+    write_nginx_test_config( $test_nginx_conf, $docs_dir, $dest, 0 );
     run( qw(nginx -t -c), $test_nginx_conf );
 }
 
@@ -547,12 +548,25 @@ sub write_nginx_redirects {
 # docs_dir        - directory containing generated docs : Path::Class::dir
 # redirects_file  - file containing redirects or 0 if there aren't
 #                 - any redirects : Path::Class::file||0
+# waching_web     - Truthy if we are watching web resources.
 #===================================
 sub write_nginx_test_config {
 #===================================
-    my ( $dest, $docs_dir, $redirects_file ) = @_;
+    my ( $dest, $docs_dir, $redirects_file, $watching_web ) = @_;
 
     my $redirects_line = $redirects_file ? "include $redirects_file;\n" : '';
+    my $web_conf;
+    if ( $watching_web ) {
+        $web_conf = <<"CONF"
+    rewrite ^/guide/static/docs\\.js(.*)\$ /guide/static/docs_js/index.js\$1 last;
+    location /guide/static/ {
+      proxy_pass http://0.0.0.0:1234;
+    }
+CONF
+    } else {
+        $web_conf = '';
+    }
+
     my $nginx_conf = <<"CONF";
 daemon off;
 error_log /dev/stdout info;
@@ -569,6 +583,7 @@ http {
 
   server {
     listen 8000;
+    $web_conf
     location /guide {
       alias $docs_dir;
       add_header 'Access-Control-Allow-Origin' '*';
@@ -725,16 +740,36 @@ sub timestamp {
 }
 
 #===================================
-sub build_docs_js {
+sub start_web_resources_watcher {
 #===================================
+    my $parcel_pid = fork;
+    return $parcel_pid if $parcel_pid;
+
+    close STDIN;
+    open( STDIN, "</dev/null" );
+    exec( qw(/node_modules/parcel/bin/cli.js serve
+             --public-url /guide/static/
+             --hmr-port 8001
+             -d /tmp/parcel/
+             resources/web/docs_js/index.js resources/web/styles.css) );
+}
+
+#===================================
+sub build_web_resources {
+#===================================
+    my ( $dest ) = @_;
+
     run '/node_modules/parcel/bin/cli.js', 'build',
-        'resources/web/docs_js/index.js', '/node_modules',
-        '-d', 'resources/web', '-o', 'docs.js',
-        '--experimental-scope-hoisting';
+        '-d', $dest, '-o', 'docs.js', '--experimental-scope-hoisting',
+        'resources/web/docs_js/index.js', '/node_modules';
     my $docs = file('resources/web/docs.js');
     my $licenses = file('resources/web/docs.js.licenses')->slurp;
     my $minified = $docs->slurp;
     $docs->spew($licenses . $minified);
+
+    run '/node_modules/parcel/bin/cli.js', 'build',
+        '-d', $dest, '-o', 'styles.css',
+        'resources/web/styles.css';
 }
 
 1

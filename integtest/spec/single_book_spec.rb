@@ -463,11 +463,36 @@ RSpec.describe 'building a single book' do
       @opened_docs.exit
     end
 
+    let(:static) { 'http://localhost:8000/guide/static' }
     let(:index) { Net::HTTP.get_response(URI('http://localhost:8000/guide/')) }
+    let(:js) do
+      Net::HTTP.get_response(URI("#{static}/docs.js"))
+    end
+    let(:css) do
+      Net::HTTP.get_response(URI("#{static}/styles.css"))
+    end
+
     it 'serves the book' do
       expect(index).to serve(doc_body(include(<<~HTML.strip)))
         <a href="chapter.html">Chapter
       HTML
+    end
+    context 'the js' do
+      it 'is unminified' do
+        expect(js).to serve(include(<<~JS))
+          // Test comment used to detect unminifed JS in tests
+        JS
+      end
+      it 'include hot module replacement for the css' do
+        expect(js).to serve(include(<<~JS))
+          // Setup hot module replacement for css if we're in dev mode.
+        JS
+      end
+    end
+    it 'serves the css unminified' do
+      expect(css).to serve(include(<<~CSS))
+        /* test comment used to detect unminified source */
+      CSS
     end
   end
 
