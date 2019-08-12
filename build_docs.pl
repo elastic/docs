@@ -34,7 +34,8 @@ use ES::Util qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
-    build_docs_js
+    start_web_resources_watcher
+    build_web_resources
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -63,10 +64,6 @@ init_env();
 
 $Opts->{template} = ES::Template->new(
     %{ $Conf->{template} },
-    # We'd like to remove abs_urls entirely but we need it to support
-    # --open without docker and we need it to support sharing docs over
-    # firebase. Both of those are coming, but not here yet!
-    abs_urls => $Opts->{doc},
 );
 
 $Opts->{doc}           ? build_local()
@@ -110,7 +107,8 @@ sub build_local {
         }
     }
 
-    build_docs_js();
+    # Get a head start on web resources if we're going to need them.
+    my $web_resources_pid = start_web_resources_watcher if $Opts->{open};
 
     my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
@@ -130,15 +128,7 @@ sub build_local {
 
     say "Done";
 
-    my $html = $dir->file('index.html');
-
-    if ( $Opts->{open} ) {
-        say "Opening: " . $html;
-        serve_and_open_browser( $dir, 0 );
-    }
-    else {
-        say "See: $html";
-    }
+    serve_and_open_browser( $dir, 0, $web_resources_pid ) if $Opts->{open};
 }
 
 #===================================
@@ -251,13 +241,16 @@ sub build_all {
         say "Skipping documentation builds."
     }
     else {
-        build_docs_js();
-
         say "Building docs";
         build_entries( $build_dir, $temp_dir, $toc, @$contents );
 
         say "Writing main TOC";
         $toc->write( $build_dir, 0 );
+
+        say "Writing web resources";
+        my $static_dir = $build_dir->subdir( 'static' );
+        # $static_dir->mkpath;
+        build_web_resources( $static_dir );
 
         say "Writing extra HTML redirects";
         for ( @{ $Conf->{redirects} } ) {
@@ -278,7 +271,7 @@ sub build_all {
     $tracker->prune_out_of_date( @$contents );
     $tracker->write;
     push_changes( $build_dir, $target_repo ) if $Opts->{push};
-    serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
+    serve_and_open_browser( $build_dir, $redirects, 0 ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -772,12 +765,13 @@ sub pick_conf {
 #===================================
 sub serve_and_open_browser {
 #===================================
-    my ( $docs_dir, $redirects_file ) = @_;
+    my ( $docs_dir, $redirects_file, $web_resources_pid ) = @_;
 
     if ( my $pid = fork ) {
         # parent
         $SIG{INT} = sub {
             kill 'TERM', $pid;
+            kill 'TERM', $web_resources_pid if $web_resources_pid;
         };
         $SIG{TERM} = $SIG{INT};
 
@@ -787,7 +781,9 @@ sub serve_and_open_browser {
     }
     else {
         my $nginx_config = file('/tmp/nginx.conf');
-        write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
+        write_nginx_test_config(
+            $nginx_config, $docs_dir, $redirects_file, $web_resources_pid
+        );
         close STDIN;
         open( STDIN, "</dev/null" );
         exec( qw(nginx -c), $nginx_config );

@@ -70,6 +70,20 @@ module Dsl
           end
         end
       end
+      file_context 'html/static/docs.js' do
+        it 'is minified' do
+          expect(contents).to include(<<~JS.strip)
+            {function ka(a){return a&&a.__esModule?{d:a.default}:{d:a}}
+          JS
+        end
+      end
+      file_context 'html/static/styles.css' do
+        it 'is minified' do
+          expect(contents).to include(<<~CSS.strip)
+            *{font-family:Inter,sans-serif}
+          CSS
+        end
+      end
     end
   end
 end
