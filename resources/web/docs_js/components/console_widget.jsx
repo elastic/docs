@@ -71,18 +71,25 @@ export const ConsoleForm = connect((state, props) =>
 
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
-  return <div>
-    <a className="sense_widget copy_as_curl"
-       onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
-      {props.langStrings('Copy as cURL')}
-    </a>
-    {props.view_in_text &&
-      <a className="view_in_link"
-         target="console"
-         title={props.langStrings(props.view_in_text)}
-         href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
-    }
-    <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
+  return <div class=".u-spaced-between">
+    <select>
+      <option>CONSOLE</option>
+      <option>C#</option>
+      <option>JS</option>
+    </select>
+    <div>
+      <a className="sense_widget copy_as_curl"
+        onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
+        {props.langStrings('Copy as cURL')}
+      </a>
+      {props.view_in_text &&
+        <a className="view_in_link"
+          target="console"
+          title={props.langStrings(props.view_in_text)}
+          href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
+      }
+      <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
+    </div>
   </div>
 }
 
