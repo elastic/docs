@@ -337,16 +337,14 @@
 
   <!-- added and deprecated markup -->
   <xsl:template match="phrase[@revisionflag]">
-    <xsl:variable name="classname">
+    <xsl:variable name="extra">
       <xsl:choose>
-        <xsl:when test="attribute::revisionflag='added'">added</xsl:when>
-        <xsl:when test="attribute::revisionflag='changed'">coming</xsl:when>
-        <xsl:when test="attribute::revisionflag='deleted'">deprecated</xsl:when>
+        <xsl:when test="attribute::revisionflag='deleted'">u-strikethrough</xsl:when>
       </xsl:choose>
     </xsl:variable>
-    <span class="{$classname}">
-      [<span class="version"><xsl:value-of select="attribute::revision" /></span>]
-      <span class="detail">
+    <span class="Admonishment">
+      [<span class="{normalize-space(concat('Admonishment-version u-mono ', $extra))}"><xsl:value-of select="attribute::revision" /></span>]
+      <span class="Admonishment-detail">
         <xsl:call-template name="revision-text" />
         <xsl:apply-templates />
       </span>
@@ -376,11 +374,11 @@
   <!-- Inline experimental/beta -->
   <xsl:template match="phrase[@role='experimental']|phrase[@role='beta']">
     <xsl:variable name="classname" select="attribute::role" />
-    <span class="{$classname}">
-      [<span class="{$classname}_title">
+    <span class="Admonishment Admonishment--{$classname}">
+      [<span class="Admonishment-title u-mono">
         <xsl:call-template name="experimental-beta-title" />
       </span>]
-      <span class="detail">
+      <span class="Admonishment-detail">
         <xsl:call-template name="experimental-beta-text" />
       </span>
     </span>
