@@ -89,7 +89,9 @@ class Book
   def link_to(branch)
     url = "#{@prefix}/#{branch}/index.html"
     decoration = ''
-    decoration = " [#{@current_branch}]" if branch == 'current'
+    if branch == 'current' && @branches.length != 1
+      decoration = " [#{@current_branch}]"
+    end
     %(<a class="ulink" href="#{url}" target="_top">#{@title}#{decoration}</a>)
   end
 
