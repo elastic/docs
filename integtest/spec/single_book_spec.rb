@@ -385,8 +385,6 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/important.png'
     file_context 'images/icons/note.png'
     file_context 'images/icons/warning.png'
-    file_context 'images/icons/callouts/1.png'
-    file_context 'images/icons/callouts/2.png'
   end
 
   context 'for a book with console alternatives' do

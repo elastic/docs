@@ -10,7 +10,7 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
       expect(body).to include(<<~HTML.strip)
         <div class="pre_wrapper default #{has_roles} lang-console"><pre class="default #{has_roles} programlisting prettyprint lang-console">GET /_search
         {
-            "query": "foo bar" <a id="CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+            "query": "foo bar" <a id="CO1-1"></a><i class="conum" data-value="1"></i>
         }</pre></div>#{console_widget}<div class="default #{has_roles} lang-console calloutlist">
       HTML
       # The last line is important: we need the snippet to be followed
@@ -20,7 +20,7 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
     it 'contains the js example' do
       expect(body).to include(<<~HTML.strip)
         <div class="pre_wrapper alternative lang-js"><pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
-          body: { query: 'foo bar' } <a id="A0-CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+          body: { query: 'foo bar' } <a id="A0-CO1-1"></a><i class="conum" data-value="1"></i>
         })</pre></div><div class="alternative lang-js calloutlist">
       HTML
       # The last line is important: we need the snippet to be followed
@@ -31,7 +31,7 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
         <div class="pre_wrapper alternative lang-csharp"><pre class="alternative programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
             .Query(q =&gt; q
                 .QueryString(m =&gt; m
-                    .Query("foo bar") <a id="A1-CO1-1"></a><span><img src="images/icons/callouts/1.png" alt="" /></span>
+                    .Query("foo bar") <a id="A1-CO1-1"></a><i class="conum" data-value="1"></i>
                 )
             )
         );</pre></div><div class="alternative lang-csharp calloutlist">
