@@ -31,6 +31,29 @@ RSpec.describe 'building all books' do
     end
     let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
+    file_context 'html/static/docs.js' do
+      def self.has_license(name, heading)
+        it "has license for #{name}" do
+          expect(contents).to include(<<~TXT)
+            /* #{name}
+             * #{heading}
+          TXT
+        end
+      end
+      has_license 'code-prettify', 'The Apache 2.0 License'
+      has_license "code-prettify's lang-sql", 'The Apache 2.0 License'
+      has_license "code-prettify's lang-yaml", 'The Apache 2.0 License'
+      has_license 'js-cookie', 'The MIT License (MIT)'
+      has_license 'linkstate', 'The MIT License (MIT)'
+      has_license 'loose-envify', 'The MIT License (MIT)'
+      has_license 'preact', 'The MIT License (MIT)'
+      has_license 'preact-context', 'The Apache 2.0 License'
+      has_license 'preact-redux', 'The MIT License (MIT)'
+      has_license 'ramda', 'The MIT License (MIT)'
+      has_license 'redux', 'The MIT License (MIT)'
+      has_license 'redux-thunk', 'The MIT License (MIT)'
+      has_license 'symbol-observable', 'The MIT License (MIT)'
+    end
   end
   context 'for a single book built by a single repo with two sources' do
     convert_all_before_context do |src|
