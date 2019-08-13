@@ -215,7 +215,7 @@ sub build {
         if ( $update_version_toc ) {
             # We could get away with only doing this if we added or removed
             # any branches or changed the current branch, but we don't have
-            # that. I think? NOCOMMIT check.
+            # that information right now.
             $toc->write($dir);
             for ( @{ $self->branches } ) {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $_ ), $_ );
