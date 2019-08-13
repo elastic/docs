@@ -158,7 +158,15 @@ def run_build_docs(args):
                 '-v',
                 '%s:%s:ro,cached' % (repo_root, repo_mount)
             ])
-        return repo_mount + path.replace(repo_root, '')
+        if not path.startswith(repo_root):
+            cmd = 'git rev-parse --show-toplevel'
+            err = ("provided path doesn't contain `%s`:\n"
+                   "    path: %s\n"
+                   "toplevel: %s\n"
+                   "This may be caused by case insensitive path matching") % \
+                (cmd, path, repo_root)
+            raise ArgError(err)
+        return repo_mount + path[len(repo_root):]
 
     open_browser = False
     args = Args(args)
@@ -294,9 +302,9 @@ def run_build_docs(args):
         logger.info(line)
         if open_browser:
             open_browser.on_line(line)
-        if 'Bind for 0.0.0.0:8000 failed: port is already allocated.' in line:
-            logger.error('Another process has port 8000. Is there already a '
-                         'docs build running with --open?')
+        if 'failed: port is already allocated.' in line:
+            logger.error('Another process has a port we need. Is there '
+                         'already a docs build running with --open?')
         if should_forward_ssh_auth_into_container:
             match = re.match('Waiting for ssh auth to be forwarded to (.+)',
                              line)

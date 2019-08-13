@@ -751,7 +751,7 @@ sub start_web_resources_watcher {
              --public-url /guide/static/
              --hmr-port 8001
              -d /tmp/parcel/
-             resources/web/docs_js/index.js resources/web/styles.css) );
+             resources/web/docs_js/index.js resources/web/styles.pcss) );
 }
 
 #===================================
@@ -762,9 +762,14 @@ sub build_web_resources {
     run '/node_modules/parcel/bin/cli.js', 'build',
         '-d', $dest, '-o', 'docs.js', '--experimental-scope-hoisting',
         'resources/web/docs_js/index.js', '/node_modules';
+    my $docs = $dest->file('docs.js');
+    my $licenses = file('resources/web/docs.js.licenses')->slurp;
+    my $minified = $docs->slurp;
+    $docs->spew($licenses . $minified);
+
     run '/node_modules/parcel/bin/cli.js', 'build',
         '-d', $dest, '-o', 'styles.css',
-        'resources/web/styles.css';
+        'resources/web/styles.pcss';
 }
 
 1
