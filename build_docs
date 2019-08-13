@@ -158,7 +158,15 @@ def run_build_docs(args):
                 '-v',
                 '%s:%s:ro,cached' % (repo_root, repo_mount)
             ])
-        return repo_mount + path.replace(repo_root, '')
+        if not path.startswith(repo_root):
+            cmd = 'git rev-parse --show-toplevel'
+            err = ("provided path doesn't contain `%s`:\n"
+                   "    path: %s\n"
+                   "toplevel: %s\n"
+                   "This may be caused by case insensitive path matching") % \
+                (cmd, path, repo_root)
+            raise ArgError(err)
+        return repo_mount + path[len(repo_root):]
 
     open_browser = False
     args = Args(args)
