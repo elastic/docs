@@ -34,7 +34,7 @@ RSpec.describe 'building all books' do
 
       [[chapter2]]
       == Chapter 2
-      Chapter 2 text
+      Some text.
     ASCIIDOC
 
     def self.build_twice(
@@ -84,7 +84,9 @@ RSpec.describe 'building all books' do
       )
       build_twice(
         before_first_build: lambda do |src, _config|
-          src.book_and_repo 'repo', 'Test', 'Some text.'
+          repo = src.repo_with_file 'repo', 'index.asciidoc', TWO_CHAPTERS
+          book = src.book 'Test'
+          book.source repo, 'index.asciidoc'
         end,
         before_second_build: init_second_book_and_customize(before_second_build)
       )
@@ -108,8 +110,7 @@ RSpec.describe 'building all books' do
       )
       build_twice(
         before_first_build: lambda do |src, _config|
-          src.simple_include
-
+          init_include src
           # Allow the caller to customize the source
           before_first_build.call src
         end,
@@ -118,6 +119,21 @@ RSpec.describe 'building all books' do
         end
       )
       include_context 'build one book twice'
+    end
+
+    def self.init_include(src)
+      repo1 = src.repo_with_file 'repo1', 'index.asciidoc', <<~ASCIIDOC
+        #{TWO_CHAPTERS}
+        Include between here
+        include::../repo2/included.asciidoc[]
+        and here.
+      ASCIIDOC
+
+      repo2 = src.repo_with_file 'repo2', 'included.asciidoc', 'included text'
+
+      book = src.book 'Test'
+      book.source repo1, 'index.asciidoc'
+      book.source repo2, 'included.asciidoc'
     end
 
     def self.build_one_book_then_two_books(
@@ -231,7 +247,7 @@ RSpec.describe 'building all books' do
         let(:out) { outputs[1] }
         include_examples 'builds all books'
       end
-      page_context 'html/test/current/chapter.html' do
+      page_context 'html/test/current/chapter2.html' do
         it 'includes the new text' do
           expect(body).to include(new_text)
         end
@@ -293,10 +309,7 @@ RSpec.describe 'building all books' do
             before_second_build: lambda do |src, _config|
               repo = src.repo 'repo'
               repo.write 'index.asciidoc', <<~ASCIIDOC
-                = Title
-
-                [[chapter]]
-                == Chapter
+                #{TWO_CHAPTERS}
                 New text.
               ASCIIDOC
               repo.commit 'changed text'
