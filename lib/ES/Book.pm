@@ -353,7 +353,7 @@ sub _update_title_and_version_drop_downs {
     for ( 'toc.html', 'index.html' ) {
         my $file = $branch_dir->file($_);
         my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
-        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+<\/li>)?<li>/<ul class="toc">${title}<li>/);
+        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?<li>/<ul class="toc">${title}<li>/);
         die "couldn't update version" unless $success;
         $file->spew( iomode => '>:utf8', $html );
     }
