@@ -69,10 +69,31 @@ export const ConsoleForm = connect((state, props) =>
         `${props.setting}_curl_password`], state.settings)
 , {saveSettings})(_ConsoleForm);
 
+export class _AlternativeLanguageForm extends Component {
+  componentWillMount() {
+    const defaultVals = omit(['langStrings', 'saveSettings'], this.props);
+    this.setState(defaultVals);
+  }
+
+  render(props, state) {
+    return <select className="AlternativePicker"
+        value={state["alternative_language"]}
+        onInput={linkState(this, "alternative_language")}>
+      <option>CONSOLE</option>
+      <option>C#</option>
+      <option>JS</option>
+    </select>
+  }
+}
+
+export const AlternativeLanguageForm = connect((state, props) =>
+  pick(["langStrings", "alternative_language"], state.settings)
+, {saveSettings})(_ConsoleForm);
+
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
-  return <div class=".u-spaced-between">
-    <select>
+  return <div className="u-space-between">
+    <select className="AlternativePicker">
       <option>CONSOLE</option>
       <option>C#</option>
       <option>JS</option>

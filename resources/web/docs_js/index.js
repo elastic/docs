@@ -161,7 +161,8 @@ $(function() {
       sense_url: Cookies.get("sense_url") || default_sense_url,
       sense_curl_host: Cookies.get("sense_curl_host") || "localhost:9200",
       sense_curl_user: Cookies.get("sense_curl_user"),
-      sense_curl_password: "$ESPASS"//TODO Cookies.get("curl_password")
+      sense_curl_password: "$ESPASS",//TODO Cookies.get("curl_password")
+      console_alternative: Cookies.get('console_alternative') || 'CONSOLE',
     }
   };
 
