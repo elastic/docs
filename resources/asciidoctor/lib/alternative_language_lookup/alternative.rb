@@ -30,10 +30,10 @@ module AlternativeLanguageLookup
     ##
     # A block that can be inserted into the main document if we've successfully
     # loaded, validated, and munged the alternative. nil otherwise.
-    def block(parent)
+    def block(block)
       return unless @text
 
-      Asciidoctor::Block.new parent, :pass, source: @text
+      Asciidoctor::Block.new block.parent, :pass, source: @text
     end
 
     def load
