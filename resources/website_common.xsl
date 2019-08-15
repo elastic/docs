@@ -317,6 +317,7 @@
     <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana'">
       <xsl:variable name="widget_class">
         <xsl:value-of select="@language"/>_widget
+        <xsl:value-of select="substring-after(@role, 'default')"/>
       </xsl:variable>
       <div
         class="{normalize-space($widget_class)}"
