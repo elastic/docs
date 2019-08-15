@@ -81,7 +81,7 @@ sub _autosense_snippets {
 
         # Remove callouts from snippet
         my $snippet = $2;
-        $snippet =~ s{<a.+?</span>}{}gs;
+        $snippet =~ s{<a.+?</i>}{}gs;
 
         # Unescape HTML entities
         $snippet =~ s/&lt;/</g;

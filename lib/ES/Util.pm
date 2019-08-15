@@ -77,7 +77,6 @@ sub build_chunked {
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
-                'callout.graphics' => 1,
                 'navig.graphics'   => 1,
                 'admon.textlabel'  => 0,
                 'admon.graphics'   => 1,
@@ -87,8 +86,8 @@ sub build_chunked {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
-        # We use the callouts from asciidoc so add it as a resource so we
-        # can find them
+        # We use the admonishment images from asciidoc so add it as a resource
+        # so we can find them
         push @$resources, $asciidoc_dir;
         eval {
             $output = run(
@@ -108,7 +107,6 @@ sub build_chunked {
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
@@ -220,7 +218,6 @@ sub build_single {
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
-                'callout.graphics' => 1,
                 'navig.graphics'   => 1,
                 'admon.textlabel'  => 0,
                 'admon.graphics'   => 1,
@@ -231,8 +228,8 @@ sub build_single {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
-        # We use the callouts from asciidoc so add it as a resource so we
-        # can find them
+        # We use the admonishment images from asciidoc so add it as a resource
+        # so we can find them
         push @$resources, $asciidoc_dir;
         eval {
             $output = run(
@@ -246,7 +243,6 @@ sub build_single {
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
