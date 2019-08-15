@@ -69,34 +69,17 @@ export const ConsoleForm = connect((state, props) =>
         `${props.setting}_curl_password`], state.settings)
 , {saveSettings})(_ConsoleForm);
 
-export class _AlternativeLanguageForm extends Component {
-  componentWillMount() {
-    const defaultVals = omit(['langStrings', 'saveSettings'], this.props);
-    this.setState(defaultVals);
-  }
-
-  render(props, state) {
-    return <select className="AlternativePicker"
-        value={state["alternative_language"]}
-        onInput={linkState(this, "alternative_language")}>
-      <option>CONSOLE</option>
-      <option>C#</option>
-      <option>JS</option>
-    </select>
-  }
-}
-
-export const AlternativeLanguageForm = connect((state, props) =>
-  pick(["langStrings", "alternative_language"], state.settings)
-, {saveSettings})(_ConsoleForm);
-
+// ConsoleWidget isn't quite the right name for this any more....
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   return <div className="u-space-between">
-    <select className="AlternativePicker">
-      <option>CONSOLE</option>
-      <option>C#</option>
-      <option>JS</option>
+    <select className="AlternativePicker"
+            value={props.consoleAlternative}
+            onChange={(e) => props.saveSettings({consoleAlternative: e.target.value})}>
+      <option value="console">CONSOLE</option>
+      <option value="csharp">C#</option>
+      <option value="js">JS</option>
+      <option value="php">PHP</option>
     </select>
     <div>
       <a className="sense_widget copy_as_curl"
@@ -115,5 +98,5 @@ export const ConsoleWidget = props => {
 }
 
 export default connect((state, props) =>
-  pick(["langStrings", "baseUrl", `${props.setting}_url`], state.settings)
-, {copyAsCurl, openModal})(ConsoleWidget)
+  pick(["langStrings", "baseUrl", `${props.setting}_url`, "consoleAlternative"], state.settings)
+, {copyAsCurl, openModal, saveSettings})(ConsoleWidget)

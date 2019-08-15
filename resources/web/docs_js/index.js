@@ -1,3 +1,4 @@
+import AlternativeExamples from "./components/alternative_examples";
 import ConsoleWidget from "./components/console_widget";
 import Modal from "./components/modal";
 import mount from "./components/mount";
@@ -162,7 +163,7 @@ $(function() {
       sense_curl_host: Cookies.get("sense_curl_host") || "localhost:9200",
       sense_curl_user: Cookies.get("sense_curl_user"),
       sense_curl_password: "$ESPASS",//TODO Cookies.get("curl_password")
-      console_alternative: Cookies.get('console_alternative') || 'CONSOLE',
+      consoleAlternative: Cookies.get('consoleAlternative') || "console",
     }
   };
 
@@ -171,6 +172,8 @@ $(function() {
 
   // One modal component for N mini-apps
   mount($('body'), Modal);
+
+  AlternativeExamples(store());
 
   var right_col = $('#right_col'); // Move rtp container to top right and make visible
 
