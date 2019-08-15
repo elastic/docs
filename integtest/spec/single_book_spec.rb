@@ -401,7 +401,7 @@ RSpec.describe 'building a single book' do
             "query": "foo bar" <1>
         }
         ----------------------------------
-        <1> Example
+        <1> Here's the explanation
 
         [source,console]
         ----------------------------------
