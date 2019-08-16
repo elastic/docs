@@ -37,6 +37,19 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
         );</pre></div><div class="alternative lang-csharp calloutlist">
       HTML
     end
+    context 'the initial js state' do
+      it 'contains the available alternatives' do
+        expect(initial_js_state).to include(
+          alternatives: {
+            console: {
+              js: { hasAny: true },
+              csharp: { hasAny: true },
+              java: { hasAny: false },
+            },
+          }
+        )
+      end
+    end
   end
   file_context "#{path}/alternatives_report.adoc" do
     it 'has a report on the example with all alternatives' do
@@ -50,9 +63,9 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
         }
         ----
         |===
-        | js | csharp
+        | js | csharp | java
 
-        | &check; | &check;
+        | &check; | &check; | &cross;
         |===
       ASCIIDOC
     end
@@ -67,9 +80,9 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
         }
         ----
         |===
-        | js | csharp
+        | js | csharp | java
 
-        | &cross; | &cross;
+        | &cross; | &cross; | &cross;
         |===
       ASCIIDOC
     end

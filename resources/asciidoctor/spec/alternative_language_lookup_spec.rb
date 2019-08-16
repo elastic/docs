@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'tempfile'
 require 'alternative_language_lookup/extension'
 
@@ -94,14 +95,23 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       {
         'alternative_language_lookups' => config,
         'alternative_language_report' =>
-          Tempfile.new('alternative_report').path,
+          Tempfile.new(%w[alternatives_report adoc]).path,
+        'alternative_language_summary' =>
+          Tempfile.new(%w[alternatives_summary json]).path,
       }
     end
     let(:report) do
       # read the result of the conversion to populate the dir
       converted
-      # return the dir
-      File.read(convert_attributes['alternative_language_report'])
+      # grab the contents
+      File.read convert_attributes['alternative_language_report']
+    end
+    let(:summary) do
+      # read the result of the conversion to populate the dir
+      converted
+      # grab the contents
+      txt = File.read convert_attributes['alternative_language_summary']
+      JSON.parse(txt, symbolize_names: true) unless txt.empty?
     end
     context "when there aren't any alternatives" do
       include_context 'convert without logs'
@@ -131,6 +141,20 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           ASCIIDOC
         end
       end
+      context 'the summary' do
+        it 'shows everything as missing' do
+          expect(summary).to eq(
+            console: {
+              total: 1,
+              alternatives: {
+                js: { found: 0 },
+                csharp: { found: 0 },
+                java: { found: 0 },
+              },
+            }
+          )
+        end
+      end
     end
     context 'when there is a single alternative' do
       include_context 'convert without logs'
@@ -152,6 +176,20 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
 
             | &check; | &cross; | &cross;
           ASCIIDOC
+        end
+      end
+      context 'the summary' do
+        it 'shows only js found' do
+          expect(summary).to eq(
+            console: {
+              total: 1,
+              alternatives: {
+                js: { found: 1 },
+                csharp: { found: 0 },
+                java: { found: 0 },
+              },
+            }
+          )
         end
       end
     end
@@ -177,6 +215,20 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
 
             | &check; | &check; | &check;
           ASCIIDOC
+        end
+      end
+      context 'the summary' do
+        it 'shows only js found' do
+          expect(summary).to eq(
+            console: {
+              total: 1,
+              alternatives: {
+                js: { found: 1 },
+                csharp: { found: 1 },
+                java: { found: 1 },
+              },
+            }
+          )
         end
       end
     end
