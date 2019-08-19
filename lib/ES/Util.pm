@@ -52,6 +52,7 @@ sub build_chunked {
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
+    my $alternatives_summary = $dest->file('alternatives_summary.json');
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -77,7 +78,6 @@ sub build_chunked {
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
-                'callout.graphics' => 1,
                 'navig.graphics'   => 1,
                 'admon.textlabel'  => 0,
                 'admon.graphics'   => 1,
@@ -87,8 +87,8 @@ sub build_chunked {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
-        # We use the callouts from asciidoc so add it as a resource so we
-        # can find them
+        # We use the admonishment images from asciidoc so add it as a resource
+        # so we can find them
         push @$resources, $asciidoc_dir;
         eval {
             $output = run(
@@ -108,13 +108,13 @@ sub build_chunked {
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc",
+                    '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
@@ -168,7 +168,7 @@ sub build_chunked {
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
         or die "Couldn't find chunk dir in <$dest>";
 
-    finish_build( $index->parent, $chunk_dir, $lang, $asciidoctor );
+    finish_build( $index->parent, $chunk_dir, $lang, $asciidoctor, $alternatives_summary );
     extract_toc_from_index($chunk_dir);
     for ( $chunk_dir->children ) {
         run( 'mv', $_, $dest );
@@ -199,6 +199,7 @@ sub build_single {
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
+    my $alternatives_summary = $dest->file('alternatives_summary.json');
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -220,7 +221,6 @@ sub build_single {
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
-                'callout.graphics' => 1,
                 'navig.graphics'   => 1,
                 'admon.textlabel'  => 0,
                 'admon.graphics'   => 1,
@@ -231,8 +231,8 @@ sub build_single {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
-        # We use the callouts from asciidoc so add it as a resource so we
-        # can find them
+        # We use the admonishment images from asciidoc so add it as a resource
+        # so we can find them
         push @$resources, $asciidoc_dir;
         eval {
             $output = run(
@@ -246,13 +246,13 @@ sub build_single {
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc",
+                    '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
@@ -312,7 +312,7 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    finish_build( $index->parent, $dest, $lang, $asciidoctor );
+    finish_build( $index->parent, $dest, $lang, $asciidoctor, $alternatives_summary );
 }
 
 #===================================
@@ -395,10 +395,10 @@ sub build_pdf {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $dest, $lang, $asciidoctor ) = @_;
+    my ( $source, $dest, $lang, $asciidoctor, $alternatives_summary ) = @_;
 
     # Apply template to HTML files
-    $Opts->{template}->apply( $dest, $lang, $asciidoctor );
+    $Opts->{template}->apply( $dest, $lang, $asciidoctor, $alternatives_summary );
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;

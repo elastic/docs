@@ -249,7 +249,6 @@ sub build_all {
 
         say "Writing web resources";
         my $static_dir = $build_dir->subdir( 'static' );
-        # $static_dir->mkpath;
         build_web_resources( $static_dir );
 
         say "Writing extra HTML redirects";

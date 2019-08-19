@@ -330,10 +330,11 @@
     <!-- Throw away the link by not copying it. -->
   </xsl:template>
 
-  <!-- Make callouts non-selectable -->
+  <!-- Use asciidoctor style callouts -->
   <xsl:template name="callout-bug">
     <xsl:param name="conum" select="1"/>
-    <span><img src="{$callout.graphics.path}{$conum}{$callout.graphics.extension}" alt="" /></span>
+    <!-- <i> is a hack here to avoid all of the styling that comes in with a <span>....-->
+    <i class="conum" data-value="{$conum}"></i>
   </xsl:template>
 
   <!-- added and deprecated markup -->

@@ -16,6 +16,7 @@ RUN cat /yarn.gpg | apt-key add - && rm yarn.gpg
 #   * bash
 #   * less
 # * Used by the docs build
+#   * libjson-perl
 #   * libnss-wrapper
 #   * libxml2-utils
 #   * nginx
@@ -44,6 +45,7 @@ RUN install_packages \
   cmake \
   git \
   less \
+  libjson-perl \
   libnss-wrapper \
   libxml2-dev \
   libxml2-utils \
