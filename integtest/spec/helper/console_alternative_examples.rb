@@ -2,31 +2,20 @@
 
 RSpec.shared_examples 'README-like console alternatives' do |path|
   page_context "#{path}/chapter.html" do
-    it 'contains the default example' do
-      has_roles = 'has-js has-csharp'
-      console_widget = <<~HTML.strip
-        <div class="console_widget default #{has_roles}" data-snippet="snippets/1.console"></div>
+    let(:has_classes) { 'has-js has-csharp' }
+    let(:console_widget) do
+      <<~HTML.strip
+        <div class="console_widget #{has_classes}" data-snippet="snippets/1.console"></div>
       HTML
-      expect(body).to include(<<~HTML.strip)
-        <div class="pre_wrapper default #{has_roles} lang-console"><pre class="default #{has_roles} programlisting prettyprint lang-console">GET /_search
-        {
-            "query": "foo bar" <a id="CO1-1"></a><i class="conum" data-value="1"></i>
-        }</pre></div>#{console_widget}<div class="default #{has_roles} lang-console calloutlist">
-      HTML
-      # The last line is important: we need the snippet to be followed
-      # immediately by the console widget and then immediately by the callout
-      # list.
     end
-    it 'contains the js example' do
+    it 'contains the js listing followed by the csharp listing' do
       expect(body).to include(<<~HTML.strip)
-        <div class="pre_wrapper alternative lang-js"><pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
+        </div><div class="pre_wrapper alternative lang-js"><pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
           body: { query: 'foo bar' } <a id="A0-CO1-1"></a><i class="conum" data-value="1"></i>
-        })</pre></div><div class="alternative lang-js calloutlist">
+        })</pre></div><div class="pre_wrapper alternative lang-csharp">
       HTML
-      # The last line is important: we need the snippet to be followed
-      # immediately by the callout list.
     end
-    it 'contains the csharp example' do
+    it 'contains the csharp listing followed by the default listing' do
       expect(body).to include(<<~HTML.strip)
         <div class="pre_wrapper alternative lang-csharp"><pre class="alternative programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
             .Query(q =&gt; q
@@ -34,7 +23,30 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
                     .Query("foo bar") <a id="A1-CO1-1"></a><i class="conum" data-value="1"></i>
                 )
             )
-        );</pre></div><div class="alternative lang-csharp calloutlist">
+        );</pre></div><div class="pre_wrapper default #{has_classes} lang-console">
+      HTML
+    end
+    it 'contains the default listing followed by the console widget' do
+      expect(body).to include(<<~HTML.strip)
+        <div class="pre_wrapper default #{has_classes} lang-console"><pre class="default #{has_classes} programlisting prettyprint lang-console">GET /_search
+        {
+            "query": "foo bar" <a id="CO1-1"></a><i class="conum" data-value="1"></i>
+        }</pre></div>#{console_widget}
+      HTML
+    end
+    it 'contains the console widget followed by the js calloutlist' do
+      expect(body).to include(<<~HTML.strip)
+        #{console_widget}<div class="alternative lang-js calloutlist">
+      HTML
+    end
+    it 'contains the js calloutlist followed by the csharp calloutlist' do
+      expect(body).to include(<<~HTML.strip)
+        js</p></td></tr></table></div><div class="alternative lang-csharp calloutlist">
+      HTML
+    end
+    it 'contains the csharp calloutlist followed by the default calloutlist' do
+      expect(body).to include(<<~HTML.strip)
+        csharp</p></td></tr></table></div><div class="default #{has_classes} lang-console calloutlist">
       HTML
     end
     context 'the initial js state' do
