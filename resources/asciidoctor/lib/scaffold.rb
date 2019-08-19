@@ -18,7 +18,13 @@ class TreeProcessorScaffold < Asciidoctor::Extensions::TreeProcessor
 
   def process_blocks(block)
     process_block block
-    sub_blocks = block.context == :dlist ? block.blocks.flatten : block.blocks
+    sub_blocks =
+      if block.context == :dlist
+        block.blocks.flatten
+      else
+        # Dup so modifications to the list don't cause us to reprocess
+        block.blocks.dup
+      end
     sub_blocks.each do |sub_block|
       # subblock can be nil for definition lists without a definition.
       # this is weird, but it is safe to skip nil here because subclasses

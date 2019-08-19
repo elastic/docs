@@ -18,22 +18,35 @@ module AlternativeLanguageLookup
       @lang = lang
       @path = path
       @counter = @document.attr 'alternative_language_counter', 0
-      @text = nil
+      @listing_text = nil
+      @colist_text = nil
       load
       return unless validate
 
       munge
       @document.attributes['alternative_language_counter'] = @counter + 1
-      @text = @child.convert
+      @listing_text = @listing.convert
+      @colist_text = @colist&.convert
     end
 
     ##
-    # A block that can be inserted into the main document if we've successfully
-    # loaded, validated, and munged the alternative. nil otherwise.
-    def block(parent)
-      return unless @text
+    # A block for the alternative listing that can be inserted into the main
+    # document if we've successfully loaded, validated, and munged the
+    # alternative. nil otherwise.
+    def listing(parent)
+      return unless @listing_text
 
-      Asciidoctor::Block.new parent, :pass, source: @text
+      Asciidoctor::Block.new parent, :pass, source: @listing_text
+    end
+
+    ##
+    # A block for the alternative callout list that can be inserted into the
+    # main document if the alternative contains a callout list and we've
+    # successfully loaded, validated, and munged the alternative. nil otherwise.
+    def colist(parent)
+      return unless @colist_text
+
+      Asciidoctor::Block.new parent, :pass, source: @colist_text
     end
 
     def load
