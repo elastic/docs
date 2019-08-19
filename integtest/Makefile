@@ -24,4 +24,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec -e 'for a single book built by a single repo'
+	rspec
