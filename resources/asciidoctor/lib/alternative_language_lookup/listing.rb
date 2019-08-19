@@ -44,6 +44,8 @@ module AlternativeLanguageLookup
       end
       report = document.attr 'alternative_language_report'
       report&.report self, found_langs
+      summary = document.attr 'alternative_language_summary'
+      summary&.on_listing self, found_langs
 
       cleanup_original_after_add found_langs unless found_langs.empty?
     end
