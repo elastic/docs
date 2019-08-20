@@ -164,7 +164,15 @@ $(function() {
       sense_curl_user: Cookies.get("sense_curl_user"),
       sense_curl_password: "$ESPASS",//TODO Cookies.get("curl_password")
       consoleAlternative: Cookies.get('consoleAlternative') || "console",
-    }
+    },
+    /*
+     * Grab the initial state that we know how to deal with from the page.
+     * Rather than grab *everything* we grab the keys we can reduce to prevent
+     * things from falling over when an out of date version of the js sees new
+     * initial state. This wouldn't be a thing if we could bust the cache at
+     * will but, at this point, we can't.
+     */
+    alternatives: window.initial_state.alternatives,
   };
 
   // first call to store initializes it

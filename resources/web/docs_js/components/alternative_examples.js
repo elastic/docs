@@ -24,6 +24,8 @@ export default function(store) {
      * when there isn't an alternative. */
     sheet.insertRule(`#guide .default.has-${newValue} { display: none; }`);
     sheet.insertRule(`#guide .alternative.lang-${newValue} { display: block; }`);
+    sheet.insertRule(`#guide .AlternativePicker-warning { display: block; }`);
+    sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { display: none; }`);
   };
   updateSheet();
   store.subscribe(updateSheet);

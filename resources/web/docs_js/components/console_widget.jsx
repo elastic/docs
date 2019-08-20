@@ -1,5 +1,5 @@
 import * as utils from "../utils";
-import {prop, pick, merge, omit} from "../../../../../node_modules/ramda";
+import {prop, pick, mapObjIndexed, merge, omit, values} from "../../../../../node_modules/ramda";
 import {h, Component} from "../../../../../node_modules/preact";
 import linkState from "../../../../../node_modules/linkstate";
 import {connect} from "../../../../../node_modules/preact-redux";
@@ -69,23 +69,66 @@ export const ConsoleForm = connect((state, props) =>
         `${props.setting}_curl_password`], state.settings)
 , {saveSettings})(_ConsoleForm);
 
-// ConsoleWidget isn't quite the right name for this any more....
-export const ConsoleWidget = props => {
-  const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
-  const alternativePicker = <div className="AlternativePicker u-space-between">
+const alternativePrettyName = rawName => {
+  switch(rawName) {
+    case 'console': return 'Console';
+    case 'csharp': return 'C#';
+    case 'js': return 'JavaScript';
+    case 'php': return 'PHP';
+    default: return rawName;
+  }
+};
+
+const alternativeChoice = rawName => {
+  return <option value={rawName}>{alternativePrettyName(rawName)}</option>;
+};
+
+const alternativePicker = props => {
+  if (!props.alternatives) {
+    return;
+  }
+  const consoleAlternatives = props.alternatives.console;
+  if (!consoleAlternatives) {
+    return;
+  }
+
+  const items = [];
+  let sawChoice = false;
+  if (!props.consoleAlternative) {
+    sawChoice = true;
+  }
+  sawChoice |= 'console' === props.consoleAlternative;
+  items.push(alternativeChoice('console'));
+  for (const name of Object.keys(consoleAlternatives)) {
+    sawChoice |= name === props.consoleAlternative;
+    items.push(alternativeChoice(name));
+  }
+
+  /* If value isn't in the list then *make* it and we'll render our standard
+   * "there no example for this language" option. This prevents us from
+   * squashing preferences that users set. */
+  if (!sawChoice) {
+    items.push(alternativeChoice(props.consoleAlternative));
+  }
+  // TODO we shouldn't change these drop downs after the first time they are rendered. The extra choice should stay while you stay on the page.
+
+  // TODO add the "message" bubble to the warning.
+  return <div className="AlternativePicker u-space-between">
     <select className="AlternativePicker-select"
             value={props.consoleAlternative}
             onChange={(e) => props.saveSettings({consoleAlternative: e.target.value})}>
-      <option value="console">CONSOLE</option>
-      <option value="csharp">C#</option>
-      <option value="js">JS</option>
-      <option value="php">PHP</option>
+      {items}
     </select>
     <div className="AlternativePicker-warning" />
   </div>;
+};
+
+// ConsoleWidget isn't quite the right name for this any more....
+export const ConsoleWidget = props => {
+  const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   // TODO: only attach if there are alternatives on this book
   return <div className="u-space-between">
-    {alternativePicker}
+    {alternativePicker(props)}
     <div>
       <a className="sense_widget copy_as_curl"
         onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
@@ -103,5 +146,7 @@ export const ConsoleWidget = props => {
 }
 
 export default connect((state, props) =>
-  pick(["langStrings", "baseUrl", `${props.setting}_url`, "consoleAlternative"], state.settings)
-, {copyAsCurl, openModal, saveSettings})(ConsoleWidget)
+  merge(
+    pick(["langStrings", "baseUrl", `${props.setting}_url`, "consoleAlternative"], state.settings),
+    {alternatives: state.alternatives}),
+{copyAsCurl, openModal, saveSettings})(ConsoleWidget)
