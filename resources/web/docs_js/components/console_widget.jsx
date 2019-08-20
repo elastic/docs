@@ -1,5 +1,5 @@
 import * as utils from "../utils";
-import {prop, pick, mapObjIndexed, merge, omit, values} from "../../../../../node_modules/ramda";
+import {prop, pick, merge, omit} from "../../../../../node_modules/ramda";
 import {h, Component} from "../../../../../node_modules/preact";
 import linkState from "../../../../../node_modules/linkstate";
 import {connect} from "../../../../../node_modules/preact-redux";
@@ -85,11 +85,11 @@ const alternativeChoice = rawName => {
 
 const alternativePicker = props => {
   if (!props.alternatives) {
-    return;
+    return <div/>;
   }
   const consoleAlternatives = props.alternatives.console;
   if (!consoleAlternatives) {
-    return;
+    return <div/>;
   }
 
   const items = [];
@@ -110,13 +110,16 @@ const alternativePicker = props => {
   if (!sawChoice) {
     items.push(alternativeChoice(props.consoleAlternative));
   }
-  // TODO we shouldn't change these drop downs after the first time they are rendered. The extra choice should stay while you stay on the page.
+  // TODO we shouldn't change these drop downs after the first time they are rendered. The extra choice should stay while you stay on the page. Maybe we can get away with rendering this once on page load and never subscribing again?
 
   // TODO add the "message" bubble to the warning.
+  // TODO prevent "jumping" when the size of the snippets isn't the same
   return <div className="AlternativePicker u-space-between">
     <select className="AlternativePicker-select"
             value={props.consoleAlternative}
-            onChange={(e) => props.saveSettings({consoleAlternative: e.target.value})}>
+            onChange={(e) => {
+              props.saveSettings({consoleAlternative: e.target.value});
+            }}>
       {items}
     </select>
     <div className="AlternativePicker-warning" />
