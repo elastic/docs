@@ -79,13 +79,13 @@ const alternativePrettyName = rawName => {
   }
 };
 
-const AlternativeChoice = props => {
-  return <option value={props.name}>{alternativePrettyName(props.name)}</option>;
+const AlternativeChoice = ({name: name}) => {
+  return <option value={name}>{alternativePrettyName(name)}</option>;
 };
 
-const AlternativePicker = props => {
+export const AlternativePicker = props => {
   if (!props.alternatives) {
-    return <div/>;
+    return <div/>; // Empty div to preserve the spacing
   }
   const consoleAlternatives = props.alternatives.console;
   if (!consoleAlternatives) {
