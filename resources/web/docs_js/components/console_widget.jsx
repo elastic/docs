@@ -85,11 +85,11 @@ const alternativeChoice = rawName => {
 
 const alternativePicker = props => {
   if (!props.alternatives) {
-    return <div/>;
+    return;
   }
   const consoleAlternatives = props.alternatives.console;
   if (!consoleAlternatives) {
-    return <div/>;
+    return;
   }
 
   const items = [];
@@ -127,9 +127,8 @@ const alternativePicker = props => {
 // ConsoleWidget isn't quite the right name for this any more....
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
-  // TODO: only attach if there are alternatives on this book
   return <div className="u-space-between">
-    {alternativePicker(props)}
+    {alternativePicker(props) || <div/>}
     <div>
       <a className="sense_widget copy_as_curl"
         onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
