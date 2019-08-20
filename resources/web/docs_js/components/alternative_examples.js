@@ -1,5 +1,6 @@
 export default function(store) {
   const style = document.createElement('style');
+  style.id = 'console-alternative';
   document.head.appendChild(style);
   const sheet = style.sheet;
 
@@ -20,10 +21,12 @@ export default function(store) {
     if (newValue === "console") {
       return;
     }
+
     /* Setup rules to show alternatives when they exist and keep the default
      * when there isn't an alternative. */
     sheet.insertRule(`#guide .default.has-${newValue} { display: none; }`);
     sheet.insertRule(`#guide .alternative.lang-${newValue} { display: block; }`);
+    // Setup rules to show the warning unless the snippet has that alternative
     sheet.insertRule(`#guide .AlternativePicker-warning { display: block; }`);
     sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { display: none; }`);
   };
