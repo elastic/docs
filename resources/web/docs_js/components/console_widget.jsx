@@ -117,9 +117,7 @@ const alternativePicker = props => {
   return <div className="AlternativePicker u-space-between">
     <select className="AlternativePicker-select"
             value={props.consoleAlternative}
-            onChange={(e) => {
-              props.saveSettings({consoleAlternative: e.target.value});
-            }}>
+            onChange={(e) => props.saveSettings({consoleAlternative: e.target.value})}>
       {items}
     </select>
     <div className="AlternativePicker-warning" />
