@@ -93,11 +93,7 @@ const alternativePicker = props => {
   }
 
   const items = [];
-  let sawChoice = false;
-  if (!props.consoleAlternative) {
-    sawChoice = true;
-  }
-  sawChoice |= 'console' === props.consoleAlternative;
+  let sawChoice = 'console' === props.consoleAlternative;
   items.push(alternativeChoice('console'));
   for (const name of Object.keys(consoleAlternatives)) {
     sawChoice |= name === props.consoleAlternative;
