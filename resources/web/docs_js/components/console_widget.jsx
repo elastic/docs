@@ -79,32 +79,32 @@ const alternativePrettyName = rawName => {
   }
 };
 
-const alternativeChoice = rawName => {
-  return <option value={rawName}>{alternativePrettyName(rawName)}</option>;
+const AlternativeChoice = props => {
+  return <option value={props.name}>{alternativePrettyName(props.name)}</option>;
 };
 
-const alternativePicker = props => {
+const AlternativePicker = props => {
   if (!props.alternatives) {
-    return;
+    return <div/>;
   }
   const consoleAlternatives = props.alternatives.console;
   if (!consoleAlternatives) {
-    return;
+    return <div/>;
   }
 
   const items = [];
   let sawChoice = 'console' === props.consoleAlternative;
-  items.push(alternativeChoice('console'));
+  items.push(<AlternativeChoice name='console'/>);
   for (const name of Object.keys(consoleAlternatives)) {
     sawChoice |= name === props.consoleAlternative;
-    items.push(alternativeChoice(name));
+    items.push(<AlternativeChoice name={name} />);
   }
 
   /* If value isn't in the list then *make* it and we'll render our standard
    * "there no example for this language" option. This prevents us from
    * squashing preferences that users set. */
   if (!sawChoice) {
-    items.push(alternativeChoice(props.consoleAlternative));
+    items.push(<AlternativeChoice name={props.consoleAlternative} />);
   }
   // TODO we shouldn't change these drop downs after the first time they are rendered. The extra choice should stay while you stay on the page. Maybe we can get away with rendering this once on page load and never subscribing again?
 
@@ -124,7 +124,7 @@ const alternativePicker = props => {
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   return <div className="u-space-between">
-    {alternativePicker(props) || <div/>}
+    <AlternativePicker {...props}/>
     <div>
       <a className="sense_widget copy_as_curl"
         onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
