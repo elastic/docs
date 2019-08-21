@@ -64,7 +64,7 @@ export const _AlternativePicker = ({
 };
 
 export default connect(
-  (state, props) => merge( // NOCOMMIT: can drop props?
+  state => merge(
     pick(["consoleAlternative"], state.settings),
-    {alternatives: state.alternatives}),
+      {alternatives: state.alternatives}),
   {saveSettings})(_AlternativePicker);
