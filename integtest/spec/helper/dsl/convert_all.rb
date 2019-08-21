@@ -76,12 +76,18 @@ module Dsl
             {function ka(a){return a&&a.__esModule?{d:a.default}:{d:a}}
           JS
         end
+        it "doesn't include a source map" do
+          expect(contents).not_to include('sourceMappingURL=')
+        end
       end
       file_context 'html/static/styles.css' do
         it 'is minified' do
           expect(contents).to include(<<~CSS.strip)
             *{font-family:Inter,sans-serif}
           CSS
+        end
+        it "doesn't include a source map" do
+          expect(contents).not_to include('sourceMappingURL=')
         end
       end
     end

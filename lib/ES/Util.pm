@@ -760,14 +760,16 @@ sub build_web_resources {
     my ( $dest ) = @_;
 
     run '/node_modules/parcel/bin/cli.js', 'build',
-        '-d', $dest, '-o', 'docs.js', '--experimental-scope-hoisting',
+        '--experimental-scope-hoisting', '--no-source-maps',
+        '-d', $dest, '-o', 'docs.js',
         'resources/web/docs_js/index.js', '/node_modules';
     my $docs = $dest->file('docs.js');
     my $licenses = file('resources/web/docs.js.licenses')->slurp;
-    my $minified = $docs->slurp;
-    $docs->spew($licenses . $minified);
+    my $built = $docs->slurp;
+    $docs->spew($licenses . $built);
 
     run '/node_modules/parcel/bin/cli.js', 'build',
+        '--no-source-maps',
         '-d', $dest, '-o', 'styles.css',
         'resources/web/styles.pcss';
 }
