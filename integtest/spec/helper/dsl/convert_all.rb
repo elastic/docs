@@ -73,7 +73,7 @@ module Dsl
       file_context 'html/static/docs.js' do
         it 'is minified' do
           expect(contents).to include(<<~JS.strip)
-            {function ka(a){return a&&a.__esModule?{d:a.default}:{d:a}}
+            return a&&a.__esModule?{d:a.default}:{d:a}
           JS
         end
         it "doesn't include a source map" do
