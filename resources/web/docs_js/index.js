@@ -1,4 +1,4 @@
-import AlternativePicker from "./components/alternative_picker";
+import AlternativeSwitcher from "./components/alternative_switcher";
 import ConsoleWidget from "./components/console_widget";
 import Modal from "./components/modal";
 import mount from "./components/mount";
@@ -181,7 +181,7 @@ $(function() {
   // One modal component for N mini-apps
   mount($('body'), Modal);
 
-  AlternativeExamples(store());
+  AlternativeSwitcher(store());
 
   var right_col = $('#right_col'); // Move rtp container to top right and make visible
 
