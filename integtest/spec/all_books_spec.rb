@@ -270,7 +270,7 @@ RSpec.describe 'building all books' do
             "query": "foo bar" <1>
         }
         ----------------------------------
-        <1> Example
+        <1> Here's the explanation
 
         [source,console]
         ----------------------------------
@@ -306,19 +306,22 @@ RSpec.describe 'building all books' do
       csharp_repo.switch_to_new_branch 'mapped'
       setup_example csharp_repo, 'csharp'
 
+      java_repo = src.repo 'java'
+      java_repo.write 'examples/dummy', 'dummy'
+      java_repo.commit 'init'
+
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
-      book.source(
-        js_repo,
-        'examples',
-        alternatives: { source_lang: 'console', alternative_lang: 'js' }
-      )
+      js_alt = { source_lang: 'console', alternative_lang: 'js' }
+      book.source js_repo, 'examples', alternatives: js_alt
       book.source(
         csharp_repo,
         'examples',
         map_branches: { 'master': 'mapped' },
         alternatives: { source_lang: 'console', alternative_lang: 'csharp' }
       )
+      java_alts = { source_lang: 'console', alternative_lang: 'java' }
+      book.source(java_repo, 'examples', alternatives: java_alts)
     end
     let(:latest_revision) { 'init' }
     include_examples 'README-like console alternatives', 'html/test/master'

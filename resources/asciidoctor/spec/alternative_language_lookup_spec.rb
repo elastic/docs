@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'tempfile'
 require 'alternative_language_lookup/extension'
 
@@ -94,14 +95,23 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       {
         'alternative_language_lookups' => config,
         'alternative_language_report' =>
-          Tempfile.new('alternative_report').path,
+          Tempfile.new(%w[alternatives_report adoc]).path,
+        'alternative_language_summary' =>
+          Tempfile.new(%w[alternatives_summary json]).path,
       }
     end
     let(:report) do
       # read the result of the conversion to populate the dir
       converted
-      # return the dir
-      File.read(convert_attributes['alternative_language_report'])
+      # grab the contents
+      File.read convert_attributes['alternative_language_report']
+    end
+    let(:summary) do
+      # read the result of the conversion to populate the dir
+      converted
+      # grab the contents
+      txt = File.read convert_attributes['alternative_language_summary']
+      JSON.parse(txt, symbolize_names: true) unless txt.empty?
     end
     context "when there aren't any alternatives" do
       include_context 'convert without logs'
@@ -131,6 +141,20 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           ASCIIDOC
         end
       end
+      context 'the summary' do
+        it 'shows everything as missing' do
+          expect(summary).to eq(
+            console: {
+              total: 1,
+              alternatives: {
+                js: { found: 0 },
+                csharp: { found: 0 },
+                java: { found: 0 },
+              },
+            }
+          )
+        end
+      end
     end
     context 'when there is a single alternative' do
       include_context 'convert without logs'
@@ -140,8 +164,8 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         expect(converted).to eq(<<~DOCBOOK.strip)
           <preface>
           <title></title>
-          <programlisting role="default has-js" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
           <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('just js alternative');</programlisting>
+          <programlisting role="default has-js" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
           </preface>
         DOCBOOK
       end
@@ -154,6 +178,20 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           ASCIIDOC
         end
       end
+      context 'the summary' do
+        it 'shows only js found' do
+          expect(summary).to eq(
+            console: {
+              total: 1,
+              alternatives: {
+                js: { found: 1 },
+                csharp: { found: 0 },
+                java: { found: 0 },
+              },
+            }
+          )
+        end
+      end
     end
     context 'when all alternatives exist' do
       include_context 'convert without logs'
@@ -163,10 +201,10 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         expect(converted).to eq(<<~DOCBOOK.strip)
           <preface>
           <title></title>
-          <programlisting role="default has-js has-csharp has-java" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
           <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('all alternatives');</programlisting>
           <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("all alternatives");</programlisting>
           <programlisting role="alternative" language="java" linenumbering="unnumbered">System.out.println("all alternatives");</programlisting>
+          <programlisting role="default has-js has-csharp has-java" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
           </preface>
         DOCBOOK
       end
@@ -177,6 +215,20 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
 
             | &check; | &check; | &check;
           ASCIIDOC
+        end
+      end
+      context 'the summary' do
+        it 'shows only js found' do
+          expect(summary).to eq(
+            console: {
+              total: 1,
+              alternatives: {
+                js: { found: 1 },
+                csharp: { found: 1 },
+                java: { found: 1 },
+              },
+            }
+          )
         end
       end
     end
@@ -228,28 +280,27 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           <2> b
         ASCIIDOC
       end
-      it 'inserts the alternatives below the callouts' do
+      it 'inserts the alternative code above the default code' do
         expect(converted).to include(<<~DOCBOOK.strip)
+          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("there are callouts"); <co id="A0-CO1-1"/> <co id="A0-CO1-2"/></programlisting>
           <programlisting role="default has-csharp" language="console" linenumbering="unnumbered">GET /there_are_callouts <co id="CO1-1"/> <co id="CO1-2"/></programlisting>
+        DOCBOOK
+      end
+      it 'inserts the alternative callouts above the default callouts' do
+        expect(converted).to include(<<~DOCBOOK.strip)
+          <calloutlist role="alternative lang-csharp">
+          <callout arearefs="A0-CO1-1">
+          <para>csharp a</para>
+          </callout>
+          <callout arearefs="A0-CO1-2">
+          <para>csharp b</para>
+          </callout>
+          </calloutlist>
           <calloutlist role="default has-csharp lang-console">
           <callout arearefs="CO1-1">
           <para>a</para>
           </callout>
           <callout arearefs="CO1-2">
-          <para>b</para>
-          </callout>
-          </calloutlist>
-          <programlisting role="alternative" language="csharp"
-        DOCBOOK
-      end
-      it 'adds the alternative including its callouts' do
-        expect(converted).to include(<<~DOCBOOK.strip)
-          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("matching callouts"); <co id="A0-CO1-1"/> <co id="A0-CO1-2"/></programlisting>
-          <calloutlist role="alternative lang-csharp">
-          <callout arearefs="A0-CO1-1">
-          <para>a</para>
-          </callout>
-          <callout arearefs="A0-CO1-2">
           <para>b</para>
           </callout>
           </calloutlist>
