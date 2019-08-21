@@ -1,5 +1,5 @@
 import {h, render} from "../../../../../../node_modules/preact";
-import {ConsoleWidget, AlternativePicker, ConsoleForm} from "../../components/console_widget";
+import {ConsoleWidget, _AlternativePicker} from "../../components/console_widget";
 
 describe(ConsoleWidget, () => {
   let picker;
@@ -13,15 +13,15 @@ describe(ConsoleWidget, () => {
     picker.innerHTML = '';
   });
 
-  describe(AlternativePicker, () => {
+  describe(_AlternativePicker, () => {
     describe("when there aren't any alternatives", () => {
-      const picker = render(<AlternativePicker />);
+      const picker = render(<_AlternativePicker />);
       test("is just an empty div", () => {
         expect(picker).toStrictEqual(render(<div/>));
       });
     });
     describe("when there aren't any alternatives", () => {
-      const picker = render(<AlternativePicker alternatives={{
+      const picker = render(<_AlternativePicker alternatives={{
         bash: {
           cshell: {},
           emacs: {},
@@ -32,8 +32,8 @@ describe(ConsoleWidget, () => {
         expect(picker).toStrictEqual(render(<div/>));
       });
     });
-    describe("when the there are console alternatives", () => {
-      const picker = render(<AlternativePicker
+    describe("when there are console alternatives", () => {
+      const picker = render(<_AlternativePicker
         consoleAlternative="console"
         alternatives={{
           console: {
@@ -59,7 +59,7 @@ describe(ConsoleWidget, () => {
       });
     });
     describe("when the the console alternative isn't in the options", () => {
-      const picker = render(<AlternativePicker
+      const picker = render(<_AlternativePicker
         consoleAlternative="bort"
         alternatives={{
           console: {
@@ -83,7 +83,7 @@ describe(ConsoleWidget, () => {
     });
     describe("when the value changes", () => {
       const updates = [];
-      const picker = render(<AlternativePicker
+      const picker = render(<_AlternativePicker
         consoleAlternative="console"
         saveSettings={s => updates.push(s)}
         alternatives={{

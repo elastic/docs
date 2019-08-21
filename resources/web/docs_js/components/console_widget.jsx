@@ -83,7 +83,7 @@ const AlternativeChoice = ({name: name}) => {
   return <option value={name}>{alternativePrettyName(name)}</option>;
 };
 
-export const AlternativePicker = ({
+export const _AlternativePicker = ({
   alternatives: alternatives,
   consoleAlternative: consoleAlternative,
   saveSettings: saveSettings,
@@ -124,11 +124,18 @@ export const AlternativePicker = ({
   </div>;
 };
 
+// TODO move me to my own file
+const AlternativePicker = connect(
+  (state, props) => merge(
+    pick(["consoleAlternative"], state.settings),
+    {alternatives: state.alternatives}),
+  {saveSettings})(_AlternativePicker)
+
 // ConsoleWidget isn't quite the right name for this any more....
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   return <div className="u-space-between">
-    <AlternativePicker {...props}/>
+    <AlternativePicker />
     <div>
       <a className="sense_widget copy_as_curl"
         onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
@@ -145,8 +152,7 @@ export const ConsoleWidget = props => {
   </div>
 }
 
-export default connect((state, props) =>
-  merge(
-    pick(["langStrings", "baseUrl", `${props.setting}_url`, "consoleAlternative"], state.settings),
-    {alternatives: state.alternatives}),
-{copyAsCurl, openModal, saveSettings})(ConsoleWidget)
+export default connect(
+  (state, props) => pick(["langStrings", "baseUrl", `${props.setting}_url`], state.settings),
+  {copyAsCurl, openModal, saveSettings}
+)(ConsoleWidget);
