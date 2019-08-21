@@ -457,6 +457,7 @@ RSpec.describe 'building a single book' do
         <a href="chapter.html">Chapter
       HTML
     end
+
     context 'the js' do
       it 'is unminified' do
         expect(js).to serve(include(<<~JS))
@@ -468,11 +469,19 @@ RSpec.describe 'building a single book' do
           // Setup hot module replacement for css if we're in dev mode.
         JS
       end
+      it 'includes a source map' do
+        expect(js).to serve(include('sourceMappingURL='))
+      end
     end
-    it 'serves the css unminified' do
-      expect(css).to serve(include(<<~CSS))
-        /* test comment used to detect unminified source */
-      CSS
+    context 'the css' do
+      it 'is unminified' do
+        expect(css).to serve(include(<<~CSS))
+          /* test comment used to detect unminified source */
+        CSS
+      end
+      it 'includes a source map' do
+        expect(css).to serve(include('sourceMappingURL='))
+      end
     end
   end
 
