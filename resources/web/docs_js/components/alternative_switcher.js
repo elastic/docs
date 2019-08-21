@@ -1,4 +1,9 @@
-export default function(store) {
+/*
+ * Widget to switch the displayed alternative langauge when the configured
+ * language switches.
+ */
+
+export default store => {
   const style = document.createElement('style');
   style.id = 'console-alternative';
   document.head.appendChild(style);

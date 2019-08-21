@@ -1,8 +1,8 @@
 import {newStore} from "../../store";
 import {saveSettings} from "../../actions/settings";
-import AlternativeExamples from "../../components/alternative_examples";
+import AlternativeSwitcher from "../../components/alternative_switcher";
 
-describe(AlternativeExamples, () => {
+describe(AlternativeSwitcher, () => {
   let db;
   // This is what the example snippets sort of look like:
   document.head.innerHTML = `
@@ -77,7 +77,7 @@ describe(AlternativeExamples, () => {
   describe("when initialized with console", () => {
     beforeAll(() => {
       db = newStore({settings: {consoleAlternative: "console"}});
-      AlternativeExamples(db);
+      AlternativeSwitcher(db);
     });
     afterAll(() => {
       document.getElementById('console-alternative').remove();
@@ -108,7 +108,7 @@ describe(AlternativeExamples, () => {
   describe("when initialized with csharp", () => {
     beforeAll(() => {
       db = newStore({settings: {consoleAlternative: "csharp"}});
-      AlternativeExamples(db);
+      AlternativeSwitcher(db);
     });
     afterAll(() => {
       document.getElementById('console-alternative').remove();
@@ -120,7 +120,7 @@ describe(AlternativeExamples, () => {
   describe("when initialized with bogus", () => {
     beforeAll(() => {
       db = newStore({settings: {consoleAlternative: "bogus"}});
-      AlternativeExamples(db);
+      AlternativeSwitcher(db);
     });
     afterAll(() => {
       document.getElementById('console-alternative').remove();

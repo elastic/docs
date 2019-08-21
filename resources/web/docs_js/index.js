@@ -1,4 +1,4 @@
-import AlternativeExamples from "./components/alternative_examples";
+import AlternativePicker from "./components/alternative_picker";
 import ConsoleWidget from "./components/console_widget";
 import Modal from "./components/modal";
 import mount from "./components/mount";
