@@ -275,11 +275,21 @@ RSpec.describe CopyImages do
         expect(logs).to eq(expected_logs.strip)
       end
     end
-    context 'when the inline image is inside a list' do
+    context 'when the inline image is inside an ordered list' do
       let(:input) do
         <<~ASCIIDOC
           == Example
           . words image:example1.png[] words
+        ASCIIDOC
+      end
+      let(:resolved) { 'example1.png' }
+      include_examples 'copies example1'
+    end
+    context 'when the inline image is inside an unordered list' do
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          * words image:example1.png[] words
         ASCIIDOC
       end
       let(:resolved) { 'example1.png' }

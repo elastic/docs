@@ -80,7 +80,7 @@ module CopyImages
     # with this.
     def process_inline_image_from_converted(block)
       return unless block.context == :list_item &&
-                    block.parent.context == :olist
+                    %i[olist ulist].include?(block.parent.context)
 
       block.text.scan(DOCBOOK_IMAGE_RX) do |(target)|
         # We have to resolve attributes inside the target. But there is a
