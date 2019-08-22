@@ -307,6 +307,19 @@ RSpec.describe CopyImages do
     end
   end
 
+  context 'when the inline image is inside an empty definition list' do
+    let(:input) do
+      <<~ASCIIDOC
+        == Example
+        Foo::
+        Bar:::
+      ASCIIDOC
+    end
+    it "doesn't copy an images but at least it doesn't crash" do
+      expect(copied).to eq([])
+    end
+  end
+
   context 'when the same image is referenced more than once' do
     let(:input) do
       <<~ASCIIDOC
