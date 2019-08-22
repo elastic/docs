@@ -9,7 +9,7 @@ check: rspec rubocop
 
 .PHONY: rspec
 rspec:
-	rspec
+	rspec spec/copy_images_spec.rb
 
 .PHONY: rubocop
 rubocop:

@@ -295,6 +295,16 @@ RSpec.describe CopyImages do
       let(:resolved) { 'example1.png' }
       include_examples 'copies example1'
     end
+    context 'when the inline image is inside a definition list' do
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          Foo:: words image:example1.png[] words
+        ASCIIDOC
+      end
+      let(:resolved) { 'example1.png' }
+      include_examples 'copies example1'
+    end
   end
 
   context 'when the same image is referenced more than once' do
