@@ -10,10 +10,11 @@ import {saveSettings} from "../actions/settings";
 
 const alternativePrettyName = rawName => {
   switch(rawName) {
-    case 'console': return 'Console';
-    case 'csharp': return 'C#';
-    case 'js': return 'JavaScript';
-    case 'php': return 'PHP';
+    case "console": return "Console";
+    case "csharp": return "C#";
+    case "js": return "JavaScript";
+    case "php": return "PHP";
+    case "python": return "Python";
     default: return rawName;
   }
 };
