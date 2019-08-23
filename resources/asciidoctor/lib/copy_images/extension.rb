@@ -81,9 +81,18 @@ module CopyImages
     def process_inline_image_from_converted(block)
       return unless block.context == :list_item &&
                     %i[dlist olist ulist].include?(block.parent.context)
-      return unless block.text
+      return unless block.text?
 
-      block.text.scan(DOCBOOK_IMAGE_RX) do |(target)|
+      # NOCOMMIT: colist too!
+      # We have to resolve attributes inside the target. But there is a
+      # "funny" ritual for that because attribute substitution is always
+      # against the document. We have to play the block's attributes against
+      # the document, then clear them on the way out.
+      block.document.playback_attributes block.parent.attributes
+      text = block.text
+      block.document.clear_playback_attributes block.parent.attributes
+
+      text.scan(DOCBOOK_IMAGE_RX) do |(target)|
         # We have to resolve attributes inside the target. But there is a
         # "funny" ritual for that because attribute substitution is always
         # against the document. We have to play the block's attributes against

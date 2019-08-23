@@ -105,16 +105,32 @@ RSpec.describe CopyImages do
     context 'when the image contains attributes' do
       let(:target) { 'example1.{ext}' }
       let(:resolved) { 'example1.png' }
-      let(:input) do
-        <<~ASCIIDOC
-          == Example
-          :ext: png
+      context 'when the attribute is close to the image' do
+        let(:input) do
+          <<~ASCIIDOC
+            == Example
+            :ext: png
 
-          #{image_command}
-        ASCIIDOC
+            #{image_command}
+          ASCIIDOC
+        end
+        let(:include_line) { 4 }
+        include_examples 'copies example1'
       end
-      let(:include_line) { 4 }
-      include_examples 'copies example1'
+      context 'when the attribute is far from the image' do
+        let(:input) do
+          <<~ASCIIDOC
+            == Example
+            :ext: png
+
+            Words.
+
+            #{image_command}
+          ASCIIDOC
+        end
+        let(:include_line) { 6 }
+        include_examples 'copies example1'
+      end
     end
     context 'when referencing an external image' do
       let(:target) do
@@ -276,47 +292,44 @@ RSpec.describe CopyImages do
       end
     end
     context 'when the inline image is inside an ordered list' do
-      let(:input) do
-        <<~ASCIIDOC
-          == Example
-          . words image:example1.png[] words
-        ASCIIDOC
-      end
-      let(:resolved) { 'example1.png' }
-      include_examples 'copies example1'
+      let(:image_command) { ". Words image:#{target}[] words" }
+      include_examples 'copies images with various paths'
     end
-    context 'when the inline image is inside an unordered list' do
-      let(:input) do
-        <<~ASCIIDOC
-          == Example
-          * words image:example1.png[] words
-        ASCIIDOC
-      end
-      let(:resolved) { 'example1.png' }
-      include_examples 'copies example1'
+    context 'when the inline image is inside an ordered list' do
+      let(:image_command) { "* Words image:#{target}[] words" }
+      include_examples 'copies images with various paths'
     end
     context 'when the inline image is inside a definition list' do
+      let(:image_command) { "Foo:: Words image:#{target}[] words" }
+      include_examples 'copies images with various paths'
+    end
+    context 'when there is a reference in an ordered list' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[foo-thing]]
+          == Example
+          :id: foo
+
+          More words.
+
+          . <<{id}-thing>>
+        ASCIIDOC
+      end
+      it "doesn't log anything" do
+        expect(logs).to eq('')
+      end
+    end
+    context 'when there is an empty definition list' do
       let(:input) do
         <<~ASCIIDOC
           == Example
-          Foo:: words image:example1.png[] words
+          Foo::
+          Bar:::
         ASCIIDOC
       end
-      let(:resolved) { 'example1.png' }
-      include_examples 'copies example1'
-    end
-  end
-
-  context 'when the inline image is inside an empty definition list' do
-    let(:input) do
-      <<~ASCIIDOC
-        == Example
-        Foo::
-        Bar:::
-      ASCIIDOC
-    end
-    it "doesn't copy an images but at least it doesn't crash" do
-      expect(copied).to eq([])
+      it "doesn't log anything" do
+        expect(logs).to eq('')
+      end
     end
   end
 
