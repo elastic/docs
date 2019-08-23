@@ -1,9 +1,31 @@
+import {curry} from "../../../../../node_modules/ramda";
+
 /*
  * Widget to switch the displayed alternative langauge when the configured
  * language switches.
  */
 
-export default store => {
+/* Since this swaps a lot of `display: none` with `display: block` we can
+ * expect it to force a reflow which feels like a "jump" when you are
+ * looking at the page. We attempt to prevent the "jump" by keeping the
+ * element that initiated the state change in the same position on
+ * the page. */
+const preScrollToKeepOnScreen = (element) => {
+  /*
+   * NOTE: This isn't tested in jest and needs to be verified visually
+   *       if modified!!!!!1111one
+   */
+  if (!element) {
+    return () => {};
+  }
+  const beforeTop = element.getBoundingClientRect().top;
+  return () => {
+    const afterTop = element.getBoundingClientRect().top;
+    window.scrollBy(0, afterTop - beforeTop);
+  }
+};
+
+export const _AlternativeSwitcher = (preScrollToKeepOnScreen, store) => {
   const style = document.createElement('style');
   style.id = 'console-alternative';
   document.head.appendChild(style);
@@ -18,13 +40,7 @@ export default store => {
     }
     oldValue = newValue;
 
-    /* Since this swaps a lot of `display: none` with `display: block` we can
-     * expect it to force a reflow which feels like a "jump" when you are
-     * looking at the page. We attempt to prevent the "jump" by keeping the
-     * element that initiated the state change in the same position on
-     * the page. */
-    const changeSource = store.getState().settings.alternativeChangeSource;
-    const beforeTop = changeSource ? changeSource.getBoundingClientRect().top : 0;
+    const scroll = preScrollToKeepOnScreen(store.getState().settings.alternativeChangeSource);
     // Clear all the rules because they were for showing a different alternative
     for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
       sheet.deleteRule(i);
@@ -40,9 +56,10 @@ export default store => {
       sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { visibility: hidden; }`);
       // TODO check if it is faster to remove the sheet, add the rules, and re-add the sheet.
     }
-    const afterTop = changeSource ? changeSource.getBoundingClientRect().top : 0;
-    window.scrollBy(0, afterTop - beforeTop);
+    scroll();
   };
   updateSheet();
   store.subscribe(updateSheet);
 };
+
+export default curry(_AlternativeSwitcher)(preScrollToKeepOnScreen);

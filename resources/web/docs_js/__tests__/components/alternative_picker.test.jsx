@@ -86,13 +86,10 @@ describe(_AlternativePicker, () => {
       * have to do it ourselves. Like an animal. */
     select.dispatchEvent(new Event("change"));
     test("saves the config", () => {
+      // We can't use toMatchObject here because tagName is busted.
+      expect(updates).toHaveLength(1);
+      expect(updates[0].consoleAlternative).toBe("js");
       expect(updates[0].alternativeChangeSource.tagName).toBe("SELECT");
-      expect(updates).toMatchObject([{
-        consoleAlternative: "js",
-        alternativeChangeSource: {
-          className: "SELECT",
-        }
-      }]);
     })
   });
 });
