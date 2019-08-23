@@ -32,8 +32,8 @@ export default store => {
     sheet.insertRule(`#guide .default.has-${newValue} { display: none; }`);
     sheet.insertRule(`#guide .alternative.lang-${newValue} { display: block; }`);
     // Setup rules to show the warning unless the snippet has that alternative
-    sheet.insertRule(`#guide .AlternativePicker-warning { display: block; }`);
-    sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { display: none; }`);
+    sheet.insertRule(`#guide .AlternativePicker-warning { visibility: visible; }`);
+    sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { visibility: hidden; }`);
   };
   updateSheet();
   store.subscribe(updateSheet);
