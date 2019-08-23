@@ -28,6 +28,10 @@ describe(_AlternativeSwitcher, () => {
       <div id="csharp-colist"   class="alternative lang-csharp calloutlist"</div>
       <div id="js-colist"       class="alternative lang-js calloutlist"></div>
       <div id="console-colist"  class="default lang-console has-csharp has-js calloutlist"></div>
+
+      <div id="csharp-result"   class="alternative lang-csharp-result pre_wrapper"></div>
+      <div id="js-result"       class="alternative lang-js-result pre_wrapper"></div>
+      <div id="console-result"  class="default lang-console-result has-csharp has-js pre_wrapper"></div>
     </div>
   `;
 
@@ -58,6 +62,14 @@ describe(_AlternativeSwitcher, () => {
           isVisible(colist);
         } else {
           isHidden(colist);
+        }
+      });
+      describe(`the result for ${lang}`, () => {
+        const listing = document.getElementById(`${lang}-result`);
+        if (lang === selected) {
+          isVisible(listing);
+        } else {
+          isHidden(listing);
         }
       });
     }

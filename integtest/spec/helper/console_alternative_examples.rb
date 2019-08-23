@@ -1,5 +1,39 @@
 # frozen_string_literal: true
 
+module ConsoleExamples
+  README_LIKE = <<~ASCIIDOC
+    When you execute this:
+    [source,console]
+    ----------------------------------
+    GET /_search
+    {
+        "query": "foo bar" <1>
+    }
+    ----------------------------------
+    <1> Here's the explanation
+
+    The result is this:
+    [source,console-result]
+    ----------------------------------
+    {
+        "hits": {
+            "total": { "value": 0, "relation": "eq" },
+            "hits": []
+        }
+    }
+    ----------------------------------
+
+    This one doesn't have an alternative:
+    [source,console]
+    ----------------------------------
+    GET /_search
+    {
+        "query": "missing"
+    }
+    ----------------------------------
+  ASCIIDOC
+end
+
 RSpec.shared_examples 'README-like console alternatives' do |path|
   page_context "#{path}/chapter.html" do
     let(:has_classes) { 'has-js has-csharp' }
@@ -10,7 +44,7 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
     end
     it 'contains the js listing followed by the csharp listing' do
       expect(body).to include(<<~HTML.strip)
-        </div><div class="pre_wrapper alternative lang-js"><pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
+        <div class="pre_wrapper alternative lang-js"><pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
           body: { query: 'foo bar' } <a id="A0-CO1-1"></a><i class="conum" data-value="1"></i>
         })</pre></div><div class="pre_wrapper alternative lang-csharp">
       HTML
@@ -66,7 +100,7 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
   file_context "#{path}/alternatives_report.adoc" do
     it 'has a report on the example with all alternatives' do
       expect(contents).to include(<<~ASCIIDOC)
-        === index.asciidoc: line 6: 8a7e0a79b1743d5fd94d79a7106ee930.adoc
+        === index.asciidoc: line 7: 8a7e0a79b1743d5fd94d79a7106ee930.adoc
         [source,console]
         ----
         GET /_search
@@ -81,9 +115,28 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
         |===
       ASCIIDOC
     end
+    it 'has a report on the example result' do
+      expect(contents).to include(<<~ASCIIDOC)
+        === index.asciidoc: line 17: 9fa2da152878d1d5933d483a3c2af35e.adoc
+        [source,console-result]
+        ----
+        {
+            "hits": {
+                "total": { "value": 0, "relation": "eq" },
+                "hits": []
+            }
+        }
+        ----
+        |===
+        | js-result | csharp-result | java-result
+
+        | &check; | &cross; | &cross;
+        |===
+      ASCIIDOC
+    end
     it 'has a report on the example without any alternatives' do
       expect(contents).to include(<<~ASCIIDOC)
-        === index.asciidoc: line 15: d21765565081685a36dfc4af89e7cece.adoc
+        === index.asciidoc: line 28: d21765565081685a36dfc4af89e7cece.adoc
         [source,console]
         ----
         GET /_search

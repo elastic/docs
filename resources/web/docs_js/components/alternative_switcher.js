@@ -51,6 +51,8 @@ export const _AlternativeSwitcher = (preScrollToKeepOnScreen, store) => {
        * when there isn't an alternative. */
       sheet.insertRule(`#guide .default.has-${newValue} { display: none; }`);
       sheet.insertRule(`#guide .alternative.lang-${newValue} { display: block; }`);
+      sheet.insertRule(`#guide .default.has-${newValue}-result { display: none; }`);
+      sheet.insertRule(`#guide .alternative.lang-${newValue}-result { display: block; }`);
       // Setup rules to show the warning unless the snippet has that alternative
       sheet.insertRule(`#guide .AlternativePicker-warning { visibility: visible; }`);
       sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { visibility: hidden; }`);
