@@ -18,8 +18,11 @@ export default store => {
     }
     oldValue = newValue;
 
-    /* Updating the consoleAlternative propery */
-
+    /* Since this swaps a lot of `display: none` with `display: block` we can
+     * expect it to force a reflow which feels like a "jump" when you are
+     * looking at the page. We attempt to prevent the "jump" by keeping the
+     * element that initiated the state change in the same position on
+     * the page. */
     const changeSource = store.getState().settings.alternativeChangeSource;
     const beforeTop = changeSource ? changeSource.getBoundingClientRect().top : 0;
     // Clear all the rules because they were for showing a different alternative
