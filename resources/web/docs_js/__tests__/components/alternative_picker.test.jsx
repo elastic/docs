@@ -86,7 +86,13 @@ describe(_AlternativePicker, () => {
       * have to do it ourselves. Like an animal. */
     select.dispatchEvent(new Event("change"));
     test("saves the config", () => {
-      expect(updates).toStrictEqual([{consoleAlternative: 'js'}]);
+      expect(updates[0].alternativeChangeSource.tagName).toBe("SELECT");
+      expect(updates).toMatchObject([{
+        consoleAlternative: "js",
+        alternativeChangeSource: {
+          className: "SELECT",
+        }
+      }]);
     })
   });
 });
