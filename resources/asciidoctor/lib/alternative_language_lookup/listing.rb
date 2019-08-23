@@ -60,7 +60,7 @@ module AlternativeLanguageLookup
         if @listing_index
           # While we're here check if there is a callout list.
           colist = parent.blocks[@listing_index + 1]
-          @colist = colist if colist&.context == :colist
+          @colist = colist&.context == :colist ? colist : nil
         else
           message = "Invalid document: parent doesn't include child!"
           logger.error(message_with_context(message, @block.source_location))
