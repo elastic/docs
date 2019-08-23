@@ -52,11 +52,15 @@ export const _AlternativePicker = ({
   // TODO we shouldn't change these drop downs after the first time they are rendered. The extra choice should stay while you stay on the page. Maybe we can get away with rendering this once on page load and never subscribing again?
 
   // TODO add the "message" bubble to the warning.
-  // TODO prevent "jumping" when the size of the snippets isn't the same
   return <div className="AlternativePicker u-space-between">
     <select className="AlternativePicker-select"
             value={consoleAlternative}
-            onChange={(e) => saveSettings({consoleAlternative: e.target.value})}>
+            onChange={(e) => {
+              saveSettings({
+                consoleAlternative: e.target.value,
+                alternativeChangeSource: e.target,
+              });
+            }}>
       {items}
     </select>
     <div className="AlternativePicker-warning" />

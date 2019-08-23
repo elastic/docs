@@ -18,22 +18,27 @@ export default store => {
     }
     oldValue = newValue;
 
+    /* Updating the consoleAlternative propery */
+
+    const changeSource = store.getState().settings.alternativeChangeSource;
+    const beforeTop = changeSource ? changeSource.getBoundingClientRect().top : 0;
     // Clear all the rules because they were for showing a different alternative
     for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
       sheet.deleteRule(i);
     }
     // The default doesn't need any rules.
-    if (newValue === "console") {
-      return;
+    if (newValue !== "console") {
+      /* Setup rules to show alternatives when they exist and keep the default
+      * when there isn't an alternative. */
+      sheet.insertRule(`#guide .default.has-${newValue} { display: none; }`);
+      sheet.insertRule(`#guide .alternative.lang-${newValue} { display: block; }`);
+      // Setup rules to show the warning unless the snippet has that alternative
+      sheet.insertRule(`#guide .AlternativePicker-warning { display: block; }`);
+      sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { display: none; }`);
+      // TODO check if it is faster to remove the sheet, add the rules, and re-add the sheet.
     }
-
-    /* Setup rules to show alternatives when they exist and keep the default
-     * when there isn't an alternative. */
-    sheet.insertRule(`#guide .default.has-${newValue} { display: none; }`);
-    sheet.insertRule(`#guide .alternative.lang-${newValue} { display: block; }`);
-    // Setup rules to show the warning unless the snippet has that alternative
-    sheet.insertRule(`#guide .AlternativePicker-warning { display: block; }`);
-    sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { display: none; }`);
+    const afterTop = changeSource ? changeSource.getBoundingClientRect().top : 0;
+    window.scrollBy(0, afterTop - beforeTop);
   };
   updateSheet();
   store.subscribe(updateSheet);
