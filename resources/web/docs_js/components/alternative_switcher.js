@@ -32,12 +32,12 @@ export default store => {
     // The default doesn't need any rules.
     if (newValue !== "console") {
       /* Setup rules to show alternatives when they exist and keep the default
-      * when there isn't an alternative. */
+       * when there isn't an alternative. */
       sheet.insertRule(`#guide .default.has-${newValue} { display: none; }`);
       sheet.insertRule(`#guide .alternative.lang-${newValue} { display: block; }`);
       // Setup rules to show the warning unless the snippet has that alternative
-      sheet.insertRule(`#guide .AlternativePicker-warning { display: block; }`);
-      sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { display: none; }`);
+      sheet.insertRule(`#guide .AlternativePicker-warning { visibility: visible; }`);
+      sheet.insertRule(`#guide .has-${newValue} .AlternativePicker-warning { visibility: hidden; }`);
       // TODO check if it is faster to remove the sheet, add the rules, and re-add the sheet.
     }
     const afterTop = changeSource ? changeSource.getBoundingClientRect().top : 0;

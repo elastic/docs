@@ -152,7 +152,7 @@ $(function() {
       langStrings: LangStrings,
       baseUrl: base_url,
       kibana_url: Cookies.get("kibana_url") || default_kibana_url,
-      kibana_curl_host: Cookies.get("kibana_curl_host") || "localhost:9200",
+      kibana_curl_host: Cookies.get("kibana_curl_host") || "localhost:5601",
       kibana_curl_user: Cookies.get("kibana_curl_user"),
       kibana_curl_password: "$KIBANAPASS",
       console_url: Cookies.get("console_url") || default_console_url,
