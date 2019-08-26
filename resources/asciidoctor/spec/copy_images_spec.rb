@@ -12,9 +12,7 @@ RSpec.describe CopyImages do
   before(:each) do
     Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register ChangeAdmonition
-    Asciidoctor::Extensions.register do
-      tree_processor CopyImages::CopyImages
-    end
+    Asciidoctor::Extensions.register CopyImages
   end
 
   after(:each) do
