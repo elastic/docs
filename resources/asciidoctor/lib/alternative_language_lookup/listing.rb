@@ -6,10 +6,17 @@ module AlternativeLanguageLookup
   ##
   # Information about a listing in the original document.
   class Listing
+    RESULT_SUFFIX = '-result'
+    RESULT_SUFFIX_LENGTH = RESULT_SUFFIX.length
+
     include Asciidoctor::Logging
 
     attr_reader :block
     attr_reader :lang
+    attr_reader :is_result
+    ##
+    # `key_lang` normalises `lang` into the lookup key for alternatives.
+    attr_reader :key_lang
     attr_reader :alternatives
     attr_reader :source
     attr_reader :digest
@@ -17,8 +24,16 @@ module AlternativeLanguageLookup
     def initialize(block)
       @block = block
       @lang = block.attr 'language'
+      return unless @lang
+
+      @is_result = @lang.end_with? RESULT_SUFFIX
+      @key_lang = if @is_result
+                    @lang[0, @lang.length - RESULT_SUFFIX_LENGTH]
+                  else
+                    @lang
+                  end
       lookups = block.document.attr 'alternative_language_lookups'
-      @alternatives = lookups[@lang]
+      @alternatives = lookups[@key_lang]
     end
 
     def process
@@ -34,7 +49,9 @@ module AlternativeLanguageLookup
         next unless (found = a[:index][@digest])
 
         # TODO: we can probably cache this. There are lots of dupes.
-        alternative = Alternative.new document, a[:lang], found[:path]
+        alt_lang = a[:lang]
+        alt_lang += '-result' if @is_result
+        alternative = Alternative.new document, alt_lang, found[:path]
         alternative_listing = alternative.listing @block.parent
         next unless alternative_listing
 

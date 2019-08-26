@@ -232,6 +232,87 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         end
       end
     end
+    context 'when there are alternative results' do
+      include_context 'convert without logs'
+      let(:input) do
+        <<~ASCIIDOC
+          [source,console]
+          ----
+          #{snippet_contents}
+          ----
+
+          [source,console-result]
+          ----
+          #{result_contents}
+          ----
+        ASCIIDOC
+      end
+      let(:snippet_contents) { 'GET /just_js_alternative' }
+      let(:result_contents) { '{"just_js_result": {}}' }
+      it 'adds the alternative' do
+        expect(converted).to eq(<<~DOCBOOK.strip)
+          <preface>
+          <title></title>
+          <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('just js alternative');</programlisting>
+          <programlisting role="default has-js" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
+          <programlisting role="alternative" language="js-result" linenumbering="unnumbered">'just js result'</programlisting>
+          <programlisting role="default has-js" language="console-result" linenumbering="unnumbered">#{result_contents}</programlisting>
+          </preface>
+        DOCBOOK
+      end
+      context 'the alternatives report' do
+        it 'shows the request snippet' do
+          expect(report).to include(<<~ASCIIDOC)
+            === <stdin>: line 2: 39f76498cca438ba11af18a7075d24c9.adoc
+            [source,console]
+            ----
+            GET /just_js_alternative
+            ----
+            |===
+            | js | csharp | java
+
+            | &check; | &cross; | &cross;
+            |===
+          ASCIIDOC
+        end
+        it 'shows the result snippet' do
+          expect(report).to include(<<~ASCIIDOC)
+            === <stdin>: line 7: c4f54085e4784ead2ef4a758d03edd16.adoc
+            [source,console-result]
+            ----
+            {"just_js_result": {}}
+            ----
+            |===
+            | js-result | csharp-result | java-result
+
+            | &check; | &cross; | &cross;
+            |===
+          ASCIIDOC
+        end
+        it 'shows the result snippet after the request snippet' do
+          expect(report.lines.grep(/stdin/)).to eq(
+            [
+              "=== <stdin>: line 2: 39f76498cca438ba11af18a7075d24c9.adoc\n",
+              "=== <stdin>: line 7: c4f54085e4784ead2ef4a758d03edd16.adoc\n",
+            ]
+          )
+        end
+      end
+      context 'the summary' do
+        it 'counts the result' do
+          expect(summary).to eq(
+            console: {
+              total: 2,
+              alternatives: {
+                js: { found: 2 },
+                csharp: { found: 0 },
+                java: { found: 0 },
+              },
+            }
+          )
+        end
+      end
+    end
     context 'when the alternative has characters that must be escaped' do
       include_context 'convert without logs'
       let(:input) { one_snippet }
