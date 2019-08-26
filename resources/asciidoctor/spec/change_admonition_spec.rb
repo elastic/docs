@@ -31,7 +31,7 @@ RSpec.describe ChangeAdmonition do
         let(:expected) do
           <<~DOCBOOK
             <#{tag} revisionflag="#{revisionflag}" revision="some_version">
-              <simpara>Like 2<superscript>7</superscript></simpara>
+            <simpara>Like 2<superscript>7</superscript></simpara>
             </#{tag}>
           DOCBOOK
         end

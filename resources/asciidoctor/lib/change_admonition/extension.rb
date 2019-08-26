@@ -37,7 +37,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
 
       <<~DOCBOOK.strip
         <#{tag_name = node.attr 'name'} revisionflag="#{flag}" revision="#{node.attr 'version'}">
-          <simpara>#{node.content}</simpara>
+        <simpara>#{node.content}</simpara>
         </#{tag_name}>
       DOCBOOK
     end

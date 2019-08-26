@@ -62,6 +62,7 @@ RSpec.describe CopyImages do
       ASCIIDOC
     end
     let(:include_line) { 2 }
+    let(:log_line) { include_line + log_offset }
     ##
     # Asserts that some `input` causes just the `example1.png` image to
     # be copied.
@@ -71,7 +72,7 @@ RSpec.describe CopyImages do
       end
       it 'logs that it copied the image' do
         expect(logs).to include(
-          "INFO: <stdin>: line #{include_line}: copying #{spec_dir}/#{example1}"
+          "INFO: <stdin>: line #{log_line}: copying #{spec_dir}/#{example1}"
         )
       end
     end
@@ -144,7 +145,7 @@ RSpec.describe CopyImages do
     context "when it can't find a file" do
       include_examples "when it can't find a file"
       let(:expected_logs) do
-        %r{WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+        %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image\ at\ any\ of\ \[
           "#{spec_dir}/not_found.jpg",\s
           "#{spec_dir}/resources/not_found.jpg",\s
           .+
@@ -162,7 +163,7 @@ RSpec.describe CopyImages do
       let(:resolved) { 'example1.png' }
       it 'logs an error' do
         expect(logs).to include(
-          'ERROR: <stdin>: line 2: Error loading [resources]: ' \
+          "ERROR: <stdin>: line #{log_line}: Error loading [resources]: " \
           'Unclosed quoted field on line 1.'
         )
       end
@@ -191,7 +192,7 @@ RSpec.describe CopyImages do
         end
         it 'logs that it copied the image' do
           expect(logs).to eq(
-            "INFO: <stdin>: line 2: copying #{tmp}/#{target}"
+            "INFO: <stdin>: line #{log_line}: copying #{tmp}/#{target}"
           )
         end
       end
@@ -207,7 +208,7 @@ RSpec.describe CopyImages do
       context "when it can't find a file" do
         include_examples "when it can't find a file"
         let(:expected_logs) do
-          %r{WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+          %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image\ at\ any\ of\ \[
             "#{tmp}/not_found.jpg",\s
             "#{spec_dir}/not_found.jpg",\s
             .+
@@ -222,7 +223,7 @@ RSpec.describe CopyImages do
       context "when it can't find a file" do
         include_examples "when it can't find a file"
         let(:expected_logs) do
-          %r{WARN:\ <stdin>:\ line\ 2:\ can't\ read\ image\ at\ any\ of\ \[
+          %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image\ at\ any\ of\ \[
             "/dummy1/not_found.jpg",\s
             "/dummy2/not_found.jpg",\s
             "#{tmp}/not_found.jpg",\s
@@ -241,6 +242,7 @@ RSpec.describe CopyImages do
     end
   end
 
+  let(:log_offset) { 0 }
   context 'for the image block macro' do
     let(:image_command) { "image::#{target}[]" }
     include_examples 'copies images with various paths'
@@ -293,12 +295,25 @@ RSpec.describe CopyImages do
       let(:image_command) { ". Words image:#{target}[] words" }
       include_examples 'copies images with various paths'
     end
-    context 'when the inline image is inside an ordered list' do
+    context 'when the inline image is inside an unordered list' do
       let(:image_command) { "* Words image:#{target}[] words" }
       include_examples 'copies images with various paths'
     end
     context 'when the inline image is inside a definition list' do
       let(:image_command) { "Foo:: Words image:#{target}[] words" }
+      include_examples 'copies images with various paths'
+    end
+    context 'when the inline image is inside a callout list' do
+      let(:image_command) do
+        <<~ASCIIDOC
+          ----
+          foo <1>
+          ----
+
+          <1> word image:#{target}[] word
+        ASCIIDOC
+      end
+      let(:log_offset) { 4 }
       include_examples 'copies images with various paths'
     end
     context 'when there is a reference in an ordered list' do
@@ -529,7 +544,7 @@ RSpec.describe CopyImages do
     end
     it 'logs that it copied the image' do
       expect(logs).to eq(<<~LOGS.strip)
-        INFO#{location}: copying #{absolute_path}/#{admonition_image}.#{copy_admonition_images}
+        INFO: <stdin>: line 1: copying #{absolute_path}/#{admonition_image}.#{copy_admonition_images}
       LOGS
     end
   end
@@ -559,7 +574,6 @@ RSpec.describe CopyImages do
         #{admonition.upcase}: Words words words.
       ASCIIDOC
     end
-    let(:location) { ': <stdin>: line 1' }
     let(:admonition_image) { admonition }
     context 'for the note admonition' do
       include_context 'copy-admonition-images examples'
@@ -607,8 +621,6 @@ RSpec.describe CopyImages do
         #{admonition}::[some_version]
       ASCIIDOC
     end
-    # Asciidoctor doesn't make the location available to us for logging here.
-    let(:location) { '' }
     let(:admonition_image) { 'note' }
     context 'for the added admonition' do
       include_context 'copy-admonition-images examples'

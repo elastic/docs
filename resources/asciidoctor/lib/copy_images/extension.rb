@@ -43,11 +43,11 @@ module CopyImages
     #### "Conversion" methods
 
     def admonition(node)
-      if (extension = node.attr 'copy-admonition-images') &&
-         (style = node.attr 'style')
-        # The image for a standard admonition comes from the style
-        path = "images/icons/#{style.downcase}.#{extension}"
-        @copier.copy_image node, path
+      if (extension = node.attr 'copy-admonition-images')
+        if (image = admonition_image node)
+          path = "images/icons/#{image}.#{extension}"
+          @copier.copy_image node, path
+        end
       end
       yield
     end
@@ -108,23 +108,22 @@ module CopyImages
       end
     end
 
-    def process_change_admonition(admonition_extension, block)
-      revisionflag = block.attr 'revisionflag'
-      return unless revisionflag
+    def admonition_image(node)
+      if (revisionflag = node.attr 'revisionflag')
+        image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
+        return image if image
 
-      admonition_image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
-      if admonition_image
-        @copier.copy_image(
-          block, "images/icons/#{admonition_image}.#{admonition_extension}"
-        )
-      else
         logger.warn(
           message_with_context(
             "unknow revisionflag #{revisionflag}",
-            source_location: block.source_location
+            source_location: node.source_location
           )
         )
+        return
       end
+      # The image for a standard admonition comes from the style
+      style = node.attr 'style'
+      style&.downcase
     end
   end
 end
