@@ -15,7 +15,7 @@ module AlternativeLanguageLookup
     attr_reader :lang
     attr_reader :is_result
     ##
-    # If `key_lang` normalises `lang` into the lookup key for alternatives.
+    # `key_lang` normalises `lang` into the lookup key for alternatives.
     attr_reader :key_lang
     attr_reader :alternatives
     attr_reader :source
