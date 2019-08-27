@@ -291,6 +291,10 @@ RSpec.describe CopyImages do
         expect(logs).to eq(expected_logs.strip)
       end
     end
+    context 'when the inline image is totally alone' do
+      let(:image_command) { "image:#{target}[width=600]" }
+      include_examples 'copies images with various paths'
+    end
     context 'when the inline image is inside an ordered list' do
       let(:image_command) { ". Words image:#{target}[] words" }
       include_examples 'copies images with various paths'
