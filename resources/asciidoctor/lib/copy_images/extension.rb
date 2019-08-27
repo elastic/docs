@@ -32,8 +32,6 @@ module CopyImages
       'deleted' => 'warning',
     }.freeze
     CALLOUT_RX = /CO\d+-(\d+)/
-    INLINE_IMAGE_RX = /(\\)?image:([^:\s\[](?:[^\n\[]*[^\s\[])?)\[/m
-    DOCBOOK_IMAGE_RX = %r{<imagedata fileref="([^"]+)"/>}m
 
     def initialize(delegate)
       super(delegate)
@@ -58,11 +56,7 @@ module CopyImages
           copy_image_for_callout_items extension, item
         end
       end
-      scan_images_from_docbook node, yield
-    end
-
-    def dlist(node)
-      scan_images_from_docbook node, yield
+      yield
     end
 
     def image(node)
@@ -77,27 +71,7 @@ module CopyImages
       yield
     end
 
-    def olist(node)
-      scan_images_from_docbook node, yield
-    end
-
-    def paragraph(node)
-      scan_images_from_docbook node, yield
-    end
-
-    def ulist(node)
-      scan_images_from_docbook node, yield
-    end
-
     #### Helper methods
-
-    def scan_images_from_docbook(node, text)
-      text.scan(DOCBOOK_IMAGE_RX) do |(uri)|
-        copy_image node, uri
-      end
-      text
-    end
-
     def copy_image(node, uri)
       return unless uri
       return if Asciidoctor::Helpers.uriish? uri # Skip external images
