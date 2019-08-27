@@ -70,6 +70,13 @@ module CopyImages
       yield
     end
 
+    def inline_image(node)
+      # Inline images aren't "real" and don't have a source_location so we have
+      # to get the location from the parent.
+      copy_image node.parent, node.target
+      yield
+    end
+
     def olist(node)
       scan_images_from_docbook node, yield
     end
