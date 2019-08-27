@@ -1,3 +1,4 @@
+import AlternativeSwitcher from "./components/alternative_switcher";
 import ConsoleWidget from "./components/console_widget";
 import Modal from "./components/modal";
 import mount from "./components/mount";
@@ -151,7 +152,7 @@ $(function() {
       langStrings: LangStrings,
       baseUrl: base_url,
       kibana_url: Cookies.get("kibana_url") || default_kibana_url,
-      kibana_curl_host: Cookies.get("kibana_curl_host") || "localhost:9200",
+      kibana_curl_host: Cookies.get("kibana_curl_host") || "localhost:5601",
       kibana_curl_user: Cookies.get("kibana_curl_user"),
       kibana_curl_password: "$KIBANAPASS",
       console_url: Cookies.get("console_url") || default_console_url,
@@ -161,8 +162,17 @@ $(function() {
       sense_url: Cookies.get("sense_url") || default_sense_url,
       sense_curl_host: Cookies.get("sense_curl_host") || "localhost:9200",
       sense_curl_user: Cookies.get("sense_curl_user"),
-      sense_curl_password: "$ESPASS"//TODO Cookies.get("curl_password")
-    }
+      sense_curl_password: "$ESPASS",
+      consoleAlternative: Cookies.get('consoleAlternative') || "console",
+    },
+    /*
+     * Grab the initial state that we know how to deal with from the page.
+     * Rather than grab *everything* we grab the keys we can reduce to prevent
+     * things from falling over when an out of date version of the js sees new
+     * initial state. This wouldn't be a thing if we could bust the cache at
+     * will but, at this point, we can't.
+     */
+    alternatives: window.initial_state.alternatives,
   };
 
   // first call to store initializes it
@@ -170,6 +180,8 @@ $(function() {
 
   // One modal component for N mini-apps
   mount($('body'), Modal);
+
+  AlternativeSwitcher(store());
 
   var right_col = $('#right_col'); // Move rtp container to top right and make visible
 

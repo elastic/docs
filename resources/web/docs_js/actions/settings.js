@@ -10,7 +10,7 @@ export const setCookies = forEach(([k, v]) => Cookies.set(k, v));
 // the function used in the app is setup below
 export const _saveSettings = setCookies =>
   m => dispatch => {
-    const values = omit(["console_curl_password", "kibana_curl_password", "sense_curl_password"], m);
+    const values = omit(["console_curl_password", "kibana_curl_password", "sense_curl_password", "alternativeChangeSource"], m);
     setCookies(toPairs(values));
     dispatch(closeModal());
     return dispatch({

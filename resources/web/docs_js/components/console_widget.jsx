@@ -5,6 +5,7 @@ import linkState from "../../../../../node_modules/linkstate";
 import {connect} from "../../../../../node_modules/preact-redux";
 import {openModal} from "../actions/modal";
 import {saveSettings} from "../actions/settings";
+import AlternativePicker from "./alternative_picker";
 
 const copyAsCurl = ({setting, consoleText, isKibana}) => (_, getState) => {
   const state       = getState();
@@ -69,23 +70,28 @@ export const ConsoleForm = connect((state, props) =>
         `${props.setting}_curl_password`], state.settings)
 , {saveSettings})(_ConsoleForm);
 
+// ConsoleWidget isn't quite the right name for this any more....
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
-  return <div>
-    <a className="sense_widget copy_as_curl"
-       onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
-      {props.langStrings('Copy as cURL')}
-    </a>
-    {props.view_in_text &&
-      <a className="view_in_link"
-         target="console"
-         title={props.langStrings(props.view_in_text)}
-         href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
-    }
-    <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
+  return <div className="u-space-between">
+    <AlternativePicker />
+    <div className="u-space-between">
+      <a className="sense_widget copy_as_curl"
+        onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
+        {props.langStrings('Copy as cURL')}
+      </a>
+      {props.view_in_text &&
+        <a className="view_in_link"
+          target="console"
+          title={props.langStrings(props.view_in_text)}
+          href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
+      }
+      <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
+    </div>
   </div>
 }
 
-export default connect((state, props) =>
-  pick(["langStrings", "baseUrl", `${props.setting}_url`], state.settings)
-, {copyAsCurl, openModal})(ConsoleWidget)
+export default connect(
+  (state, props) => pick(["langStrings", "baseUrl", `${props.setting}_url`], state.settings),
+  {copyAsCurl, openModal, saveSettings}
+)(ConsoleWidget);

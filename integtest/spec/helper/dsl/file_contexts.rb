@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module Dsl
   ##
   # Methods to create contexts for asserting things about files and
@@ -59,6 +61,18 @@ module Dsl
         raise "Can't find title in #{body}" unless m
 
         m[1]
+      end
+      let(:initial_js_state) do
+        start_boundry = 'window.initial_state = '
+        start = contents.index start_boundry
+        return unless start
+
+        start += start_boundry.length
+        stop = contents.index '</script>', start
+        return unless stop
+
+        txt = contents[start, stop - start]
+        JSON.parse txt, symbolize_names: true
       end
     end
   end

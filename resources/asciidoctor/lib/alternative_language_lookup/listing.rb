@@ -6,10 +6,17 @@ module AlternativeLanguageLookup
   ##
   # Information about a listing in the original document.
   class Listing
+    RESULT_SUFFIX = '-result'
+    RESULT_SUFFIX_LENGTH = RESULT_SUFFIX.length
+
     include Asciidoctor::Logging
 
     attr_reader :block
     attr_reader :lang
+    attr_reader :is_result
+    ##
+    # `key_lang` normalises `lang` into the lookup key for alternatives.
+    attr_reader :key_lang
     attr_reader :alternatives
     attr_reader :source
     attr_reader :digest
@@ -17,8 +24,16 @@ module AlternativeLanguageLookup
     def initialize(block)
       @block = block
       @lang = block.attr 'language'
+      return unless @lang
+
+      @is_result = @lang.end_with? RESULT_SUFFIX
+      @key_lang = if @is_result
+                    @lang[0, @lang.length - RESULT_SUFFIX_LENGTH]
+                  else
+                    @lang
+                  end
       lookups = block.document.attr 'alternative_language_lookups'
-      @alternatives = lookups[@lang]
+      @alternatives = lookups[@key_lang]
     end
 
     def process
@@ -26,7 +41,7 @@ module AlternativeLanguageLookup
 
       @source = @block.source
       @digest = Digest::MurmurHash3_x64_128.hexdigest @source
-      @next_index = nil # We'll look it up when we need it
+      @listing_index = nil # We'll look it up when we need it
 
       found_langs = []
 
@@ -34,42 +49,51 @@ module AlternativeLanguageLookup
         next unless (found = a[:index][@digest])
 
         # TODO: we can probably cache this. There are lots of dupes.
-        alternative = Alternative.new document, a[:lang], found[:path]
-        alternative_block = alternative.block @block
-        next unless alternative_block
+        alt_lang = a[:lang]
+        alt_lang += '-result' if @is_result
+        alternative = Alternative.new document, alt_lang, found[:path]
+        alternative_listing = alternative.listing @block.parent
+        next unless alternative_listing
 
-        insert alternative_block
+        alternative_colist = alternative.colist @block.parent
+        insert alternative_listing, alternative_colist
         found_langs << a[:lang]
       end
       report = document.attr 'alternative_language_report'
       report&.report self, found_langs
+      summary = document.attr 'alternative_language_summary'
+      summary&.on_listing self, found_langs
 
       cleanup_original_after_add found_langs unless found_langs.empty?
     end
 
-    def insert(alternative)
-      unless @next_index
+    def insert(alternative_listing, alternative_colist)
+      unless @listing_index
         # Find the right spot in the parent's blocks to add any alternatives:
         # right after this block's callouts if it has any, otherwise just after
         # this block.
-        @next_index = parent.blocks.find_index(@block) + 1
-        unless @next_index
+        @listing_index = parent.blocks.find_index(@block)
+        @colist_offset = 1
+        if @listing_index
+          # While we're here check if there is a callout list.
+          colist = parent.blocks[@listing_index + 1]
+          @colist = colist&.context == :colist ? colist : nil
+        else
           message = "Invalid document: parent doesn't include child!"
           logger.error(message_with_context(message, @block.source_location))
           # In grand Asciidoctor tradition we'll *try* to make some
           # output though
-          @next_index = 0
-        end
-        if (colist = parent.blocks[@next_index])&.context == :colist
-          @next_index += 1
-          @colist = colist
-        else
+          @listing_index = 0
           @colist = nil
         end
       end
 
-      parent.blocks.insert @next_index, alternative
-      @next_index += 1
+      parent.blocks.insert @listing_index, alternative_listing
+      @listing_index += 1
+      return unless alternative_colist
+
+      parent.blocks.insert @listing_index + @colist_offset, alternative_colist
+      @colist_offset += 1
     end
 
     def cleanup_original_after_add(found_langs)
