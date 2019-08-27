@@ -268,8 +268,7 @@ sub build_all {
         check_links($build_dir);
     }
     $tracker->prune_out_of_date( @$contents );
-    $tracker->write;
-    push_changes( $build_dir, $target_repo ) if $Opts->{push};
+    push_changes( $build_dir, $target_repo, $tracker ) if $Opts->{push};
     serve_and_open_browser( $build_dir, $redirects, 0 ) if $Opts->{open};
 
     $temp_dir->rmtree;
@@ -618,13 +617,13 @@ sub preview {
 #===================================
 sub push_changes {
 #===================================
-    my ($build_dir, $target_repo ) = @_;
+    my ($build_dir, $target_repo, $tracker ) = @_;
 
-    say 'Building revision.txt';
-    $build_dir->file('revision.txt')
-        ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
-
-    if ( $target_repo->outstanding_changes ) {
+    if ( $tracker->has_non_local_changes || $target_repo->outstanding_changes ) {
+        $tracker->write;
+        say 'Building revision.txt';
+        $build_dir->file('revision.txt')
+            ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
         say 'Preparing commit';
         build_sitemap($build_dir);
         say "Commiting changes";

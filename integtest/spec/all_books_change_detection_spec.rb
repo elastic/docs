@@ -15,13 +15,19 @@ RSpec.describe 'building all books' do
       @target_branch = nil
       @checkout_branch = nil
       @keep_hash = false
+      @extra = proc {}
     end
 
     def convert_all
       conversion = @dest.prepare_convert_all @src.conf
       conversion.target_branch @target_branch if @target_branch
       conversion.keep_hash if @keep_hash
+      @extra.call conversion
       conversion.convert
+    end
+
+    def extra
+      @extra = proc
     end
   end
   describe 'change detection' do
@@ -151,9 +157,18 @@ RSpec.describe 'building all books' do
         it "doesn't print that it is building any books" do
           expect(out).not_to include(': Building ')
         end
-        it 'prints that it is not pushing anything' do
-          expect(out).to include('No changes to push')
-        end
+        include_examples "doesn't have anything to push"
+      end
+    end
+    shared_examples "the second build doesn't have anything to push" do
+      context 'the second build' do
+        let(:out) { outputs[1] }
+        include_examples "doesn't have anything to push"
+      end
+    end
+    shared_examples "doesn't have anything to push" do
+      it 'prints that it is not pushing anything' do
+        expect(out).to include('No changes to push')
       end
     end
 
@@ -205,6 +220,20 @@ RSpec.describe 'building all books' do
             end
           )
           include_examples 'second build is noop'
+        end
+        context 'when --keep_hash and --sub_dir are specified but there are ' \
+                'unrelated changes' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, config|
+              repo = src.repo 'repo'
+              repo.write 'dummy', 'dummy'
+
+              config.extra do |conversion|
+                conversion.keep_hash.sub_dir(repo, 'master')
+              end
+            end
+          )
+          include_examples "the second build doesn't have anything to push"
         end
         context 'even when there is a new target branch' do
           # Since we fork the target_branch to master we won't have anything
