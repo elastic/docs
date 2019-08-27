@@ -29,7 +29,6 @@ RSpec.describe 'building all books' do
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
     file_context 'html/static/docs.js' do
       def self.has_license(name, heading)
@@ -69,7 +68,6 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       book.source repo, 'resources'
     end
-    let(:latest_revision) { 'add cat image' }
     include_examples 'book basics', 'Test', 'test'
     page_context "the current version's chapter page",
                  'html/test/current/chapter.html' do
@@ -90,7 +88,6 @@ RSpec.describe 'building all books' do
       include_context 'single book built by two repos'
     end
     shared_context 'single book built by two repos' do
-      let(:latest_revision) { 'init' }
       include_examples 'book basics', 'Test', 'test'
       page_context 'html/test/current/chapter.html' do
         it 'contains the text from the index' do
@@ -150,7 +147,6 @@ RSpec.describe 'building all books' do
       book2.index = 'second/index.asciidoc'
       book2.source repo, 'second'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'First', 'first'
     include_examples 'book basics', 'Second', 'second'
   end
@@ -160,7 +156,6 @@ RSpec.describe 'building all books' do
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
   end
   context 'when target_branch is specified' do
@@ -169,7 +164,6 @@ RSpec.describe 'building all books' do
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
     it 'prints that it is forking the new branch from master' do
       expect(out).to include('target_repo: Forking <new_branch> from master')
@@ -205,7 +199,6 @@ RSpec.describe 'building all books' do
            rel="nofollow">edit</a>
       HTML
     end
-    let(:latest_revision) { 'init' }
     context "when respect_edit_url_overrides isn't specified" do
       override_edit_me false
       let(:repo) { @src.repo 'repo' }
@@ -246,7 +239,6 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       book.source private_repo, 'foo.asciidoc', is_private: true
     end
-    let(:latest_revision) { 'init' }
     page_context 'html/test/current/chapter.html' do
       it 'does contain an edit link because it is from a public source' do
         expect(body).to include(%(title="Edit this page on GitHub"))
@@ -303,7 +295,6 @@ RSpec.describe 'building all books' do
       java_alts = { source_lang: 'console', alternative_lang: 'java' }
       book.source(java_repo, 'examples', alternatives: java_alts)
     end
-    let(:latest_revision) { 'init' }
     include_examples 'README-like console alternatives', 'html/test/master'
   end
 

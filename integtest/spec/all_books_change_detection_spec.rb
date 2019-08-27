@@ -271,8 +271,6 @@ RSpec.describe 'building all books' do
 
     context 'when building one book out of one repo twice' do
       context 'when the second build is a noop' do
-        let(:latest_revision) { 'init' }
-
         context 'because there are no changes to the source repo' do
           build_one_book_out_of_one_repo_twice
           include_examples 'second build is noop'
@@ -344,7 +342,6 @@ RSpec.describe 'building all books' do
               repo.commit 'changed text'
             end
           )
-          let(:latest_revision) { 'changed text' }
           let(:new_text) { 'New text.' }
           include_examples 'second build is not a noop'
         end
@@ -359,7 +356,6 @@ RSpec.describe 'building all books' do
               book.asciidoctor = true
             end
           )
-          let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
@@ -370,7 +366,6 @@ RSpec.describe 'building all books' do
               book.asciidoctor = false
             end
           )
-          let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
@@ -382,7 +377,6 @@ RSpec.describe 'building all books' do
               config.target_branch = 'new_target'
             end
           )
-          let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
           context 'the first build' do
@@ -410,7 +404,6 @@ RSpec.describe 'building all books' do
               config.target_branch = nil # nil means don't override
             end
           )
-          let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
@@ -423,7 +416,6 @@ RSpec.describe 'building all books' do
               book.branches.push 'foo'
             end
           )
-          let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           context 'the second build' do
             let(:out) { outputs[1] }
@@ -461,7 +453,6 @@ RSpec.describe 'building all books' do
               book.current_branch = 'foo'
             end
           )
-          let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           context 'the second build' do
             let(:out) { outputs[1] }
@@ -495,7 +486,6 @@ RSpec.describe 'building all books' do
               book.branches.delete 'bar'
             end
           )
-          let(:latest_revision) { 'init' }
           let(:new_text) { 'Some text.' }
           context 'the second build' do
             let(:out) { outputs[1] }
@@ -520,7 +510,6 @@ RSpec.describe 'building all books' do
 
     context 'when building one book out of one repo and then out of two' do
       context 'when the second build is a noop' do
-        let(:latest_revision) { 'init' }
         context 'because it was run with --keep_hash' do
           build_one_book_out_of_one_repo_and_then_out_of_two(
             before_second_build: lambda do |_src, config|
@@ -531,7 +520,6 @@ RSpec.describe 'building all books' do
         end
       end
       context "when the second build isn't a noop" do
-        let(:latest_revision) { 'adding junk' }
         context 'because it was run without any special flags' do
           build_one_book_out_of_one_repo_and_then_out_of_two
           let(:new_text) { 'Some text.' }
@@ -542,8 +530,6 @@ RSpec.describe 'building all books' do
 
     context 'when building one book out of two repos twice' do
       context 'when the second build is a noop' do
-        let(:latest_revision) { 'init' }
-
         context 'because there are no changes to the either repo' do
           build_one_book_out_of_two_repos_twice
           include_examples 'second build is noop'
@@ -587,7 +573,6 @@ RSpec.describe 'building all books' do
         end
       end
       context "when the second build isn't a noop" do
-        let(:latest_revision) { 'changed text' }
         let(:new_text) { 'new text' }
 
         context 'because the index repo changes' do
@@ -621,8 +606,6 @@ RSpec.describe 'building all books' do
               repo2.switch_to_new_branch 'override'
             end
           )
-          # We don't make a new commit so the latest revision is still 'init'
-          let(:latest_revision) { 'init' }
           # And the text hasn't changed
           let(:new_text) { 'included text' }
           include_examples 'second build is not a noop'
@@ -650,7 +633,6 @@ RSpec.describe 'building all books' do
     context 'when building one book and then building two books' do
       context 'without any special flags' do
         build_one_book_then_two_books
-        let(:latest_revision) { 'init' }
         context 'the second build' do
           let(:out) { outputs[1] }
           include_examples 'commits changes'
@@ -670,7 +652,6 @@ RSpec.describe 'building all books' do
             config.keep_hash = true
           end
         )
-        let(:latest_revision) { 'init' }
         context 'the second build' do
           let(:out) { outputs[1] }
           it "doesn't print that it is building the original book" do
