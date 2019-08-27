@@ -62,7 +62,7 @@ describe(_AlternativePicker, () => {
             <option value="console">Console</option>
             <option value="js">JavaScript</option>
             <option value="csharp">C#</option>
-            <option value="bort">bort</option>
+            <option value="bort">Bort</option>
           </select>
           <div class="AlternativePicker-warning" />
         </div>
