@@ -397,22 +397,7 @@ RSpec.describe 'building a single book' do
 
         [[chapter]]
         == Chapter
-        [source,console]
-        ----------------------------------
-        GET /_search
-        {
-            "query": "foo bar" <1>
-        }
-        ----------------------------------
-        <1> Here's the explanation
-
-        [source,console]
-        ----------------------------------
-        GET /_search
-        {
-            "query": "missing"
-        }
-        ----------------------------------
+        #{ConsoleExamples::README_LIKE}
       ASCIIDOC
     end
     convert_before do |src, dest|

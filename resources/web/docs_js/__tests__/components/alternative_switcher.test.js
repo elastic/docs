@@ -1,31 +1,37 @@
 import {newStore} from "../../store";
 import {saveSettings} from "../../actions/settings";
-import AlternativeSwitcher from "../../components/alternative_switcher";
+import {_AlternativeSwitcher} from "../../components/alternative_switcher";
 
-describe(AlternativeSwitcher, () => {
+describe(_AlternativeSwitcher, () => {
   let db;
-  // This is what the example snippets sort of look like:
   document.head.innerHTML = `
     <style>
+      /* Mimic the main css so the tests detect "display" correctly. */
       .alternative {
         display: none;
       }
       .AlternativePicker-warning {
         display: none;
       }
-    </style>
+      </style>
   `;
+  // This is what the example snippets sort of look like:
   document.body.innerHTML = `
     <div id="guide">
-      <div id="csharp-listing"  class="alternative lang-csharp pre_wrapper" />
-      <div id="js-listing"      class="alternative lang-js pre_wrapper" />
-      <div id="console-listing" class="default lang-console has-csharp has-js pre_wrapper" />
+      <div id="csharp-listing"  class="alternative lang-csharp pre_wrapper"></div>
+      <div id="js-listing"      class="alternative lang-js pre_wrapper"></div>
+      <div id="console-listing" class="default lang-console has-csharp has-js pre_wrapper"></div>
       <div id="widget"          class="has-csharp has-js console_widget">
-        <div id="warning"       class="AlternativePicker-warning" />
+        <div id="picker"></div>
+        <div id="warning"       class="AlternativePicker-warning"></div>
       </div>
-      <div id="csharp-colist"   class="alternative lang-csharp calloutlist" />
-      <div id="js-colist"       class="alternative lang-js calloutlist" />
-      <div id="console-colist"  class="default lang-console has-csharp has-js calloutlist" />
+      <div id="csharp-colist"   class="alternative lang-csharp calloutlist"</div>
+      <div id="js-colist"       class="alternative lang-js calloutlist"></div>
+      <div id="console-colist"  class="default lang-console has-csharp has-js calloutlist"></div>
+
+      <div id="csharp-result"   class="alternative lang-csharp-result pre_wrapper"></div>
+      <div id="js-result"       class="alternative lang-js-result pre_wrapper"></div>
+      <div id="console-result"  class="default lang-console-result has-csharp has-js pre_wrapper"></div>
     </div>
   `;
 
@@ -58,6 +64,14 @@ describe(AlternativeSwitcher, () => {
           isHidden(colist);
         }
       });
+      describe(`the result for ${lang}`, () => {
+        const listing = document.getElementById(`${lang}-result`);
+        if (lang === selected) {
+          isVisible(listing);
+        } else {
+          isHidden(listing);
+        }
+      });
     }
     describe("the widget", () => {
       const widget = document.getElementById("widget");
@@ -74,32 +88,115 @@ describe(AlternativeSwitcher, () => {
     // });
   };
 
+  const noScrolling = (element) => {
+    expect(element).toBeUndefined();
+    return () => {};
+  }
+
   describe("when initialized with console", () => {
+    const picker = document.getElementById("picker");
+    const scrolls = [];
+    const scrollChecker = (element) => {
+      scrolls.push("before");
+      scrolls.push(element);
+      return () => {
+        scrolls.push("after");
+      };
+    }
     beforeAll(() => {
       db = newStore({settings: {consoleAlternative: "console"}});
-      AlternativeSwitcher(db);
+      _AlternativeSwitcher(scrollChecker, db);
     });
     afterAll(() => {
       document.getElementById('console-alternative').remove();
     });
 
     showsLanguage("console", false);
+    test("hasn't scrolled", () => {
+      expect(scrolls).toEqual(["before", undefined, "after"]);
+    });
 
     describe("changed to csharp", () => {
       beforeAll(() => {
-        db.dispatch(saveSettings({consoleAlternative: "csharp"}));
+        db.dispatch(saveSettings({
+          consoleAlternative: "csharp",
+          alternativeChangeSource: picker,
+        }));
       });
       showsLanguage("csharp", false);
+      test("scrolls after selecting", () => {
+        expect(scrolls).toEqual([
+          "before", undefined, "after",
+          "before", picker, "after",
+        ]);
+      });
       describe("then changed to js", () => {
         beforeAll(() => {
-          db.dispatch(saveSettings({consoleAlternative: "js"}));
+          db.dispatch(saveSettings({
+            consoleAlternative: "js",
+            alternativeChangeSource: picker,
+          }));
         });
         showsLanguage("js", false);
+        test("scrolls after selecting", () => {
+          expect(scrolls).toEqual([
+            "before", undefined, "after",
+            "before", picker, "after",
+            "before", picker, "after",
+          ]);
+        });  
         describe("then changed to bogus", () => {
           beforeAll(() => {
-            db.dispatch(saveSettings({consoleAlternative: "bogus"}));
+            db.dispatch(saveSettings({
+              consoleAlternative: "bogus",
+              alternativeChangeSource: picker,
+            }));
           });
           showsLanguage("console", true);
+          test("scrolls after selecting", () => {
+            expect(scrolls).toEqual([
+              "before", undefined, "after",
+              "before", picker, "after",
+              "before", picker, "after",
+              "before", picker, "after",
+            ]);
+          });
+          describe("then changed to console", () => {
+            beforeAll(() => {
+              db.dispatch(saveSettings({
+                consoleAlternative: "console",
+                alternativeChangeSource: picker,
+              }));
+            });
+            showsLanguage("console", false);
+            test("scrolls after selecting", () => {
+              expect(scrolls).toEqual([
+                "before", undefined, "after",
+                "before", picker, "after",
+                "before", picker, "after",
+                "before", picker, "after",
+                "before", picker, "after",
+              ]);
+            });
+            describe("then kept at console but still firing a change event", () => {
+              beforeAll(() => {
+                db.dispatch(saveSettings({
+                  consoleAlternative: "console",
+                  alternativeChangeSource: picker,
+                }));
+              });
+              showsLanguage("console", false);
+              test("doesn't scroll", () => {
+                expect(scrolls).toEqual([
+                  "before", undefined, "after",
+                  "before", picker, "after",
+                  "before", picker, "after",
+                  "before", picker, "after",
+                  "before", picker, "after",
+                ]);
+              });
+            });
+          });
         });
       });
     });
@@ -108,7 +205,7 @@ describe(AlternativeSwitcher, () => {
   describe("when initialized with csharp", () => {
     beforeAll(() => {
       db = newStore({settings: {consoleAlternative: "csharp"}});
-      AlternativeSwitcher(db);
+      _AlternativeSwitcher(noScrolling, db);
     });
     afterAll(() => {
       document.getElementById('console-alternative').remove();
@@ -120,7 +217,7 @@ describe(AlternativeSwitcher, () => {
   describe("when initialized with bogus", () => {
     beforeAll(() => {
       db = newStore({settings: {consoleAlternative: "bogus"}});
-      AlternativeSwitcher(db);
+      _AlternativeSwitcher(noScrolling, db);
     });
     afterAll(() => {
       document.getElementById('console-alternative').remove();

@@ -75,7 +75,7 @@ export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   return <div className="u-space-between">
     <AlternativePicker />
-    <div>
+    <div className="u-space-between">
       <a className="sense_widget copy_as_curl"
         onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
         {props.langStrings('Copy as cURL')}

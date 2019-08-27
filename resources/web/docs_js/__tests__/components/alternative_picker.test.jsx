@@ -62,7 +62,7 @@ describe(_AlternativePicker, () => {
             <option value="console">Console</option>
             <option value="js">JavaScript</option>
             <option value="csharp">C#</option>
-            <option value="bort">bort</option>
+            <option value="bort">Bort</option>
           </select>
           <div class="AlternativePicker-warning" />
         </div>
@@ -86,7 +86,10 @@ describe(_AlternativePicker, () => {
       * have to do it ourselves. Like an animal. */
     select.dispatchEvent(new Event("change"));
     test("saves the config", () => {
-      expect(updates).toStrictEqual([{consoleAlternative: 'js'}]);
+      // We can't use toMatchObject here because tagName is busted.
+      expect(updates).toHaveLength(1);
+      expect(updates[0].consoleAlternative).toBe("js");
+      expect(updates[0].alternativeChangeSource.tagName).toBe("SELECT");
     })
   });
 });

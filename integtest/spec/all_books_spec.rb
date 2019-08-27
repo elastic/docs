@@ -261,50 +261,30 @@ RSpec.describe 'building all books' do
   end
 
   context 'for a book with console alternatives' do
-    def self.index
-      <<~ASCIIDOC
-        [source,console]
-        ----------------------------------
-        GET /_search
-        {
-            "query": "foo bar" <1>
-        }
-        ----------------------------------
-        <1> Here's the explanation
-
-        [source,console]
-        ----------------------------------
-        GET /_search
-        {
-            "query": "missing"
-        }
-        ----------------------------------
-      ASCIIDOC
-    end
-
     def self.examples_dir
       "#{__dir__}/../readme_examples/"
     end
 
-    def self.setup_example(repo, lang)
+    def self.setup_example(repo, lang, hash)
       repo.cp(
-        "#{examples_dir}/#{lang}/8a7e0a79b1743d5fd94d79a7106ee930.adoc",
-        'examples/8a7e0a79b1743d5fd94d79a7106ee930.adoc'
+        "#{examples_dir}/#{lang}/#{hash}.adoc",
+        "examples/#{hash}.adoc"
       )
       repo.commit 'add example'
     end
 
     convert_all_before_context do |src|
-      repo = src.repo_with_index 'repo', index
+      repo = src.repo_with_index 'repo', ConsoleExamples::README_LIKE
 
       js_repo = src.repo 'js'
-      setup_example js_repo, 'js'
+      setup_example js_repo, 'js', '8a7e0a79b1743d5fd94d79a7106ee930'
+      setup_example js_repo, 'js', '9fa2da152878d1d5933d483a3c2af35e'
 
       csharp_repo = src.repo 'csharp'
       csharp_repo.write 'dummy', 'dummy'
       csharp_repo.commit 'init'
       csharp_repo.switch_to_new_branch 'mapped'
-      setup_example csharp_repo, 'csharp'
+      setup_example csharp_repo, 'csharp', '8a7e0a79b1743d5fd94d79a7106ee930'
 
       java_repo = src.repo 'java'
       java_repo.write 'examples/dummy', 'dummy'

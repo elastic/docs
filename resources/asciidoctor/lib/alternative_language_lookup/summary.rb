@@ -19,7 +19,7 @@ module AlternativeLanguageLookup
     end
 
     def on_listing(listing, found_langs)
-      sdata = @data[listing.lang]
+      sdata = @data[listing.key_lang]
       sdata[:total] += 1
       adata = sdata[:alternatives]
       found_langs.each { |alt| adata[alt][:found] += 1 }
