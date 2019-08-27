@@ -35,12 +35,6 @@ module Dsl
           expect(out).to include("#{book.title}: Finished master")
         end
       end
-      it 'prints that it is copying master to current for every book' do
-        # TODO: read branches from somewhere when we specify them
-        books.each_value do |book|
-          expect(out).to include("#{book.title}: Copying master to current")
-        end
-      end
       include_examples 'commits changes'
     end
     shared_examples 'commits changes' do
