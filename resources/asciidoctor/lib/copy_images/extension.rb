@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../delegating_conveter.rb'
+require_relative '../delegating_converter.rb'
 require_relative 'copier.rb'
 
 ##

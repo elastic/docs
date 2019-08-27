@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'asciidoctor/extensions'
-require_relative '../delegating_conveter.rb'
+require_relative '../delegating_converter.rb'
 
 ##
 # Extensions for marking when something was added, when it *will* be added, or
