@@ -86,6 +86,14 @@ class Dest
   end
 
   ##
+  # Executes `git show` for a single file.
+  def commit_info_for_file(file)
+    Dir.chdir bare_repo do
+      sh "git show -- #{file}"
+    end
+  end
+
+  ##
   # Start the preview service.
   def start_preview
     Preview.new(bare_repo)

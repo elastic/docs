@@ -53,6 +53,45 @@ RSpec.describe 'building all books' do
       has_license 'redux-thunk', 'The MIT License (MIT)'
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
+    file_context 'html/sitemap.xml' do
+      it 'has an entry for the chapter' do
+        expect(contents).to include(<<~XML)
+          <loc>https://www.elastic.co/guide/test/current/chapter.html</loc>
+        XML
+      end
+    end
+  end
+  context 'for a single book with two chapters' do
+    convert_all_before_context do |src|
+      repo = src.repo 'repo'
+      repo.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[chapter1]]
+        == Chapter 1
+
+        Some text.
+
+        [[chapter2]]
+        == Chapter 2
+
+        Some more text.
+      ASCIIDOC
+      repo.commit 'init'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+    end
+    include_examples 'book basics', 'Test', 'test'
+    file_context 'html/sitemap.xml' do
+      let(:chapter1_index) { contents.index 'chapter1.html' }
+      let(:chapter2_index) { contents.index 'chapter2.html' }
+      it 'the entry for chapter 1 is before the entry for chapter 2' do
+        # Sorting the file is important to prevent "jumping arround" when we
+        # rebuild it.
+        expect(chapter1_index).to be < chapter2_index
+      end
+    end
   end
   context 'for a single book built by a single repo with two sources' do
     convert_all_before_context do |src|

@@ -262,9 +262,27 @@ RSpec.describe 'building all books' do
         let(:out) { outputs[1] }
         include_examples 'builds all books'
       end
+    end
+    shared_examples 'second build only changes chapter2' do
       page_context 'html/test/current/chapter2.html' do
         it 'includes the new text' do
-          expect(body).to include(new_text)
+          expect(body).to include('New text')
+        end
+      end
+      context 'the sitemap' do
+        context 'the second commit' do
+          let(:commit_info) { @dest.commit_info_for_file('html/sitemap.xml') }
+          # These assertions rely on the shape of `git show -- <file>`
+          it 'updates the changed page' do
+            expect(commit_info).to include(<<~XML)
+              <loc>https://www.elastic.co/guide/test/current/chapter2.html</loc>
+            XML
+          end
+          it "doesn't update the unchanged page" do
+            expect(commit_info).not_to include(<<~XML)
+              <loc>https://www.elastic.co/guide/test/current/chapter1.html</loc>
+            XML
+          end
         end
       end
     end
@@ -342,8 +360,8 @@ RSpec.describe 'building all books' do
               repo.commit 'changed text'
             end
           )
-          let(:new_text) { 'New text.' }
           include_examples 'second build is not a noop'
+          include_examples 'second build only changes chapter2'
         end
         context 'because the book changes from asciidoc to asciidoctor' do
           build_one_book_out_of_one_repo_twice(
@@ -356,7 +374,6 @@ RSpec.describe 'building all books' do
               book.asciidoctor = true
             end
           )
-          let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
         context 'because the book changes from asciidoctor to asciidoc' do
@@ -366,7 +383,6 @@ RSpec.describe 'building all books' do
               book.asciidoctor = false
             end
           )
-          let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
         context 'because there is a target_branch and we have changes' do
@@ -377,7 +393,6 @@ RSpec.describe 'building all books' do
               config.target_branch = 'new_target'
             end
           )
-          let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
           context 'the first build' do
             let(:out) { outputs[0] }
@@ -404,7 +419,6 @@ RSpec.describe 'building all books' do
               config.target_branch = nil # nil means don't override
             end
           )
-          let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
         context 'because we add a branch to the book' do
@@ -416,7 +430,6 @@ RSpec.describe 'building all books' do
               book.branches.push 'foo'
             end
           )
-          let(:new_text) { 'Some text.' }
           context 'the second build' do
             let(:out) { outputs[1] }
             include_examples 'commits changes'
@@ -453,7 +466,6 @@ RSpec.describe 'building all books' do
               book.current_branch = 'foo'
             end
           )
-          let(:new_text) { 'Some text.' }
           context 'the second build' do
             let(:out) { outputs[1] }
             include_examples 'commits changes'
@@ -486,7 +498,6 @@ RSpec.describe 'building all books' do
               book.branches.delete 'bar'
             end
           )
-          let(:new_text) { 'Some text.' }
           context 'the second build' do
             let(:out) { outputs[1] }
             include_examples 'commits changes'
@@ -522,7 +533,6 @@ RSpec.describe 'building all books' do
       context "when the second build isn't a noop" do
         context 'because it was run without any special flags' do
           build_one_book_out_of_one_repo_and_then_out_of_two
-          let(:new_text) { 'Some text.' }
           include_examples 'second build is not a noop'
         end
       end
@@ -573,28 +583,28 @@ RSpec.describe 'building all books' do
         end
       end
       context "when the second build isn't a noop" do
-        let(:new_text) { 'new text' }
-
         context 'because the index repo changes' do
           build_one_book_out_of_two_repos_twice(
             before_second_build: lambda do |src|
               repo1 = src.repo 'repo1'
               text = repo1.read 'index.asciidoc'
-              repo1.write 'index.asciidoc', text + 'new text'
+              repo1.write 'index.asciidoc', text + 'New text'
               repo1.commit 'changed text'
             end
           )
           include_examples 'second build is not a noop'
+          include_examples 'second build only changes chapter2'
         end
         context 'because the included repo changes' do
           build_one_book_out_of_two_repos_twice(
             before_second_build: lambda do |src|
               repo2 = src.repo 'repo2'
-              repo2.write 'included.asciidoc', 'new text'
+              repo2.write 'included.asciidoc', 'New text'
               repo2.commit 'changed text'
             end
           )
           include_examples 'second build is not a noop'
+          include_examples 'second build only changes chapter2'
         end
         context "because a repo's branch mapping changes" do
           build_one_book_out_of_two_repos_twice(
@@ -606,8 +616,6 @@ RSpec.describe 'building all books' do
               repo2.switch_to_new_branch 'override'
             end
           )
-          # And the text hasn't changed
-          let(:new_text) { 'included text' }
           include_examples 'second build is not a noop'
         end
         context 'because there is a change in a mapped branch' do
@@ -621,11 +629,12 @@ RSpec.describe 'building all books' do
             end,
             before_second_build: lambda do |src|
               repo2 = src.repo 'repo2'
-              repo2.write 'included.asciidoc', 'new text'
+              repo2.write 'included.asciidoc', 'New text'
               repo2.commit 'changed text'
             end
           )
           include_examples 'second build is not a noop'
+          include_examples 'second build only changes chapter2'
         end
       end
     end
