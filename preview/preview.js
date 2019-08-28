@@ -147,7 +147,7 @@ function serveDiff(branch, response) {
 
       // Skip boring files
       if ([
-            'html/branches.yaml', 'html/sitemap.xml','html/revision.txt'
+            'html/branches.yaml', 'html/sitemap.xml',
           ].includes(path)) {
         continue;
       }

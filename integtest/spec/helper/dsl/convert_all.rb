@@ -52,11 +52,6 @@ module Dsl
       it 'creates html/branches.yaml' do
         expect(dest_file('html/branches.yaml')).to file_exist
       end
-      file_context 'html/revision.txt' do
-        it 'contains the latest revision message' do
-          expect(contents).to include(latest_revision)
-        end
-      end
       page_context 'the global index', 'html/index.html' do
         it 'contains a link to the current verion of each book' do
           books.each_value do |book|

@@ -621,9 +621,6 @@ sub push_changes {
 
     if ( $tracker->has_non_local_changes || $target_repo->outstanding_changes ) {
         $tracker->write;
-        say 'Building revision.txt';
-        $build_dir->file('revision.txt')
-            ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
         say 'Preparing commit';
         build_sitemap($build_dir);
         say "Commiting changes";
