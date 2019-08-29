@@ -452,7 +452,7 @@ ENTRY
 #===================================
 sub init_dirs {
 #===================================
-    my $repos_dir = $Opts->{reposcache};
+    my $repos_dir = $Opts->{reposcache} || '.repos';
     $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
