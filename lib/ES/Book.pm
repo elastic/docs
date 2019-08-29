@@ -216,7 +216,7 @@ sub build {
             for ( @{ $self->branches } ) {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $_ ), $_ );
             }
-            $self->_update_title_and_version_drop_downs( $dir->subdir( 'current') , $self->current );
+            $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",

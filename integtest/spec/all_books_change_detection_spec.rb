@@ -212,6 +212,9 @@ RSpec.describe 'building all books' do
         end
       end
       shared_examples 'correct for branch' do |branch|
+        it 'asdfasdf' do
+          expect(outputs[1]).to be('asdfasf');
+        end
         page_context 'index.html', "html/test/#{branch}/index.html" do
           include_examples 'correct'
         end

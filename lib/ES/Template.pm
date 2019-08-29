@@ -33,6 +33,7 @@ sub apply {
     for my $source ( $source_dir->children ) {
         my $dest = $dest_dir->file( $source->relative( $source_dir ) );
         if ($source->is_dir || $source->basename !~ /\.html$/) {
+            say "copying $source";
             rcopy( $source, $dest );
             next;
         }
