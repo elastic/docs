@@ -352,6 +352,11 @@ sub _update_title_and_version_drop_downs {
     $title .= '</select></span></li>';
     for ( 'toc.html', 'index.html' ) {
         my $file = $branch_dir->file($_);
+        # Ignore missing files because the books haven't been built yet. This
+        # can happen after a new branch is added to the config and then we use
+        # --keep_hash to prevent building new books, like for PR tests.
+        next unless -e $file;
+
         my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
         my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?<li>/<ul class="toc">${title}<li>/);
         die "couldn't update version" unless $success;
