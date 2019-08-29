@@ -5,7 +5,7 @@ use warnings;
 use v5.10;
 use Encode qw(encode_utf8);
 use Path::Class qw(file);
-use File::Copy::Recursive qw(fcopy);
+use File::Copy::Recursive qw(rcopy);
 use JSON;
 use ES::Util qw(run);
 
@@ -24,19 +24,20 @@ sub new {
 #===================================
 sub apply {
 #===================================
-    my $self = shift;
-    my $dir  = shift;
-    my $lang = shift || die "No lang specified";
-    my $asciidoctor = shift;
-    my $alternatives_summary = shift;
+    my ( $self, $source_dir, $dest_dir, $lang, $asciidoctor, $alternatives_summary) = @_;
 
     my $map = $self->{map};
 
     my $initial_js_state = $self->_build_initial_js_state( $alternatives_summary );
 
-    for my $file ( $dir->children ) {
-        next if $file->is_dir or $file->basename !~ /\.html$/;
-        my $contents = $file->slurp( iomode => '<:encoding(UTF-8)' );
+    for my $source ( $source_dir->children ) {
+        my $dest = $dest_dir->file( $source->relative( $source_dir ) );
+        if ($source->is_dir || $source->basename !~ /\.html$/) {
+            rcopy( $source, $dest );
+            next;
+        }
+
+        my $contents = $source->slurp( iomode => '<:encoding(UTF-8)' );
 
         # Strip XML guff
         $contents =~ s/\s+xmlns="[^"]*"//g;
@@ -45,7 +46,7 @@ sub apply {
         $contents =~ s/\s*$/\n/;
 
         # Extract AUTOSENSE snippets
-        $contents = $self->_autosense_snippets( $file, $contents ) unless $asciidoctor;
+        $contents = $self->_autosense_snippets( $source, $contents ) unless $asciidoctor;
 
         # Fill in template
         my @parts  = @{ $self->{parts} };
@@ -57,7 +58,7 @@ sub apply {
             = "<!-- start body -->\n$body\n<!-- end body -->\n";
         $parts[ $map->{FINAL} ] = $initial_js_state . $parts[ $map->{FINAL} ];
 
-        $file->spew( iomode => '>:utf8', join "", @parts );
+        $dest->spew( iomode => '>:utf8', join "", @parts );
     }
 }
 

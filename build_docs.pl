@@ -85,6 +85,7 @@ sub build_local {
     say "Building HTML from $doc";
 
     my $dir = dir( $Opts->{out} || 'html_docs' )->absolute($Old_Pwd);
+    my $raw_dir = $dir->subdir( 'raw' );
 
     $Opts->{resource}
         = [ map { dir($_)->absolute($Old_Pwd) } @{ $Opts->{resource} || [] } ];
@@ -112,15 +113,13 @@ sub build_local {
 
     my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
-        $dir->rmtree;
-        $dir->mkpath;
-        build_single( $index, $dir, %$Opts,
+        build_single( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
         );
     }
     else {
-        build_chunked( $index, $dir, %$Opts,
+        build_chunked( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
         );
@@ -230,6 +229,7 @@ sub build_all {
         or die "Missing <paths.build> in config";
     $build_dir = $target_repo->destination->subdir( $build_dir );
     $build_dir->mkpath;
+    my $raw_build_dir = $target_repo->destination->subdir( 'raw' );
 
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
@@ -242,10 +242,10 @@ sub build_all {
     }
     else {
         say "Building docs";
-        build_entries( $build_dir, $temp_dir, $toc, @$contents );
+        build_entries( $raw_build_dir, $build_dir, $temp_dir, $toc, @$contents );
 
         say "Writing main TOC";
-        $toc->write( $build_dir, 0 );
+        $toc->write( $raw_build_dir, $build_dir, $temp_dir, 0 );
 
         say "Writing web resources";
         my $static_dir = $build_dir->subdir( 'static' );
@@ -362,7 +362,7 @@ sub check_kibana_links {
 #===================================
 sub build_entries {
 #===================================
-    my ( $build, $temp_dir, $toc, @entries ) = @_;
+    my ( $raw_build, $build, $temp_dir, $toc, @entries ) = @_;
 
     while ( my $entry = shift @entries ) {
         my $title = $entry->{title}
@@ -370,12 +370,15 @@ sub build_entries {
 
         if ( my $sections = $entry->{sections} ) {
             my $base_dir = $entry->{base_dir} || '';
+            my $raw_sub_build = $raw_build->subdir($base_dir);
+            my $sub_build = $build->subdir($base_dir);
             my $section_toc = build_entries(
-                $build->subdir($base_dir), $temp_dir,
-                ES::Toc->new( $title, $entry->{lang} ), @$sections
+                $raw_sub_build, $sub_build, $temp_dir,
+                ES::Toc->new( $title, $entry->{lang} ),
+                @$sections
             );
             if ($base_dir) {
-                $section_toc->write( $build->subdir($base_dir) );
+                $section_toc->write( $raw_sub_build, $sub_build, $temp_dir );
                 $toc->add_entry(
                     {   title => $title,
                         url   => $base_dir . '/index.html'
@@ -389,6 +392,7 @@ sub build_entries {
         }
         my $book = ES::Book->new(
             dir      => $build,
+            raw_dir  => $raw_build,
             template => $Opts->{template},
             temp_dir => $temp_dir,
             %$entry

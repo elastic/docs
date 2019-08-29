@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use v5.10;
 
-use File::Copy::Recursive qw(fcopy rcopy);
+use File::Copy::Recursive qw(rcopy);
 use Capture::Tiny qw(capture tee);
 use Encode qw(decode_utf8);
 use Path::Class qw(dir file);
@@ -33,7 +33,7 @@ our $Opts = { procs => 3, lang => 'en' };
 #===================================
 sub build_chunked {
 #===================================
-    my ( $index, $dest, %opts ) = @_;
+    my ( $index, $raw_dest, $dest, %opts ) = @_;
 
     my $chunk     = $opts{chunk}         || 0;
     my $version   = $opts{version}       || '';
@@ -58,6 +58,8 @@ sub build_chunked {
 
     $dest->rmtree;
     $dest->mkpath;
+    $raw_dest->rmtree;
+    $raw_dest->mkpath;
 
     my %xsltopts = (
             "toc.max.depth"            => 5,
@@ -75,14 +77,14 @@ sub build_chunked {
     if ( $asciidoctor ) {
         my $dest_xml = $index->basename;
         $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
-        $dest_xml = $dest->file($dest_xml);
+        $dest_xml = $raw_dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
                 'navig.graphics'   => 1,
                 'admon.textlabel'  => 0,
                 'admon.graphics'   => 1,
         );
-        my $chunks_path = dir("$dest/.chunked");
+        my $chunks_path = dir("$raw_dest/.chunked");
         $chunks_path->mkpath;
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
@@ -116,7 +118,7 @@ sub build_chunked {
                     '-a' => "alternative_language_report=$dest/alternatives_report.adoc",
                     '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
-                '--destination-dir=' . $dest,
+                '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
             );
@@ -153,7 +155,7 @@ sub build_chunked {
                 $private ? ( '-a' => 'edit_url!' ) : (),
                 '--xsl-file'      => 'resources/website_chunked.xsl',
                 '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-                '--destination-dir=' . $dest,
+                '--destination-dir=' . $raw_dest,
                 ( $lenient ? '-L' : () ),
                 docinfo($index),
                 xsltopts(%xsltopts),
@@ -165,21 +167,21 @@ sub build_chunked {
 
     _check_build_error( $output, $died, $lenient );
 
-    my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
-        or die "Couldn't find chunk dir in <$dest>";
+    my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
+        or die "Couldn't find chunk dir in <$raw_dest>";
 
-    finish_build( $index->parent, $chunk_dir, $lang, $asciidoctor, $alternatives_summary );
-    extract_toc_from_index($chunk_dir);
     for ( $chunk_dir->children ) {
-        run( 'mv', $_, $dest );
+        run( 'mv', $_, $raw_dest );
     }
+    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary );
+    extract_toc_from_index($raw_dest);
     $chunk_dir->rmtree;
 }
 
 #===================================
 sub build_single {
 #===================================
-    my ( $index, $dest, %opts ) = @_;
+    my ( $index, $raw_dest, $dest, %opts ) = @_;
 
     my $type = $opts{type} || 'book';
     my $toc = $opts{toc} ? "$type toc" : '';
@@ -203,6 +205,14 @@ sub build_single {
 
     die "Can't find index [$index]" unless -f $index;
 
+    unless ( $opts{keep_dest} ) {
+        say "Cleaning $dest and $raw_dest";
+        $dest->rmtree;
+        $dest->mkpath;
+        $raw_dest->rmtree;
+        $raw_dest->mkpath;
+    }
+
     my %xsltopts = (
             "generate.toc"             => $toc,
             "toc.section.depth"        => 0,
@@ -218,7 +228,7 @@ sub build_single {
     if ( $asciidoctor ) {
         my $dest_xml = $index->basename;
         $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
-        $dest_xml = $dest->file($dest_xml);
+        $dest_xml = $raw_dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
                 'navig.graphics'   => 1,
@@ -257,7 +267,7 @@ sub build_single {
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
-                '--destination-dir=' . $dest,
+                '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
             );
@@ -267,7 +277,7 @@ sub build_single {
             $output .= run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
-                '--output' => "$dest/index.html",
+                '--output' => "$raw_dest/index.html",
                 file('resources/website.xsl')->absolute,
                 $dest_xml
             );
@@ -291,7 +301,7 @@ sub build_single {
                 $private ? ( '-a' => 'edit_url!' ) : (),
                 '--xsl-file'      => 'resources/website.xsl',
                 '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-                '--destination-dir=' . $dest,
+                '--destination-dir=' . $raw_dest,
                 ( $lenient ? '-L' : () ),
                 docinfo($index),
                 xsltopts(%xsltopts),
@@ -307,12 +317,12 @@ sub build_single {
     $base_name =~ s/\.[^.]+$/.html/;
 
     if ( $base_name ne 'index.html' ) {
-        my $src = $dest->file($base_name);
-        rename $src, $dest->file('index.html')
+        my $src = $raw_dest->file($base_name);
+        rename $src, $raw_dest->file('index.html')
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    finish_build( $index->parent, $dest, $lang, $asciidoctor, $alternatives_summary );
+    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary );
 }
 
 #===================================
@@ -395,10 +405,10 @@ sub build_pdf {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $dest, $lang, $asciidoctor, $alternatives_summary ) = @_;
+    my ( $source, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary ) = @_;
 
     # Apply template to HTML files
-    $Opts->{template}->apply( $dest, $lang, $asciidoctor, $alternatives_summary );
+    $Opts->{template}->apply( $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary );
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
