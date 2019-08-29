@@ -35,6 +35,12 @@ RSpec.describe 'building a single book' do
           expect(initial_js_state).to be_empty
         end
       end
+      page_context 'toc.html' do
+        it "doesn't have the initail js state" do
+          # because we didn't apply the template
+          expect(initial_js_state).to be_nil
+        end
+      end
       page_context 'raw/index.html' do
         it 'has the right title' do
           expect(title).to eq('Title')

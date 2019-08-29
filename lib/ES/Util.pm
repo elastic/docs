@@ -174,7 +174,7 @@ sub build_chunked {
         run( 'mv', $_, $raw_dest );
     }
     finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary );
-    extract_toc_from_index($raw_dest);
+    extract_toc_from_index( $dest );
     $chunk_dir->rmtree;
 }
 
