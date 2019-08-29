@@ -766,6 +766,11 @@ sub build_web_resources {
     my $css = $dest->file('styles.css');
 
     unless ( -e $compiled_js && -e $compiled_css ) {
+        # We write the compiled js and css to /tmp so we can use them on
+        # subsequent runs in the same container. This doesn't come up when you
+        # build docs either with --doc or --all *but* it comes up all the time
+        # when you run the integration tests and saves about 1.5 seconds on
+        # every docs build.
         say "Compiling web resources";
         run '/node_modules/parcel/bin/cli.js', 'build',
             '--experimental-scope-hoisting', '--no-source-maps',
