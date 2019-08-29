@@ -759,19 +759,26 @@ sub build_web_resources {
 #===================================
     my ( $dest ) = @_;
 
-    run '/node_modules/parcel/bin/cli.js', 'build',
-        '--experimental-scope-hoisting', '--no-source-maps',
-        '-d', $dest, '-o', 'docs.js',
-        'resources/web/docs_js/index.js', '/node_modules';
-    my $docs = $dest->file('docs.js');
-    my $licenses = file('resources/web/docs.js.licenses')->slurp;
-    my $built = $docs->slurp;
-    $docs->spew($licenses . $built);
+    my $parcel_out = dir('/tmp/parcel');
+    my $compiled_js = $parcel_out->file('docs_js/index.js');
+    my $compiled_css = $parcel_out->file('styles.css');
+    my $js = $dest->file('docs.js');
+    my $css = $dest->file('styles.css');
 
-    run '/node_modules/parcel/bin/cli.js', 'build',
-        '--no-source-maps',
-        '-d', $dest, '-o', 'styles.css',
-        'resources/web/styles.pcss';
+    unless ( -e $compiled_js && -e $compiled_css ) {
+        say "Compiling web resources";
+        run '/node_modules/parcel/bin/cli.js', 'build',
+            '--experimental-scope-hoisting', '--no-source-maps',
+            '-d', $parcel_out,
+            'resources/web/docs_js/index.js', 'resources/web/styles.pcss';
+        die "Parcel didn't make $compiled_js" unless -e $compiled_js;
+        die "Parcel didn't make $compiled_css" unless -e $compiled_css;
+    }
+
+    $dest->mkpath;
+    my $js_licenses = file( 'resources/web/docs.js.licenses' );
+    $js->spew( $js_licenses->slurp . $compiled_js->slurp );
+    rcopy( $compiled_css, $css );
 }
 
 1
