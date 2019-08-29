@@ -452,9 +452,7 @@ ENTRY
 #===================================
 sub init_dirs {
 #===================================
-    my $repos_dir = $Conf->{paths}{repos}
-        or die "Missing <paths.repos> in config";
-
+    my $repos_dir = $Opts->{reposcache};
     $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
@@ -813,6 +811,7 @@ sub command_line_opts {
         'push',
         'rebuild',
         'reference=s',
+        'reposcache=s',
         'skiplinkcheck',
         'sub_dir=s@',
         'user=s',
@@ -871,6 +870,8 @@ sub usage {
                             what has changed
           --reference       Directory of `--mirror` clones to use as a
                             local cache
+          --repos_cache     Directory to which working repositories are cloned.
+                            Defaults to `<script_dir>/.repos`.
           --skiplinkcheck   Omit the step that checks for broken links
           --sub_dir         Use a directory as a branch of some repo
                             (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
@@ -931,6 +932,7 @@ sub check_opts {
         die('--announce_preview only compatible with --all') if $Opts->{announce_preview};
         die('--rebuild only compatible with --all') if $Opts->{rebuild};
         die('--reference only compatible with --all') if $Opts->{reference};
+        die('--reposcache only compatible with --all') if $Opts->{reposcache};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
         die('--user only compatible with --all') if $Opts->{user};

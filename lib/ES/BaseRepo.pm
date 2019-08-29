@@ -100,7 +100,8 @@ sub _try_to_fetch {
     my $name = $self->name;
     my $url  = $self->url;
     if ( $origin ne $url ) {
-        printf(" - %20s: Upstream has changed to <%s>. Deleting\n", $self->name, $url);
+        printf(" - %20s: Upstream has changed from <%s> to <%s>. Deleting\n",
+                $self->name, $origin, $url);
         $git_dir->rmtree;
         return;
     }

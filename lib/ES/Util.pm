@@ -28,7 +28,11 @@ our @EXPORT_OK = qw(
     build_web_resources
 );
 
-our $Opts = { procs => 3, lang => 'en' };
+our $Opts = {
+    procs => 3,
+    lang => 'en',
+    reposcache => '.repos',
+};
 
 #===================================
 sub build_chunked {
