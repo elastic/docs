@@ -65,7 +65,7 @@ class Dest
   # Convert a conf file worth of books and check it out.
   def convert_all(conf, expect_failure: false, target_branch: nil)
     # TODO: remove this in favor of prepare_convert_all
-    convert = ConvertAll.new conf, bare_repo, self
+    convert = prepare_convert_all conf
     convert.target_branch target_branch if target_branch
     convert.convert expect_failure: expect_failure
   end
