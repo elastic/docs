@@ -248,7 +248,6 @@ sub build_all {
         say "Writing main TOC";
         $toc->write( $build_dir, 0 );
 
-        say "Writing web resources";
         my $static_dir = $build_dir->subdir( 'static' );
         build_web_resources( $static_dir );
 
