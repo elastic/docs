@@ -293,11 +293,40 @@ RSpec.describe 'building all books' do
           build_one_book_out_of_one_repo_twice
           include_examples 'second build is noop'
         end
+        context 'even when there are no changes to the kibana repo' do
+          build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              # The kibana link checking requires a few things:
+              # 1. A repo named kibana
+              # 2. A special links file in the repo
+              # 3. A book at `en/kibana`
+              kibana_repo = src.repo_with_index 'kibana', 'words'
+              kibana_repo.write(
+                'src/ui/public/documentation_links/documentation_links.ts',
+                'text but no links actually'
+              )
+              kibana_repo.commit 'add links file'
+              kibana_book = src.book 'Kibana', prefix: 'en/kibana'
+              kibana_book.source kibana_repo, 'index.asciidoc'
+            end
+          )
+          include_examples 'second build is noop'
+        end
         context 'even when there are unrelated changes source repo' do
           build_one_book_out_of_one_repo_twice(
             before_second_build: lambda do |src, _config|
               repo = src.repo 'repo'
               repo.write 'garbage', 'junk'
+              repo.commit 'adding junk'
+            end
+          )
+          include_examples 'second build is noop'
+        end
+        context 'even when there are noop changes source repo' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, _config|
+              repo = src.repo 'repo'
+              repo.write 'index.asccidoc', TWO_CHAPTERS + '  '
               repo.commit 'adding junk'
             end
           )
