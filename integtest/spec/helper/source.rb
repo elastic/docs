@@ -112,7 +112,6 @@ class Source
   private
 
   def common_conf
-    repos_path = path '../repos'
     <<~YAML
       template:
         defaults:
@@ -123,7 +122,6 @@ class Source
       paths:
         build:          html/
         branch_tracker: html/branches.yaml
-        repos:          #{repos_path}
       contents_title: Test
     YAML
   end
