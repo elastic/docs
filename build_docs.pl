@@ -431,7 +431,6 @@ sub build_sitemap {
     }
     for ( split /\0/, $changed ) {
         next unless s|^html/||;
-        say "ASDFADF $_";
         $dates{$_} = $now;
     }
 
