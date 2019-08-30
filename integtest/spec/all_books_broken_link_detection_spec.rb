@@ -183,7 +183,7 @@ RSpec.describe 'building all books' do
           end
           include_examples 'all links are ok'
         end
-        describe 'when the broken link is in an *new* unbuilt branch' do
+        describe 'when the broken link is in a *new* unbuilt branch' do
           convert_before do |src, dest|
             setup src, dest
             kibana = src.repo('kibana')

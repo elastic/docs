@@ -34,7 +34,8 @@ module AlternativeLanguageLookup
     end
 
     def lang_header(listing)
-      listing.alternatives.map { |a| "| #{a[:lang]}" }.join ' '
+      suffix = listing.is_result ? '-result' : ''
+      listing.alternatives.map { |a| "| #{a[:lang]}#{suffix}" }.join ' '
     end
 
     def lang_line(listing, found_langs)

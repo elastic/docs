@@ -29,14 +29,8 @@ module Dsl
     end
     shared_context 'convert single' do
       let(:out) { outputs[0] }
-      it 'prints the path to the html index' do
-        expect(out).to include(dest_file('index.html'))
-      end
-      it 'creates the css' do
-        expect(dest_file('styles.css')).to file_exist
-      end
-      it 'creates the js' do
-        expect(dest_file('docs.js')).to file_exist
+      it 'prints the "Done" when it is finished' do
+        expect(out).to include('Done')
       end
       context 'when run with asciidoc' do
         let(:asciidoctor_files) do

@@ -17,6 +17,10 @@ class Book
   attr_accessor :branches
 
   ##
+  # The branch that is marked "current"
+  attr_accessor :current_branch
+
+  ##
   # Should this book allow overriding :edit_url:? Defaults to false.
   attr_accessor :respect_edit_url_overrides
 
@@ -27,6 +31,7 @@ class Book
     @asciidoctor = true
     @sources = []
     @branches = ['master']
+    @current_branch = 'master'
     @respect_edit_url_overrides = false
   end
 
@@ -70,7 +75,7 @@ class Book
     <<~YAML
       title:      #{@title}
       prefix:     #{@prefix}
-      current:    master
+      current:    #{@current_branch}
       branches:   [ #{@branches.join ', '} ]
       index:      #{@index}
       tags:       test tag
@@ -84,7 +89,9 @@ class Book
   def link_to(branch)
     url = "#{@prefix}/#{branch}/index.html"
     decoration = ''
-    decoration = ' [master]' unless @branches.length == 1
+    if branch == 'current' && @branches.length != 1
+      decoration = " [#{@current_branch}]"
+    end
     %(<a class="ulink" href="#{url}" target="_top">#{@title}#{decoration}</a>)
   end
 

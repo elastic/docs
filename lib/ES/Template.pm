@@ -6,6 +6,7 @@ use v5.10;
 use Encode qw(encode_utf8);
 use Path::Class qw(file);
 use File::Copy::Recursive qw(fcopy);
+use JSON;
 use ES::Util qw(run);
 
 #===================================
@@ -15,7 +16,7 @@ sub new {
 
     my $self = bless {
         defaults => $args{defaults},
-        abs_urls => $args{abs_urls} || 0,
+        json => JSON->new->pretty->utf8->canonical,
     }, $class;
     $self->_init;
 }
@@ -27,8 +28,11 @@ sub apply {
     my $dir  = shift;
     my $lang = shift || die "No lang specified";
     my $asciidoctor = shift;
+    my $alternatives_summary = shift;
 
     my $map = $self->{map};
+
+    my $initial_js_state = $self->_build_initial_js_state( $alternatives_summary );
 
     for my $file ( $dir->children ) {
         next if $file->is_dir or $file->basename !~ /\.html$/;
@@ -51,17 +55,10 @@ sub apply {
         $parts[ $map->{LANG} ]    = qq(lang="$lang");
         $parts[ $map->{BODY} ]
             = "<!-- start body -->\n$body\n<!-- end body -->\n";
+        $parts[ $map->{FINAL} ] = $initial_js_state . $parts[ $map->{FINAL} ];
 
         $file->spew( iomode => '>:utf8', join "", @parts );
     }
-
-    # Copy stylesheet
-    fcopy( 'resources/web/styles.css', $dir )
-        or die "Couldn't copy <styles.css> to <$dir>: $!";
-
-    # Copy javascript
-    fcopy( 'resources/web/docs.js', $dir )
-        or die "Couldn't copy <docs.js> to <$dir>: $!";
 }
 
 my $Autosense_RE = qr{
@@ -90,7 +87,7 @@ sub _autosense_snippets {
 
         # Remove callouts from snippet
         my $snippet = $2;
-        $snippet =~ s{<a.+?</span>}{}gs;
+        $snippet =~ s{<a.+?</i>}{}gs;
 
         # Unescape HTML entities
         $snippet =~ s/&lt;/</g;
@@ -167,7 +164,6 @@ sub _init {
     } or die "Unable to load template: $@";
     my @parts = split /<!-- (DOCS \w+) -->/, $content;
     my $defaults = $self->{defaults};
-    my $abs = $self->{abs_urls} ? 'https://www.elastic.co/' : '';
     my %map;
 
     for my $i ( 0 .. @parts - 1 ) {
@@ -175,17 +171,43 @@ sub _init {
             $parts[$i] = $defaults->{$1} || '';
             $map{$1} = $i;
         }
-        if ($abs) {
-            $parts[$i] =~ s{
-                (<(?:script|link|img)[^>]*)
-                (\b(?:src|href)=")/(?=\w)
-            }{$1 $2$abs}xg;
-        }
     }
 
     $self->{map}   = \%map;
     $self->{parts} = \@parts;
     return $self;
+}
+
+#===================================
+sub _build_initial_js_state {
+#===================================
+    my ( $self, $alternatives_summary ) = ( @_ );
+
+    # Try an keep this state small and from changing frequently because it is
+    # included in every html page.
+    my %state;
+
+    if ( -f $alternatives_summary ) {
+        my %summary;
+        my $alts = $alternatives_summary->slurp( iomode => '<:encoding(UTF-8)' );
+        $alts = $self->{json}->decode($alts);
+
+        while (my ($sourceLang, $sEntry) = each (%{ $alts })) {
+            $summary{$sourceLang} = {};
+            while (my ($altLang, $aEntry) = each (%{ $sEntry->{alternatives} })) {
+                $summary{$sourceLang}{$altLang} = {};
+                my $hasAny = $aEntry->{found} > 0 ? \1 : \0;
+                $summary{$sourceLang}{$altLang}{hasAny} = $hasAny;
+            }
+        }
+        $state{alternatives} = \%summary;
+    }
+
+    my $txt = $self->{json}->encode(\%state);
+    return <<"HTML";
+<script type="text/javascript">
+window.initial_state = $txt</script>
+HTML
 }
 
 1;

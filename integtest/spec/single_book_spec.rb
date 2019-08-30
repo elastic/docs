@@ -31,6 +31,9 @@ RSpec.describe 'building a single book' do
         it 'has the right title' do
           expect(title).to eq('Title')
         end
+        it 'has an empty initial js state' do
+          expect(initial_js_state).to be_empty
+        end
       end
       page_context 'chapter.html' do
         it 'has the right title' do
@@ -385,8 +388,6 @@ RSpec.describe 'building a single book' do
     file_context 'images/icons/important.png'
     file_context 'images/icons/note.png'
     file_context 'images/icons/warning.png'
-    file_context 'images/icons/callouts/1.png'
-    file_context 'images/icons/callouts/2.png'
   end
 
   context 'for a book with console alternatives' do
@@ -396,34 +397,21 @@ RSpec.describe 'building a single book' do
 
         [[chapter]]
         == Chapter
-        [source,console]
-        ----------------------------------
-        GET /_search
-        {
-            "query": "foo bar" <1>
-        }
-        ----------------------------------
-        <1> Example
-
-        [source,console]
-        ----------------------------------
-        GET /_search
-        {
-            "query": "missing"
-        }
-        ----------------------------------
+        #{ConsoleExamples::README_LIKE}
       ASCIIDOC
     end
     convert_before do |src, dest|
       repo = src.repo 'src'
       from = repo.write 'index.asciidoc', index
       repo.commit 'commit outstanding'
+      # Points java to a directory without any examples so we can report that.
       dest.prepare_convert_single(from, '.')
           .asciidoctor
           .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
           .alternatives(
             'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
           )
+          .alternatives('console', 'java', "#{__dir__}/helper")
           .convert
     end
     include_examples 'README-like console alternatives', '.'
@@ -440,11 +428,45 @@ RSpec.describe 'building a single book' do
       @opened_docs.exit
     end
 
+    let(:static) { 'http://localhost:8000/guide/static' }
     let(:index) { Net::HTTP.get_response(URI('http://localhost:8000/guide/')) }
+    let(:js) do
+      Net::HTTP.get_response(URI("#{static}/docs.js"))
+    end
+    let(:css) do
+      Net::HTTP.get_response(URI("#{static}/styles.css"))
+    end
+
     it 'serves the book' do
       expect(index).to serve(doc_body(include(<<~HTML.strip)))
         <a href="chapter.html">Chapter
       HTML
+    end
+
+    context 'the js' do
+      it 'is unminified' do
+        expect(js).to serve(include(<<~JS))
+          // Test comment used to detect unminifed JS in tests
+        JS
+      end
+      it 'include hot module replacement for the css' do
+        expect(js).to serve(include(<<~JS))
+          // Setup hot module replacement for css if we're in dev mode.
+        JS
+      end
+      it 'includes a source map' do
+        expect(js).to serve(include('sourceMappingURL='))
+      end
+    end
+    context 'the css' do
+      it 'is unminified' do
+        expect(css).to serve(include(<<~CSS))
+          /* test comment used to detect unminified source */
+        CSS
+      end
+      it 'includes a source map' do
+        expect(css).to serve(include('sourceMappingURL='))
+      end
     end
   end
 

@@ -24,7 +24,8 @@ our @EXPORT_OK = qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
-    build_docs_js
+    start_web_resources_watcher
+    build_web_resources
 );
 
 our $Opts = { procs => 3, lang => 'en' };
@@ -51,6 +52,7 @@ sub build_chunked {
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
+    my $alternatives_summary = $dest->file('alternatives_summary.json');
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -76,7 +78,6 @@ sub build_chunked {
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
-                'callout.graphics' => 1,
                 'navig.graphics'   => 1,
                 'admon.textlabel'  => 0,
                 'admon.graphics'   => 1,
@@ -86,8 +87,8 @@ sub build_chunked {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
-        # We use the callouts from asciidoc so add it as a resource so we
-        # can find them
+        # We use the admonishment images from asciidoc so add it as a resource
+        # so we can find them
         push @$resources, $asciidoc_dir;
         eval {
             $output = run(
@@ -107,13 +108,13 @@ sub build_chunked {
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc",
+                    '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
                 '--destination-dir=' . $dest,
                 docinfo($index),
@@ -167,7 +168,7 @@ sub build_chunked {
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $dest->children
         or die "Couldn't find chunk dir in <$dest>";
 
-    finish_build( $index->parent, $chunk_dir, $lang, $asciidoctor );
+    finish_build( $index->parent, $chunk_dir, $lang, $asciidoctor, $alternatives_summary );
     extract_toc_from_index($chunk_dir);
     for ( $chunk_dir->children ) {
         run( 'mv', $_, $dest );
@@ -198,6 +199,7 @@ sub build_single {
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
+    my $alternatives_summary = $dest->file('alternatives_summary.json');
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -219,7 +221,6 @@ sub build_single {
         $dest_xml = $dest->file($dest_xml);
 
         %xsltopts = (%xsltopts,
-                'callout.graphics' => 1,
                 'navig.graphics'   => 1,
                 'admon.textlabel'  => 0,
                 'admon.graphics'   => 1,
@@ -230,8 +231,8 @@ sub build_single {
         # Emulate asciidoc_dir because we use it to find shared asciidoc files
         # but asciidoctor doesn't support it.
         my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
-        # We use the callouts from asciidoc so add it as a resource so we
-        # can find them
+        # We use the admonishment images from asciidoc so add it as a resource
+        # so we can find them
         push @$resources, $asciidoc_dir;
         eval {
             $output = run(
@@ -245,13 +246,13 @@ sub build_single {
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-callout-images=png',
                 '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc"
+                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc",
+                    '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
                 # Disable warning on missing attributes because we have
                 # missing attributes!
@@ -311,7 +312,7 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    finish_build( $index->parent, $dest, $lang, $asciidoctor );
+    finish_build( $index->parent, $dest, $lang, $asciidoctor, $alternatives_summary );
 }
 
 #===================================
@@ -394,10 +395,10 @@ sub build_pdf {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $dest, $lang, $asciidoctor ) = @_;
+    my ( $source, $dest, $lang, $asciidoctor, $alternatives_summary ) = @_;
 
     # Apply template to HTML files
-    $Opts->{template}->apply( $dest, $lang, $asciidoctor );
+    $Opts->{template}->apply( $dest, $lang, $asciidoctor, $alternatives_summary );
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
@@ -535,7 +536,7 @@ sub write_nginx_redirects {
     $dest->spew( iomode => '>:utf8', $redirects );
 
     my $test_nginx_conf = $temp_dir->file( 'nginx.conf' );
-    write_nginx_test_config( $test_nginx_conf, $docs_dir, $dest );
+    write_nginx_test_config( $test_nginx_conf, $docs_dir, $dest, 0 );
     run( qw(nginx -t -c), $test_nginx_conf );
 }
 
@@ -547,12 +548,25 @@ sub write_nginx_redirects {
 # docs_dir        - directory containing generated docs : Path::Class::dir
 # redirects_file  - file containing redirects or 0 if there aren't
 #                 - any redirects : Path::Class::file||0
+# waching_web     - Truthy if we are watching web resources.
 #===================================
 sub write_nginx_test_config {
 #===================================
-    my ( $dest, $docs_dir, $redirects_file ) = @_;
+    my ( $dest, $docs_dir, $redirects_file, $watching_web ) = @_;
 
     my $redirects_line = $redirects_file ? "include $redirects_file;\n" : '';
+    my $web_conf;
+    if ( $watching_web ) {
+        $web_conf = <<"CONF"
+    rewrite ^/guide/static/docs\\.js(.*)\$ /guide/static/docs_js/index.js\$1 last;
+    location /guide/static/ {
+      proxy_pass http://0.0.0.0:1234;
+    }
+CONF
+    } else {
+        $web_conf = '';
+    }
+
     my $nginx_conf = <<"CONF";
 daemon off;
 error_log /dev/stdout info;
@@ -569,6 +583,7 @@ http {
 
   server {
     listen 8000;
+    $web_conf
     location /guide {
       alias $docs_dir;
       add_header 'Access-Control-Allow-Origin' '*';
@@ -725,9 +740,50 @@ sub timestamp {
 }
 
 #===================================
-sub build_docs_js {
+sub start_web_resources_watcher {
 #===================================
-    run '/node_modules/parcel/bin/cli.js', 'build', 'resources/web/docs_js/index.js', '/node_modules', '-d', 'resources/web', '-o', 'docs.js', '--experimental-scope-hoisting';
+    my $parcel_pid = fork;
+    return $parcel_pid if $parcel_pid;
+
+    close STDIN;
+    open( STDIN, "</dev/null" );
+    exec( qw(/node_modules/parcel/bin/cli.js serve
+             --public-url /guide/static/
+             --hmr-port 8001
+             -d /tmp/parcel/
+             resources/web/docs_js/index.js resources/web/styles.pcss) );
+}
+
+#===================================
+sub build_web_resources {
+#===================================
+    my ( $dest ) = @_;
+
+    my $parcel_out = dir('/tmp/parcel');
+    my $compiled_js = $parcel_out->file('docs_js/index.js');
+    my $compiled_css = $parcel_out->file('styles.css');
+    my $js = $dest->file('docs.js');
+    my $css = $dest->file('styles.css');
+
+    unless ( -e $compiled_js && -e $compiled_css ) {
+        # We write the compiled js and css to /tmp so we can use them on
+        # subsequent runs in the same container. This doesn't come up when you
+        # build docs either with --doc or --all *but* it comes up all the time
+        # when you run the integration tests and saves about 1.5 seconds on
+        # every docs build.
+        say "Compiling web resources";
+        run '/node_modules/parcel/bin/cli.js', 'build',
+            '--experimental-scope-hoisting', '--no-source-maps',
+            '-d', $parcel_out,
+            'resources/web/docs_js/index.js', 'resources/web/styles.pcss';
+        die "Parcel didn't make $compiled_js" unless -e $compiled_js;
+        die "Parcel didn't make $compiled_css" unless -e $compiled_css;
+    }
+
+    $dest->mkpath;
+    my $js_licenses = file( 'resources/web/docs.js.licenses' );
+    $js->spew( $js_licenses->slurp . $compiled_js->slurp );
+    rcopy( $compiled_css, $css );
 }
 
 1

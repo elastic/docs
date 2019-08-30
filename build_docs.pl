@@ -17,6 +17,7 @@ our @Old_ARGV = @ARGV;
 use Cwd;
 use FindBin;
 use Data::Dumper;
+use XML::LibXML;
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -34,7 +35,8 @@ use ES::Util qw(
     write_nginx_redirects
     write_nginx_test_config
     write_nginx_preview_config
-    build_docs_js
+    start_web_resources_watcher
+    build_web_resources
 );
 
 use Getopt::Long qw(:config no_auto_abbrev no_ignore_case no_getopt_compat);
@@ -63,10 +65,6 @@ init_env();
 
 $Opts->{template} = ES::Template->new(
     %{ $Conf->{template} },
-    # We'd like to remove abs_urls entirely but we need it to support
-    # --open without docker and we need it to support sharing docs over
-    # firebase. Both of those are coming, but not here yet!
-    abs_urls => $Opts->{doc},
 );
 
 $Opts->{doc}           ? build_local()
@@ -110,7 +108,8 @@ sub build_local {
         }
     }
 
-    build_docs_js();
+    # Get a head start on web resources if we're going to need them.
+    my $web_resources_pid = start_web_resources_watcher if $Opts->{open};
 
     my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
@@ -130,15 +129,7 @@ sub build_local {
 
     say "Done";
 
-    my $html = $dir->file('index.html');
-
-    if ( $Opts->{open} ) {
-        say "Opening: " . $html;
-        serve_and_open_browser( $dir, 0 );
-    }
-    else {
-        say "See: $html";
-    }
+    serve_and_open_browser( $dir, 0, $web_resources_pid ) if $Opts->{open};
 }
 
 #===================================
@@ -251,13 +242,14 @@ sub build_all {
         say "Skipping documentation builds."
     }
     else {
-        build_docs_js();
-
         say "Building docs";
         build_entries( $build_dir, $temp_dir, $toc, @$contents );
 
         say "Writing main TOC";
         $toc->write( $build_dir, 0 );
+
+        my $static_dir = $build_dir->subdir( 'static' );
+        build_web_resources( $static_dir );
 
         say "Writing extra HTML redirects";
         for ( @{ $Conf->{redirects} } ) {
@@ -276,9 +268,8 @@ sub build_all {
         check_links($build_dir);
     }
     $tracker->prune_out_of_date( @$contents );
-    $tracker->write;
-    push_changes( $build_dir, $target_repo ) if $Opts->{push};
-    serve_and_open_browser( $build_dir, $redirects ) if $Opts->{open};
+    push_changes( $build_dir, $target_repo, $tracker ) if $Opts->{push};
+    serve_and_open_browser( $build_dir, $redirects, 0 ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -411,31 +402,40 @@ sub build_entries {
 #===================================
 sub build_sitemap {
 #===================================
-    my ($dir) = @_;
+    my ( $dir, $changed ) = @_;
+
+    # Build the sitemap by iterating over all of the toc and index files. Uses
+    # the old sitemap to populate the dates for files that haven't changed.
+    # Use "now" for files that have.
+
     my $sitemap = $dir->file('sitemap.xml');
+    my $now = timestamp();
+    my %dates;
 
-    say "Building sitemap: $sitemap";
-    open my $fh, '>', $sitemap or die "Couldn't create $sitemap: $!";
-    say $fh <<SITEMAP_START;
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-SITEMAP_START
+    if ( -e $sitemap ) {
+        my $doc = XML::LibXML->load_xml( location => $sitemap );
+        for ($doc->firstChild->childNodes) {
+            next unless $_->nodeName eq 'url';
+            my $loc;
+            my $lastmod;
+            for ($_->childNodes) {
+                $loc = $_->to_literal if $_->nodeName eq 'loc';
+                $lastmod = $_->to_literal if $_->nodeName eq 'lastmod';
+            }
+            die "Dind't find <loc> in $_" unless $loc;
+            die "Dind't find <lastmod> in $_" unless $lastmod;
+            $loc =~ s|https://www.elastic.co/guide/||;
+            $dates{$loc} = $lastmod;
+        }
+    }
+    for ( split /\0/, $changed ) {
+        next unless s|^html/||;
+        $dates{$_} = $now;
+    }
 
-    my $date     = timestamp();
-    my $add_link = sub {
-        my $file = shift;
-        my $url  = 'https://www.elastic.co/guide/' . $file->relative($dir);
-        say $fh <<ENTRY;
-<url>
-    <loc>$url</loc>
-    <lastmod>$date</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-</url>
-ENTRY
-
-    };
-
+    # Build a list of the files we're going to index and sort it so entries in
+    # the sitemap don't "jump around".
+    my @files;
     $dir->recurse(
         callback => sub {
             my $item = shift;
@@ -444,15 +444,37 @@ ENTRY
             if ( -e $item->file('toc.html') ) {
                 my $content = $item->file('toc.html')
                     ->slurp( iomode => '<:encoding(UTF-8)' );
-                $add_link->( $item->file($_) )
+                push @files, $item->file($_)
                     for ( $content =~ /href="([^"]+)"/g );
             }
             elsif ( -e $item->file('index.html') ) {
-                $add_link->( $item->file('index.html') );
+                push @files, $item->file('index.html');
             }
             return $item->PRUNE;
         }
     );
+    @files = sort @files;
+
+    open my $fh, '>', $sitemap or die "Couldn't create $sitemap: $!";
+    say $fh <<SITEMAP_START;
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+SITEMAP_START
+
+    for ( @files ) {
+        my $loc  = $_->relative($dir);
+        my $url  = "https://www.elastic.co/guide/$loc";
+        my $date = $dates{$loc};
+        die "Couldn't find a modified time for $loc" unless $date;
+        say $fh <<ENTRY;
+<url>
+    <loc>$url</loc>
+    <lastmod>$date</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+</url>
+ENTRY
+    }
 
     say $fh "</urlset>";
     close $fh or die "Couldn't close $sitemap: $!"
@@ -461,9 +483,7 @@ ENTRY
 #===================================
 sub init_dirs {
 #===================================
-    my $repos_dir = $Conf->{paths}{repos}
-        or die "Missing <paths.repos> in config";
-
+    my $repos_dir = $Opts->{reposcache} || '.repos';
     $repos_dir = dir($repos_dir)->absolute;
     $repos_dir->mkpath;
 
@@ -626,15 +646,14 @@ sub preview {
 #===================================
 sub push_changes {
 #===================================
-    my ($build_dir, $target_repo ) = @_;
+    my ($build_dir, $target_repo, $tracker ) = @_;
 
-    say 'Building revision.txt';
-    $build_dir->file('revision.txt')
-        ->spew( iomode => '>:utf8', ES::Repo->all_repo_branches );
-
-    if ( $target_repo->outstanding_changes ) {
-        say 'Preparing commit';
-        build_sitemap($build_dir);
+    my $outstanding = $target_repo->outstanding_changes;
+    if ( $tracker->has_non_local_changes || $outstanding ) {
+        say "Saving branch tracker";
+        $tracker->write;
+        say "Building sitemap";
+        build_sitemap( $build_dir, $outstanding );
         say "Commiting changes";
         $target_repo->commit;
         say "Pushing changes";
@@ -772,12 +791,13 @@ sub pick_conf {
 #===================================
 sub serve_and_open_browser {
 #===================================
-    my ( $docs_dir, $redirects_file ) = @_;
+    my ( $docs_dir, $redirects_file, $web_resources_pid ) = @_;
 
     if ( my $pid = fork ) {
         # parent
         $SIG{INT} = sub {
             kill 'TERM', $pid;
+            kill 'TERM', $web_resources_pid if $web_resources_pid;
         };
         $SIG{TERM} = $SIG{INT};
 
@@ -787,7 +807,9 @@ sub serve_and_open_browser {
     }
     else {
         my $nginx_config = file('/tmp/nginx.conf');
-        write_nginx_test_config( $nginx_config, $docs_dir, $redirects_file );
+        write_nginx_test_config(
+            $nginx_config, $docs_dir, $redirects_file, $web_resources_pid
+        );
         close STDIN;
         open( STDIN, "</dev/null" );
         exec( qw(nginx -c), $nginx_config );
@@ -822,6 +844,7 @@ sub command_line_opts {
         'push',
         'rebuild',
         'reference=s',
+        'reposcache=s',
         'skiplinkcheck',
         'sub_dir=s@',
         'user=s',
@@ -880,6 +903,8 @@ sub usage {
                             what has changed
           --reference       Directory of `--mirror` clones to use as a
                             local cache
+          --repos_cache     Directory to which working repositories are cloned.
+                            Defaults to `<script_dir>/.repos`.
           --skiplinkcheck   Omit the step that checks for broken links
           --sub_dir         Use a directory as a branch of some repo
                             (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
@@ -940,6 +965,7 @@ sub check_opts {
         die('--announce_preview only compatible with --all') if $Opts->{announce_preview};
         die('--rebuild only compatible with --all') if $Opts->{rebuild};
         die('--reference only compatible with --all') if $Opts->{reference};
+        die('--reposcache only compatible with --all') if $Opts->{reposcache};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
         die('--user only compatible with --all') if $Opts->{user};

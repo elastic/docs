@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'asciidoctor/extensions'
+require_relative '../delegating_converter.rb'
 
 ##
 # Extensions for marking when something was added, when it *will* be added, or
@@ -25,6 +26,21 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       registry.block_macro ChangeAdmonitionBlock.new(revisionflag, tag), name
       registry.inline_macro ChangeAdmonitionInline.new(revisionflag), name
     end
+    DelegatingConverter.setup(registry.document) { |doc| Converter.new doc }
+  end
+
+  ##
+  # Properly renders change admonitions.
+  class Converter < DelegatingConverter
+    def admonition(node)
+      return yield unless (flag = node.attr 'revisionflag')
+
+      <<~DOCBOOK.strip
+        <#{tag_name = node.attr 'name'} revisionflag="#{flag}" revision="#{node.attr 'version'}">
+        <simpara>#{node.content}</simpara>
+        </#{tag_name}>
+      DOCBOOK
+    end
   end
 
   ##
@@ -41,27 +57,15 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
 
     def process(parent, _target, attrs)
       version = attrs[:version]
-      # We can *almost* go through the standard :admonition conversion but
-      # that won't render the revisionflag or the revision. So we have to
-      # go with this funny compound pass thing.
-      admon = Asciidoctor::Block.new(parent, :pass, content_model: :compound)
-      admon << Asciidoctor::Block.new(
-        admon, :pass,
-        attributes: { 'revisionflag' => @revisionflag },
-        source: tag_source(version)
+      Asciidoctor::Block.new(
+        parent, :admonition,
+        attributes: {
+          'name' => @tag,
+          'revisionflag' => @revisionflag,
+          'version' => version,
+        },
+        source: attrs[:passtext]
       )
-      admon << Asciidoctor::Block.new(
-        admon, :paragraph,
-        source: attrs[:passtext],
-        subs: Asciidoctor::Substitutors::NORMAL_SUBS
-      )
-      admon << Asciidoctor::Block.new(admon, :pass, source: "</#{@tag}>")
-    end
-
-    def tag_source(version)
-      <<~HTML
-        <#{@tag} revisionflag="#{@revisionflag}" revision="#{version}">
-      HTML
     end
   end
 

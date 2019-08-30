@@ -222,41 +222,6 @@ sub dump_recent_commits {
 }
 
 #===================================
-sub all_repo_branches {
-#===================================
-    my $class = shift;
-    my @out;
-    for ( sort keys %Repos ) {
-        my $repo = $Repos{$_};
-        my $shas = $repo->tracker->shas_for_repo( $repo->name );
-
-        next unless %$shas;
-
-        push @out, "Repo: " . $repo->name;
-        push @out, '-' x 80;
-
-        local $ENV{GIT_DIR} = $repo->git_dir;
-
-        for my $branch ( sort keys %$shas ) {
-            my $sha = $shas->{$branch};
-            $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
-            my $msg;
-            if ( $sha eq 'local' ) {
-                $msg = 'local changes';
-            } else {
-                my $log = run( qw(git log --oneline -1), $sha );
-                ( $msg ) = $log =~ /^\w+\s+([^\n]+)/;
-            } 
-            push @out, sprintf "  %-35s %s   %s", $branch,
-                substr( $shas->{$branch}, 0, 8 ), $msg;
-        }
-        push @out, '';
-
-    }
-    return join "\n", @out;
-}
-
-#===================================
 sub show_file {
 #===================================
     my $self = shift;

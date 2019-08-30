@@ -5,6 +5,7 @@ require 'digest/murmurhash'
 require_relative '../scaffold'
 require_relative 'listing'
 require_relative 'report'
+require_relative 'summary'
 
 module AlternativeLanguageLookup
   ##
@@ -21,6 +22,14 @@ module AlternativeLanguageLookup
           parse_lookups lookups_string
       end
 
+      summary = nil
+      summary_path = document.attr 'alternative_language_summary'
+      if summary_path.is_a? String
+        lookups = document.attr 'alternative_language_lookups'
+        summary = Summary.new summary_path, lookups
+        document.attributes['alternative_language_summary'] = summary
+      end
+
       report_path = document.attr 'alternative_language_report'
       if report_path&.is_a? String
         Report.open report_path do |report|
@@ -30,6 +39,7 @@ module AlternativeLanguageLookup
       else
         super
       end
+      summary&.save
     end
 
     def parse_lookups(lookups_string)

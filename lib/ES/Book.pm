@@ -184,11 +184,11 @@ sub build {
     );
 
     my $latest = 1;
-    my $rebuilding_any_branch = 0;
+    my $update_version_toc = 0;
     my $rebuilding_current_branch = 0;
     for my $branch ( @{ $self->branches } ) {
         my $building = $self->_build_book( $branch, $pm, $rebuild, $latest );
-        $rebuilding_any_branch ||= $building;
+        $update_version_toc ||= $building;
         $latest = 0;
 
         my $branch_title = $self->branch_title($branch);
@@ -209,12 +209,18 @@ sub build {
         }
     }
     $pm->wait_all_children();
-    $self->_copy_branch_to_current( $self->current ) if $rebuilding_current_branch;
-    $self->remove_old_branches;
+    $self->_copy_branch_to_current if $rebuilding_current_branch;
+    $update_version_toc |= $self->_remove_old_branches;
     if ( $self->is_multi_version ) {
-        if ( $rebuilding_any_branch ) {
-            printf(" - %40.40s: Writing versions TOC\n", $self->title);
+        if ( $update_version_toc ) {
+            # We could get away with only doing this if we added or removed
+            # any branches or changed the current branch, but we don't have
+            # that information right now.
             $toc->write($dir);
+            for ( @{ $self->branches } ) {
+                $self->_update_title_and_version_drop_downs( $dir->subdir( $_ ), $_ );
+            }
+            $self->_update_title_and_version_drop_downs( $dir->subdir( 'current') , $self->current );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -223,8 +229,7 @@ sub build {
             section_title => $self->section_title()
         };
     }
-    if ( $rebuilding_any_branch ) {
-        printf(" - %40.40s: Writing redirect to current branch...\n", $self->title);
+    if ( $update_version_toc ) {
         write_html_redirect( $dir, "current/index.html" );
     }
     return {
@@ -313,7 +318,6 @@ sub _build_book {
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
             );
-            $self->_add_title_to_toc( $branch, $branch_dir );
         }
         $checkout->rmtree;
         printf(" - %40.40s: Finished %s\n", $self->title, $branch);
@@ -333,27 +337,29 @@ sub _build_book {
 }
 
 #===================================
-sub _add_title_to_toc {
+sub _update_title_and_version_drop_downs {
 #===================================
-    my ( $self, $branch, $dir ) = @_;
-    my $title = $self->title;
-    if ( $self->is_multi_version ) {
-        $title .= ': <select>';
-        for ( @{ $self->branches } ) {
-            my $option = '<option value="' . $_ . '"';
-            $option .= ' selected'  if $branch eq $_;
-            $option .= '>' . $self->branch_title($_);
-            $option .= ' (current)' if $self->current eq $_;
-            $option .= '</option>';
-            $title  .= $option;
-        }
-        $title .= '</select>';
+    my ( $self, $branch_dir, $branch ) = @_;
+
+    my $title = '<li id="book_title"><span>' . $self->title . ': <select>';
+    for ( @{ $self->branches } ) {
+        $title .= '<option value="' . $_ . '"';
+        $title .= ' selected'  if $branch eq $_;
+        $title .= '>' . $self->branch_title($_);
+        $title .= ' (current)' if $self->current eq $_;
+        $title .= '</option>';
     }
-    $title = '<li id="book_title"><span>' . $title . '</span></li>';
+    $title .= '</select></span></li>';
     for ( 'toc.html', 'index.html' ) {
-        my $file = $dir->file($_);
+        my $file = $branch_dir->file($_);
+        # Ignore missing files because the books haven't been built yet. This
+        # can happen after a new branch is added to the config and then we use
+        # --keep_hash to prevent building new books, like for PR tests.
+        next unless -e $file;
+
         my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
-        $html =~ s/<ul class="toc"><li>/<ul class="toc">${title}<li>/;
+        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?<li>/<ul class="toc">${title}<li>/);
+        die "couldn't update version" unless $success;
         $file->spew( iomode => '>:utf8', $html );
     }
 }
@@ -361,21 +367,14 @@ sub _add_title_to_toc {
 #===================================
 sub _copy_branch_to_current {
 #===================================
-    my ( $self, $branch ) = @_;
+    my ( $self ) = @_;
 
-    printf(" - %40.40s: Copying %s to current\n", $self->title, $branch);
-
-    my $branch_dir  = $self->dir->subdir($branch);
+    my $branch_dir  = $self->dir->subdir( $self->current );
     my $current_dir = $self->dir->subdir('current');
 
     $current_dir->rmtree;
     rcopy( $branch_dir, $current_dir )
         or die "Couldn't copy <$branch_dir> to <$current_dir>: $!";
-
-    return {
-        title => "Version: $branch (current)",
-        url   => 'current/index.html'
-    };
 }
 
 #===================================
@@ -410,19 +409,22 @@ sub _page_header_text {
 }
 
 #===================================
-sub remove_old_branches {
+sub _remove_old_branches {
 #===================================
     my $self     = shift;
     my %branches = map { $_ => 1 } ( @{ $self->branches }, 'current' );
     my $dir      = $self->dir;
 
+    my $removed_any = 0;
     for my $child ( $dir->children ) {
         next unless $child->is_dir;
         my $version = $child->basename;
         next if $branches{$version};
         printf(" - %40.40s: Deleting old branch %s\n", $self->title, $version);
         $child->rmtree;
+        $removed_any = 1;
     }
+    return $removed_any;
 }
 
 #===================================

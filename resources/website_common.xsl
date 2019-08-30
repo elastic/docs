@@ -33,6 +33,10 @@
   <xsl:param name="generate.toc"></xsl:param>
   <xsl:param name="toc.list.type"           select="'ul'"/>
 
+  <!-- Disable breaks after formal examples because they come *before* the
+       callout lists that come after them, making them look terrible. -->
+  <xsl:param name="formal.object.break.after">0</xsl:param>
+
   <!-- meta elements -->
   <xsl:template name="user.head.content">
     <xsl:variable name="meta-description">
@@ -312,7 +316,8 @@
     <!-- Asciidoctor's CONSOLE widget -->
     <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana'">
       <xsl:variable name="widget_class">
-        <xsl:value-of select="@language"/>_widget <xsl:value-of select="@role"/>
+        <xsl:value-of select="@language"/>_widget
+        <xsl:value-of select="substring-after(@role, 'default')"/>
       </xsl:variable>
       <div
         class="{normalize-space($widget_class)}"
@@ -325,24 +330,23 @@
     <!-- Throw away the link by not copying it. -->
   </xsl:template>
 
-  <!-- Make callouts non-selectable -->
+  <!-- Use asciidoctor style callouts -->
   <xsl:template name="callout-bug">
     <xsl:param name="conum" select="1"/>
-    <span><img src="{$callout.graphics.path}{$conum}{$callout.graphics.extension}" alt="" /></span>
+    <!-- <i> is a hack here to avoid all of the styling that comes in with a <span>....-->
+    <i class="conum" data-value="{$conum}"></i>
   </xsl:template>
 
   <!-- added and deprecated markup -->
   <xsl:template match="phrase[@revisionflag]">
-    <xsl:variable name="classname">
+    <xsl:variable name="extra">
       <xsl:choose>
-        <xsl:when test="attribute::revisionflag='added'">added</xsl:when>
-        <xsl:when test="attribute::revisionflag='changed'">coming</xsl:when>
-        <xsl:when test="attribute::revisionflag='deleted'">deprecated</xsl:when>
+        <xsl:when test="attribute::revisionflag='deleted'">u-strikethrough</xsl:when>
       </xsl:choose>
     </xsl:variable>
-    <span class="{$classname}">
-      [<span class="version"><xsl:value-of select="attribute::revision" /></span>]
-      <span class="detail">
+    <span class="Admonishment">
+      [<span class="{normalize-space(concat('Admonishment-version u-mono ', $extra))}"><xsl:value-of select="attribute::revision" /></span>]
+      <span class="Admonishment-detail">
         <xsl:call-template name="revision-text" />
         <xsl:apply-templates />
       </span>
@@ -372,11 +376,11 @@
   <!-- Inline experimental/beta -->
   <xsl:template match="phrase[@role='experimental']|phrase[@role='beta']">
     <xsl:variable name="classname" select="attribute::role" />
-    <span class="{$classname}">
-      [<span class="{$classname}_title">
+    <span class="Admonishment Admonishment--{$classname}">
+      [<span class="Admonishment-title u-mono">
         <xsl:call-template name="experimental-beta-title" />
       </span>]
-      <span class="detail">
+      <span class="Admonishment-detail">
         <xsl:call-template name="experimental-beta-text" />
       </span>
     </span>
