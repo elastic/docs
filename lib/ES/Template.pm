@@ -24,7 +24,8 @@ sub new {
 #===================================
 sub apply {
 #===================================
-    my ( $self, $source_dir, $dest_dir, $lang, $asciidoctor, $alternatives_summary) = @_;
+    my ( $self, $source_dir, $dest_dir, $lang, $asciidoctor,
+         $alternatives_summary, $is_toc) = @_;
 
     my $map = $self->{map};
 
@@ -32,8 +33,18 @@ sub apply {
 
     for my $source ( $source_dir->children ) {
         my $dest = $dest_dir->file( $source->relative( $source_dir ) );
-        if ($source->is_dir || $source->basename !~ /\.html$/) {
-            say "copying $source";
+        if ( $source->is_dir ) {
+            # Usually books are built to empty directories and any
+            # subdirectories contain images or snippets and should be copied
+            # wholesale into the templated directory. But the book's
+            # multi-version table of contents is different because it is built
+            # to the root directory of all book versions so subdirectories are
+            # other books! Copying them would overwrite the templates book
+            # files with untemplated book files. That'd be bad!
+            rcopy( $source, $dest ) unless $is_toc;
+            next;
+        }
+        if ( $source->basename !~ /\.html$/ ) {
             rcopy( $source, $dest );
             next;
         }

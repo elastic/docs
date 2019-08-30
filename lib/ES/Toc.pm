@@ -38,7 +38,7 @@ sub write {
             type        => 'article',
             lang        => $self->lang,
             asciidoctor => 1,
-            keep_dest   => 1,   # Don't delete the destination directories because it has books in it!
+            is_toc      => 1,
             root_dir    => '',  # Required but thrown on the floor with asciidoctor
             latest      => 1,   # Run all of our warnings
             private     => 1,   # Don't generate edit me urls

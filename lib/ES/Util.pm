@@ -173,7 +173,8 @@ sub build_chunked {
     for ( $chunk_dir->children ) {
         run( 'mv', $_, $raw_dest );
     }
-    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary );
+    # Figure out a way to not copy subdirs from other books. maybe build everything into a tmp dir and copy
+    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary, 0 );
     extract_toc_from_index( $dest );
     $chunk_dir->rmtree;
 }
@@ -205,8 +206,12 @@ sub build_single {
 
     die "Can't find index [$index]" unless -f $index;
 
-    unless ( $opts{keep_dest} ) {
-        say "Cleaning $dest and $raw_dest";
+    unless ( $opts{is_toc} ) {
+        # Usually books live in their own directory so we can just `rm -rf`
+        # those directories and start over. But the Table of Contents for all
+        # vrsions of a book is written to the directory that contains all of
+        # the versions of that book. `rm -rf`ed there we'd lose all of the
+        # versions of the book. So we just don't.
         $dest->rmtree;
         $dest->mkpath;
         $raw_dest->rmtree;
@@ -322,7 +327,8 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary );
+    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor,
+                  $alternatives_summary, $opts{is_toc} );
 }
 
 #===================================
@@ -405,10 +411,11 @@ sub build_pdf {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary ) = @_;
+    my ( $source, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary, $is_toc ) = @_;
 
     # Apply template to HTML files
-    $Opts->{template}->apply( $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary );
+    $Opts->{template}->apply( $raw_dest, $dest, $lang, $asciidoctor,
+                              $alternatives_summary, $is_toc );
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;

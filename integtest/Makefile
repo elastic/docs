@@ -24,4 +24,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec -e 'we add a branch to the book'
+	rspec
