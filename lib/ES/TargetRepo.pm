@@ -111,7 +111,9 @@ sub outstanding_changes {
     local $ENV{GIT_WORK_TREE} = $self->{destination};
     local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
 
-    return run qw(git status -s --);
+    # This command will list all modified files, including deleted files.
+    # Unlike `git status` it won't group new directories.
+    return run qw(git ls-files -zomd --);
 }
 
 #===================================

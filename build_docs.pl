@@ -17,6 +17,7 @@ our @Old_ARGV = @ARGV;
 use Cwd;
 use FindBin;
 use Data::Dumper;
+use XML::LibXML;
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -402,31 +403,40 @@ sub build_entries {
 #===================================
 sub build_sitemap {
 #===================================
-    my ($dir) = @_;
+    my ( $dir, $changed ) = @_;
+
+    # Build the sitemap by iterating over all of the toc and index files. Uses
+    # the old sitemap to populate the dates for files that haven't changed.
+    # Use "now" for files that have.
+
     my $sitemap = $dir->file('sitemap.xml');
+    my $now = timestamp();
+    my %dates;
 
-    say "Building sitemap: $sitemap";
-    open my $fh, '>', $sitemap or die "Couldn't create $sitemap: $!";
-    say $fh <<SITEMAP_START;
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-SITEMAP_START
+    if ( -e $sitemap ) {
+        my $doc = XML::LibXML->load_xml( location => $sitemap );
+        for ($doc->firstChild->childNodes) {
+            next unless $_->nodeName eq 'url';
+            my $loc;
+            my $lastmod;
+            for ($_->childNodes) {
+                $loc = $_->to_literal if $_->nodeName eq 'loc';
+                $lastmod = $_->to_literal if $_->nodeName eq 'lastmod';
+            }
+            die "Dind't find <loc> in $_" unless $loc;
+            die "Dind't find <lastmod> in $_" unless $lastmod;
+            $loc =~ s|https://www.elastic.co/guide/||;
+            $dates{$loc} = $lastmod;
+        }
+    }
+    for ( split /\0/, $changed ) {
+        next unless s|^html/||;
+        $dates{$_} = $now;
+    }
 
-    my $date     = timestamp();
-    my $add_link = sub {
-        my $file = shift;
-        my $url  = 'https://www.elastic.co/guide/' . $file->relative($dir);
-        say $fh <<ENTRY;
-<url>
-    <loc>$url</loc>
-    <lastmod>$date</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-</url>
-ENTRY
-
-    };
-
+    # Build a list of the files we're going to index and sort it so entries in
+    # the sitemap don't "jump around".
+    my @files;
     $dir->recurse(
         callback => sub {
             my $item = shift;
@@ -435,15 +445,37 @@ ENTRY
             if ( -e $item->file('toc.html') ) {
                 my $content = $item->file('toc.html')
                     ->slurp( iomode => '<:encoding(UTF-8)' );
-                $add_link->( $item->file($_) )
+                push @files, $item->file($_)
                     for ( $content =~ /href="([^"]+)"/g );
             }
             elsif ( -e $item->file('index.html') ) {
-                $add_link->( $item->file('index.html') );
+                push @files, $item->file('index.html');
             }
             return $item->PRUNE;
         }
     );
+    @files = sort @files;
+
+    open my $fh, '>', $sitemap or die "Couldn't create $sitemap: $!";
+    say $fh <<SITEMAP_START;
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+SITEMAP_START
+
+    for ( @files ) {
+        my $loc  = $_->relative($dir);
+        my $url  = "https://www.elastic.co/guide/$loc";
+        my $date = $dates{$loc};
+        die "Couldn't find a modified time for $loc" unless $date;
+        say $fh <<ENTRY;
+<url>
+    <loc>$url</loc>
+    <lastmod>$date</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+</url>
+ENTRY
+    }
 
     say $fh "</urlset>";
     close $fh or die "Couldn't close $sitemap: $!"
@@ -617,10 +649,12 @@ sub push_changes {
 #===================================
     my ($build_dir, $target_repo, $tracker ) = @_;
 
-    if ( $tracker->has_non_local_changes || $target_repo->outstanding_changes ) {
+    my $outstanding = $target_repo->outstanding_changes;
+    if ( $tracker->has_non_local_changes || $outstanding ) {
+        say "Saving branch tracker";
         $tracker->write;
-        say 'Preparing commit';
-        build_sitemap($build_dir);
+        say "Building sitemap";
+        build_sitemap( $build_dir, $outstanding );
         say "Commiting changes";
         $target_repo->commit;
         say "Pushing changes";
