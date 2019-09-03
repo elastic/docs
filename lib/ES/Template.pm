@@ -15,7 +15,6 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $self = bless {
-        defaults => $args{defaults},
         json => JSON->new->pretty->utf8->canonical,
     }, $class;
     $self->_init;
@@ -65,10 +64,10 @@ sub apply {
         my ($head) = ( $contents =~ m{<head>(.+?)</head>}s );
         my ($body) = ( $contents =~ m{<body>(.+?)</body>}s );
         $parts[ $map->{PREHEAD} ] = $head;
-        $parts[ $map->{LANG} ]    = qq(lang="$lang");
+        $parts[ $map->{LANG} ] = qq(lang="$lang");
         $parts[ $map->{BODY} ]
             = "<!-- start body -->\n$body\n<!-- end body -->\n";
-        $parts[ $map->{FINAL} ] = $initial_js_state . $parts[ $map->{FINAL} ];
+        $parts[ $map->{FINAL} ] = $initial_js_state;
 
         $dest->spew( iomode => '>:utf8', join "", @parts );
     }
@@ -176,12 +175,11 @@ sub _init {
         1;
     } or die "Unable to load template: $@";
     my @parts = split /<!-- (DOCS \w+) -->/, $content;
-    my $defaults = $self->{defaults};
     my %map;
 
     for my $i ( 0 .. @parts - 1 ) {
         if ( $parts[$i] =~ s/^DOCS (\w+)$// ) {
-            $parts[$i] = $defaults->{$1} || '';
+            $parts[$i] = '';
             $map{$1} = $i;
         }
     }
