@@ -27,19 +27,18 @@ sub add_entry {
 #===================================
 sub write {
 #===================================
-    my ( $self, $dir, $indent ) = @_;
+    my ( $self, $raw_dir, $dir, $temp_dir, $indent ) = @_;
     $indent = 1 unless defined $indent;
 
-    my $index = $dir->file('index.html');
-
     my $adoc = join "\n", "= " . $self->title, '', $self->render($indent);
-    my $adoc_file = $dir->file('index.asciidoc');
+    my $adoc_file = $temp_dir->file( 'index.asciidoc' );
     $adoc_file->spew( iomode => '>:utf8', $adoc );
 
-    build_single( $adoc_file, $dir,
+    build_single( $adoc_file, $raw_dir, $dir,
             type        => 'article',
             lang        => $self->lang,
             asciidoctor => 1,
+            is_toc      => 1,
             root_dir    => '',  # Required but thrown on the floor with asciidoctor
             latest      => 1,   # Run all of our warnings
             private     => 1,   # Don't generate edit me urls

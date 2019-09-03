@@ -68,14 +68,8 @@ sub new {
     my $title = $args{title}
         or die "No <title> specified: " . Dumper( \%args );
 
-    my $dir = $args{dir}
-        or die "No <dir> specified for book <$title>";
-
-    my $temp_dir = $args{temp_dir}
-        or die "No <temp_dir> specified for book <$title>";
-
     my $source = ES::Source->new(
-        temp_dir => $temp_dir,
+        temp_dir => $args{temp_dir},
         sources  => $args{sources},
         examples => $args{examples},
     );
@@ -143,7 +137,9 @@ sub new {
 
     bless {
         title         => $title,
-        dir           => $dir->subdir($prefix),
+        raw_dir       => $args{raw_dir}->subdir( $prefix ),
+        dir           => $args{dir}->subdir( $prefix ),
+        temp_dir      => $args{temp_dir},
         template      => $template,
         source        => $source,
         prefix        => $prefix,
@@ -216,11 +212,11 @@ sub build {
             # We could get away with only doing this if we added or removed
             # any branches or changed the current branch, but we don't have
             # that information right now.
-            $toc->write($dir);
+            $toc->write( $self->{raw_dir}, $dir, $self->{temp_dir} );
             for ( @{ $self->branches } ) {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $_ ), $_ );
             }
-            $self->_update_title_and_version_drop_downs( $dir->subdir( 'current') , $self->current );
+            $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -254,6 +250,7 @@ sub _build_book {
 #===================================
     my ( $self, $branch, $pm, $rebuild, $latest ) = @_;
 
+    my $raw_branch_dir = $self->{raw_dir}->subdir( $branch );
     my $branch_dir    = $self->dir->subdir($branch);
     my $source        = $self->source;
     my $template      = $self->template;
@@ -272,10 +269,9 @@ sub _build_book {
     printf(" - %40.40s: Building %s...\n", $self->title, $branch);
     eval {
         if ( $self->single ) {
-            $branch_dir->rmtree;
-            $branch_dir->mkpath;
             build_single(
                 $first_path->file($index),
+                $raw_branch_dir,
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,
@@ -299,6 +295,7 @@ sub _build_book {
         else {
             build_chunked(
                 $first_path->file($index),
+                $raw_branch_dir,
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,

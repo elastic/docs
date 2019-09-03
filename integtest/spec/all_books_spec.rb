@@ -108,6 +108,12 @@ RSpec.describe 'building all books' do
       book.source repo, 'resources'
     end
     include_examples 'book basics', 'Test', 'test'
+    context 'raw/test/current' do
+      it "doesn't exist" do
+        # Because "current" doesn't exist at all in "raw"
+        expect(dest_file('raw/test/current')).not_to file_exist
+      end
+    end
     page_context "the current version's chapter page",
                  'html/test/current/chapter.html' do
       it 'has a link to the image' do
@@ -116,7 +122,25 @@ RSpec.describe 'building all books' do
         HTML
       end
     end
+    page_context "the master version's chapter page",
+                 'html/test/master/chapter.html' do
+      it 'has a link to the image' do
+        expect(body).to include(<<~HTML.strip)
+          <img src="resources/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
+    file_context "the master version's raw chapter page",
+                 'raw/test/master/chapter.html' do
+      it 'has a link to the image' do
+        expect(contents).to include(<<~HTML.strip)
+          <img src="resources/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
     file_context 'html/test/current/resources/cat.jpg'
+    file_context 'html/test/master/resources/cat.jpg'
+    file_context 'raw/test/master/resources/cat.jpg'
   end
   context 'for a single book built by two repos' do
     def self.single_book_built_by_two_repos
@@ -242,7 +266,7 @@ RSpec.describe 'building all books' do
       override_edit_me false
       let(:repo) { @src.repo 'repo' }
       let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
-      page_context 'the book index', 'html/test/master/chapter.html' do
+      page_context 'html/test/master/chapter.html' do
         it 'contains the standard edit_me link' do
           expect(body).to include(edit_me)
         end
@@ -251,7 +275,7 @@ RSpec.describe 'building all books' do
     context 'when respect_edit_url_overrides is specified' do
       override_edit_me true
       let(:edit_url) { 'overridden' }
-      page_context 'the book index', 'html/test/master/chapter.html' do
+      page_context 'html/test/master/chapter.html' do
         it 'contains the overridden edit_me link' do
           expect(body).to include(edit_me)
         end

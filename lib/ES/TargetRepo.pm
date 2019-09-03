@@ -68,7 +68,7 @@ sub checkout_minimal {
             $self->{started_empty} = 0;
             chdir $self->{destination};
             run qw(git config core.sparseCheckout true);
-            $self->_write_sparse_config("/*\n!html/*/\n");
+            $self->_write_sparse_config("/*\n!html/*/\n!raw/*/");
             run qw(git checkout master);
             return 1 if $self->{branch} eq 'master';
             if ( $self->_branch_exists( 'origin/' . $self->{branch} ) ) {
