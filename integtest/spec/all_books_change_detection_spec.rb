@@ -111,17 +111,17 @@ RSpec.describe 'building all books' do
     end
 
     def self.build_one_book_out_of_two_repos_twice(
-        before_first_build: ->(src) {},
-        before_second_build: ->(src) {}
+        before_first_build: ->(src, config) {},
+        before_second_build: ->(src, config) {}
       )
       build_twice(
-        before_first_build: lambda do |src, _config|
+        before_first_build: lambda do |src, config|
           init_include src
           # Allow the caller to customize the source
-          before_first_build.call src
+          before_first_build.call src, config
         end,
-        before_second_build: lambda do |src, _config|
-          before_second_build.call src
+        before_second_build: lambda do |src, config|
+          before_second_build.call src, config
         end
       )
       include_context 'build one book twice'
@@ -351,6 +351,32 @@ RSpec.describe 'building all books' do
           )
           include_examples 'second build is noop'
         end
+        context 'when --keep_hash is specified and there is a new branch' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, config|
+              repo = src.repo 'repo'
+              repo.switch_to_new_branch 'foo'
+              book = src.book 'Test'
+              book.branches.push 'foo'
+              config.extra(&:keep_hash)
+            end
+          )
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            it "doesn't print that it is building the first branch" do
+              # The original book hasn't changed so we don't rebuild it
+              expect(out).not_to include('Test: Building master...')
+            end
+            it "doesn't print that it is building the second branch" do
+              expect(out).not_to include('Test: Building foo...')
+            end
+            it 'does print that it is pushing changes' do
+              # This is because the TOC includes the new branch. That isn't
+              # great but it isn't too bad.
+              expect(out).to include('Pushing changes')
+            end
+          end
+        end
         context 'when --keep_hash and --sub_dir are specified but there are ' \
                 'unrelated changes' do
           build_one_book_out_of_one_repo_twice(
@@ -450,7 +476,7 @@ RSpec.describe 'building all books' do
           )
           include_examples 'second build is not a noop'
         end
-        context 'because we add a branch to the book' do
+        context 'because we add a new branch' do
           build_one_book_out_of_one_repo_twice(
             before_second_build: lambda do |src, _config|
               repo = src.repo 'repo'
@@ -545,6 +571,53 @@ RSpec.describe 'building all books' do
           include_examples 'toc and version drop down'
           let(:current) { 'master' }
         end
+        context 'because we add a branch to the book and specify ' \
+                '--keep_hash and --sub_dir' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, config|
+              repo = src.repo 'repo'
+              book = src.book 'Test'
+              book.branches.push 'foo'
+              config.extra do |conversion|
+                conversion.keep_hash.sub_dir(repo, 'foo')
+              end
+            end
+          )
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            it 'builds the new branch' do
+              expect(out).to include 'Test: Building foo...'
+            end
+            include_examples 'commits changes'
+          end
+        end
+        context 'because we add a source to the book and specify ' \
+                '--keep_hash and --sub_dir' do
+          build_one_book_out_of_one_repo_twice(
+            before_second_build: lambda do |src, config|
+              repo2 = src.repo 'repo2'
+              repo2.write 'dummy', 'words'
+              repo2.commit 'init'
+              book = src.book 'Test'
+              book.source repo2, 'not_used_actually'
+              repo = src.repo 'repo'
+              repo.write 'index.asciidoc', TWO_CHAPTERS + "\nmore words"
+              config.extra do |conversion|
+                conversion.keep_hash.sub_dir(repo, 'master')
+              end
+            end
+          )
+          # The new branch is ignored because it wasn't used last time
+          include_examples 'second build is not a noop'
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            it 'prints that it is skipping the new source' do
+              expect(out).to include(
+                'Test: Skipping new repo repo2 for branch master.'
+              )
+            end
+          end
+        end
       end
     end
 
@@ -568,6 +641,14 @@ RSpec.describe 'building all books' do
     end
 
     context 'when building one book out of two repos twice' do
+      def self.add_branch(src)
+        repo1 = src.repo 'repo1'
+        repo1.switch_to_new_branch 'foo'
+        repo2 = src.repo 'repo2'
+        repo2.switch_to_new_branch 'foo'
+        book = src.book 'Test'
+        book.branches.push 'foo'
+      end
       context 'when the second build is a noop' do
         context 'because there are no changes to the either repo' do
           build_one_book_out_of_two_repos_twice
@@ -575,7 +656,7 @@ RSpec.describe 'building all books' do
         end
         context 'because there are unrelated changes to the index repo' do
           build_one_book_out_of_two_repos_twice(
-            before_second_build: lambda do |src|
+            before_second_build: lambda do |src, _config|
               repo1 = src.repo 'repo1'
               repo1.write 'garbage', 'junk'
               repo1.commit 'adding junk'
@@ -585,7 +666,7 @@ RSpec.describe 'building all books' do
         end
         context 'because there are unrelated changes to the included repo' do
           build_one_book_out_of_two_repos_twice(
-            before_second_build: lambda do |src|
+            before_second_build: lambda do |src, _config|
               repo2 = src.repo 'repo2'
               repo2.write 'garbage', 'junk'
               repo2.commit 'adding junk'
@@ -595,14 +676,14 @@ RSpec.describe 'building all books' do
         end
         context 'because there is an unrelated change in a mapped branch' do
           build_one_book_out_of_two_repos_twice(
-            before_first_build: lambda do |src|
+            before_first_build: lambda do |src, _config|
               book = src.book 'Test'
               repo2 = src.repo 'repo2'
               book.source repo2, 'included.asciidoc',
                           map_branches: { 'master': 'override' }
               repo2.switch_to_new_branch 'override'
             end,
-            before_second_build: lambda do |src|
+            before_second_build: lambda do |src, _config|
               repo2 = src.repo 'repo2'
               repo2.write 'garbage', 'junk'
               repo2.commit 'adding junk'
@@ -610,11 +691,30 @@ RSpec.describe 'building all books' do
           )
           include_examples 'second build is noop'
         end
+        context 'because we add a new branch and specify --keep_hash ' \
+                'and --sub_dir on the new branch with one repo' do
+          build_one_book_out_of_two_repos_twice(
+            before_second_build: lambda do |src, config|
+              add_branch src
+              config.extra do |conversion|
+                conversion.keep_hash.sub_dir(src.repo('repo1'), 'foo')
+              end
+            end
+          )
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+            it "doesn't print that it is building the original branch" do
+              # The original book hasn't changed so we don't rebuild it
+              expect(out).not_to include('Test: Building master...')
+            end
+          end
+        end
       end
       context "when the second build isn't a noop" do
         context 'because the index repo changes' do
           build_one_book_out_of_two_repos_twice(
-            before_second_build: lambda do |src|
+            before_second_build: lambda do |src, _config|
               repo1 = src.repo 'repo1'
               text = repo1.read 'index.asciidoc'
               repo1.write 'index.asciidoc', text + 'New text'
@@ -626,7 +726,7 @@ RSpec.describe 'building all books' do
         end
         context 'because the included repo changes' do
           build_one_book_out_of_two_repos_twice(
-            before_second_build: lambda do |src|
+            before_second_build: lambda do |src, _config|
               repo2 = src.repo 'repo2'
               repo2.write 'included.asciidoc', 'New text'
               repo2.commit 'changed text'
@@ -637,7 +737,7 @@ RSpec.describe 'building all books' do
         end
         context "because a repo's branch mapping changes" do
           build_one_book_out_of_two_repos_twice(
-            before_second_build: lambda do |src|
+            before_second_build: lambda do |src, _config|
               book = src.book 'Test'
               repo2 = src.repo 'repo2'
               book.source repo2, 'included.asciidoc',
@@ -649,14 +749,14 @@ RSpec.describe 'building all books' do
         end
         context 'because there is a change in a mapped branch' do
           build_one_book_out_of_two_repos_twice(
-            before_first_build: lambda do |src|
+            before_first_build: lambda do |src, _config|
               book = src.book 'Test'
               repo2 = src.repo 'repo2'
               book.source repo2, 'included.asciidoc',
                           map_branches: { 'master': 'override' }
               repo2.switch_to_new_branch 'override'
             end,
-            before_second_build: lambda do |src|
+            before_second_build: lambda do |src, _config|
               repo2 = src.repo 'repo2'
               repo2.write 'included.asciidoc', 'New text'
               repo2.commit 'changed text'
@@ -664,6 +764,43 @@ RSpec.describe 'building all books' do
           )
           include_examples 'second build is not a noop'
           include_examples 'second build only changes chapter2'
+        end
+        context 'because we add a new branch' do
+          build_one_book_out_of_two_repos_twice(
+            before_second_build: lambda do |src, _config|
+              add_branch src
+            end
+          )
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+            it "doesn't print that it is building the original branch" do
+              expect(out).not_to include('Test: Building master...')
+            end
+          end
+        end
+        context 'because we add a new branch and specify --keep_hash ' \
+                'and --sub_dir on the new branch with both repos' do
+          build_one_book_out_of_two_repos_twice(
+            before_second_build: lambda do |src, config|
+              add_branch src
+              config.extra do |conversion|
+                conversion.keep_hash
+                          .sub_dir(src.repo('repo1'), 'foo')
+                          .sub_dir(src.repo('repo2'), 'foo')
+              end
+            end
+          )
+          context 'the second build' do
+            let(:out) { outputs[1] }
+            include_examples 'commits changes'
+            it "doesn't print that it is building the original branch" do
+              expect(out).not_to include('Test: Building master...')
+            end
+            it 'prints that is buildin the new branch' do
+              expect(out).to include('Test: Building foo...')
+            end
+          end
         end
       end
     end

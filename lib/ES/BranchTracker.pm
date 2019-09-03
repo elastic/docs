@@ -43,7 +43,7 @@ sub set_sha_for_branch {
 #===================================
     my ( $self, $repo, $branch, $sha ) = @_;
 
-    return if $self->shas->{$repo}{$branch} eq $sha;
+    return if defined $self->shas->{$repo}{$branch} && $self->shas->{$repo}{$branch} eq $sha;
     $self->{has_non_local_changes} = 1 unless $sha =~ /^local/;
     $self->shas->{$repo}{$branch} = $sha;
 }
