@@ -135,7 +135,7 @@ sub extract {
 
     if ( exists $self->{sub_dirs}->{$branch} ) {
         # Copies the $path from the subsitution directory. It is tempting to
-        # just symlink the substitution directoriy into the destionation and
+        # just symlink the substitution directory into the destination and
         # call it a day and that *almost* works! The trouble is that we often
         # use relative paths to include asciidoc files from other repositories
         # and those relative paths don't work at all with symlinks.
