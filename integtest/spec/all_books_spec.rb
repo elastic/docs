@@ -29,7 +29,6 @@ RSpec.describe 'building all books' do
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
     file_context 'html/static/docs.js' do
       def self.has_license(name, heading)
@@ -54,6 +53,45 @@ RSpec.describe 'building all books' do
       has_license 'redux-thunk', 'The MIT License (MIT)'
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
+    file_context 'html/sitemap.xml' do
+      it 'has an entry for the chapter' do
+        expect(contents).to include(<<~XML)
+          <loc>https://www.elastic.co/guide/test/current/chapter.html</loc>
+        XML
+      end
+    end
+  end
+  context 'for a single book with two chapters' do
+    convert_all_before_context do |src|
+      repo = src.repo 'repo'
+      repo.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[chapter1]]
+        == Chapter 1
+
+        Some text.
+
+        [[chapter2]]
+        == Chapter 2
+
+        Some more text.
+      ASCIIDOC
+      repo.commit 'init'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+    end
+    include_examples 'book basics', 'Test', 'test'
+    file_context 'html/sitemap.xml' do
+      let(:chapter1_index) { contents.index 'chapter1.html' }
+      let(:chapter2_index) { contents.index 'chapter2.html' }
+      it 'the entry for chapter 1 is before the entry for chapter 2' do
+        # Sorting the file is important to prevent "jumping arround" when we
+        # rebuild it.
+        expect(chapter1_index).to be < chapter2_index
+      end
+    end
   end
   context 'for a single book built by a single repo with two sources' do
     convert_all_before_context do |src|
@@ -69,8 +107,13 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       book.source repo, 'resources'
     end
-    let(:latest_revision) { 'add cat image' }
     include_examples 'book basics', 'Test', 'test'
+    context 'raw/test/current' do
+      it "doesn't exist" do
+        # Because "current" doesn't exist at all in "raw"
+        expect(dest_file('raw/test/current')).not_to file_exist
+      end
+    end
     page_context "the current version's chapter page",
                  'html/test/current/chapter.html' do
       it 'has a link to the image' do
@@ -79,7 +122,25 @@ RSpec.describe 'building all books' do
         HTML
       end
     end
+    page_context "the master version's chapter page",
+                 'html/test/master/chapter.html' do
+      it 'has a link to the image' do
+        expect(body).to include(<<~HTML.strip)
+          <img src="resources/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
+    file_context "the master version's raw chapter page",
+                 'raw/test/master/chapter.html' do
+      it 'has a link to the image' do
+        expect(contents).to include(<<~HTML.strip)
+          <img src="resources/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
     file_context 'html/test/current/resources/cat.jpg'
+    file_context 'html/test/master/resources/cat.jpg'
+    file_context 'raw/test/master/resources/cat.jpg'
   end
   context 'for a single book built by two repos' do
     def self.single_book_built_by_two_repos
@@ -90,7 +151,6 @@ RSpec.describe 'building all books' do
       include_context 'single book built by two repos'
     end
     shared_context 'single book built by two repos' do
-      let(:latest_revision) { 'init' }
       include_examples 'book basics', 'Test', 'test'
       page_context 'html/test/current/chapter.html' do
         it 'contains the text from the index' do
@@ -150,7 +210,6 @@ RSpec.describe 'building all books' do
       book2.index = 'second/index.asciidoc'
       book2.source repo, 'second'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'First', 'first'
     include_examples 'book basics', 'Second', 'second'
   end
@@ -160,7 +219,6 @@ RSpec.describe 'building all books' do
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
   end
   context 'when target_branch is specified' do
@@ -169,7 +227,6 @@ RSpec.describe 'building all books' do
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
-    let(:latest_revision) { 'init' }
     include_examples 'book basics', 'Test', 'test'
     it 'prints that it is forking the new branch from master' do
       expect(out).to include('target_repo: Forking <new_branch> from master')
@@ -205,12 +262,11 @@ RSpec.describe 'building all books' do
            rel="nofollow">edit</a>
       HTML
     end
-    let(:latest_revision) { 'init' }
     context "when respect_edit_url_overrides isn't specified" do
       override_edit_me false
       let(:repo) { @src.repo 'repo' }
       let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
-      page_context 'the book index', 'html/test/master/chapter.html' do
+      page_context 'html/test/master/chapter.html' do
         it 'contains the standard edit_me link' do
           expect(body).to include(edit_me)
         end
@@ -219,7 +275,7 @@ RSpec.describe 'building all books' do
     context 'when respect_edit_url_overrides is specified' do
       override_edit_me true
       let(:edit_url) { 'overridden' }
-      page_context 'the book index', 'html/test/master/chapter.html' do
+      page_context 'html/test/master/chapter.html' do
         it 'contains the overridden edit_me link' do
           expect(body).to include(edit_me)
         end
@@ -246,7 +302,6 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       book.source private_repo, 'foo.asciidoc', is_private: true
     end
-    let(:latest_revision) { 'init' }
     page_context 'html/test/current/chapter.html' do
       it 'does contain an edit link because it is from a public source' do
         expect(body).to include(%(title="Edit this page on GitHub"))
@@ -303,7 +358,6 @@ RSpec.describe 'building all books' do
       java_alts = { source_lang: 'console', alternative_lang: 'java' }
       book.source(java_repo, 'examples', alternatives: java_alts)
     end
-    let(:latest_revision) { 'init' }
     include_examples 'README-like console alternatives', 'html/test/master'
   end
 

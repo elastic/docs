@@ -1,24 +1,29 @@
 # frozen_string_literal: true
 
-require_relative '../scaffold.rb'
+require_relative '../delegating_converter.rb'
 require_relative 'copier.rb'
 
+##
+# Copies images that are referenced into the same directory as the
+# output files.
+#
+# It finds the images by looking in a comma separated list of directories
+# defined by the `resources` attribute.
+#
+# It can also be configured to copy the images that number callout lists by
+# setting `copy-callout-images` to the file extension of the images to copy.
+#
+# It can also be configured to copy the that decoration admonitions by
+# setting `copy-admonition-images` to the file extension of the images
+# to copy.
 module CopyImages
+  def self.activate(registry)
+    DelegatingConverter.setup(registry.document) { |doc| Converter.new doc }
+  end
+
   ##
-  # Copies images that are referenced into the same directory as the
-  # output files.
-  #
-  # It finds the images by looking in a comma separated list of directories
-  # defined by the `resources` attribute.
-  #
-  # It can also be configured to copy the images that number callout lists by
-  # setting `copy-callout-images` to the file extension of the images to copy.
-  #
-  # It can also be configured to copy the that decoration admonitions by
-  # setting `copy-admonition-images` to the file extension of the images
-  # to copy.
-  #
-  class CopyImages < TreeProcessorScaffold
+  # A Converter implementation that copies images as it sees them.
+  class Converter < DelegatingConverter
     include Asciidoctor::Logging
 
     ADMONITION_IMAGE_FOR_REVISION_FLAG = {
@@ -27,130 +32,79 @@ module CopyImages
       'deleted' => 'warning',
     }.freeze
     CALLOUT_RX = /CO\d+-(\d+)/
-    INLINE_IMAGE_RX = /(\\)?image:([^:\s\[](?:[^\n\[]*[^\s\[])?)\[/m
-    DOCBOOK_IMAGE_RX = %r{<imagedata fileref="([^"]+)"/>}m
 
-    def initialize(name)
-      super
+    def initialize(delegate)
+      super(delegate)
       @copier = Copier.new
     end
 
-    def process_block(block)
-      process_inline_image_from_source block
-      process_inline_image_from_converted block
-      process_block_image block
-      process_callout block
-      process_admonition block
-    end
+    #### "Conversion" methods
 
-    def process_block_image(block)
-      return unless block.context == :image
-
-      uri = block.image_uri(block.attr('target'))
-      process_image block, uri
-    end
-
-    ##
-    # Scan the inline image from the asciidoc source. One day Asciidoc will
-    # parse inline things into the AST and we can get at them nicely. Today, we
-    # have to scrape them from the source of the node.
-    def process_inline_image_from_source(block)
-      return unless block.content_model == :simple
-
-      block.source.scan(INLINE_IMAGE_RX) do |(escape, target)|
-        next if escape
-
-        # We have to resolve attributes inside the target. But there is a
-        # "funny" ritual for that because attribute substitution is always
-        # against the document. We have to play the block's attributes against
-        # the document, then clear them on the way out.
-        block.document.playback_attributes block.attributes
-        target = block.sub_attributes target
-        block.document.clear_playback_attributes block.attributes
-        uri = block.image_uri target
-        process_image block, uri
+    def admonition(node)
+      if (extension = node.attr 'copy-admonition-images')
+        if (image = admonition_image node)
+          path = "images/icons/#{image}.#{extension}"
+          @copier.copy_image node, path
+        end
       end
+      yield
     end
 
-    ##
-    # Scan the inline image from the generated docbook. It is not nice that
-    # this is required but there isn't much we can do about it. We *could*
-    # rewrite all of the image copying to be against the generated docbook
-    # using this code but I feel like that'd be slower. For now, we'll stick
-    # with this.
-    def process_inline_image_from_converted(block)
-      return unless block.context == :list_item &&
-                    block.parent.context == :olist
-
-      block.text.scan(DOCBOOK_IMAGE_RX) do |(target)|
-        # We have to resolve attributes inside the target. But there is a
-        # "funny" ritual for that because attribute substitution is always
-        # against the document. We have to play the block's attributes against
-        # the document, then clear them on the way out.
-        uri = block.image_uri target
-        process_image block, uri
+    def colist(node)
+      if (extension = node.attr 'copy-callout-images')
+        node.items.each do |item|
+          copy_image_for_callout_items extension, item
+        end
       end
+      yield
     end
 
-    def process_image(block, uri)
+    def image(node)
+      copy_image node, node.attr('target')
+      yield
+    end
+
+    def inline_image(node)
+      # Inline images aren't "real" and don't have a source_location so we have
+      # to get the location from the parent.
+      copy_image node.parent, node.target
+      yield
+    end
+
+    #### Helper methods
+    def copy_image(node, uri)
       return unless uri
       return if Asciidoctor::Helpers.uriish? uri # Skip external images
 
-      @copier.copy_image block, uri
+      @copier.copy_image node, uri
     end
 
-    def process_callout(block)
-      callout_extension = block.document.attr 'copy-callout-images'
-      return unless callout_extension
-      return unless block.parent && block.parent.context == :colist
-
-      coids = block.attr('coids')
+    def copy_image_for_callout_items(callout_extension, node)
+      coids = node.attr('coids')
       return unless coids
 
       coids.scan(CALLOUT_RX) do |(index)|
-        @copier.copy_image(
-          block, "images/icons/callouts/#{index}.#{callout_extension}"
-        )
+        path = "images/icons/callouts/#{index}.#{callout_extension}"
+        @copier.copy_image node, path
       end
     end
 
-    def process_admonition(block)
-      admonition_extension = block.document.attr 'copy-admonition-images'
-      return unless admonition_extension
+    def admonition_image(node)
+      if (revisionflag = node.attr 'revisionflag')
+        image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
+        return image if image
 
-      process_standard_admonition admonition_extension, block
-      process_change_admonition admonition_extension, block
-    end
-
-    def process_standard_admonition(admonition_extension, block)
-      return unless block.context == :admonition
-
-      # The image for a standard admonition comes from the style
-      style = block.attr 'style'
-      return unless style
-
-      @copier.copy_image(
-        block, "images/icons/#{style.downcase}.#{admonition_extension}"
-      )
-    end
-
-    def process_change_admonition(admonition_extension, block)
-      revisionflag = block.attr 'revisionflag'
-      return unless revisionflag
-
-      admonition_image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
-      if admonition_image
-        @copier.copy_image(
-          block, "images/icons/#{admonition_image}.#{admonition_extension}"
-        )
-      else
         logger.warn(
           message_with_context(
             "unknow revisionflag #{revisionflag}",
-            source_location: block.source_location
+            source_location: node.source_location
           )
         )
+        return
       end
+      # The image for a standard admonition comes from the style
+      style = node.attr 'style'
+      style&.downcase
     end
   end
 end

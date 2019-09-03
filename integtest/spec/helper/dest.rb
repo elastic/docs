@@ -23,6 +23,7 @@ class Dest
   attr_reader :convert_statuses
 
   def initialize(tmp)
+    @repos_cache = File.expand_path 'repos', tmp
     @bare_dest = File.expand_path 'dest.git', tmp
     @dest = File.expand_path 'dest', tmp
     Dir.mkdir @dest
@@ -57,14 +58,14 @@ class Dest
   end
 
   def prepare_convert_all(conf)
-    ConvertAll.new conf, bare_repo, self
+    ConvertAll.new conf, @repos_cache, bare_repo, self
   end
 
   ##
   # Convert a conf file worth of books and check it out.
   def convert_all(conf, expect_failure: false, target_branch: nil)
     # TODO: remove this in favor of prepare_convert_all
-    convert = ConvertAll.new conf, bare_repo, self
+    convert = prepare_convert_all conf
     convert.target_branch target_branch if target_branch
     convert.convert expect_failure: expect_failure
   end
@@ -82,6 +83,14 @@ class Dest
   def commit_info
     Dir.chdir bare_repo do
       sh 'git show'
+    end
+  end
+
+  ##
+  # Executes `git show` for a single file.
+  def commit_info_for_file(file)
+    Dir.chdir bare_repo do
+      sh "git show -- #{file}"
     end
   end
 
@@ -177,11 +186,12 @@ class Dest
   end
 
   class ConvertAll < CmdBuilder
-    def initialize(conf, target_repo, dest)
+    def initialize(conf, repos_cache, target_repo, dest)
       super()
       @cmd = %W[
         --all
         --push
+        --reposcache #{repos_cache}
         --target_repo #{target_repo}
         --conf #{conf}
       ]

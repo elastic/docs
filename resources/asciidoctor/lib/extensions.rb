@@ -14,6 +14,7 @@ require_relative 'open_in_widget/extension'
 
 Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
+Asciidoctor::Extensions.register CopyImages
 Asciidoctor::Extensions.register do
   # Enable storing the source locations so we can look at them. This is required
   # for EditMe to get a nice location.
@@ -21,7 +22,6 @@ Asciidoctor::Extensions.register do
   block_macro LangOverride
   preprocessor CrampedInclude
   preprocessor ElasticCompatPreprocessor
-  treeprocessor CopyImages::CopyImages
   treeprocessor EditMe
   treeprocessor ElasticCompatTreeProcessor
   # The tree processors after this must come after ElasticComptTreeProcessor

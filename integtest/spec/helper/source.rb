@@ -112,18 +112,12 @@ class Source
   private
 
   def common_conf
-    repos_path = path '../repos'
     <<~YAML
       template:
         defaults:
-          POSTHEAD: |
-            <link rel="stylesheet" type="text/css" href="styles.css" />
-          FINAL: |
-            <script type="text/javascript" src="/guide/static/docs.js"></script>
       paths:
         build:          html/
         branch_tracker: html/branches.yaml
-        repos:          #{repos_path}
       contents_title: Test
     YAML
   end

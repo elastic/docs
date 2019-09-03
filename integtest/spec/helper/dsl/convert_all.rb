@@ -35,12 +35,6 @@ module Dsl
           expect(out).to include("#{book.title}: Finished master")
         end
       end
-      it 'prints that it is copying master to current for every book' do
-        # TODO: read branches from somewhere when we specify them
-        books.each_value do |book|
-          expect(out).to include("#{book.title}: Copying master to current")
-        end
-      end
       include_examples 'commits changes'
     end
     shared_examples 'commits changes' do
@@ -57,11 +51,6 @@ module Dsl
       end
       it 'creates html/branches.yaml' do
         expect(dest_file('html/branches.yaml')).to file_exist
-      end
-      file_context 'html/revision.txt' do
-        it 'contains the latest revision message' do
-          expect(contents).to include(latest_revision)
-        end
       end
       page_context 'the global index', 'html/index.html' do
         it 'contains a link to the current verion of each book' do

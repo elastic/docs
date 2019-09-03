@@ -25,16 +25,10 @@ sub new {
     my $self = bless {
         file => $file,
         shas => \%shas,
+        has_non_local_changes => 0,
     }, $class;
 
     return $self;
-}
-
-#===================================
-sub shas_for_repo {
-#===================================
-    my ( $self, $repo ) = @_;
-    return $self->shas->{$repo} || {};
 }
 
 #===================================
@@ -49,6 +43,8 @@ sub set_sha_for_branch {
 #===================================
     my ( $self, $repo, $branch, $sha ) = @_;
 
+    return if $self->shas->{$repo}{$branch} eq $sha;
+    $self->{has_non_local_changes} = 1 unless $sha =~ /^local/;
     $self->shas->{$repo}{$branch} = $sha;
 }
 
@@ -74,6 +70,7 @@ sub prune_out_of_date {
             # right now.
             unless ($allowed_for_repo->{$branch} || $branch =~ /^link-check/) {
                 delete $branches->{$branch};
+                $self->{has_non_local_changes} = 1;
             }
         }
         # Empty can show up because there is a new book that were not
@@ -111,6 +108,14 @@ sub write {
     my $self = shift;
     $self->file->parent->mkpath;
     $self->file->spew( iomode => '>:utf8', Dump( $self->{shas} ) );
+}
+
+#===================================
+sub has_non_local_changes {
+#===================================
+# Truthy if any book was rebuilt with non-local changes.
+#===================================
+    shift->{has_non_local_changes};
 }
 
 #===================================
