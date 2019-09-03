@@ -127,6 +127,7 @@ class Dest
     ok = status.success?
     ok = !ok if expect_failure
     raise_status cmd, out, status unless ok
+    raise "Perl warnings:\n#{out}" if out.include? 'Use of uninitialized value'
 
     @convert_outputs << out
     @convert_statuses << status.exitstatus

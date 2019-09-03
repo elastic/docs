@@ -44,8 +44,8 @@ sub add_sub_dir {
 }
 
 #===================================
-# Returns 0 if the repo hasn't changed since we last built it, 1 if it has, and
-# 'new_sub_dir' if this is a sub_dir for a new source.
+# Returns 'not_changed' if the repo hasn't changed since we last built it,
+# 'changed' if it has, and 'new_sub_dir' if this is a sub_dir for a new source.
 #===================================
 sub has_changed {
 #===================================
@@ -65,14 +65,14 @@ sub has_changed {
             # New sub_dirs *might* build, but only if the entire book is built
             # out of new sub_dirs.
             return 'new_sub_dir' if exists $self->{sub_dirs}->{$branch};
-            return 0;
+            return 'not_changed';
         }
 
         $new = $self->_last_commit(@_);
     } else {
         # If we aren't keeping the hash from the last build and there *isn't*
         # a hash that means that this is a new repo so we should build it.
-        return 1 unless $old_info;
+        return 'changed' unless $old_info;
 
         $new = sha_for($branch) or die(
                 "Remote branch <origin/$branch> doesn't exist in repo "
@@ -83,15 +83,17 @@ sub has_changed {
 
     # We check sub_dirs *after* the checks above so we can handle sub_dir for
     # new sources specially.
-    return 1 if exists $self->{sub_dirs}->{$branch};
+    return 'changed' if exists $self->{sub_dirs}->{$branch};
 
-    return $old_info ne $new_info if $self->{keep_hash};
-    return if $old_info eq $new_info;
+    if ($self->{keep_hash}) {
+        return $old_info ne $new_info ? 'changed' : 'not_changed';
+    }
+    return 'not_changed' if $old_info eq $new_info;
     # If the asciidoctor-ness of the previous build doesn't match this one then
     # we've changed. It'd be nice if build-info were a class but we'll be
     # dropping asciidoctor as soon as we've migrated all of the books and this
     # is sort of a local minima of effort.
-    return 1 unless ($old_info =~ /\|asciidoctor$/) == $asciidoctor;
+    return 'changed' unless ($old_info =~ /\|asciidoctor$/) == $asciidoctor;
 
     my $changed;
     eval {
@@ -102,7 +104,7 @@ sub has_changed {
     }
         || do { $changed = 1 };
 
-    return $changed;
+    return $changed ? 'changed' : 'not_changed';
 }
 
 #===================================

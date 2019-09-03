@@ -70,7 +70,8 @@ sub has_changed {
             # us *some* test coverage.
             next;
         }
-        return 1 if $has_changed;
+        return 1 if $has_changed eq 'changed';
+        die "Unexpected '$has_changed'" unless $has_changed eq 'not_changed';
         $all_new_sub_dir = 0;
     }
     return $all_new_sub_dir;
