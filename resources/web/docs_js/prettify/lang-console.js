@@ -23,14 +23,14 @@ import PR from "../../lib/prettify/prettify";
 const basic = PR.createSimpleLexer(
   [
     [PR.PR_PUNCTUATION, /^[/?=&]/, null, '/?=&'],
-    [PR.PR_PLAIN,       /^\s+/,  null, ' \t\r\n'],
+    [PR.PR_PLAIN, /^\s+/, null, ' \t\r\n'],
+    [PR.PR_KEYWORD, /^DELETE|HEAD|GET|PATCH|POST|PUT/, null, 'DHGP'],
+    ["lang-js", /^(\{.+?\})(?=\s*(DELETE|HEAD|GET|PATCH|POST|PUT|$))/s, null, '{'],
   ],
   [
-    // TODO try and use shortcuts
-    [PR.PR_KEYWORD, /^DELETE|HEAD|GET|PATCH|POST|PUT/],
-    ["lang-js",     /^(\{.+?\})(?=\s*(DELETE|HEAD|GET|PATCH|POST|PUT|$))/s],
     [PR.PR_STRING,  /^[^ \s/?=&]+/],
-  ]);
+  ]
+);
 
 const enhanced = job => {
   basic(job);
