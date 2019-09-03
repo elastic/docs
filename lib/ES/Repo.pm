@@ -44,12 +44,13 @@ sub add_sub_dir {
 }
 
 #===================================
+# Returns 0 if the repo hasn't changed since we last built it, 1 if it has, and
+# 'new_sub_dir' if this is a sub_dir for a new source.
+#===================================
 sub has_changed {
 #===================================
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
-
-    return 1 if exists $self->{sub_dirs}->{$branch};
 
     local $ENV{GIT_DIR} = $self->git_dir;
     my $old_info = $self->_last_commit_info(@_);
@@ -60,7 +61,12 @@ sub has_changed {
         # hash that means that the branch wasn't used the last time we built
         # this book. That means we'll skip it entirely when building the book
         # anyway so we should consider the book not to have changed.
-        return 0 unless $old_info;
+        unless ($old_info) {
+            # New sub_dirs *might* build, but only if the entire book is built
+            # out of new sub_dirs.
+            return 'new_sub_dir' if exists $self->{sub_dirs}->{$branch};
+            return 0;
+        }
 
         $new = $self->_last_commit(@_);
     } else {
@@ -74,6 +80,10 @@ sub has_changed {
     }
     my $new_info = $new;
     $new_info .= '|asciidoctor' if $asciidoctor;
+
+    # We check sub_dirs *after* the checks above so we can handle sub_dir for
+    # new sources specially.
+    return 1 if exists $self->{sub_dirs}->{$branch};
 
     return $old_info ne $new_info if $self->{keep_hash};
     return if $old_info eq $new_info;
@@ -124,8 +134,8 @@ sub extract {
     my ( $title, $branch, $path, $dest ) = @_;
 
     if ( exists $self->{sub_dirs}->{$branch} ) {
-        # Copies the $path from the subsitution diretory. It is tempting to
-        # just symlink the substitution directoriy into the destionation and
+        # Copies the $path from the subsitution directory. It is tempting to
+        # just symlink the substitution directory into the destination and
         # call it a day and that *almost* works! The trouble is that we often
         # use relative paths to include asciidoc files from other repositories
         # and those relative paths don't work at all with symlinks.
@@ -140,9 +150,10 @@ sub extract {
         return;
     }
 
-    $branch = $self->_resolve_branch( @_ );
-    unless ( $branch ) {
-        printf(" - %40.40s: %s is new. Skipping\n", $title, $self->{name});
+    my $resolved_branch = $self->_resolve_branch( @_ );
+    unless ( $resolved_branch ) {
+        printf(" - %40.40s: Skipping new repo %s for branch %s.\n",
+               $title, $self->{name}, $branch);
         return;
     }
 
@@ -151,7 +162,7 @@ sub extract {
     $dest->mkpath;
     my $tar = $dest->file('.temp_git_archive.tar');
     die "File <$tar> already exists" if -e $tar;
-    run qw(git archive --format=tar -o ), $tar, $branch, $path;
+    run qw(git archive --format=tar -o ), $tar, $resolved_branch, $path;
 
     run "tar", "-x", "-C", $dest, "-f", $tar;
     $tar->remove;
