@@ -30,15 +30,15 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
     end
     include_examples 'book basics', 'Test', 'test'
-    file_context 'html/static/docs.js' do
-      def self.has_license(name, heading)
-        it "has license for #{name}" do
-          expect(contents).to include(<<~TXT)
-            /* #{name}
-             * #{heading}
-          TXT
-        end
+    def self.has_license(name, heading)
+      it "has license for #{name}" do
+        expect(contents).to include(<<~TXT)
+          /* #{name}
+           * #{heading}
+        TXT
       end
+    end
+    file_context 'html/static/docs.js' do
       has_license 'code-prettify', 'The Apache 2.0 License'
       has_license "code-prettify's lang-sql", 'The Apache 2.0 License'
       has_license "code-prettify's lang-yaml", 'The Apache 2.0 License'
@@ -53,6 +53,10 @@ RSpec.describe 'building all books' do
       has_license 'redux-thunk', 'The MIT License (MIT)'
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
+    file_context 'html/static/styles.css' do
+      has_license 'Inter', 'SIL OPEN FONT LICENSE'
+    end
+    file_context 'html/static/Inter-Medium.5d08e0ba.woff2'
     file_context 'html/sitemap.xml' do
       it 'has an entry for the chapter' do
         expect(contents).to include(<<~XML)
