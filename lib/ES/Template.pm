@@ -65,9 +65,8 @@ sub apply {
         my ($head) = ( $contents =~ m{<head>(.+?)</head>}s );
         my ($body) = ( $contents =~ m{<body>(.+?)</body>}s );
         $parts[ $map->{PREHEAD} ] = $head;
-        $parts[ $map->{LANG} ]    = qq(lang="$lang");
-        $parts[ $map->{BODY} ]
-            = "<!-- start body -->\n$body\n<!-- end body -->\n";
+        $parts[ $map->{LANG} ] = qq(lang="$lang");
+        $parts[ $map->{BODY} ] = $body;
         $parts[ $map->{FINAL} ] = $initial_js_state . $parts[ $map->{FINAL} ];
 
         $dest->spew( iomode => '>:utf8', join "", @parts );
