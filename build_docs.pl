@@ -63,9 +63,7 @@ die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_sta
 
 init_env();
 
-$Opts->{template} = ES::Template->new(
-    %{ $Conf->{template} },
-);
+$Opts->{template} = ES::Template->new();
 
 $Opts->{doc}           ? build_local()
     : $Opts->{all}     ? build_all()
