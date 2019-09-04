@@ -48,6 +48,11 @@ module Dsl
     end
     shared_context 'Dsl_page' do |file_name|
       include_context 'Dsl_file', file_name
+      let(:head) do
+        return unless contents
+
+        contents.sub(/.+<head>/, '').sub(%r{</head>.+}, '')
+      end
       let(:body) do
         return unless contents
 
@@ -59,6 +64,14 @@ module Dsl
 
         m = body.match %r{<h1 class="title"><a id=".+"></a>([^<]+)(<a.+?)?</h1>}
         raise "Can't find title in #{body}" unless m
+
+        m[1]
+      end
+      let(:language) do
+        return unless contents
+
+        m = contents.match(/<section id="guide" lang="([^"]+)">/)
+        raise "Can't find language in #{contents}" unless m
 
         m[1]
       end
