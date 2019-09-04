@@ -55,6 +55,21 @@ RSpec.describe 'building a single book' do
         end
       end
       page_context 'raw/index.html' do
+        it "doesn't have the xml prolog" do
+          expect(contents).not_to include('?xml')
+        end
+        it 'has the html5 doctype' do
+          expect(contents).to include("<!DOCTYPE html>\n")
+        end
+        it "doesn't have any xmlns declarations" do
+          expect(contents).not_to include('xmlns=')
+        end
+        it "doesn't have any xml:lang tags" do
+          expect(contents).not_to include('xml:lang=')
+        end
+        it 'has a trailing newline' do
+          expect(contents).to end_with("\n")
+        end
         it 'has the right title' do
           expect(title).to eq('Title')
         end

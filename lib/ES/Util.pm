@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use v5.10;
 
-use File::Copy::Recursive qw(rcopy);
+use File::Copy::Recursive qw(rcopy rmove);
 use Capture::Tiny qw(capture tee);
 use Encode qw(decode_utf8);
 use Path::Class qw(dir file);
@@ -171,7 +171,16 @@ sub build_chunked {
         or die "Couldn't find chunk dir in <$raw_dest>";
 
     for ( $chunk_dir->children ) {
-        run( 'mv', $_, $raw_dest );
+        my $dest = $raw_dest->file( $_->relative( $chunk_dir ) );
+        if ( $_->basename !~ /\.html$/ ) {
+            rmove( $_, $dest );
+            next;
+        }
+        # Convert docbook's ceremonial output into html5
+        my $contents = $_->slurp( iomode => '<:encoding(UTF-8)' );
+        $contents = _html5ify( $contents );
+        $dest->spew( iomode => '>:utf8', $contents );
+        unlink $_ or die "Coudln't remove $_ $!";
     }
     # Figure out a way to not copy subdirs from other books. maybe build everything into a tmp dir and copy
     finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary, 0 );
@@ -321,11 +330,16 @@ sub build_single {
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
 
+    my $html_file = $raw_dest->file('index.html');
     if ( $base_name ne 'index.html' ) {
         my $src = $raw_dest->file($base_name);
-        rename $src, $raw_dest->file('index.html')
+        rename $src, $html_file
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
+
+    my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
+    $contents = _html5ify( $contents );
+    $html_file->spew( iomode => '>:utf8', $contents );
 
     finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor,
                   $alternatives_summary, $opts{is_toc} );
@@ -454,6 +468,33 @@ sub docinfo {
     $name =~ s/\.[^.]+$//;
     my $docinfo = $index->dir->file("$name-docinfo.xml");
     return -e $docinfo ? ( -a => 'docinfo' ) : ();
+}
+
+#===================================
+# Convert docbook's xhtml output into html5. In a perfect world the docs build
+# process would generate perfect output but for now it doesn't so we bring perl
+# to the rescue here!
+#===================================
+sub _html5ify {
+#===================================
+    my ( $contents ) = @_;
+
+    # Strip the xml prolog
+    $contents =~ s/^<\?xml[^>]+>\n//;
+
+    # Convert the xhtml doctype into the html5 doctype
+    $contents =~ s/<!DOCTYPE [^>]+>\n?/<!DOCTYPE html>\n/;
+
+    # Lots of tags get `xmlns=""` or `xmlns="<xhtml>"`. We never need it.
+    $contents =~ s/\s+xmlns="[^"]*"//g;
+
+    # Strip xml lang tag. We already have the lang tag other places.
+    $contents =~ s/\s+xml:lang="[^"]*"//g;
+
+    # Add a trailing newline because good documents have trailing newlines
+    $contents =~ s/\s*$/\n/;
+
+    return $contents;
 }
 
 #===================================
