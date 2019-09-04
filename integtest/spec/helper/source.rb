@@ -115,9 +115,6 @@ class Source
     <<~YAML
       template:
         defaults:
-      paths:
-        build:          html/
-        branch_tracker: html/branches.yaml
       contents_title: Test
     YAML
   end
