@@ -121,60 +121,7 @@ sub _init {
     my $self = shift;
 
     my $template = file("resources/web/template.html");
-    my $content;
-    eval {
-        $content = $template->slurp( iomode => '<:encoding(UTF-8)' );;
-
-        # remove title
-        $content =~ s{<title>.*</title>}{}s
-            or die "Couldn't remove <title>\n";
-
-        # remove guide_template.css
-        $content =~ s{<[^<>]+guide_template.css"[^>]+>}{};
-
-        # remove visitor count and mod_value
-        $content =~ s{<script[^>]+>visitor_count[^>]+>}{};
-        $content =~ s{<script[^>]+>mod_value[^>]+>}{};
-
-        # remove meta date and DC.title
-        $content =~ s{<meta name=.date.[^>]+>}{};
-        $content =~ s{<meta name=.published_date.[^>]+>}{};
-        $content =~ s{<meta name=.DC.title.[^>]+>}{};
-
-        # prehead
-        $content =~ s{(<head>)}{$1\n<!-- DOCS PREHEAD -->}
-            or die "Couldn't add PREHEAD\n";
-
-        # posthead
-        $content =~ s{(</head>)}{\n<!-- DOCS POSTHEAD -->\n$1}
-            or die "Couldn't add POSTHEAD\n";
-
-        # lang
-        $content =~ s{(<section id="guide")}{$1 <!-- DOCS LANG -->};
-
-        # body parts
-        $content =~ s{
-            (<div [^>]+ class="[^"]*\bguide-section\b[^"]*"[^>]*>)
-            .+?
-            (<div [^>]+ id="right_col" [^>]*>)
-        }{
-            $1
-            <!-- DOCS BODY -->
-            </div>
-            $2
-        }xs
-            or die "Couldn't add BODY tags\n";
-
-        # last in page
-        $content =~ s {
-            </body>
-        }{
-            <!-- DOCS FINAL -->
-            </body>
-        }xs;
-
-        1;
-    } or die "Unable to load template: $@";
+    my $content = $template->slurp( iomode => '<:encoding(UTF-8)' );
     my @parts = split /<!-- (DOCS \w+) -->/, $content;
     my $defaults = $self->{defaults};
     my %map;

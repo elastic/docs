@@ -31,6 +31,19 @@ RSpec.describe 'building a single book' do
         it 'has the right title' do
           expect(title).to eq('Title')
         end
+        it 'has a link to the css' do
+          expect(head).to include(<<~HTML)
+            <link rel="stylesheet" type="text/css" href="/guide/static/styles.css" />
+          HTML
+        end
+        it 'has a link to the js' do
+          expect(contents).to include(<<~HTML)
+            <script type="text/javascript" src="/guide/static/docs.js"></script>
+          HTML
+        end
+        it 'has the right language' do
+          expect(language).to eq('en')
+        end
         it 'has an empty initial js state' do
           expect(initial_js_state).to be_empty
         end
