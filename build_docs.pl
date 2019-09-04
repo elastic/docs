@@ -63,9 +63,7 @@ die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_sta
 
 init_env();
 
-$Opts->{template} = ES::Template->new(
-    %{ $Conf->{template} },
-);
+$Opts->{template} = ES::Template->new();
 
 $Opts->{doc}           ? build_local()
     : $Opts->{all}     ? build_all()
@@ -226,9 +224,7 @@ sub build_all {
     my $tracker = init_repos(
             $repos_dir, $temp_dir, $reference_dir, $target_repo );
 
-    my $build_dir = $Conf->{paths}{build}
-        or die "Missing <paths.build> in config";
-    $build_dir = $target_repo->destination->subdir( $build_dir );
+    my $build_dir = $target_repo->destination->subdir( 'html' );
     $build_dir->mkpath;
     my $raw_build_dir = $target_repo->destination->subdir( 'raw' );
 
@@ -540,9 +536,7 @@ sub init_repos {
 
     delete $child_dirs{ $target_repo->git_dir->absolute };
 
-    my $tracker_path = $Conf->{paths}{branch_tracker}
-        or die "Missing <paths.branch_tracker> in config";
-    $tracker_path = $target_repo->destination . "/$tracker_path";
+    my $tracker_path = $target_repo->destination . '/html/branches.yaml';
 
     # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );

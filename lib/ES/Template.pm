@@ -15,7 +15,6 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $self = bless {
-        defaults => $args{defaults},
         json => JSON->new->pretty->utf8->canonical,
     }, $class;
     $self->_init;
@@ -67,7 +66,7 @@ sub apply {
         $parts[ $map->{PREHEAD} ] = $head;
         $parts[ $map->{LANG} ] = qq(lang="$lang");
         $parts[ $map->{BODY} ] = $body;
-        $parts[ $map->{FINAL} ] = $initial_js_state . $parts[ $map->{FINAL} ];
+        $parts[ $map->{FINAL} ] = $initial_js_state;
 
         $dest->spew( iomode => '>:utf8', join "", @parts );
     }
@@ -122,12 +121,11 @@ sub _init {
     my $template = file("resources/web/template.html");
     my $content = $template->slurp( iomode => '<:encoding(UTF-8)' );
     my @parts = split /<!-- (DOCS \w+) -->/, $content;
-    my $defaults = $self->{defaults};
     my %map;
 
     for my $i ( 0 .. @parts - 1 ) {
         if ( $parts[$i] =~ s/^DOCS (\w+)$// ) {
-            $parts[$i] = $defaults->{$1} || '';
+            $parts[$i] = '';
             $map{$1} = $i;
         }
     }
