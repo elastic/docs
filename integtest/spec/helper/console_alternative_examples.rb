@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module ConsoleExamples
   README_LIKE = <<~ASCIIDOC
     When you execute this:
@@ -34,7 +36,7 @@ module ConsoleExamples
   ASCIIDOC
 end
 
-RSpec.shared_examples 'README-like console alternatives' do |path|
+RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
   page_context "#{path}/chapter.html" do
     let(:has_classes) { 'has-js has-csharp' }
     let(:console_widget) do
@@ -150,6 +152,26 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
         | &cross; | &cross; | &cross;
         |===
       ASCIIDOC
+    end
+    file_context "#{raw_path}/alternatives_summary.json" do
+      let(:parsed) { JSON.parse contents, symbolize_names: true }
+      it 'to be an empty object' do
+        expect(parsed).to include(
+          console: {
+            alternatives: {
+              js: { found: 2 },
+              csharp: { found: 1 },
+              java: { found: 0 },
+            },
+            total: 3,
+          }
+        )
+      end
+    end
+    context "#{path}/alternatives_summary.json" do
+      it "doesn't exist" do
+        expect(dest_file("#{path}/alternatives_summary.json")).not_to file_exist
+      end
     end
   end
 end

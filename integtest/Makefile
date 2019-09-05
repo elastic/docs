@@ -24,4 +24,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec
+	rspec -e 'alternatives'

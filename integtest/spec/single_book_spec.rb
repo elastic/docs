@@ -462,7 +462,7 @@ RSpec.describe 'building a single book' do
           .alternatives('console', 'java', "#{__dir__}/helper")
           .convert
     end
-    include_examples 'README-like console alternatives', '.'
+    include_examples 'README-like console alternatives', 'raw', '.'
   end
 
   context 'when run with --open' do

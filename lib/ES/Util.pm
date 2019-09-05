@@ -52,7 +52,7 @@ sub build_chunked {
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
-    my $alternatives_summary = $dest->file('alternatives_summary.json');
+    my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -211,7 +211,7 @@ sub build_single {
     my $latest    = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
-    my $alternatives_summary = $dest->file('alternatives_summary.json');
+    my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
 
     die "Can't find index [$index]" unless -f $index;
 
