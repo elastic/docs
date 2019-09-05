@@ -3,7 +3,7 @@
 set -e
 
 export BUILD=docker.elastic.co/docs/build:1
-export PREVIEW=docker.elastic.co/docs/preview:3
+export PREVIEW=docker.elastic.co/docs/preview:4
 
 cd $(git rev-parse --show-toplevel)
 ./build_docs --just-build-image
