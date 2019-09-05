@@ -63,12 +63,6 @@ sub apply {
 
         my $contents = $source->slurp( iomode => '<:encoding(UTF-8)' );
 
-        # Strip XML guff
-        $contents =~ s/\s+xmlns="[^"]*"//g;
-        $contents =~ s/\s+xml:lang="[^"]*"//g;
-        $contents =~ s/^<\?xml[^>]+>\n//;
-        $contents =~ s/\s*$/\n/;
-
         # Extract AUTOSENSE snippets
         $contents = $self->_autosense_snippets( $source, $contents ) unless $asciidoctor;
 
