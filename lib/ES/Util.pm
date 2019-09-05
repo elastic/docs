@@ -179,11 +179,11 @@ sub build_chunked {
         # Convert docbook's ceremonial output into html5
         my $contents = $_->slurp( iomode => '<:encoding(UTF-8)' );
         $contents = _html5ify( $contents );
+        $contents = _extract_autosense_snippets( $_, $contents ) unless $asciidoctor;
         $dest->spew( iomode => '>:utf8', $contents );
         unlink $_ or die "Coudln't remove $_ $!";
     }
-    # Figure out a way to not copy subdirs from other books. maybe build everything into a tmp dir and copy
-    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary, 0 );
+    finish_build( $index->parent, $raw_dest, $dest, $lang, $alternatives_summary, 0 );
     extract_toc_from_index( $dest );
     $chunk_dir->rmtree;
 }
@@ -339,9 +339,10 @@ sub build_single {
 
     my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
     $contents = _html5ify( $contents );
+    $contents = _extract_autosense_snippets( $_, $contents ) unless $asciidoctor;
     $html_file->spew( iomode => '>:utf8', $contents );
 
-    finish_build( $index->parent, $raw_dest, $dest, $lang, $asciidoctor,
+    finish_build( $index->parent, $raw_dest, $dest, $lang,
                   $alternatives_summary, $opts{is_toc} );
 }
 
@@ -425,10 +426,10 @@ sub build_pdf {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $raw_dest, $dest, $lang, $asciidoctor, $alternatives_summary, $is_toc ) = @_;
+    my ( $source, $raw_dest, $dest, $lang, $alternatives_summary, $is_toc ) = @_;
 
     # Apply template to HTML files
-    $Opts->{template}->apply( $raw_dest, $dest, $lang, $asciidoctor,
+    $Opts->{template}->apply( $raw_dest, $dest, $lang,
                               $alternatives_summary, $is_toc );
 
     my $snippets_dest = $dest->subdir('snippets');
@@ -494,6 +495,47 @@ sub _html5ify {
     # Add a trailing newline because good documents have trailing newlines
     $contents =~ s/\s*$/\n/;
 
+    return $contents;
+}
+
+my $Autosense_RE = qr{
+        (<pre \s class="programlisting[^>]+>
+         ((?:(?!</pre>).)+?)
+         </pre>
+         </div>
+         <div \s class="(?:console|sense|kibana)_widget" \s data-snippet="
+        )
+        :(?:CONSOLE|AUTOSENSE|KIBANA):
+    }xs;
+
+#===================================
+sub _extract_autosense_snippets {
+#===================================
+    my ( $file, $contents ) = (@_);
+    my $counter  = 1;
+    my $filename = $file->basename;
+    $filename =~ s/\.html$//;
+
+    my $snippet_dir = $file->parent->subdir('snippets')->subdir($filename);
+    while (
+        $contents =~ s|$Autosense_RE|${1}snippets/${filename}/${counter}.json| )
+    {
+        $snippet_dir->mkpath if $counter == 1;
+
+        # Remove callouts from snippet
+        my $snippet = $2;
+        $snippet =~ s{<a.+?</i>}{}gs;
+
+        # Unescape HTML entities
+        $snippet =~ s/&lt;/</g;
+        $snippet =~ s/&gt;/>/g;
+        $snippet =~ s/&amp;/&/g;
+
+        # Write snippet
+        $snippet_dir->file("$counter.json")
+            ->spew( iomode => '>:utf8', $snippet . "\n" );
+        $counter++;
+    }
     return $contents;
 }
 

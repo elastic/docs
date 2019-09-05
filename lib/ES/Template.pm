@@ -36,7 +36,7 @@ sub new {
 #===================================
 sub apply {
 #===================================
-    my ( $self, $source_dir, $dest_dir, $lang, $asciidoctor,
+    my ( $self, $source_dir, $dest_dir, $lang,
          $alternatives_summary, $is_toc) = @_;
 
     my $map = $self->{map};
@@ -63,9 +63,6 @@ sub apply {
 
         my $contents = $source->slurp( iomode => '<:encoding(UTF-8)' );
 
-        # Extract AUTOSENSE snippets
-        $contents = $self->_autosense_snippets( $source, $contents ) unless $asciidoctor;
-
         # Fill in template
         my @parts  = @{ $self->{parts} };
         my ($head) = ( $contents =~ m{<head>(.+?)</head>}s );
@@ -77,47 +74,6 @@ sub apply {
 
         $dest->spew( iomode => '>:utf8', join "", @parts );
     }
-}
-
-my $Autosense_RE = qr{
-        (<pre \s class="programlisting[^>]+>
-         ((?:(?!</pre>).)+?)
-         </pre>
-         </div>
-         <div \s class="(?:console|sense|kibana)_widget" \s data-snippet="
-        )
-        :(?:CONSOLE|AUTOSENSE|KIBANA):
-    }xs;
-
-#===================================
-sub _autosense_snippets {
-#===================================
-    my ( $self, $file, $contents ) = (@_);
-    my $counter  = 1;
-    my $filename = $file->basename;
-    $filename =~ s/\.html$//;
-
-    my $snippet_dir = $file->parent->subdir('snippets')->subdir($filename);
-    while (
-        $contents =~ s|$Autosense_RE|${1}snippets/${filename}/${counter}.json| )
-    {
-        $snippet_dir->mkpath if $counter == 1;
-
-        # Remove callouts from snippet
-        my $snippet = $2;
-        $snippet =~ s{<a.+?</i>}{}gs;
-
-        # Unescape HTML entities
-        $snippet =~ s/&lt;/</g;
-        $snippet =~ s/&gt;/>/g;
-        $snippet =~ s/&amp;/&/g;
-
-        # Write snippet
-        $snippet_dir->file("$counter.json")
-            ->spew( iomode => '>:utf8', $snippet . "\n" );
-        $counter++;
-    }
-    return $contents;
 }
 
 #===================================
