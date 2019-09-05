@@ -14,10 +14,23 @@ sub new {
 #===================================
     my ( $class, %args ) = @_;
 
-    my $self = bless {
+    my $template = file( "resources/web/template.html" );
+    my $content = $template->slurp( iomode => '<:encoding(UTF-8)' );
+    my @parts = split /<!-- (DOCS \w+) -->/, $content;
+    my %map;
+
+    for my $i ( 0 .. @parts - 1 ) {
+        if ( $parts[$i] =~ s/^DOCS (\w+)$// ) {
+            $parts[$i] = '';
+            $map{$1} = $i;
+        }
+    }
+
+    return bless {
         json => JSON->new->pretty->utf8->canonical,
+        map => \%map,
+        parts => \@parts,
     }, $class;
-    $self->_init;
 }
 
 #===================================
@@ -111,28 +124,6 @@ sub _autosense_snippets {
         $counter++;
     }
     return $contents;
-}
-
-#===================================
-sub _init {
-#===================================
-    my $self = shift;
-
-    my $template = file("resources/web/template.html");
-    my $content = $template->slurp( iomode => '<:encoding(UTF-8)' );
-    my @parts = split /<!-- (DOCS \w+) -->/, $content;
-    my %map;
-
-    for my $i ( 0 .. @parts - 1 ) {
-        if ( $parts[$i] =~ s/^DOCS (\w+)$// ) {
-            $parts[$i] = '';
-            $map{$1} = $i;
-        }
-    }
-
-    $self->{map}   = \%map;
-    $self->{parts} = \@parts;
-    return $self;
 }
 
 #===================================
