@@ -50,7 +50,6 @@ use ES::Book();
 use ES::TargetRepo();
 use ES::Toc();
 use ES::LinkCheck();
-use ES::Template();
 
 GetOptions($Opts, @{ command_line_opts() }) || exit usage();
 check_opts();
@@ -62,8 +61,6 @@ our $Conf = LoadFile(pick_conf());
 die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_standard_docker};
 
 init_env();
-
-$Opts->{template} = ES::Template->new();
 
 $Opts->{doc}           ? build_local()
     : $Opts->{all}     ? build_all()
@@ -414,7 +411,6 @@ sub build_entries {
         my $book = ES::Book->new(
             dir      => $build,
             raw_dir  => $raw_build,
-            template => $Opts->{template},
             temp_dir => $temp_dir,
             %$entry
         );

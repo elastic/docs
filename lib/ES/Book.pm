@@ -98,9 +98,6 @@ sub new {
     die "Current branch <$current> is not in <branches> in book <$title>"
         unless $branch_titles{$current};
 
-    my $template = $args{template}
-        or die "No <template> specified for book <$title>";
-
     my $tags = $args{tags}
         or die "No <tags> specified for book <$title>";
 
@@ -140,7 +137,6 @@ sub new {
         raw_dir       => $args{raw_dir}->subdir( $prefix ),
         dir           => $args{dir}->subdir( $prefix ),
         temp_dir      => $args{temp_dir},
-        template      => $template,
         source        => $source,
         prefix        => $prefix,
         chunk         => $chunk,
@@ -253,7 +249,6 @@ sub _build_book {
     my $raw_branch_dir = $self->{raw_dir}->subdir( $branch );
     my $branch_dir    = $self->dir->subdir($branch);
     my $source        = $self->source;
-    my $template      = $self->template;
     my $index         = $self->index;
     my $section_title = $self->section_title($branch);
     my $subject       = $self->subject;
@@ -284,7 +279,6 @@ sub _build_book {
                 section_title => $section_title,
                 subject       => $subject,
                 toc           => $self->toc,
-                template      => $template,
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
@@ -309,7 +303,6 @@ sub _build_book {
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 subject       => $subject,
-                template      => $template,
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
@@ -439,7 +432,6 @@ sub section_title {
 #===================================
 sub title            { shift->{title} }
 sub dir              { shift->{dir} }
-sub template         { shift->{template} }
 sub prefix           { shift->{prefix} }
 sub chunk            { shift->{chunk} }
 sub toc              { shift->{toc} }
