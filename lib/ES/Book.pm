@@ -290,6 +290,7 @@ sub _build_book {
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
+                branch => $branch,
             );
         }
         else {
@@ -314,6 +315,7 @@ sub _build_book {
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
+                branch => $branch,
             );
         }
         $checkout->rmtree;

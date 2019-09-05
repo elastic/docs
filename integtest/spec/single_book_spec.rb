@@ -465,6 +465,61 @@ RSpec.describe 'building a single book' do
     include_examples 'README-like console alternatives', '.'
   end
 
+  context 'for a book that uses {source_branch}' do
+    INDEX = <<~ASCIIDOC
+      = Title
+
+      [[chapter]]
+      == Chapter
+      The branch is {source_branch}.
+    ASCIIDOC
+    def self.convert_with_source_branch_before_context(branch)
+      convert_single_before_context do |src|
+        unless branch == 'master'
+          src.write 'dummy', 'needed so git is ok with switching branches'
+          src.commit 'dummy'
+          src.switch_to_new_branch branch
+        end
+        src.write 'index.asciidoc', INDEX
+      end
+    end
+    shared_examples 'contains branch' do |branch|
+      page_context 'chapter.html' do
+        it 'contains the branch name' do
+          expect(body).to include("The branch is #{branch}.")
+        end
+      end
+    end
+    context 'when the branch is master' do
+      convert_with_source_branch_before_context 'master'
+      include_examples 'contains branch', 'master'
+    end
+    context 'when the branch is 7.x' do
+      convert_with_source_branch_before_context '7.x'
+      include_examples 'contains branch', '7.x'
+    end
+    context 'when the branch is 1.5' do
+      convert_with_source_branch_before_context '1.5'
+      include_examples 'contains branch', '1.5'
+    end
+    context 'when the branch is 18.5' do
+      convert_with_source_branch_before_context '18.5'
+      include_examples 'contains branch', '18.5'
+    end
+    context 'when the branch is some_crazy_thing' do
+      convert_with_source_branch_before_context 'some_crazy_thing'
+      include_examples 'contains branch', 'master'
+    end
+    context 'when the branch is some_crazy_thing_7.x' do
+      convert_with_source_branch_before_context 'some_crazy_thing_7.x'
+      include_examples 'contains branch', '7.x'
+    end
+    context 'when the branch is some_crazy_thing_7_x' do
+      convert_with_source_branch_before_context 'some_crazy_thing_7_x'
+      include_examples 'contains branch', '7_x'
+    end
+  end
+
   context 'when run with --open' do
     include_context 'source and dest'
     before(:context) do

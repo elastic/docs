@@ -188,8 +188,32 @@ sub _guess_edit_url {
             $remote = 'unknown';
         }
     }
-    my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
+    my $branch = eval { run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
+    $Opts->{branch} = _guess_branch( $branch ) unless $Opts->{branch};
     return ES::Repo::edit_url_for_url_and_branch($remote, $branch);
+}
+
+#===================================
+sub _guess_branch {
+#===================================
+    my $real_branch = shift;
+
+    # Detects common branch patterns like:
+    # 7.x
+    # 7.1
+    # 18.5
+    # Also normalizes brackport style patters like:
+    # blah_blah_7.x
+    # bort_foo_7_x
+    # zip_zop_12.8
+    # qux_12_8
+    return $1 if $real_branch =~ /(\d+[\._][\dx]+)$/;
+
+    # Otherwise we just assume we're trageting master. This'll be right when
+    # the branch is actually 'master' and when this is a feature branch. It
+    # obviously won't always be right, but for the most part that *should* be
+    # ok because we have pull request builds which will double check the links.
+    return 'master';
 }
 
 #===================================

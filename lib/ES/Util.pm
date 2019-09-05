@@ -53,6 +53,7 @@ sub build_chunked {
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $dest->file('alternatives_summary.json');
+    my $branch = $opts{branch};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -100,6 +101,7 @@ sub build_chunked {
                 '-d' => 'book',
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
+                '-a' => "source_branch=$branch",
                 # Use ` to delimit monospaced literals because our docs
                 # expect that
                 '-a' => 'compat-mode=legacy',
@@ -147,6 +149,7 @@ sub build_chunked {
                 '-f' => 'chunked',
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
+                '-a' => "source_branch=$branch",
                 '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
                 # Use ` to delimit monospaced literals because our docs
@@ -212,6 +215,7 @@ sub build_single {
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $dest->file('alternatives_summary.json');
+    my $branch = $opts{branch};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -266,6 +270,7 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
+                '-a' => "source_branch=$branch",
                 $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
@@ -310,6 +315,7 @@ sub build_single {
                 '-d' => $type,
                 '-a' => 'showcomments=1',
                 '-a' => "lang=$lang",
+                '-a' => "source_branch=$branch",
                 '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
                 $private ? ( '-a' => 'edit_url!' ) : (),
