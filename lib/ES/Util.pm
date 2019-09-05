@@ -171,16 +171,16 @@ sub build_chunked {
         or die "Couldn't find chunk dir in <$raw_dest>";
 
     for ( $chunk_dir->children ) {
-        my $dest = $raw_dest->file( $_->relative( $chunk_dir ) );
+        my $child_dest = $raw_dest->file( $_->relative( $chunk_dir ) );
         if ( $_->basename !~ /\.html$/ ) {
-            rmove( $_, $dest );
+            rmove( $_, $child_dest );
             next;
         }
         # Convert docbook's ceremonial output into html5
         my $contents = $_->slurp( iomode => '<:encoding(UTF-8)' );
         $contents = _html5ify( $contents );
-        $contents = _extract_autosense_snippets( $_, $contents ) unless $asciidoctor;
-        $dest->spew( iomode => '>:utf8', $contents );
+        $contents = _extract_autosense_snippets( $_, $raw_dest, $contents ) unless $asciidoctor;
+        $child_dest->spew( iomode => '>:utf8', $contents );
         unlink $_ or die "Coudln't remove $_ $!";
     }
     finish_build( $index->parent, $raw_dest, $dest, $lang, $alternatives_summary, 0 );
@@ -339,7 +339,7 @@ sub build_single {
 
     my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
     $contents = _html5ify( $contents );
-    $contents = _extract_autosense_snippets( $html_file, $contents ) unless $asciidoctor;
+    $contents = _extract_autosense_snippets( $html_file, $raw_dest, $contents ) unless $asciidoctor;
     $html_file->spew( iomode => '>:utf8', $contents );
 
     finish_build( $index->parent, $raw_dest, $dest, $lang,
@@ -511,12 +511,12 @@ my $Autosense_RE = qr{
 #===================================
 sub _extract_autosense_snippets {
 #===================================
-    my ( $file, $contents ) = (@_);
+    my ( $file, $dest, $contents ) = (@_);
     my $counter  = 1;
     my $filename = $file->basename;
     $filename =~ s/\.html$//;
 
-    my $snippet_dir = $file->parent->subdir('snippets')->subdir($filename);
+    my $snippet_dir = $dest->subdir('snippets')->subdir($filename);
     while (
         $contents =~ s|$Autosense_RE|${1}snippets/${filename}/${counter}.json| )
     {
