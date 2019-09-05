@@ -138,6 +138,7 @@ sub _guess_opts_from_file {
     my $doc_toplevel = _find_toplevel($index->parent);
     unless ( $doc_toplevel ) {
         $Opts->{root_dir} = $index->parent;
+        $Opts->{branch} = 'master';
         # If we can't find the edit url for the document then we're never
         # going to find it for anyone.
         return;
