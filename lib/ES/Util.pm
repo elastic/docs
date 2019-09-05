@@ -339,7 +339,7 @@ sub build_single {
 
     my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
     $contents = _html5ify( $contents );
-    $contents = _extract_autosense_snippets( $_, $contents ) unless $asciidoctor;
+    $contents = _extract_autosense_snippets( $html_file, $contents ) unless $asciidoctor;
     $html_file->spew( iomode => '>:utf8', $contents );
 
     finish_build( $index->parent, $raw_dest, $dest, $lang,
