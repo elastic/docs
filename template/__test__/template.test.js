@@ -96,5 +96,17 @@ describe(template, () => {
         );
       });
     });
+    describe("when it gets a document without a head", () => {
+      test("throws an exception", () => {
+        expect(() => t.apply(`<html><body>words</body></html>`))
+          .toThrow(/Couldn't find head/);
+      });
+    });
+    describe("when it gets a document without a body", () => {
+      test("throws an exception", () => {
+        expect(() => t.apply(`<html><head><script>foo</script></head></html>`))
+          .toThrow(/Couldn't find body/);
+      });
+    });
   });
 });

@@ -46,11 +46,11 @@ module.exports = async templatePath => {
   const apply = (raw, lang, initialJsState) => {
     const head = /<head>(.+?)<\/head>/s.exec(raw);
     if (!head) {
-      throw `Couldn't find head in ${raw}`;
+      throw new Error(`Couldn't find head in ${raw}`);
     }
     const body = /<body>(.+?)<\/body>/s.exec(raw);
     if (!body) {
-      throw `Couldn't find body in ${raw}`;
+      throw new Error(`Couldn't find body in ${raw}`);
     }
 
     const theseParts = parts.slice(0);
