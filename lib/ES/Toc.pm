@@ -42,6 +42,7 @@ sub write {
             root_dir    => '',  # Required but thrown on the floor with asciidoctor
             latest      => 1,   # Run all of our warnings
             private     => 1,   # Don't generate edit me urls
+            branch => '' # TOCs don't have a branch but it is a required arg
     );
     $adoc_file->remove;
 }
