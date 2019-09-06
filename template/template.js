@@ -38,8 +38,8 @@ module.exports = async templatePath => {
   const parts = contents.split(/<!-- (DOCS \w+) -->/).map((part, index) => {
     const matcher = /DOCS (\w+)/.exec(part);
     if (matcher) {
-      part = '';
       map[matcher[1]] = index;
+      return '';
     }
     return part;
   });
