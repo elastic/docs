@@ -113,6 +113,15 @@ class OpenBrowserState:
                 # is weird. If we tell it that the browser's name is `open`
                 # we'll get whatever the user set as their default browser.
                 environ['BROWSER'] = 'open'
+
+                # Docker for Mac has trouble watching filesystem events on
+                # a mounted volume, so Parcel's watcher was not triggering
+                # rebuilds when saving files locally that are mapped to the
+                # container. Using polling is more expensive, but resolves the
+                # issue. See:
+                # - https://github.com/docker/for-mac/issues/2216
+                # - https://github.com/parcel-bundler/parcel/issues/2539#issuecomment-462946468
+                environ["CHOKIDAR_USEPOLLING"] = "1"
             webbrowser.open('http://localhost:8000/guide',
                             new=1, autoraise=False)
             self.opened = True
@@ -237,6 +246,11 @@ def run_build_docs(args):
             docker_args.extend(['--publish', '8000:8000/tcp'])
             docker_args.extend(['--publish', '8001:8001/tcp'])
             open_browser = OpenBrowserState()
+
+            # ulimit has to get bumped to allow the container to do the
+            # more-expensive polling-style Parcel watcher on Docker for Mac;
+            if environ.get("CHOKIDAR_USEPOLLING"):
+                docker_args.extend(["--ulimit", "nofile=90000:90000"])
         elif arg == '--out':
             out_dir = realpath(args.next_arg_or_err())
             docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
