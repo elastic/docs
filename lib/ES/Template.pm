@@ -44,6 +44,7 @@ sub apply {
     my $initial_js_state = $self->_build_initial_js_state( $alternatives_summary );
 
     for my $source ( $source_dir->children ) {
+        next if $source eq $alternatives_summary;
         my $dest = $dest_dir->file( $source->relative( $source_dir ) );
         if ( $source->is_dir ) {
             # Usually books are built to empty directories and any
