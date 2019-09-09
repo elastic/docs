@@ -98,10 +98,10 @@ RSpec.describe 'building all books' do
       repo = src.repo_with_index 'repo', <<~ASCIIDOC
         Some text.
 
-        image::resources/cat.jpg[A cat]
+        image::resources/readme/cat.jpg[A cat]
       ASCIIDOC
       root = File.expand_path '../../', __dir__
-      repo.cp "#{root}/resources/cat.jpg", 'resources/cat.jpg'
+      repo.cp "#{root}/resources/readme/cat.jpg", 'resources/readme/cat.jpg'
       repo.commit 'add cat image'
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
@@ -118,7 +118,7 @@ RSpec.describe 'building all books' do
                  'html/test/current/chapter.html' do
       it 'has a link to the image' do
         expect(body).to include(<<~HTML.strip)
-          <img src="resources/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat" />
         HTML
       end
     end
@@ -126,7 +126,7 @@ RSpec.describe 'building all books' do
                  'html/test/master/chapter.html' do
       it 'has a link to the image' do
         expect(body).to include(<<~HTML.strip)
-          <img src="resources/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat" />
         HTML
       end
     end
@@ -134,13 +134,13 @@ RSpec.describe 'building all books' do
                  'raw/test/master/chapter.html' do
       it 'has a link to the image' do
         expect(contents).to include(<<~HTML.strip)
-          <img src="resources/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat" />
         HTML
       end
     end
-    file_context 'html/test/current/resources/cat.jpg'
-    file_context 'html/test/master/resources/cat.jpg'
-    file_context 'raw/test/master/resources/cat.jpg'
+    file_context 'html/test/current/resources/readme/cat.jpg'
+    file_context 'html/test/master/resources/readme/cat.jpg'
+    file_context 'raw/test/master/resources/readme/cat.jpg'
   end
   context 'for a single book built by two repos' do
     def self.single_book_built_by_two_repos
