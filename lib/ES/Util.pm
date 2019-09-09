@@ -430,13 +430,40 @@ sub build_pdf {
 }
 
 #===================================
+sub run (@) {
+#===================================
+    my @args = @_;
+    my ( $out, $err, $ok );
+
+    if ( $Opts->{verbose} ) {
+        say 'Running: ' . join(' ', map { "\"$_\"" } @args);
+        ( $out, $err, $ok ) = tee { system(@args) == 0 };
+    }
+    else {
+        ( $out, $err, $ok ) = capture { system(@args) == 0 };
+    }
+
+    my $combined = "$out\n$err";
+    $combined =~ s/^\s+|\s+$//g;
+    return $combined if $ok;
+
+    my $git_dir = $ENV{GIT_DIR} ? "in GIT_DIR $ENV{GIT_DIR}" : "";
+    die "Error executing: @args $git_dir\n$out\n---\n$err"
+        unless $ok;
+
+    return $combined;
+}
+
+#===================================
 sub finish_build {
 #===================================
     my ( $source, $raw_dest, $dest, $lang, $alternatives_summary, $is_toc ) = @_;
 
     # Apply template to HTML files
-    $Opts->{template}->apply( $raw_dest, $dest, $lang,
-                              $alternatives_summary, $is_toc );
+    run 'node', 'template/cli.js', '--template', 'resources/web/template.html',
+        '--source', $raw_dest, '--dest', $dest, '--lang', $lang,
+        -f $alternatives_summary ? ('--altsummary', $alternatives_summary) : (),
+        $is_toc ? ('--tocmode') : ();
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
@@ -778,31 +805,6 @@ http {
 }
 CONF
     $dest->spew( iomode => '>:utf8', $nginx_conf );
-}
-
-#===================================
-sub run (@) {
-#===================================
-    my @args = @_;
-    my ( $out, $err, $ok );
-
-    if ( $Opts->{verbose} ) {
-        say 'Running: ' . join(' ', map { "\"$_\"" } @args);
-        ( $out, $err, $ok ) = tee { system(@args) == 0 };
-    }
-    else {
-        ( $out, $err, $ok ) = capture { system(@args) == 0 };
-    }
-
-    my $combined = "$out\n$err";
-    $combined =~ s/^\s+|\s+$//g;
-    return $combined if $ok;
-
-    my $git_dir = $ENV{GIT_DIR} ? "in GIT_DIR $ENV{GIT_DIR}" : "";
-    die "Error executing: @args $git_dir\n$out\n---\n$err"
-        unless $ok;
-
-    return $combined;
 }
 
 #===================================
