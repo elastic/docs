@@ -870,8 +870,6 @@ sub build_web_resources {
     my $parcel_out = dir('/tmp/parcel');
     my $compiled_js = $parcel_out->file('docs_js/index.js');
     my $compiled_css = $parcel_out->file('styles.css');
-    my $js = $dest->file('docs.js');
-    my $css = $dest->file('styles.css');
 
     unless ( -e $compiled_js && -e $compiled_css ) {
         # We write the compiled js and css to /tmp so we can use them on
@@ -881,6 +879,7 @@ sub build_web_resources {
         # every docs build.
         say "Compiling web resources";
         run '/node_modules/parcel/bin/cli.js', 'build',
+            '--public-url', '/guide/static/',
             '--experimental-scope-hoisting', '--no-source-maps',
             '-d', $parcel_out,
             'resources/web/docs_js/index.js', 'resources/web/styles.pcss';
@@ -889,9 +888,17 @@ sub build_web_resources {
     }
 
     $dest->mkpath;
+    my $js = $dest->file( 'docs.js' );
+    my $css = $dest->file( 'styles.css' );
     my $js_licenses = file( 'resources/web/docs.js.licenses' );
+    my $css_licenses = file( 'resources/web/styles.css.licenses' );
     $js->spew( $js_licenses->slurp . $compiled_js->slurp );
-    rcopy( $compiled_css, $css );
+    $css->spew( $css_licenses->slurp . $compiled_css->slurp );
+
+    for ( $parcel_out->children ) {
+        next unless /.+\.woff2?/;
+        rcopy( $_, $dest );
+    }
 }
 
 1
