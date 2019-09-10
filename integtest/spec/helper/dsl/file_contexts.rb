@@ -62,7 +62,9 @@ module Dsl
       let(:title) do
         return unless body
 
-        m = body.match %r{<h1 class="title"><a id=".+"></a>([^<]+)(<a.+?)?</h1>}
+        m = body.match(
+          %r{<h1 class="title"><a id="[^\"]+">([^<]+)</a>(<a.+?)?</h1>}
+        )
         raise "Can't find title in #{body}" unless m
 
         m[1]

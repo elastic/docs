@@ -206,18 +206,20 @@
       <xsl:attribute name="class">title</xsl:attribute>
       <!-- Elastic changes start here -->
       <a>
-        <xsl:attribute name="name">
+        <xsl:attribute name="id">
           <xsl:call-template name="object.id">
             <xsl:with-param name="object" select="$node"/>
           </xsl:call-template>
         </xsl:attribute>
         <xsl:apply-templates select="$node" mode="object.title.markup">
-          <xsl:with-param name="allow-anchors" select="1"/>
+          <xsl:with-param name="allow-anchors" select="0"/>
         </xsl:apply-templates>
       </a>
       <xsl:if test="$node[@role='xpack']">
         <a class="xpack_tag" href="/subscriptions" />
       </xsl:if>
+      <!-- Grab the edit_me link if there is one. -->
+      <xsl:apply-templates select="*" />
       <!-- Elastic changes end here -->
     </xsl:element>
   </xsl:template>
@@ -227,17 +229,27 @@
     <xsl:param name="node" select="."/>
     <h1>
       <xsl:attribute name="class">title</xsl:attribute>
-      <xsl:call-template name="anchor">
-        <xsl:with-param name="node" select="$node"/>
-        <xsl:with-param name="conditional" select="0"/>
-      </xsl:call-template>
+      <!-- Elastic changes start here -->
+      <a>
+        <xsl:attribute name="id">
+          <xsl:call-template name="object.id">
+            <xsl:with-param name="object" select="$node"/>
+          </xsl:call-template>
+        </xsl:attribute>
+        <xsl:apply-templates select="$node" mode="object.title.markup">
+          <xsl:with-param name="allow-anchors" select="0"/>
+        </xsl:apply-templates>
+      </a>
       <xsl:apply-templates select="$node" mode="object.title.markup">
         <xsl:with-param name="allow-anchors" select="1"/>
       </xsl:apply-templates>
-      <!-- The Elastic addition -->
       <xsl:if test="$node[@role='xpack']">
         <a class="xpack_tag" href="/subscriptions" />
       </xsl:if>
+      foooo
+      <!-- Grab the edit_me link if there is one. -->
+      <xsl:apply-templates select="*" />
+      <!-- Elastic changes end here -->
     </h1>
   </xsl:template>
 
