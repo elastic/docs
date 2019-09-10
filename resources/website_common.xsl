@@ -204,17 +204,21 @@
 
     <xsl:element name="h{$level+1}" namespace="http://www.w3.org/1999/xhtml">
       <xsl:attribute name="class">title</xsl:attribute>
-      <xsl:call-template name="anchor">
-        <xsl:with-param name="node" select="$node"/>
-        <xsl:with-param name="conditional" select="0"/>
-      </xsl:call-template>
-      <xsl:apply-templates select="$node" mode="object.title.markup">
-        <xsl:with-param name="allow-anchors" select="1"/>
-      </xsl:apply-templates>
-      <!-- The Elastic addition -->
+      <!-- Elastic changes start here -->
+      <a>
+        <xsl:attribute name="name">
+          <xsl:call-template name="object.id">
+            <xsl:with-param name="object" select="$node"/>
+          </xsl:call-template>
+        </xsl:attribute>
+        <xsl:apply-templates select="$node" mode="object.title.markup">
+          <xsl:with-param name="allow-anchors" select="1"/>
+        </xsl:apply-templates>
+      </a>
       <xsl:if test="$node[@role='xpack']">
         <a class="xpack_tag" href="/subscriptions" />
       </xsl:if>
+      <!-- Elastic changes end here -->
     </xsl:element>
   </xsl:template>
 
