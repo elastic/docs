@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../log_util'
+
 module AlternativeLanguageLookup
   ##
   # Load alternative examples in alternative languages. Creating this class is
@@ -7,7 +9,7 @@ module AlternativeLanguageLookup
   # if there are problems with the example. So only create it if you plan to
   # use the example.
   class Alternative
-    include Asciidoctor::Logging
+    include LogUtil
 
     LAYOUT_DESCRIPTION = <<~LOG
       Alternative language must be a code block followed optionally by a callout list
@@ -18,15 +20,9 @@ module AlternativeLanguageLookup
       @lang = lang
       @path = path
       @counter = @document.attr 'alternative_language_counter', 0
-      @listing_text = nil
-      @colist_text = nil
+      @listing_text = @colist_text = nil
       load
-      return unless validate
-
-      munge
-      @document.attributes['alternative_language_counter'] = @counter + 1
-      @listing_text = @listing.convert
-      @colist_text = @colist&.convert
+      finish_preparations if validate
     end
 
     ##
@@ -53,30 +49,32 @@ module AlternativeLanguageLookup
       # Parse the included portion as asciidoc but not as a "child" document
       # because that is for parsing text we've already parsed once. This is
       # text that we're detecting very late in the process.
-      @child = Asciidoctor::Document.new(
-        "include::#{@path}[]",
+      @child = Asciidoctor::Document.new "include::#{@path}[]", load_opts
+      @child.parse
+    end
+
+    def load_opts
+      {
         attributes: @document.attributes.dup,
         safe: @document.safe,
         backend: @document.backend,
         doctype: Asciidoctor::DEFAULT_DOCTYPE,
         sourcemap: @document.sourcemap,
         base_dir: @document.base_dir,
-        to_dir: @document.options[:to_dir]
-      )
-      @child.parse
+        to_dir: @document.options[:to_dir],
+      }
     end
 
     def validate
-      unless @child.blocks.length == 1 || @child.blocks.length == 2
-        log_warn @child.source_location, <<~LOG.strip
+      @listing, @colist, rest = @child.blocks
+      unless @listing || !rest.empty?
+        warn block: @child, message: <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but was:
           #{@child.blocks}
         LOG
         return false
       end
 
-      @listing = @child.blocks[0]
-      @colist = @child.blocks[1]
       check_listing & check_colist
     end
 
@@ -85,13 +83,18 @@ module AlternativeLanguageLookup
     # otherwise invalid. Otherwise returns true.
     def check_listing
       unless @listing.context == :listing
-        log_warn @listing.source_location, <<~LOG.strip
+        warn block: @listing, message: <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but the first block was a #{@listing.context}.
         LOG
         return false
       end
+
+      validate_listing_langauge
+    end
+
+    def validate_listing_langauge
       unless (listing_lang = @listing.attr 'language') == @lang
-        log_warn @listing.source_location, <<~LOG.strip
+        warn block: @listing, message: <<~LOG.strip
           Alternative language listing must have lang=#{@lang} but was #{listing_lang}.
         LOG
         return false
@@ -107,7 +110,7 @@ module AlternativeLanguageLookup
       return true unless @colist
 
       unless @colist.context == :colist
-        log_warn @colist.source_location, <<~LOG.strip
+        warn block: @colist, message: <<~LOG.strip
           #{LAYOUT_DESCRIPTION} but the second block was a #{@colist.context}.
         LOG
         return false
@@ -116,9 +119,12 @@ module AlternativeLanguageLookup
     end
 
     ##
-    # Warn that there is some problem with this alternative.
-    def log_warn(location, message)
-      logger.warn message_with_context message, source_location: location
+    # Finish preparing the alternative after we know it is valid.
+    def finish_preparations
+      munge
+      @document.attributes['alternative_language_counter'] = @counter + 1
+      @listing_text = @listing.convert
+      @colist_text = @colist&.convert
     end
 
     ##

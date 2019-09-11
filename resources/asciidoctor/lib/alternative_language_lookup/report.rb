@@ -35,13 +35,20 @@ module AlternativeLanguageLookup
 
     def lang_header(listing)
       suffix = listing.is_result ? '-result' : ''
-      listing.alternatives.map { |a| "| #{a[:lang]}#{suffix}" }.join ' '
+      listing
+        .alternatives
+        .map do |a|
+          "| #{a.alternative_lang}#{suffix}"
+        end
+        .join ' '
     end
 
     def lang_line(listing, found_langs)
       listing
         .alternatives
-        .map { |a| found_langs.include?(a[:lang]) ? '| &check;' : '| &cross;' }
+        .map do |a|
+          found_langs.include?(a.alternative_lang) ? '| &check;' : '| &cross;'
+        end
         .join ' '
     end
   end

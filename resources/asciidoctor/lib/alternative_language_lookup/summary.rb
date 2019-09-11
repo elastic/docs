@@ -13,7 +13,7 @@ module AlternativeLanguageLookup
       lookups.each do |source_lang, lang_lookups|
         @data[source_lang] = sdata = { total: 0, alternatives: {} }
         lang_lookups.each do |lookup|
-          sdata[:alternatives][lookup[:lang]] = { found: 0 }
+          sdata[:alternatives][lookup.alternative_lang] = { found: 0 }
         end
       end
     end
