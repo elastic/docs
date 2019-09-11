@@ -77,6 +77,8 @@ function serveDiff(branch, response) {
   let chunk = '';
   let first = true;
   let completeSuccess = true;
+  let sawAny = false;
+
   const handleChunk = () => {
     /*
      * Parses output from `git diff-tree -z` which is in
@@ -165,6 +167,7 @@ function serveDiff(branch, response) {
         "/guide/" + (movedToPath === null ? path : movedToPath);
       const link = `<a href="${linkTarget}">${linkText}</a>`;
       out += `  <li>${diff} ${link}\n`;
+      sawAny = true;
     }
   };
 
@@ -179,15 +182,18 @@ function serveDiff(branch, response) {
   const pipeline = child.stdout.pipe(handle);
   rigHandlers(child, response, pipeline, response => {
     response.write(handleChunk());
+    response.write('</ul>');
     if (chunk !== '') {
       console.error('unprocessed results from git', chunk);
-      response.write(`  <li>Unprocessed results from git: <pre>${chunk}</pre>`);
+      response.write(`<p>Unprocessed results from git: <pre>${chunk}</pre></p>`);
       response.status = 500;
     } else if (!completeSuccess) {
-      response.write(`  <li>Error processing some entries from git. See logs.`);
+      response.write(`<p>Error processing some entries from git. See logs.</p>`);
       response.status = 500;
+    } else if (!sawAny) {
+      response.write("<p>There aren't any differences!</p>");
     }
-    response.write('</ul></html>');
+    response.write('</html>');
   });
 }
 

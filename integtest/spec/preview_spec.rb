@@ -216,6 +216,11 @@ RSpec.describe 'previewing built docs', order: :defined do
             +1 -1 <a href="/guide/test/master/moved_chapter.html">test/master/chapter.html -> test/master/moved_chapter.html</a>
           HTML
         end
+        it "doesn't have a message saying there aren't any differences" do
+          expect(diff).not_to serve(include(<<~HTML))
+            <p>There aren't any differences!</p>
+          HTML
+        end
       end
     end
   end
@@ -271,6 +276,9 @@ RSpec.describe 'previewing built docs', order: :defined do
         include_examples 'valid diff'
         it 'is empty' do
           expect(diff).to serve(include("<ul>\n</ul>"))
+        end
+        it "has a message saying there aren't any differences" do
+          expect(diff).to serve(include("<p>There aren't any differences!</p>"))
         end
       end
     end
