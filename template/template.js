@@ -44,22 +44,31 @@ module.exports = templatePath => {
       let chunk = '';
       const nextChunk = async preserve => {
         const result = await itr.next();
+        if (result.done) {
+          return false;
+        }
         if (preserve) {
-          chunk = chunk.slice(chunk.length - preserve) + result.value;
+          /* If we're looking for a marker then we need to keep some characters
+           * at the end of the chunk in case the marker is on the edge. */
+          const slice = Math.max(0, chunk.length - preserve);
+          chunk = chunk.slice(slice) + result.value;
         } else {
           chunk = result.value;
         }
-        return !result.done;
+        return true;
       };
       if (!await nextChunk()) {
-        // TODO handle totally empty stream?!
+        throw new Error(`${name} didn't have any data`)
       }
       const gather = async function* (marker) {
         let index;
         while ((index = chunk.indexOf(marker)) < 0) {
-          yield chunk.slice(0, chunk.length - marker.length);
+          const slice = chunk.length - marker.length;
+          if (slice > 0) {
+            yield chunk.slice(0, slice);
+          }
           if (!await nextChunk(marker.length)) {
-            throw new Error(`Couldn't find ${marker} in ${name}`);
+            throw new Error(`Couldn't find ${marker} in ${name}:\n${chunk}`);
           }
         }
         yield chunk.substring(0, index);
@@ -69,7 +78,7 @@ module.exports = templatePath => {
         let index;
         while ((index = chunk.indexOf(marker)) < 0) {
           if (!await nextChunk(marker.length)) {
-            throw new Error(`Couldn't find ${marker} in ${name}`);
+            throw new Error(`Couldn't find ${marker} in ${name}:\n${chunk}`);
           }
         }
         chunk = chunk.substring(index + marker.length);
@@ -88,7 +97,10 @@ module.exports = templatePath => {
     };
 
     async function* asyncApply() {
-      const templateStream = fs.createReadStream(templatePath, {encoding: 'UTF-8'});
+      const templateStream = fs.createReadStream(templatePath, {
+        encoding: 'UTF-8',
+        autoDestroy: true,
+      });
       const template = await Gatherer('template', templateStream[Symbol.asyncIterator]());
       yield* template.gather("<!-- DOCS PREHEAD -->");
       const raw = await Gatherer('raw', rawItr);
@@ -103,7 +115,7 @@ module.exports = templatePath => {
       yield `<script type="text/javascript">
 window.initial_state = ${initialJsState}</script>`;
       yield* template.remaining();
-      // TODO close the templates
+      await templateStream.close();
     }
     
     return Readable.from(asyncApply());
@@ -152,9 +164,9 @@ window.initial_state = ${initialJsState}</script>`;
       const write = fs.createWriteStream(dest, {encoding: 'UTF-8'});
       apply(raw[Symbol.asyncIterator](), lang, initialJsState).pipe(write);
       await new Promise((resolve, reject) => {
-        write.on("finish", () => resolve());
+        write.on("finish", resolve);
         write.on("error", reject);
-      });
+      }).finally(() => raw.close());
     };
   };
   return {

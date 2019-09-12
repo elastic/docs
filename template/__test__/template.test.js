@@ -127,6 +127,13 @@ describe(Template, () => {
         );
       });
     });
+    describe("when it gets an empty document", () => {
+      test("throws an exception", async () => {
+        return expect(template.applyToItr((function* () {
+          // Intentionally doesn't yield
+        })())).rejects.toThrow(/raw didn't have any data/);
+      });
+    });
     describe("when it gets a document without a head", () => {
       test("throws an exception", async () => {
         return expect(template.applyToString(`<html><body>words</body></html>`))
@@ -163,7 +170,7 @@ describe(Template, () => {
         expect(result).toMatch(/<head>\s+head stuff/);
       });
     });
-    describe("when the head e nd tag is in two chunks", () => {
+    describe("when the head end tag is in two chunks", () => {
       let result;
       beforeAll(async () => {
         result = await template.applyToItr((function* () {
@@ -196,6 +203,24 @@ describe(Template, () => {
           yield '<html><head></head><body>body stuff</';
           yield 'body></html>';
         })());
+      });
+      test("outputs the correct body anyway", () => {
+        expect(result).toMatch(
+          /<!-- start body -->\s+body stuff\s+<!-- end body -->/
+        );
+      });
+    });
+    describe("when the input is in as many chunks as possible", () => {
+      let result;
+      beforeAll(async () => {
+        result = await template.applyToItr((function* () {
+          for (const c of [...'<html><head>head stuff</head><body>body stuff</body></html>']) {
+            yield c;
+          }
+        })());
+      });
+      test("outputs the correct head anyway", () => {
+        expect(result).toMatch(/<head>\s+head stuff/);
       });
       test("outputs the correct body anyway", () => {
         expect(result).toMatch(
