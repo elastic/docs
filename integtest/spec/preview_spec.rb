@@ -17,10 +17,10 @@ RSpec.describe 'previewing built docs', order: :defined do
     repo = src.repo_with_index 'repo', <<~ASCIIDOC
       Some text.
 
-      image::resources/cat.jpg[A cat]
+      image::resources/readme/cat.jpg[A cat]
       image::resources/very_large.jpg[Not a jpg but very big]
     ASCIIDOC
-    repo.cp "#{repo_root}/resources/cat.jpg", 'resources/cat.jpg'
+    repo.cp "#{repo_root}/resources/readme/cat.jpg", 'resources/readme/cat.jpg'
     repo.write 'resources/very_large.jpg', very_large_text
     repo.commit 'add cat image'
     book = src.book 'Test'
@@ -73,7 +73,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:robots_txt) { get watermark, branch, 'robots.txt' }
     let(:root) { get watermark, branch, 'guide/index.html' }
     let(:cat_image) do
-      get watermark, branch, "#{current_url}/resources/cat.jpg"
+      get watermark, branch, "#{current_url}/resources/readme/cat.jpg"
     end
     let(:very_large) do
       get watermark, branch, "#{current_url}/resources/very_large.jpg"
@@ -159,7 +159,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     include_context 'docs for branch'
     include_examples 'serves the docs root'
     it 'serves an image' do
-      bytes = File.open("#{repo_root}/resources/cat.jpg", 'rb', &:read)
+      bytes = File.open("#{repo_root}/resources/readme/cat.jpg", 'rb', &:read)
       expect(cat_image).to serve(eq(bytes))
     end
     it 'serves a very large file' do
@@ -253,7 +253,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         == Chapter
         Some text.
 
-        image::resources/cat.jpg[A cat]
+        image::resources/readme/cat.jpg[A cat]
         image::resources/very_large.jpg[Not a jpg but very big]
       ASCIIDOC
       repo.commit 'test change for test_noop branch2'

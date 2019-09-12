@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'alternative'
+require_relative '../log_util'
 
 module AlternativeLanguageLookup
   ##
@@ -9,7 +10,7 @@ module AlternativeLanguageLookup
     RESULT_SUFFIX = '-result'
     RESULT_SUFFIX_LENGTH = RESULT_SUFFIX.length
 
-    include Asciidoctor::Logging
+    include LogUtil
 
     attr_reader :block
     attr_reader :lang
@@ -77,7 +78,7 @@ module AlternativeLanguageLookup
         @colist = colist&.context == :colist ? colist : nil
       else
         message = "Invalid document: parent doesn't include child!"
-        logger.error(message_with_context(message, source_location))
+        error location: source_location, message: message
         # In grand Asciidoctor tradition we'll *try* to make some
         # output though
         @listing_index = 0

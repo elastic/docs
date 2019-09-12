@@ -387,7 +387,9 @@ RSpec.describe 'building a single book' do
   context 'for README.asciidoc' do
     convert_single_before_context do |src|
       root = File.expand_path('../../', __dir__)
-      src.cp "#{root}/resources/cat.jpg", 'resources/cat.jpg'
+      ['cat.jpg', 'screenshot.png'].each do |img|
+        src.cp "#{root}/resources/readme/#{img}", "resources/readme/#{img}"
+      end
       txt = File.open("#{root}/README.asciidoc", 'r:UTF-8', &:read)
       src.write 'index.asciidoc', txt
     end
@@ -416,6 +418,26 @@ RSpec.describe 'building a single book' do
         expect(title).to eq('Asciidoc Guide')
       end
     end
+    page_context 'images.html' do
+      it 'has the right title' do
+        expect(title).to eq('Images')
+      end
+      it 'has the cat image with a title' do
+        expect(body).to include(<<~HTML.strip)
+          <div class="figure-contents"><div class="mediaobject"><img src="resources/readme/cat.jpg" alt="Alt text" /></div></div></div>
+        HTML
+      end
+      it 'has the cat image with specified width and without a title' do
+        expect(body).to include(<<~HTML.strip)
+          <div class="informalfigure"><div class="mediaobject"><img src="resources/readme/cat.jpg" width="108" alt="Alt text" /></div></div>
+        HTML
+      end
+      it 'has the screenshot' do
+        expect(body).to include(<<~HTML.strip)
+          <div class="screenshot informalfigure"><div class="mediaobject"><img src="resources/readme/screenshot.png" alt="A screenshot example" /></div></div>
+        HTML
+      end
+    end
     # NOTE: There are lots more pages but it probably isn't worth asserting
     # on them too.
     file_context 'snippets/1.console' do
@@ -431,7 +453,8 @@ RSpec.describe 'building a single book' do
         expect(contents).to eq(expected)
       end
     end
-    file_context 'resources/cat.jpg'
+    file_context 'resources/readme/cat.jpg'
+    file_context 'resources/readme/screenshot.png'
     file_context 'images/icons/caution.png'
     file_context 'images/icons/important.png'
     file_context 'images/icons/note.png'

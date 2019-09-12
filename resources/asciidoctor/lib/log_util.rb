@@ -16,4 +16,9 @@ module LogUtil
     location ||= block&.source_location
     logger.warn message_with_context message, source_location: location
   end
+
+  def info(location: nil, block: nil, message:)
+    location ||= block&.source_location
+    logger.info message_with_context message, source_location: location
+  end
 end

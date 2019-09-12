@@ -20,15 +20,18 @@ $VERBOSE = true
 def internal_convert(input, convert_logger, extra_attributes)
   attributes = { 'docdir' => File.dirname(__FILE__) }
   attributes.merge! extra_attributes
-  Asciidoctor.convert(
-    input,
+  Asciidoctor.convert input, internal_convert_args(convert_logger, attributes)
+end
+
+def internal_convert_args(convert_logger, attributes)
+  {
     safe: :unsafe, # Used to include "funny" files.
-    backend: :docbook45,
+    backend: :docbook45, # The only target the docs build understands
     logger: convert_logger,
     doctype: :book,
     attributes: attributes,
-    sourcemap: true
-  )
+    sourcemap: true, # Required by many of our plugins
+  }
 end
 
 ##
