@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
 require 'csv'
-require_relative '../scaffold.rb'
+require_relative '../scaffold'
+require_relative '../log_util'
 
 ##
 # TreeProcessor extension to automatically add "Edit Me" links to appropriate
 # spots in the documentation.
 #
 class EditMe < TreeProcessorScaffold
-  include Asciidoctor::Logging
+  include LogUtil
 
   def process(document)
-    logger.error('sourcemap is required') unless document.sourcemap
+    error message: 'sourcemap is required' unless document.sourcemap
     edit_urls_string = document.attributes['edit_urls']
     return unless edit_urls_string
 
@@ -25,11 +26,11 @@ class EditMe < TreeProcessorScaffold
     edit_urls = []
     CSV.parse edit_urls_string do |toplevel, url|
       unless toplevel
-        logger.error message_with_context 'invalid edit_urls, no toplevel'
+        error message: 'invalid edit_urls, no toplevel'
         next
       end
       unless url
-        logger.error message_with_context 'invalid edit_urls, no url'
+        error message: 'invalid edit_urls, no url'
         next
       end
       url = url[0..-2] if url.end_with? '/'
@@ -100,12 +101,9 @@ class EditMe < TreeProcessorScaffold
           url + path[entry[:toplevel].length..-1]
         end
       else
-        logger.warn(
-          message_with_context(
-            "couldn't find edit url for #{path}",
-            source_location: source_location
-          )
-        )
+        warn location: source_location, message: <<~WARN.strip
+          couldn't find edit url for #{path}
+        WARN
         false
       end
     end
