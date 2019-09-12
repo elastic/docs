@@ -63,3 +63,16 @@ RSpec::Matchers.define :file_exist do
     msg + " but only #{parent}/#{entries.sort} exist"
   end
 end
+
+def initial_js_state(contents)
+  start_boundry = 'window.initial_state = '
+  start = contents.index start_boundry
+  return unless start
+
+  start += start_boundry.length
+  stop = contents.index '</script>', start
+  return unless stop
+
+  txt = contents[start, stop - start]
+  JSON.parse txt, symbolize_names: true
+end

@@ -78,16 +78,7 @@ module Dsl
         m[1]
       end
       let(:initial_js_state) do
-        start_boundry = 'window.initial_state = '
-        start = contents.index start_boundry
-        return unless start
-
-        start += start_boundry.length
-        stop = contents.index '</script>', start
-        return unless stop
-
-        txt = contents[start, stop - start]
-        JSON.parse txt, symbolize_names: true
+        initial_js_state contents
       end
     end
   end

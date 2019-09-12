@@ -31,7 +31,7 @@ const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);
 const stat = promisify(fs.stat);
 
-module.exports = templatePath => {
+module.exports = templateSource => {
   const apply = (rawItr, lang, initialJsState) => {
     /*
      * We apply the template by walking a stream for the template and a stream
@@ -52,6 +52,7 @@ module.exports = templatePath => {
            * at the end of the chunk in case the marker is on the edge. */
           const slice = Math.max(0, chunk.length - preserve);
           chunk = chunk.slice(slice) + result.value;
+          // TODO check if slice + keeps a copy of internal memory. This implementation assumes it *doesn't*
         } else {
           chunk = result.value;
         }
@@ -71,8 +72,8 @@ module.exports = templatePath => {
             throw new Error(`Couldn't find ${marker} in ${name}:\n${chunk}`);
           }
         }
-        yield chunk.substring(0, index);
-        chunk = chunk.substring(index + marker.length);
+        yield chunk.slice(0, index);
+        chunk = chunk.slice(index + marker.length);
       };
       const dump = async marker => {
         let index;
@@ -81,7 +82,7 @@ module.exports = templatePath => {
             throw new Error(`Couldn't find ${marker} in ${name}:\n${chunk}`);
           }
         }
-        chunk = chunk.substring(index + marker.length);
+        chunk = chunk.slice(index + marker.length);
       }
       async function* remaining() {
         yield chunk;
@@ -97,27 +98,29 @@ module.exports = templatePath => {
     };
 
     async function* asyncApply() {
-      const templateStream = fs.createReadStream(templatePath, {
-        encoding: 'UTF-8',
-        autoDestroy: true,
-      });
-      const template = await Gatherer('template', templateStream[Symbol.asyncIterator]());
-      yield* template.gather("<!-- DOCS PREHEAD -->");
-      const raw = await Gatherer('raw', rawItr);
-      await raw.dump("<head>");
-      yield* raw.gather("</head>");
-      yield* template.gather("<!-- DOCS LANG -->");
-      yield `lang="${lang}"`;
-      yield* template.gather("<!-- DOCS BODY -->");
-      await raw.dump("<body>");
-      yield* raw.gather("</body>");
-      yield* template.gather("<!-- DOCS FINAL -->");
-      yield `<script type="text/javascript">
-window.initial_state = ${initialJsState}</script>`;
-      yield* template.remaining();
-      await templateStream.close();
+      const templateStream = templateSource();
+      try {
+        const template = await Gatherer('template', templateStream[Symbol.asyncIterator]());
+        yield* template.gather("<!-- DOCS PREHEAD -->");
+        const raw = await Gatherer('raw', rawItr);
+        await raw.dump("<head>");
+        yield* raw.gather("</head>");
+        yield* template.gather("<!-- DOCS LANG -->");
+        yield `lang="${lang}"`;
+        yield* template.gather("<!-- DOCS BODY -->");
+        await raw.dump("<body>");
+        yield* raw.gather("</body>");
+        yield* template.gather("<!-- DOCS FINAL -->");
+        yield `<script type="text/javascript">
+  window.initial_state = ${initialJsState}</script>`;
+        yield* template.remaining();
+      } catch (err) {
+        templateStream.destroy(err);
+        throw err;
+      }
     }
-    
+
+    // TODO this defaults to object mode and maybe shouldn't.
     return Readable.from(asyncApply());
   };
   const buildInitialJsStateFromFile = async alternativesSummary => {
@@ -162,10 +165,12 @@ window.initial_state = ${initialJsState}</script>`;
       }
       const raw = fs.createReadStream(source, {encoding: 'UTF-8'});
       const write = fs.createWriteStream(dest, {encoding: 'UTF-8'});
-      apply(raw[Symbol.asyncIterator](), lang, initialJsState).pipe(write);
       await new Promise((resolve, reject) => {
-        write.on("finish", resolve);
+        const out = apply(raw[Symbol.asyncIterator](), lang, initialJsState);
+        write.on("close", resolve);
         write.on("error", reject);
+        out.on("error", write.destroy);
+        out.pipe(write);
       }).finally(() => raw.close());
     };
   };

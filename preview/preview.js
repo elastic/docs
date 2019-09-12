@@ -1,262 +1,206 @@
+/**
+ * @license
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 'use strict';
 
 /*
  * Little server that listens for requests in the form of
  * `${branch}.host/guide/${doc}`, looks up the doc from git and streams
  * it back over the response.
- *
- * It uses subprocesses to access git. It is tempting to use NodeGit to prevent
- * the fork overhead but for the most part the subprocesses are fast enough and
- * I'm worried that NodeGit's `Blog.getContent` methods are synchronous.
  */
 
-const child_process = require('child_process');
-const dedent = require('dedent');
-const http = require('http');
-const stream = require('stream');
-const url = require('url');
+const dedent = require("dedent");
+const Git = require("./git");
+const http = require("http");
+const path = require("path");
+const { Readable } = require("stream");
+const Template = require("../template/template");
+const url = require("url");
 
 const port = 3000;
-const checkTypeOpts = {
-  'cwd': '/docs_build/.repos/target_repo.git',
-  'max_buffer': 64,
-};
-const catOpts = {
-  'cwd': '/docs_build/.repos/target_repo.git',
-};
+const git = Git("/docs_build/.repos/target_repo.git");
 
-const requestHandler = (request, response) => {
+const requestHandler = async (request, response) => {
   const parsedUrl = url.parse(request.url);
   const branch = gitBranch(request.headers['host']);
   if (parsedUrl.pathname === '/diff') {
-    serveDiff(branch, response);
-    return;
+    return serveDiff(branch, response);
   }
   if (!parsedUrl.pathname.startsWith('/guide')) {
     response.statusCode = 404;
     response.end();
     return;
   }
-  const path = 'html' + parsedUrl.pathname.substring('/guide'.length);
+  const templateExists = await checkIfTemplateExists(branch);
+  /*
+   * We're using the existence of the template to check if the branch is
+   * "ready" for templating on the fly. There are a few changes that came in
+   * with that preparation, like making sure all of the required js is written
+   * to the `raw` directory as well.
+   */
+  const pathPrefix = templateExists ? "raw" : "html";
+  const path = pathPrefix + parsedUrl.pathname.substring("/guide".length);
   const requestedObject = `${branch}:${path}`;
-  child_process.execFile('git', ['cat-file', '-t', requestedObject], checkTypeOpts, (err, stdout, stderr) => {
-    if (err) {
-      if (err.message.includes('Not a valid object name')) {
-        response.statusCode = 404;
-        response.end(`Can't find ${requestedObject}\n`);
-      } else {
-        console.warn('unhandled error', err);
-        response.statusCode = 500;
-        response.end(err.message);
-      }
-      return;
-    }
 
-    if (stdout.trim() === 'tree') {
+  const objectType = await git.objectType(requestedObject);
+  switch (objectType) {
+    case 'missing':
+      response.statusCode = 404;
+      response.end(`Can't find ${requestedObject}\n`);
+      return;
+    case 'tree':
       response.statusCode = 301;
       const sep = requestedObject.endsWith('/') ? '' : '/';
       response.setHeader('Location', `${parsedUrl.pathname}${sep}index.html`);
       response.end();
       return;
-    }
+    case 'blob':
+      return serveBlob(response, branch, templateExists, requestedObject);
+    default:
+      throw new Error(`Don't know how to return ${objecType}`);
+  }
+}
 
-    const child = child_process.spawn(
-      'git', ['cat-file', 'blob', requestedObject], catOpts
+const checkIfTemplateExists = async branch => {
+  const type = await git.objectType(`${branch}:template.html`);
+  switch (type) {
+    case 'blob':
+      return true;
+    case 'missing':
+      return false;
+    default:
+      throw new Error(`The template is a strange object type: ${type}`);
+  }
+};
+
+const serveDiff = (branch, response) => {
+  return new Promise((resolve, reject) => {
+    pipeToResponse(
+      Readable.from(bufferItr(diffItr(branch), 16 * 1024)),
+      response, resolve, reject
     );
-    rigHandlers(child, response, child.stdout, response => {});
   });
+};
+
+const pipeToResponse = (out, response, resolve, reject) => {
+  response.on("close", resolve);
+  response.on("error", reject);
+  out.on("error", reject);
+  out.pipe(response);
 }
 
-function serveDiff(branch, response) {
-  const child = child_process.spawn(
-    'git',
-    ['diff-tree', '-z', '--find-renames', '--numstat', branch, '--'],
-    catOpts
-  );
-
-  let chunk = '';
-  let first = true;
-  let completeSuccess = true;
-  let sawAny = false;
-
-  const handleChunk = () => {
-    /*
-     * Parses output from `git diff-tree -z` which is in
-     * one of two formats:
-     * * added lines<tab>removed lines<tab>path<nul>
-     * * added lines<tab>removed lines<nul>source path<nul>destination path<nul>
-     * The second one is only used when git detects a rename.
-     */
-    let out = '';
-    let entryStart;
-    let nextNul = -1;
-    let added;
-    let removed;
-    let path;
-    let movedToPath;
-
-    if (first) {
-      out = dedent `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Diff for ${branch}</title>
-        </head>
-        <body><ul>\n`
-      first = false;
-    }
-
-    while (true) {
-      /* When this loop starts nextNul is either -1 or the end of the last
-       * message so we can pick up from nextNul + 1. */
-      entryStart = nextNul + 1;
-      nextNul = chunk.indexOf('\0', entryStart);
-      if (nextNul === -1) {
-        chunk = chunk.substring(entryStart);
-        return out;
-      }
-      const parts = chunk.substring(entryStart, nextNul).trim().split('\t');
-      switch (parts.length) {
-      case 3:
-        [added, removed, path] = parts;
-        movedToPath = null;
-        break;
-      case 2:
-        [added, removed] = parts;
-        const pathStart = nextNul + 1;
-        nextNul = chunk.indexOf('\0', pathStart);
-        if (nextNul === -1) {
-          chunk = chunk.substring(entryStart);
-          return out;
-        }
-        path = chunk.substring(pathStart, nextNul);
-        const moveToPathStat = nextNul + 1;
-        nextNul = chunk.indexOf('\0', moveToPathStat);
-        if (nextNul === -1) {
-          chunk = chunk.substring(entryStart);
-          return out;
-        }
-        movedToPath = chunk.substring(moveToPathStat, nextNul);
-        break;
-      case 1:
-        // The commit hash. Ignore it.
-        continue;
-      default:
-        console.warn("Unknown message from git", parts);
-        completeSuccess = false;
-        continue;
-      }
-
-      // Skip boring files
-      if ([
-            'html/branches.yaml', 'html/sitemap.xml',
-          ].includes(path)) {
-        continue;
-      }
-
-      // Strip the prefix from the paths
-      path = path.substring('html/'.length);
-      movedToPath =
-        movedToPath === null ? null : movedToPath.substring('html/'.length);
-
-      // Build the output html
-      const diff = `+${added} -${removed}`;
-      const linkText =
-        movedToPath === null ? path : `${path} -> ${movedToPath}`;
-      const linkTarget =
-        "/guide/" + (movedToPath === null ? path : movedToPath);
-      const link = `<a href="${linkTarget}">${linkText}</a>`;
-      out += `  <li>${diff} ${link}\n`;
-      sawAny = true;
-    }
-  };
-
-  const handle = new stream.Transform({
-    writableObjectMode: true,
-    transform(chunkIn, encoding, callback) {
-      chunk += chunkIn;
-      callback(null, handleChunk());
-    }
-  });
-
-  const pipeline = child.stdout.pipe(handle);
-  rigHandlers(child, response, pipeline, response => {
-    response.write(handleChunk());
-    response.write('</ul>');
-    if (chunk !== '') {
-      console.error('unprocessed results from git', chunk);
-      response.write(`<p>Unprocessed results from git: <pre>${chunk}</pre></p>`);
-      response.status = 500;
-    } else if (!completeSuccess) {
-      response.write(`<p>Error processing some entries from git. See logs.</p>`);
-      response.status = 500;
-    } else if (!sawAny) {
-      response.write("<p>There aren't any differences!</p>");
-    }
-    response.write('</html>');
-  });
-}
-
-function rigHandlers(child, response, pipeline, endHandler) {
-  response.setHeader('Transfer-Encoding', 'chunked');
-
-  // We spool stderr into a string because it is never super big.
-  child.stderr.setEncoding('utf8');
-  let childstderr = '';
-  child.stderr.addListener('data', chunk => {
-    childstderr += chunk;
-  });
-
-  /* We end the response either when an error occurs or when *both* the child
-   * process *and* its pipeline have been consumed. If we didn't wait for the
-   * child process then we'd end early on failures. If we didn't wait for the
-   * pipeline we could throw out the end of the response. */
-  let childExited = false;
-  let pipelineEnded = false;
-  const checkForNormalEnd = () => {
-    if (childExited && pipelineEnded) {
-      endHandler(response);
-      response.end();
+/**
+ * Buffers an async iterator until its output is at least min characters
+ * @param {Generator} itr async iterator that returns a string to buffer 
+ */
+const bufferItr = async function* (itr, min) {
+  let buffer = '';
+  for await (const chunk of itr) {
+    buffer += chunk;
+    if (buffer.length > min) {
+      yield buffer;
     }
   }
-
-  child.addListener('close', (code, signal) => {
-    /* This can get invoked multiple times but we can only do anything
-     * the first time so we just drop the second time on the floor. */
-    if (childExited) return;
-    childExited = true;
-
-    if (code === 0 && signal === null) {
-      checkForNormalEnd();
-      return;
-    }
-    if (childstderr.includes('bad revision')) {
-      response.statusCode = 404;
-      response.end();
-      return;
-    }
-    /* Note that we're playing a little fast and loose here with the status.
-     * If we've already sent a chunk we can't change the status code. We're
-     * out of luck. We just terminate the response anyway. The server log
-     * is the best we can do for tracking these. */
-    console.warn('unhandled error', code, signal, childstderr);
-    response.statusCode = 500;
-    response.end(childstderr);
-  });
-  child.addListener('error', err => {
-    child.stdout.destroy();
-    child.stderr.destroy();
-    console.warn('unhandled error', err);
-    response.statusCode = 500;
-    response.end(err.message);
-  });
-
-  pipeline.on('end', () => {
-    pipelineEnded = true;
-    checkForNormalEnd();
-  });
-  pipeline.pipe(response, {end: false});
+  yield buffer;
 }
+
+/**
+ * Creates an async iterator describing the diff. The iterator is very "chatty"
+ * so is probably best wrapped in bufferItr.
+ * @param {string} branch branch to describe
+ */
+const diffItr = async function* (branch) {
+  yield dedent `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Diff for ${branch}</title>
+    </head>
+    <body><ul>\n`;
+
+  let sawAny = false;
+  for await (const change of git.diffLastCommit(branch)) {
+    // Skip boring files
+    if (!change.path.startsWith("raw/")) {
+      continue;
+    }
+    // Strip the prefixes from the paths
+    change.path = change.path.substring("raw/".length);
+    if (change.movedToPath) {
+      change.movedToPath = change.movedToPath.substring("raw/".length);
+    }
+
+    // Build the output html
+    yield `  <li>+${change.added} -${change.removed}`;
+    const linkTarget = change.movedToPath ? change.movedToPath : change.path;
+    yield ` <a href="/guide/${linkTarget}">`;
+    yield change.movedToPath ? `${change.path} -> ${change.movedToPath}` : change.path;
+    yield `</a>\n`;
+    sawAny = true;
+  }
+  yield `</ul>`;
+  if (!sawAny) {
+    yield `<p>There aren't any differences!</p>`;
+  }
+  yield `</html>\n`;
+};
+
+const serveBlob = (response, branch, templateExists, requestedObject) => {
+  return new Promise((resolve, reject) => {
+    let raw = git.catBlob(requestedObject);
+    if (templateExists && requestedObject.endsWith(".html")) {
+      raw.on("error", reject);
+      applyTemplate(branch, requestedObject, raw)
+        .then(out => pipeToResponse(out, response, resolve, reject))
+        .catch(reject);
+    } else {
+      pipeToResponse(raw, response, resolve, reject);
+    }
+  });
+};
+
+const applyTemplate = async (branch, requestedObject, out) => {
+  const template = Template(() => git.catBlob(`${branch}:template.html`));
+  const lang = await loadLang(requestedObject);
+  const initialJsState = await loadInitialJsState(requestedObject);
+  return template.apply(out[Symbol.asyncIterator](), lang, initialJsState);
+};
+
+const loadLang = async requestedObject => {
+  const langPath = path.dirname(requestedObject) + "/lang";
+  return await git.catBlobToString(langPath);
+};
+
+const loadInitialJsState = async requestedObject => {
+  try {
+    const reportPath = path.dirname(requestedObject) + "/alternatives_summary.json";
+    const summary = JSON.parse(await git.catBlobToString(reportPath, 10 * 1024));
+    return JSON.stringify(Template.buildInitialJsState(summary));
+  } catch (err) {
+    if (err === "missing") {
+      return "{}";
+    } else {
+      throw err;
+    }
+  }
+};
 
 function gitBranch(host) {
   if (!host) {
@@ -265,11 +209,29 @@ function gitBranch(host) {
   return host.split('.')[0];
 }
 
-const server = http.createServer(requestHandler);
+const server = http.createServer((request, response) => {
+  requestHandler(request, response)
+    .catch(err => {
+      if (err === "missing") {
+        response.statusCode = 404;
+        response.end("404!");
+      } else {
+        console.warn('unhandled error for', request, err);
+        /*
+         * *try* to set the status code to 500. This might not be possible
+         * because we might be in the middle of a chunked transfer. In that
+         * case this'll look funny.
+         */
+        response.statusCode = 500;
+        response.end(err.message);
+      }
+    });
+});
 
-server.listen(port, (err) => {
+server.listen(port, err => {
   if (err) {
-    return console.info("preview server couldn't listen", err);
+    console.error("preview server couldn't listen", err);
+    process.exit(1);
   }
 
   console.info(`preview server is listening on ${port}`);

@@ -20,6 +20,7 @@
 
 'use strict';
 
+const fs = require('fs');
 const Template = require('./template');
 const yargs = require('yargs');
 
@@ -41,6 +42,9 @@ const argv = yargs
   .argv;
 
 (async () => {
-  const template = await Template(argv.template);
-  template.applyToDir(argv.source, argv.dest, argv.lang, argv.altsummary, argv.tocmode);
+  const template = await Template(() => fs.createReadStream(argv.template, {
+    encoding: 'UTF-8',
+    autoDestroy: true,
+  }));
+  await template.applyToDir(argv.source, argv.dest, argv.lang, argv.altsummary, argv.tocmode);
 })();

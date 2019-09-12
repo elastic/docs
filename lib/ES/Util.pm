@@ -465,6 +465,10 @@ sub finish_build {
         -f $alternatives_summary ? ('--altsummary', $alternatives_summary) : (),
         $is_toc ? ('--tocmode') : ();
 
+    # Write a file with the book's language somewhere where we can get it so we
+    # can apply the template on the fly.
+    $raw_dest->file('lang')->spew( iomode => '>:utf8', $lang );
+
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
 
@@ -887,18 +891,36 @@ sub build_web_resources {
         die "Parcel didn't make $compiled_css" unless -e $compiled_css;
     }
 
-    $dest->mkpath;
-    my $js = $dest->file( 'docs.js' );
-    my $css = $dest->file( 'styles.css' );
+    my $static_dir = $dest->subdir( 'raw' )->subdir( 'static' );
+    $static_dir->mkpath;
+    my $js = $static_dir->file( 'docs.js' );
+    my $css = $static_dir->file( 'styles.css' );
     my $js_licenses = file( 'resources/web/docs.js.licenses' );
     my $css_licenses = file( 'resources/web/styles.css.licenses' );
-    $js->spew( $js_licenses->slurp . $compiled_js->slurp );
-    $css->spew( $css_licenses->slurp . $compiled_css->slurp );
+    $js->spew( iomode => '>:utf8',
+        $js_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_js->slurp( iomode => '<:encoding(UTF-8)' )
+    );
+    $css->spew(
+        iomode => '>:utf8',
+        $css_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_css->slurp( iomode => '<:encoding(UTF-8)' )
+    );
 
     for ( $parcel_out->children ) {
         next unless /.+\.woff2?/;
-        rcopy( $_, $dest );
+        rcopy( $_, $static_dir );
     }
+
+    # The public site can't ready anything from the raw directory so we have to
+    # copy the static files to html as well.
+    my $templated_dir = $dest->subdir( 'html' )->subdir( 'static' );
+    $templated_dir->mkpath;
+    rcopy( $static_dir, $templated_dir );
+
+    # Copy the template to the root of the repo so we can apply it on the fly.
+    # NOTE: We only apply it on the fly for preview right now.
+    my $template_source = file('resources/web/template.html');
+    my $template = $dest->file('template.html');
+    rcopy( $template_source, $template );
 }
 
 1
