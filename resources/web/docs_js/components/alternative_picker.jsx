@@ -21,7 +21,7 @@ const AlternativeChoice = ({name: name}) => {
   return <option value={name}>{alternativePrettyName(name)}</option>;
 };
 
-class _AlternativePicker extends Component {
+export class _AlternativePicker extends Component {
   constructor(props) {
     super(props);
     this.state = { tooltipVisible: false };
