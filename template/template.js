@@ -22,6 +22,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const {Readable} = require('stream');
 const {promisify} = require('util');
 const recursiveCopy = promisify(require('recursive-copy'));
 
@@ -29,38 +30,95 @@ const mkdir = promisify(fs.mkdir);
 const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);
 const stat = promisify(fs.stat);
-const writeFile = promisify(fs.writeFile);
 
-module.exports = async templatePath => {
-  const contents = await readFile(templatePath, {encoding: 'UTF-8'});
+module.exports = templatePath => {
+  const apply = (rawItr, lang, initialJsState) => {
+    /*
+     * We apply the template by walking a stream for the template and a stream
+     * for the raw page in parallel. We do this instead of pulling everything
+     * into memory and manipulating it to keep the memory usage small even when
+     * the template or raw page are very large. We expect the most memory this
+     * can use is 3x the sum of the sum of highWaterMark of both streams.
+     */
+    const Gatherer = async (name, itr) => {
+      let chunk = '';
+      const nextChunk = async preserve => {
+        const result = await itr.next();
+        if (result.done) {
+          return false;
+        }
+        if (preserve) {
+          /* If we're looking for a marker then we need to keep some characters
+           * at the end of the chunk in case the marker is on the edge. */
+          const slice = Math.max(0, chunk.length - preserve);
+          chunk = chunk.slice(slice) + result.value;
+        } else {
+          chunk = result.value;
+        }
+        return true;
+      };
+      if (!await nextChunk()) {
+        throw new Error(`${name} didn't have any data`)
+      }
+      const gather = async function* (marker) {
+        let index;
+        while ((index = chunk.indexOf(marker)) < 0) {
+          const slice = chunk.length - marker.length;
+          if (slice > 0) {
+            yield chunk.slice(0, slice);
+          }
+          if (!await nextChunk(marker.length)) {
+            throw new Error(`Couldn't find ${marker} in ${name}:\n${chunk}`);
+          }
+        }
+        yield chunk.substring(0, index);
+        chunk = chunk.substring(index + marker.length);
+      };
+      const dump = async marker => {
+        let index;
+        while ((index = chunk.indexOf(marker)) < 0) {
+          if (!await nextChunk(marker.length)) {
+            throw new Error(`Couldn't find ${marker} in ${name}:\n${chunk}`);
+          }
+        }
+        chunk = chunk.substring(index + marker.length);
+      }
+      async function* remaining() {
+        yield chunk;
+        while (await nextChunk()) {
+          yield chunk;
+        }
+      }
+      return {
+        gather: gather,
+        dump: dump,
+        remaining: remaining,
+      };
+    };
 
-  const map = {};
-  const parts = contents.split(/<!-- (DOCS \w+) -->/).map((part, index) => {
-    const matcher = /DOCS (\w+)/.exec(part);
-    if (matcher) {
-      map[matcher[1]] = index;
-      return '';
-    }
-    return part;
-  });
-  const apply = (raw, lang, initialJsState) => {
-    const head = /<head>(.+?)<\/head>/s.exec(raw);
-    if (!head) {
-      throw new Error(`Couldn't find head in ${raw}`);
-    }
-    const body = /<body>(.+?)<\/body>/s.exec(raw);
-    if (!body) {
-      throw new Error(`Couldn't find body in ${raw}`);
-    }
-
-    const theseParts = parts.slice(0);
-    theseParts[map.PREHEAD] = head[1];
-    theseParts[map.LANG] = `lang="${lang}"`;
-    theseParts[map.BODY] = body[1];
-    theseParts[map.FINAL] = `
-<script type="text/javascript">
+    async function* asyncApply() {
+      const templateStream = fs.createReadStream(templatePath, {
+        encoding: 'UTF-8',
+        autoDestroy: true,
+      });
+      const template = await Gatherer('template', templateStream[Symbol.asyncIterator]());
+      yield* template.gather("<!-- DOCS PREHEAD -->");
+      const raw = await Gatherer('raw', rawItr);
+      await raw.dump("<head>");
+      yield* raw.gather("</head>");
+      yield* template.gather("<!-- DOCS LANG -->");
+      yield `lang="${lang}"`;
+      yield* template.gather("<!-- DOCS BODY -->");
+      await raw.dump("<body>");
+      yield* raw.gather("</body>");
+      yield* template.gather("<!-- DOCS FINAL -->");
+      yield `<script type="text/javascript">
 window.initial_state = ${initialJsState}</script>`;
-    return theseParts.join('');
+      yield* template.remaining();
+      await templateStream.close();
+    }
+    
+    return Readable.from(asyncApply());
   };
   const buildInitialJsStateFromFile = async alternativesSummary => {
     if (!alternativesSummary) {
@@ -102,9 +160,13 @@ window.initial_state = ${initialJsState}</script>`;
         await recursiveCopy(source, dest);
         continue;
       }
-      const contents = await readFile(source, {encoding: 'UTF-8'});
-      const result = apply(contents, lang, initialJsState);
-      await writeFile(dest, result, {encoding: 'UTF-8'});
+      const raw = fs.createReadStream(source, {encoding: 'UTF-8'});
+      const write = fs.createWriteStream(dest, {encoding: 'UTF-8'});
+      apply(raw[Symbol.asyncIterator](), lang, initialJsState).pipe(write);
+      await new Promise((resolve, reject) => {
+        write.on("finish", resolve);
+        write.on("error", reject);
+      }).finally(() => raw.close());
     };
   };
   return {

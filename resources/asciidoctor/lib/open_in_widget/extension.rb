@@ -3,6 +3,7 @@
 require 'fileutils'
 
 require_relative '../migration_log'
+require_relative '../log_util'
 require_relative '../scaffold'
 
 ##
@@ -38,7 +39,7 @@ require_relative '../scaffold'
 #   ---------
 #
 class OpenInWidget < TreeProcessorScaffold
-  include Asciidoctor::Logging
+  include LogUtil
   include MigrationLog
 
   CALLOUT_SCAN_RX = / ?#{Asciidoctor::CalloutScanRx}/
@@ -81,12 +82,7 @@ class OpenInWidget < TreeProcessorScaffold
                      'reading snippets from a path makes the book harder ' \
                      'to read'
     else
-      logger.error(
-        message_with_context(
-          "can't read snippet from #{normalized}",
-          source_location: block.source_location
-        )
-      )
+      error block: block, message: "can't read snippet from #{normalized}"
     end
     snippet_path
   end
@@ -108,12 +104,7 @@ class OpenInWidget < TreeProcessorScaffold
   ##
   # Copies an override snippet from the filesystem into the snippets directory.
   def copy_override_snippet(block, source, uri)
-    logger.info(
-      message_with_context(
-        "copying snippet #{source}",
-        source_location: block.source_location
-      )
-    )
+    info block: block, message: "copying snippet #{source}"
     copy_proc = block.document.attr 'copy_snippet'
     if copy_proc
       # Delegate to a proc for copying if one is defined. Used for testing.
@@ -130,12 +121,7 @@ class OpenInWidget < TreeProcessorScaffold
   # Writes a snippet extracted from the asciidoc file into the
   # snippets directory.
   def write_snippet(block, snippet, uri)
-    logger.info(
-      message_with_context(
-        "writing snippet #{uri}",
-        source_location: block.source_location
-      )
-    )
+    info block: block, message: "writing snippet #{uri}"
     write_proc = block.document.attr 'write_snippet'
     if write_proc
       # Delegate to a proc for copying if one is defined. Used for testing.

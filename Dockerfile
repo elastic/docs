@@ -1,6 +1,6 @@
 # Debian builds the docs about 20% faster than alpine. The image is larger
 # and takes longer to build but that is worth it.
-FROM bitnami/minideb:stretch
+FROM bitnami/minideb:buster
 
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 
@@ -26,6 +26,7 @@ RUN cat /yarn.gpg | apt-key add - && rm yarn.gpg
 #   * python (is python2)
 #   * xsltproc
 # * To install rubygems for asciidoctor
+#   * bundler
 #   * build-essential
 #   * cmake
 #   * libxml2-dev
@@ -41,6 +42,7 @@ RUN cat /yarn.gpg | apt-key add - && rm yarn.gpg
 RUN install_packages \
   bash \
   build-essential \
+  bundler \
   curl \
   cmake \
   git \
@@ -79,7 +81,6 @@ RUN pip3 install \
   pycodestyle==2.5.0
 
 # Install ruby deps with bundler to make things more standard for Ruby folks.
-RUN gem install bundler:2.0.1
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 RUN bundle install --binstubs --system --frozen

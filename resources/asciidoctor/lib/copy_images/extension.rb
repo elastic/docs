@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../delegating_converter.rb'
-require_relative 'copier.rb'
+require_relative '../log_util'
+require_relative '../delegating_converter'
+require_relative 'copier'
 
 ##
 # Copies images that are referenced into the same directory as the
@@ -24,7 +25,7 @@ module CopyImages
   ##
   # A Converter implementation that copies images as it sees them.
   class Converter < DelegatingConverter
-    include Asciidoctor::Logging
+    include LogUtil
 
     ADMONITION_IMAGE_FOR_REVISION_FLAG = {
       'added' => 'note',
@@ -94,12 +95,7 @@ module CopyImages
         image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
         return image if image
 
-        logger.warn(
-          message_with_context(
-            "unknow revisionflag #{revisionflag}",
-            source_location: node.source_location
-          )
-        )
+        warn block: node, message: "unknown revisionflag #{revisionflag}"
         return
       end
       # The image for a standard admonition comes from the style

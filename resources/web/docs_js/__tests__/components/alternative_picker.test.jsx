@@ -8,6 +8,7 @@ describe(_AlternativePicker, () => {
       expect(picker).toStrictEqual(render(<div/>));
     });
   });
+
   describe("when there aren't any alternatives", () => {
     const picker = render(<_AlternativePicker alternatives={{
       bash: {
@@ -16,10 +17,12 @@ describe(_AlternativePicker, () => {
         powershell: {},
       }
     }}/>);
+
     test("is just an empty div", () => {
       expect(picker).toStrictEqual(render(<div/>));
     });
   });
+
   describe("when there are console alternatives", () => {
     const picker = render(<_AlternativePicker
       consoleAlternative="console"
@@ -30,6 +33,7 @@ describe(_AlternativePicker, () => {
         }
       }}/>);
     const select = picker.childNodes[0];
+
     test("renders all configured options", () => {
       expect(picker).toStrictEqual(render(
         <div class="AlternativePicker u-space-between">
@@ -39,14 +43,17 @@ describe(_AlternativePicker, () => {
             <option value="csharp">C#</option>
           </select>
           <div class="AlternativePicker-warning" />
+          {null}
         </div>
       ));
     });
+
     test("selects the consoleAlternative from the props", () => {
       expect(select.value).toBe("console");
     });
   });
-  describe("when the the console alternative isn't in the options", () => {
+
+  describe("when the console alternative isn't in the options", () => {
     const picker = render(<_AlternativePicker
       consoleAlternative="bort"
       alternatives={{
@@ -55,6 +62,7 @@ describe(_AlternativePicker, () => {
           csharp: {},
         }
       }}/>);
+
     test("includes an option for the current alternative", () => {
       expect(picker).toStrictEqual(render(
         <div class="AlternativePicker u-space-between">
@@ -65,10 +73,12 @@ describe(_AlternativePicker, () => {
             <option value="bort">Bort</option>
           </select>
           <div class="AlternativePicker-warning" />
+          {null}
         </div>
       ));
     });
   });
+
   describe("when the value changes", () => {
     const updates = [];
     const picker = render(<_AlternativePicker
@@ -85,6 +95,7 @@ describe(_AlternativePicker, () => {
     /* Browsers don't dispatch a change even when you change the value so we
       * have to do it ourselves. Like an animal. */
     select.dispatchEvent(new Event("change"));
+
     test("saves the config", () => {
       // We can't use toMatchObject here because tagName is busted.
       expect(updates).toHaveLength(1);
