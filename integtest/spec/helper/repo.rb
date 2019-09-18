@@ -42,6 +42,8 @@ class Repo
     File.open realpath, 'r:UTF-8', &:read
   end
 
+  ##
+  # Delete a file in the repo.
   def delete(source_relative_path)
     realpath = path source_relative_path
     File.delete realpath

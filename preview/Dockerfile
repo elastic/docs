@@ -11,5 +11,4 @@ COPY template /docs_build/template
 COPY resources /docs_build/resources
 
 CMD ["/docs_build/build_docs.pl", "--in_standard_docker", \
-     "--preview", "--reference", "/tmp/repos", \
-     "--target_repo", "https://github.com/elastic/built-docs.git"]
+     "--preview", "--target_repo", "https://github.com/elastic/built-docs.git"]
