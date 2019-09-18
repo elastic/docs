@@ -105,19 +105,14 @@ const streamChild = (child) => {
     stderrBuffer += chunk;
   });
 
-  let flushCallback;
-  const out = child.stdout.pipe(new Transform({
-    transform(chunk, _encoding, callback) {
-      callback(null, chunk);
-    },
-    flush(callback) {
-      // Wait to emit the end until the process closes.
-      flushCallback = callback;
-    }
-  }));
-
   let closed = false;
-  child.addListener('close', (code, signal) => {
+  let flushCallback;
+  let childCloseState;
+  const flushIfReady = () => {
+    if (!flushCallback || !childCloseState) {
+      // Not ready.
+      return;
+    }
     /*
      * We can get this call multiple times for some reason. Lets just ignore
      * the second one.....
@@ -131,7 +126,7 @@ const streamChild = (child) => {
      * received its `flush` callback. So we delegate to that now to close
      * the transform stream with the results of the subprocess.
      */
-    if (code) {
+    if (childCloseState.code) {
       /*
        * Normalize some "not found" style errors from git so the caller can
        * 404 on them.
@@ -141,13 +136,29 @@ const streamChild = (child) => {
       if (missing) {
         flushCallback("missing");
       } else {
-        flushCallback(failureMessage(`Child failed with code ${code}`, stderrBuffer));
+        flushCallback(failureMessage(`Child failed with code ${childCloseState.code}`, stderrBuffer));
       }
-    } else if (signal) {
-      flushCallback(failureMessage(`Child died with signal ${signal}`, stderrBuffer));
+    } else if (childCloseState.signal) {
+      flushCallback(failureMessage(`Child died with signal ${childCloseState.signal}`, stderrBuffer));
     } else {
       flushCallback();
     }
+  };
+
+  const out = child.stdout.pipe(new Transform({
+    transform(chunk, _encoding, callback) {
+      callback(null, chunk);
+    },
+    flush(callback) {
+      // Wait to emit the end until the process closes.
+      flushCallback = callback;
+      flushIfReady();
+    }
+  }));
+
+  child.addListener('close', (code, signal) => {
+    childCloseState = {code: code, signal: signal};
+    flushIfReady();
   });
 
   return out;

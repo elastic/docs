@@ -34,10 +34,8 @@ const argv = yargs
   .option("template", {describe: "Path to the template"}).string("template")
   .option("source", {describe: "Path to the source files"}).string("source")
   .option("dest", {describe: "Path to write the templated files"}).string("dest")
-  .option("altsummary", {describe: "Path alternatives summary file if one exists"}).string("dest")
-  .option("lang", {describe: "Language of the book"}).string("lang")
   .option("tocmode", {describe: "Are we building a table of contents?"}).boolean("tocmode")
-  .demandOption(["template", "source", "dest", "lang"])
+  .demandOption(["template", "source", "dest"])
   .help()
   .argv;
 
@@ -46,5 +44,5 @@ const argv = yargs
     encoding: 'UTF-8',
     autoDestroy: true,
   }));
-  await template.applyToDir(argv.source, argv.dest, argv.lang, argv.altsummary, argv.tocmode);
+  await template.applyToDir(argv.source, argv.dest, argv.tocmode);
 })();

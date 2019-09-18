@@ -123,15 +123,27 @@ module.exports = templateSource => {
     // TODO this defaults to object mode and maybe shouldn't.
     return Readable.from(asyncApply());
   };
-  const buildInitialJsStateFromFile = async alternativesSummary => {
-    if (!alternativesSummary) {
-      return "{}";
+  const buildInitialJsStateFromFile = async alternativesSummaryFile => {
+    let alternativesSummary;
+    try {
+      alternativesSummary = await readFile(alternativesSummaryFile, {
+        encoding: "utf8",
+      });
+    } catch (err) {
+      if (err.errno === -2) { // ENOENT
+        return "{}";
+      }
+      throw err;
     }
-    const readAltSummary = JSON.parse(await readFile(alternativesSummary));
-    return JSON.stringify(module.exports.buildInitialJsState(readAltSummary));
+    return JSON.stringify(module.exports.buildInitialJsState(JSON.parse(alternativesSummary)));
   };
-  const applyToDir = async (sourcePath, destPath, lang, alternativesSummary, tocMode) => {
-    const initialJsState = await buildInitialJsStateFromFile(alternativesSummary);
+  const applyToDir = async (sourcePath, destPath, tocMode) => {
+    const langFile = `${sourcePath}/lang`;
+    const alternativesSummaryFile = `${sourcePath}/alternatives_summary.json`;
+    const initialJsState = await buildInitialJsStateFromFile(alternativesSummaryFile);
+    const lang = (await readFile(langFile, {
+      encoding: "utf8",
+    })).trim();
     const entries = await readdir(sourcePath);
     await mkdir(destPath, {recursive: true});
     for (var e = 0; e < entries.length; e++) {
@@ -139,7 +151,10 @@ module.exports = templateSource => {
       const source = path.join(sourcePath, basename);
       const dest = path.join(destPath, basename);
 
-      if (source === alternativesSummary) {
+      if (source === alternativesSummaryFile) {
+        continue;
+      }
+      if (source === langFile) {
         continue;
       }
 

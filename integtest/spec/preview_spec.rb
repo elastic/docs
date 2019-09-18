@@ -110,7 +110,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     context 'the current index' do
       it 'has the correct initial_js_state' do
         expect(current_index.code).to eq('200')
-        expect(initial_js_state(current_index.body)).to eq(
+        expect(extract_initial_js_state(current_index.body)).to eq(
           expected_initial_js_state
         )
       end

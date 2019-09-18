@@ -64,7 +64,7 @@ RSpec::Matchers.define :file_exist do
   end
 end
 
-def initial_js_state(contents)
+def extract_initial_js_state(contents)
   start_boundry = 'window.initial_state = '
   start = contents.index start_boundry
   return unless start

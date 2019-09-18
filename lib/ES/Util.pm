@@ -186,7 +186,7 @@ sub build_chunked {
         $child_dest->spew( iomode => '>:utf8', $contents );
         unlink $_ or die "Coudln't remove $_ $!";
     }
-    finish_build( $index->parent, $raw_dest, $dest, $lang, $alternatives_summary, 0 );
+    finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
     extract_toc_from_index( $dest );
     $chunk_dir->rmtree;
 }
@@ -348,8 +348,7 @@ sub build_single {
     $contents = _extract_autosense_snippets( $html_file, $raw_dest, $contents ) unless $asciidoctor;
     $html_file->spew( iomode => '>:utf8', $contents );
 
-    finish_build( $index->parent, $raw_dest, $dest, $lang,
-                  $alternatives_summary, $opts{is_toc} );
+    finish_build( $index->parent, $raw_dest, $dest, $lang, $opts{is_toc} );
 }
 
 #===================================
@@ -457,17 +456,17 @@ sub run (@) {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $raw_dest, $dest, $lang, $alternatives_summary, $is_toc ) = @_;
+    my ( $source, $raw_dest, $dest, $lang, $is_toc ) = @_;
+
+    # Write a file with the book's language into the raw directory so the
+    # templating can apply it now *and* on the fly later
+    $raw_dest->file('lang')->spew( iomode => '>:utf8', "$lang\n" );
+
 
     # Apply template to HTML files
     run 'node', 'template/cli.js', '--template', 'resources/web/template.html',
-        '--source', $raw_dest, '--dest', $dest, '--lang', $lang,
-        -f $alternatives_summary ? ('--altsummary', $alternatives_summary) : (),
+        '--source', $raw_dest, '--dest', $dest,
         $is_toc ? ('--tocmode') : ();
-
-    # Write a file with the book's language somewhere where we can get it so we
-    # can apply the template on the fly.
-    $raw_dest->file('lang')->spew( iomode => '>:utf8', $lang );
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;

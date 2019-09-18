@@ -78,7 +78,7 @@ module Dsl
         m[1]
       end
       let(:initial_js_state) do
-        initial_js_state contents
+        extract_initial_js_state contents
       end
     end
   end
