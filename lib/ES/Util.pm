@@ -525,6 +525,9 @@ sub _html5ify {
     # Strip xml lang tag. We already have the lang tag other places.
     $contents =~ s/\s+xml:lang="[^"]*"//g;
 
+    # Strip the generator tag because we don't need it
+    $contents =~ s|<meta name="generator" content="[^"]+" />||g;
+
     # Add a trailing newline because good documents have trailing newlines
     $contents =~ s/\s*$/\n/;
 
