@@ -64,6 +64,12 @@ RSpec.describe 'building a single book' do
         it "doesn't have any xmlns declarations" do
           expect(contents).not_to include('xmlns=')
         end
+        it "doesn't have a meta generator" do
+          expect(contents).not_to include('<meta name="generator"')
+        end
+        it "doesn't have a meta description" do
+          expect(contents).not_to include('<meta name="description"')
+        end
         it "doesn't have any xml:lang tags" do
           expect(contents).not_to include('xml:lang=')
         end

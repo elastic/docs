@@ -39,14 +39,6 @@
 
   <!-- meta elements -->
   <xsl:template name="user.head.content">
-    <xsl:variable name="meta-description">
-      <xsl:call-template name="gentext.template">
-        <xsl:with-param name="context" select="'meta'"/>
-        <xsl:with-param name="name" select="'meta-description'"/>
-      </xsl:call-template>
-    </xsl:variable>
-
-    <meta name="description" content="{$meta-description}" />
     <meta name="DC.type">
       <xsl:attribute name="content">
         <xsl:value-of select="$local.book.section.title" />
