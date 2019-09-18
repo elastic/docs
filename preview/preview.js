@@ -185,7 +185,7 @@ const applyTemplate = async (branch, requestedObject, out) => {
 
 const loadLang = async requestedObject => {
   const langPath = path.dirname(requestedObject) + "/lang";
-  return await git.catBlobToString(langPath).trim();
+  return (await git.catBlobToString(langPath)).trim();
 };
 
 const loadInitialJsState = async requestedObject => {
