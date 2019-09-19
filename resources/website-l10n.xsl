@@ -50,9 +50,6 @@
         <l:template name="edit-me-title" text="Edit this page on GitHub" />
         <l:template name="edit-me-text" text="edit" />
       </l:context>
-      <l:context name="meta">
-        <l:template name="meta-description" text="Get started with the documentation for Elasticsearch, Kibana, Logstash, Beats, X-Pack, Elastic Cloud, Elasticsearch for Apache Hadoop, and our language clients." />
-      </l:context>
       <l:context name="annotation">
         <l:template name="added" text="Added in " />
         <l:template name="beta" text="beta" />
@@ -111,9 +108,6 @@
       <l:context name="edit-me">
         <l:template name="edit-me-title" text="在 GitHub 上编辑本页" />
         <l:template name="edit-me-text" text="编辑" />
-      </l:context>
-      <l:context name="meta">
-        <l:template name="meta-description" text="有关如何使用 Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop 及我们各种语言的客户端的文档。" />
       </l:context>
       <l:context name="annotation">
         <l:template name="added" text="添加于" />
@@ -174,9 +168,6 @@
         <l:template name="edit-me-title" text="GitHub上で編集" />
         <l:template name="edit-me-text" text="編集" />
       </l:context>
-      <l:context name="meta">
-        <l:template name="meta-description" text="Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop そして、さまざまな言語のクライアントの使用方法に関するドキュメント。" />
-      </l:context>
       <l:context name="annotation">
         <l:template name="added" text="追加されたバージョン：" />
         <l:template name="beta" text="ベータ版：" />
@@ -235,9 +226,6 @@
       <l:context name="edit-me">
         <l:template name="edit-me-title" text="GitHub에서 편집" />
         <l:template name="edit-me-text" text="편집" />
-      </l:context>
-      <l:context name="meta">
-        <l:template name="meta-description" text="Elasticsearch、Kibana、Logstash、Beats、X-Pack、Elastic Cloud、Elasticsearch for Apache Hadoop, 그 밖에 다양한 언어용 클라이언트 소개" />
       </l:context>
       <l:context name="annotation">
         <l:template name="added" text="추가" />
