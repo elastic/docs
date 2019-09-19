@@ -2,6 +2,7 @@
 
 require_relative 'helper/matcher/doc_body'
 require_relative 'helper/matcher/have_same_keys'
+require_relative 'helper/matcher/initial_js_state'
 require_relative 'helper/matcher/serve'
 require_relative 'helper/console_alternative_examples'
 require_relative 'helper/dest'
@@ -62,17 +63,4 @@ RSpec::Matchers.define :file_exist do
     entries = Dir.entries(parent).reject { |e| e.start_with? '.' }
     msg + " but only #{parent}/#{entries.sort} exist"
   end
-end
-
-def extract_initial_js_state(contents)
-  start_boundry = 'window.initial_state = '
-  start = contents.index start_boundry
-  return unless start
-
-  start += start_boundry.length
-  stop = contents.index '</script>', start
-  return unless stop
-
-  txt = contents[start, stop - start]
-  JSON.parse txt, symbolize_names: true
 end

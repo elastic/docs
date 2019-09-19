@@ -86,7 +86,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     end
   end
 
-  let(:expected_initial_js_state) { {} }
+  let(:expected_js_state) { {} }
   let(:expected_language) { 'en' }
 
   it 'logs that the built docs are ready' do
@@ -109,10 +109,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     end
     context 'the current index' do
       it 'has the correct initial_js_state' do
-        expect(current_index.code).to eq('200')
-        expect(extract_initial_js_state(current_index.body)).to eq(
-          expected_initial_js_state
-        )
+        expect(current_index).to serve(initial_js_state(eq(expected_js_state)))
       end
       it 'has the correct language' do
         expect(current_index).to serve(include(<<~HTML.strip))
@@ -412,7 +409,7 @@ RSpec.describe 'previewing built docs', order: :defined do
       LOGS
     end
     let(:branch) { 'alternative_examples' }
-    let(:expected_initial_js_state) do
+    let(:expected_js_state) do
       {
         alternatives: {
           console: {
@@ -442,7 +439,7 @@ RSpec.describe 'previewing built docs', order: :defined do
       LOGS
     end
     let(:branch) { 'foolang' }
-    let(:expected_initial_js_state) do
+    let(:expected_js_state) do
       {
         alternatives: {
           console: {
