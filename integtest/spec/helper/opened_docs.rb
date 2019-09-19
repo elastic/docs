@@ -12,6 +12,6 @@ class OpenedDocs < ServingDocs
   def initialize(cmd)
     super cmd
 
-    wait_for_logs(/start worker processes$/, 10)
+    wait_for_logs(/start worker processes$/, 60)
   end
 end

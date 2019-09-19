@@ -408,7 +408,7 @@ RSpec.describe 'building all books' do
       @opened_docs = @dest.prepare_convert_all(@src.conf).open
     end
     after(:context) do
-      @opened_docs.exit
+      @opened_docs&.exit
     end
 
     let(:root) { 'http://localhost:8000/guide/' }

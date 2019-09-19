@@ -15,6 +15,6 @@ class Preview < ServingDocs
       '--preview', '--target_repo', bare_repo
     ]
 
-    wait_for_logs(/^preview server is listening on 3000$/, 10)
+    wait_for_logs(/^preview server is listening on 3000$/, 60)
   end
 end
