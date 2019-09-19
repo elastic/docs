@@ -400,33 +400,71 @@ RSpec.describe 'building all books' do
   end
 
   context 'when run with --open' do
+    repo_root = File.expand_path '../../', __dir__
+    readme_resources = "#{repo_root}/resources/readme"
     include_context 'source and dest'
+
     before(:context) do
-      repo = @src.repo_with_index 'repo', 'Words'
+      repo = @src.repo_with_index 'repo', <<~ASCIIDOC
+        Some text.
+
+        image::resources/readme/cat.jpg[A cat]
+        image::resources/readme/example.svg[An example svg]
+      ASCIIDOC
+      repo.cp "#{readme_resources}/cat.jpg", 'resources/readme/cat.jpg'
+      repo.cp "#{readme_resources}/example.svg", 'resources/readme/example.svg'
+      repo.commit 'add images'
+
       book = @src.book 'Test'
       book.source repo, 'index.asciidoc'
+      book.source repo, 'resources'
       @opened_docs = @dest.prepare_convert_all(@src.conf).open
     end
     after(:context) do
       @opened_docs&.exit
     end
 
-    let(:root) { 'http://localhost:8000/guide/' }
-    let(:index) { Net::HTTP.get_response(URI(root)) }
+    let(:root) { 'http://localhost:8000/guide' }
+    let(:book_root) { "#{root}/test/current" }
+    let(:root_index) { Net::HTTP.get_response(URI("#{root}/")) }
     let(:legacy_redirect) do
-      Net::HTTP.get_response(URI("#{root}reference/setup/"))
+      Net::HTTP.get_response(URI("#{root}/reference/setup/"))
+    end
+    let(:cat_image) do
+      Net::HTTP.get_response(URI("#{book_root}/resources/readme/cat.jpg"))
+    end
+    let(:svg_image) do
+      Net::HTTP.get_response(URI("#{book_root}/resources/readme/example.svg"))
     end
 
-    it 'serves the book' do
-      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+    it 'serves the root index' do
+      expect(root_index).to serve(doc_body(include(<<~HTML.strip)))
         <a class="ulink" href="test/current/index.html" target="_top">Test
       HTML
     end
     it 'serves a legacy redirect' do
       expect(legacy_redirect.code).to eq('301')
       expect(legacy_redirect['location']).to eq(
-        "#{root}en/elasticsearch/reference/current/setup.html"
+        "#{root}/en/elasticsearch/reference/current/setup.html"
       )
+    end
+    context 'for a JPG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/cat.jpg", 'rb', &:read)
+        expect(cat_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(cat_image['Content-Type']).to eq('image/jpeg')
+      end
+    end
+    context 'for an SVG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/example.svg", 'rb', &:read)
+        expect(svg_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(svg_image['Content-Type']).to eq('image/svg+xml')
+      end
     end
   end
 

@@ -729,9 +729,13 @@ http {
       }
     }
     types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
+      application/javascript js;
+      image/gif gif;
+      image/jpeg jpg;
+      image/jpeg jpeg;
+      image/svg+xml svg;
+      text/css css;
+      text/html html;
     }
     rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
@@ -793,11 +797,6 @@ http {
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
         add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
       }
-    }
-    types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
     }
     rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
