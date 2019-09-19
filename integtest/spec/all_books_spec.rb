@@ -55,8 +55,10 @@ RSpec.describe 'building all books' do
     end
     file_context 'html/static/styles.css' do
       has_license 'Inter', 'SIL OPEN FONT LICENSE'
+      has_license 'Noto Sans Japanese', 'SIL OPEN FONT LICENSE'
     end
     file_context 'html/static/Inter-Medium.5d08e0ba.woff2'
+    file_context 'html/static/NotoSansJP-Black.df80409c.woff2'
     file_context 'html/sitemap.xml' do
       it 'has an entry for the chapter' do
         expect(contents).to include(<<~XML)
