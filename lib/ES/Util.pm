@@ -899,7 +899,8 @@ sub build_web_resources {
     my $css = $static_dir->file( 'styles.css' );
     my $js_licenses = file( 'resources/web/docs.js.licenses' );
     my $css_licenses = file( 'resources/web/styles.css.licenses' );
-    $js->spew( iomode => '>:utf8',
+    $js->spew(
+        iomode => '>:utf8',
         $js_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_js->slurp( iomode => '<:encoding(UTF-8)' )
     );
     $css->spew(

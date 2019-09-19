@@ -2,6 +2,7 @@
 
 ##
 # Matches extracts the "initial javascript state" of a templated html page.
+# If the page doesn't contain the initial js state it'll be `nil`.
 RSpec::Matchers.define :initial_js_state do |expected|
   match do |actual|
     expected.matches? extract(actual)
