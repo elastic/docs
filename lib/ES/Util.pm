@@ -186,7 +186,7 @@ sub build_chunked {
         $child_dest->spew( iomode => '>:utf8', $contents );
         unlink $_ or die "Coudln't remove $_ $!";
     }
-    finish_build( $index->parent, $raw_dest, $dest, $lang, $alternatives_summary, 0 );
+    finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
     extract_toc_from_index( $dest );
     $chunk_dir->rmtree;
 }
@@ -348,8 +348,7 @@ sub build_single {
     $contents = _extract_autosense_snippets( $html_file, $raw_dest, $contents ) unless $asciidoctor;
     $html_file->spew( iomode => '>:utf8', $contents );
 
-    finish_build( $index->parent, $raw_dest, $dest, $lang,
-                  $alternatives_summary, $opts{is_toc} );
+    finish_build( $index->parent, $raw_dest, $dest, $lang, $opts{is_toc} );
 }
 
 #===================================
@@ -457,12 +456,16 @@ sub run (@) {
 #===================================
 sub finish_build {
 #===================================
-    my ( $source, $raw_dest, $dest, $lang, $alternatives_summary, $is_toc ) = @_;
+    my ( $source, $raw_dest, $dest, $lang, $is_toc ) = @_;
+
+    # Write a file with the book's language into the raw directory so the
+    # templating can apply it now *and* on the fly later
+    $raw_dest->file('lang')->spew( iomode => '>:utf8', "$lang\n" );
+
 
     # Apply template to HTML files
     run 'node', 'template/cli.js', '--template', 'resources/web/template.html',
-        '--source', $raw_dest, '--dest', $dest, '--lang', $lang,
-        -f $alternatives_summary ? ('--altsummary', $alternatives_summary) : (),
+        '--source', $raw_dest, '--dest', $dest,
         $is_toc ? ('--tocmode') : ();
 
     my $snippets_dest = $dest->subdir('snippets');
@@ -890,18 +893,37 @@ sub build_web_resources {
         die "Parcel didn't make $compiled_css" unless -e $compiled_css;
     }
 
-    $dest->mkpath;
-    my $js = $dest->file( 'docs.js' );
-    my $css = $dest->file( 'styles.css' );
+    my $static_dir = $dest->subdir( 'raw' )->subdir( 'static' );
+    $static_dir->mkpath;
+    my $js = $static_dir->file( 'docs.js' );
+    my $css = $static_dir->file( 'styles.css' );
     my $js_licenses = file( 'resources/web/docs.js.licenses' );
     my $css_licenses = file( 'resources/web/styles.css.licenses' );
-    $js->spew( $js_licenses->slurp . $compiled_js->slurp );
-    $css->spew( $css_licenses->slurp . $compiled_css->slurp );
+    $js->spew(
+        iomode => '>:utf8',
+        $js_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_js->slurp( iomode => '<:encoding(UTF-8)' )
+    );
+    $css->spew(
+        iomode => '>:utf8',
+        $css_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_css->slurp( iomode => '<:encoding(UTF-8)' )
+    );
 
     for ( $parcel_out->children ) {
         next unless /.+\.woff2?/;
-        rcopy( $_, $dest );
+        rcopy( $_, $static_dir );
     }
+
+    # The public site can't ready anything from the raw directory so we have to
+    # copy the static files to html as well.
+    my $templated_dir = $dest->subdir( 'html' )->subdir( 'static' );
+    $templated_dir->mkpath;
+    rcopy( $static_dir, $templated_dir );
+
+    # Copy the template to the root of the repo so we can apply it on the fly.
+    # NOTE: We only apply it on the fly for preview right now.
+    my $template_source = file('resources/web/template.html');
+    my $template = $dest->file('template.html');
+    rcopy( $template_source, $template );
 }
 
 1

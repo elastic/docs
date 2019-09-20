@@ -87,14 +87,16 @@ RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
     end
     context 'the initial js state' do
       it 'contains the available alternatives' do
-        expect(initial_js_state).to include(
-          alternatives: {
-            console: {
-              js: { hasAny: true },
-              csharp: { hasAny: true },
-              java: { hasAny: false },
-            },
-          }
+        expect(contents).to initial_js_state(
+          include(
+            alternatives: {
+              console: {
+                js: { hasAny: true },
+                csharp: { hasAny: true },
+                java: { hasAny: false },
+              },
+            }
+          )
         )
       end
     end

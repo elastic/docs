@@ -9,4 +9,4 @@ check: jest
 
 .PHONY: jest
 jest:
-	/node_modules/jest/bin/jest.js preview
+	/node_modules/jest/bin/jest.js ./__test__/**
