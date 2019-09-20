@@ -45,13 +45,13 @@ RSpec.describe 'building a single book' do
           expect(language).to eq('en')
         end
         it 'has an empty initial js state' do
-          expect(initial_js_state).to be_empty
+          expect(contents).to initial_js_state(be_empty)
         end
       end
       page_context 'toc.html' do
-        it "doesn't have the initail js state" do
+        it "doesn't have the initial js state" do
           # because we didn't apply the template
-          expect(initial_js_state).to be_nil
+          expect(contents).to initial_js_state(be_nil)
         end
       end
       page_context 'raw/index.html' do
@@ -81,7 +81,7 @@ RSpec.describe 'building a single book' do
         end
         it "doesn't have the initial js state" do
           # because we don't apply the template which is how that gets in there
-          expect(initial_js_state).to be_nil
+          expect(contents).to initial_js_state(be_nil)
         end
       end
       page_context 'chapter.html' do

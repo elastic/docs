@@ -361,12 +361,17 @@ sub _copy_branch_to_current {
 #===================================
     my ( $self ) = @_;
 
-    my $branch_dir  = $self->dir->subdir( $self->current );
-    my $current_dir = $self->dir->subdir('current');
+    my $branch_dir  = $self->{dir}->subdir( $self->current );
+    my $current_dir = $self->{dir}->subdir('current');
+    my $raw_branch_dir  = $self->{raw_dir}->subdir( $self->current );
+    my $raw_current_dir = $self->{raw_dir}->subdir('current');
 
     $current_dir->rmtree;
     rcopy( $branch_dir, $current_dir )
         or die "Couldn't copy <$branch_dir> to <$current_dir>: $!";
+    $raw_current_dir->rmtree;
+    rcopy( $raw_branch_dir, $raw_current_dir )
+        or die "Couldn't copy <$raw_branch_dir> to <$raw_current_dir>: $!";
 }
 
 #===================================

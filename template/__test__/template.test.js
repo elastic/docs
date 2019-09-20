@@ -20,6 +20,7 @@
 
 'use strict';
 
+const fs = require('fs');
 const Template = require('../template');
 
 describe(Template, () => {
@@ -65,7 +66,12 @@ describe(Template, () => {
     });
   });
   describe("apply", () => {
-    let template = Template("../resources/web/template.html")
+    let template = Template(() =>
+      fs.createReadStream("../resources/web/template.html", {
+        encoding: 'UTF-8',
+        autoDestroy: true,
+      })
+    );
     template.applyToString = async (raw, lang, initialJsState) => {
       const rawItr = (function* () {
         yield raw;
