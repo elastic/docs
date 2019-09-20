@@ -43,6 +43,13 @@ class Repo
   end
 
   ##
+  # Delete a file in the repo.
+  def delete(source_relative_path)
+    realpath = path source_relative_path
+    File.delete realpath
+  end
+
+  ##
   # Copy a file into the source path, returning the destination path.
   def cp(source_file, dest_relative_path)
     realpath = path dest_relative_path
@@ -77,10 +84,42 @@ class Repo
   end
 
   ##
+  # Checks out a branch.
+  def switch_to_branch(branch)
+    Dir.chdir @root do
+      sh "git checkout #{branch}"
+    end
+  end
+
+  ##
+  # The hash of the last commit.
+  def short_hash
+    Dir.chdir @root do
+      hash = sh 'git rev-parse --short HEAD'
+      hash.strip
+    end
+  end
+
+  ##
   # Create a worktree at `dest` for the branch `branch`.
   def create_worktree(dest, branch)
     Dir.chdir @root do
       sh "git worktree add #{dest} #{branch}"
+    end
+  end
+
+  ##
+  # Clone this repo from some directory on disk
+  def clone_from(src)
+    @initialized = true
+    sh "git clone #{src} #{@root}"
+  end
+
+  ##
+  # Push commits in this repo to some remote, maybe a directory on disk.
+  def push_to(dest)
+    Dir.chdir @root do
+      sh "git push #{dest}"
     end
   end
 

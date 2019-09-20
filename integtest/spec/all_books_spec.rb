@@ -114,10 +114,12 @@ RSpec.describe 'building all books' do
       book.source repo, 'resources'
     end
     include_examples 'book basics', 'Test', 'test'
-    context 'raw/test/current' do
-      it "doesn't exist" do
-        # Because "current" doesn't exist at all in "raw"
-        expect(dest_file('raw/test/current')).not_to file_exist
+    page_context "the current version's raw chapter page",
+                 'raw/test/current/chapter.html' do
+      it 'has a link to the image' do
+        expect(body).to include(<<~HTML.strip)
+          <img src="resources/readme/cat.jpg" alt="A cat" />
+        HTML
       end
     end
     page_context "the current version's chapter page",
@@ -145,6 +147,7 @@ RSpec.describe 'building all books' do
       end
     end
     file_context 'html/test/current/resources/readme/cat.jpg'
+    file_context 'raw/test/current/resources/readme/cat.jpg'
     file_context 'html/test/master/resources/readme/cat.jpg'
     file_context 'raw/test/master/resources/readme/cat.jpg'
   end

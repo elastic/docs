@@ -266,8 +266,7 @@ sub build_all {
         say "Writing main TOC";
         $toc->write( $raw_build_dir, $build_dir, $temp_dir, 0 );
 
-        my $static_dir = $build_dir->subdir( 'static' );
-        build_web_resources( $static_dir );
+        build_web_resources( $target_repo->destination );
 
         say "Writing extra HTML redirects";
         for ( @{ $Conf->{redirects} } ) {
@@ -983,14 +982,13 @@ sub check_opts {
         die('--push only compatible with --all') if $Opts->{push};
         die('--announce_preview only compatible with --all') if $Opts->{announce_preview};
         die('--rebuild only compatible with --all') if $Opts->{rebuild};
-        die('--reference only compatible with --all') if $Opts->{reference};
         die('--reposcache only compatible with --all') if $Opts->{reposcache};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
         die('--user only compatible with --all') if $Opts->{user};
     }
     if ( !$Opts->{all} && !$Opts->{preview} ) {
-        die('--target_branch only compatible with --all or --preview') if $Opts->{target_branch};
+        die('--reference only compatible with --all') if $Opts->{reference};
         die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
     }
 }

@@ -20,6 +20,7 @@
 
 'use strict';
 
+const fs = require('fs');
 const Template = require('./template');
 const yargs = require('yargs');
 
@@ -33,14 +34,15 @@ const argv = yargs
   .option("template", {describe: "Path to the template"}).string("template")
   .option("source", {describe: "Path to the source files"}).string("source")
   .option("dest", {describe: "Path to write the templated files"}).string("dest")
-  .option("altsummary", {describe: "Path alternatives summary file if one exists"}).string("dest")
-  .option("lang", {describe: "Language of the book"}).string("lang")
   .option("tocmode", {describe: "Are we building a table of contents?"}).boolean("tocmode")
-  .demandOption(["template", "source", "dest", "lang"])
+  .demandOption(["template", "source", "dest"])
   .help()
   .argv;
 
 (async () => {
-  const template = await Template(argv.template);
-  template.applyToDir(argv.source, argv.dest, argv.lang, argv.altsummary, argv.tocmode);
+  const template = await Template(() => fs.createReadStream(argv.template, {
+    encoding: 'UTF-8',
+    autoDestroy: true,
+  }));
+  await template.applyToDir(argv.source, argv.dest, argv.tocmode);
 })();

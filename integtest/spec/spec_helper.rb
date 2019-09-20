@@ -2,6 +2,7 @@
 
 require_relative 'helper/matcher/doc_body'
 require_relative 'helper/matcher/have_same_keys'
+require_relative 'helper/matcher/initial_js_state'
 require_relative 'helper/matcher/serve'
 require_relative 'helper/console_alternative_examples'
 require_relative 'helper/dest'
