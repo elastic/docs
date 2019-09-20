@@ -33,6 +33,17 @@ const mkdir = promisify(fs.mkdir);
 const unlink = promisify(fs.unlink);
 const writeFile = promisify(fs.writeFile);
 
+const tmp = "/tmp/git.test";
+const gitOpts = {
+  cwd: tmp,
+  env: {
+    GIT_AUTHOR_NAME: "test",
+    GIT_AUTHOR_EMAIL: "test@example.com",
+    GIT_COMMITTER_NAME: "test",
+    GIT_COMMITTER_EMAIL: "test@example.com",
+  },
+};
+
 const collect = async stream => {
   let all = '';
   for await (const c of stream) {
@@ -42,12 +53,37 @@ const collect = async stream => {
 }
 
 describe("git", () => {
-  const git = Git("/docs_build");
+  let git;
+  beforeAll(async () => {
+    await rmfr(tmp);
+    await mkdir(tmp);
+    await execFile("git", ["init"], gitOpts);
+
+    // Setup stuff for objectType and catBlob
+    await mkdir(`${tmp}/dir`);
+    await writeFile(`${tmp}/dir/file`, "contents");
+    await execFile("git", ["add", "."], gitOpts);
+    await execFile("git", ["commit", "-m", "init"], gitOpts);
+    await execFile("git", ["tag", "-m", "make tag", "imatag"], gitOpts);
+
+    // Setup stuff for the diff
+    await writeFile(`${tmp}/removed`, "remove me");
+    await writeFile(`${tmp}/renamed_from`, "rename me");
+    await execFile("git", ["add", "."], gitOpts);
+    await execFile("git", ["commit", "-m", "before diff"], gitOpts);
+    await writeFile(`${tmp}/added`, "add me");
+    await writeFile(`${tmp}/renamed_to`, "rename me");
+    await unlink(`${tmp}/removed`);
+    await unlink(`${tmp}/renamed_from`);
+    await execFile("git", ["add", "."], gitOpts);
+    await execFile("git", ["commit", "-m", "diff me"], gitOpts);
+    git = Git(tmp);
+  });
 
   describe("objectType", () =>{
     describe("when pointed at a blob", () => {
       test("resolves to `blob`", () => {
-        return expect(git.objectType("HEAD:preview/git.js"))
+        return expect(git.objectType("HEAD:dir/file"))
           .resolves.toBe("blob");
       });
     });
@@ -57,10 +93,15 @@ describe("git", () => {
           .resolves.toBe("commit");
       });
     });
-    // We don't have any tags worth checking so we'll just have to believe.
+    describe("when pointed at a tag", () => {
+      test("resolves to `commit`", () => {
+        return expect(git.objectType("imatag"))
+          .resolves.toBe("tag");
+      });
+    });
     describe("when pointed at a tree", () => {
       test("resolves to `tree`", () => {
-        return expect(git.objectType("HEAD:preview"))
+        return expect(git.objectType("HEAD:dir"))
           .resolves.toBe("tree");
       });
     });
@@ -72,7 +113,7 @@ describe("git", () => {
     });
     describe("when pointed at a missing branch", () => {
       test("resolves to `missing`", () => {
-        return expect(git.objectType("totally_missing_branch:template.html"))
+        return expect(git.objectType("totally_missing_branch:dir/file"))
           .resolves.toBe("missing");
       });
     });
@@ -126,8 +167,8 @@ describe("git", () => {
   describe("catBlobToString", () => {
     describe("when pointed at a blob", () => {
       test("returns the blob", () => {
-        return expect(git.catBlobToString("HEAD:preview/git.js", 1024 * 1024))
-          .resolves.toMatch(/catBlobToString:/);
+        return expect(git.catBlobToString("HEAD:dir/file", 1024))
+          .resolves.toBe("contents");
       });
     });
     describe("when pointed at a missing file", () => {
@@ -138,7 +179,7 @@ describe("git", () => {
     });
     describe("when pointed at a missing branch", () => {
       test("rejects to `missing`", () => {
-        return expect(git.catBlobToString("totally_missing_branch:template.html", 1024))
+        return expect(git.catBlobToString("totally_missing_branch:dir/file", 1024))
           .rejects.toBe("missing");
       });
     });
@@ -147,8 +188,8 @@ describe("git", () => {
   describe("catBlob", () => {
     describe("when the object is a blob", () => {
       test("it contains the body of the blob", () => {
-        return expect(collect(git.catBlob("HEAD:preview/git.js")))
-          .resolves.toMatch(/catBlob:/);
+        return expect(collect(git.catBlob("HEAD:dir/file")))
+          .resolves.toMatch("contents");
       });
     });
     describe("when the object is missing", () => {
@@ -166,16 +207,6 @@ describe("git", () => {
   });
 
   describe("diffLastCommit", () => {
-    const tmp = "/tmp/preview_test_repo";
-    const gitOpts = {
-      cwd: tmp,
-      env: {
-        GIT_AUTHOR_NAME: "test",
-        GIT_AUTHOR_EMAIL: "test@example.com",
-        GIT_COMMITTER_NAME: "test",
-        GIT_COMMITTER_EMAIL: "test@example.com",
-      },
-    };
     const collectDiff = async itr => {
       const result = [];
       for await (const change of itr) {
@@ -186,20 +217,7 @@ describe("git", () => {
 
     let diff;
     beforeAll(async () => {
-      await rmfr(tmp);
-      await mkdir(tmp);
-      await execFile("git", ["init"], gitOpts);
-      await writeFile(`${tmp}/removed`, "remove me");
-      await writeFile(`${tmp}/renamed_from`, "rename me");
-      await execFile("git", ["add", "."], gitOpts);
-      await execFile("git", ["commit", "-m", "init"], gitOpts);
-      await writeFile(`${tmp}/added`, "add me");
-      await writeFile(`${tmp}/renamed_to`, "rename me");
-      await unlink(`${tmp}/removed`);
-      await unlink(`${tmp}/renamed_from`);
-      await execFile("git", ["add", "."], gitOpts);
-      await execFile("git", ["commit", "-m", "diff me"], gitOpts);
-      diff = await collectDiff(Git(tmp).diffLastCommit("master"));
+      diff = await collectDiff(git.diffLastCommit("master"));
     });
 
     describe("when a file is added", () => {
