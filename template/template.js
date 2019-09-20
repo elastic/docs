@@ -128,6 +128,7 @@ window.initial_state = ${initialJsState}</script>`;
     return JSON.stringify(module.exports.buildInitialJsState(readAltSummary));
   };
   const applyToDir = async (sourcePath, destPath, lang, alternativesSummary, tocMode) => {
+    const alternativesReportFile = `${sourcePath}/alternatives_report.json`;
     const initialJsState = await buildInitialJsStateFromFile(alternativesSummary);
     const entries = await readdir(sourcePath);
     await mkdir(destPath, {recursive: true});
@@ -137,6 +138,9 @@ window.initial_state = ${initialJsState}</script>`;
       const dest = path.join(destPath, basename);
 
       if (source === alternativesSummary) {
+        continue;
+      }
+      if (source === alternativesReportFile) {
         continue;
       }
 
