@@ -239,7 +239,6 @@ const branchInfo = host => {
   } else {
     template = "template.html";
   }
-  console.log("ASDF", template, prefix);
   return [template, prefix];
 }
 

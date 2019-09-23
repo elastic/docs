@@ -41,30 +41,29 @@ RSpec.describe 'previewing built docs', order: :defined do
   let(:preview) { @preview }
   let(:logs) { preview.logs }
 
+  # The preview server reads the branch from the `Host` header. It throws out
+  # everything after and including the first `.` so you can hit a branch
+  # at urls like `http://master.docs-preview.app.elstc.co/`. Also, if it
+  # can't find the `.` then it just assumes master.
+  let(:host) { "#{branch}.localhost" }
+
   def wait_for_logs(regexp, timeout: 10)
     preview.wait_for_logs(regexp, timeout)
   rescue Timeout::Error
     expect(preview.logs).to match(regexp)
   end
 
-  def wait_for_access(watermark, branch, path)
-    wait_for_logs(/^#{watermark} #{branch}.+#{path}.+$/)
+  def wait_for_access(path)
+    wait_for_logs(/^#{watermark} #{host}.+#{path}.+$/)
   end
 
   def get(watermark, branch, path)
     uri = URI("http://localhost:8000/#{path}")
     req = Net::HTTP::Get.new(uri)
-    # The preview server reads the branch from the `Host` header. It throws out
-    # everything after and including the first `.` so you can hit a branch
-    # at urls like `http://master.docs-preview.app.elstc.co/`. That implies
-    # two things:
-    # 1. It won't work for branches with `.` in them.
-    # 2. If you don't send a `.` then the entire `Host` header is read as the
-    #    branch.
     raise "branches can't contain [.]" if branch.include? '.'
 
     req['X-Opaque-Id'] = watermark
-    req['Host'] = branch
+    req['Host'] = host
     Net::HTTP.start(uri.hostname, uri.port, read_timeout: 20) do |http|
       http.request(req)
     end
@@ -99,18 +98,39 @@ RSpec.describe 'previewing built docs', order: :defined do
     wait_for_logs(/Built docs are ready/)
   end
 
-  shared_examples 'serves some docs' do
+  shared_examples 'serves some docs' do |supports_gapped: true|
     context 'the docs root' do
       it 'contains a link to the current index' do
         expect(root).to serve(doc_body(include(<<~HTML.strip)))
           <a class="ulink" href="test/current/index.html" target="_top">Test</a>
         HTML
       end
+      it 'contains the gtag js' do
+        expect(root).to serve(include(<<~HTML.strip))
+          https://www.googletagmanager.com/gtag/js
+        HTML
+      end
       it 'logs the access to the docs root' do
-        wait_for_access watermark, branch, '/guide/index.html'
+        wait_for_access '/guide/index.html'
         expect(logs).to include(<<~LOGS)
-          #{watermark} #{branch} GET /guide/index.html HTTP/1.1 200
+          #{watermark} #{host} GET /guide/index.html HTTP/1.1 200
         LOGS
+      end
+      if supports_gapped
+        context 'when air gapped' do
+          let(:host) { "gapped_#{branch}.localhost" }
+          it "doesn't contain the gtag js" do
+            expect(root).not_to serve(include(<<~HTML.strip))
+              https://www.googletagmanager.com/gtag/js
+            HTML
+          end
+          it 'logs the access to the air gapped docs root' do
+            wait_for_access '/guide/index.html'
+            expect(logs).to include(<<~LOGS)
+              #{watermark} #{host} GET /guide/index.html HTTP/1.1 200
+            LOGS
+          end
+        end
       end
     end
     context 'the current index' do
@@ -136,18 +156,18 @@ RSpec.describe 'previewing built docs', order: :defined do
       expect(root.code).to eq('404')
     end
     it 'logs the access to the docs root' do
-      wait_for_access watermark, branch, '/guide/index.html'
+      wait_for_access '/guide/index.html'
       expect(logs).to include(<<~LOGS)
-        #{watermark} #{branch} GET /guide/index.html HTTP/1.1 404
+        #{watermark} #{host} GET /guide/index.html HTTP/1.1 404
       LOGS
     end
     it '404s for the diff' do
       expect(diff.code).to eq('404')
     end
     it 'logs the access to the diff' do
-      wait_for_access watermark, branch, '/diff'
+      wait_for_access '/diff'
       expect(logs).to include(<<~LOGS)
-        #{watermark} #{branch} GET /diff HTTP/1.1 404
+        #{watermark} #{host} GET /diff HTTP/1.1 404
       LOGS
     end
   end
@@ -171,9 +191,9 @@ RSpec.describe 'previewing built docs', order: :defined do
       expect(diff).not_to serve(include('Unprocessed results from git'))
     end
     it 'logs access to the diff when it is accessed' do
-      wait_for_access watermark, branch, '/diff'
+      wait_for_access '/diff'
       expect(logs).to include(<<~LOGS)
-        #{watermark} #{branch} GET /diff HTTP/1.1 200
+        #{watermark} #{host} GET /diff HTTP/1.1 200
       LOGS
     end
   end
@@ -208,6 +228,18 @@ RSpec.describe 'previewing built docs', order: :defined do
         expect(directory.code).to eq('301')
         expect(directory['Location']).to eq('/guide/index.html')
       end
+    end
+  end
+  describe "when the host header doesn't have a `.` " \
+           'it serves that master branch' do
+    let(:host) { 'localhost' }
+    let(:branch) { 'master' }
+    # This doesn't support air gapped docs because we can't ask for them without
+    # the `.`.
+    include_examples 'serves some docs', supports_gapped: false
+    include_context 'docs for branch'
+    context 'the diff' do
+      include_examples 'valid diff'
     end
   end
   describe 'for the test branch' do
@@ -317,9 +349,9 @@ RSpec.describe 'previewing built docs', order: :defined do
           expect(very_large_html).to serve(include(very_large_text))
         end
         it 'logs the access to the very large page' do
-          wait_for_access watermark, branch, '/guide/very_large.html'
+          wait_for_access '/guide/very_large.html'
           expect(logs).to include(<<~LOGS)
-            #{watermark} #{branch} GET /guide/very_large.html HTTP/1.1 200
+            #{watermark} #{host} GET /guide/very_large.html HTTP/1.1 200
           LOGS
         end
       end
@@ -336,7 +368,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         end
         include_examples 'logs the fetch'
         describe 'everything still works because we fall back' do
-          include_examples 'serves some docs'
+          include_examples 'serves some docs', supports_gapped: false
         end
       end
     end
