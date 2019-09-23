@@ -117,7 +117,7 @@ sub build_chunked {
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc",
+                    '-a' => "alternative_language_report=$raw_dest/alternatives_report.json",
                     '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
                 '--destination-dir=' . $raw_dest,
@@ -280,7 +280,7 @@ sub build_single {
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
                     '-a' => _format_alternatives($alternatives),
-                    '-a' => "alternative_language_report=$dest/alternatives_report.adoc",
+                    '-a' => "alternative_language_report=$raw_dest/alternatives_report.json",
                     '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
                 # Disable warning on missing attributes because we have
@@ -732,9 +732,13 @@ http {
       }
     }
     types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
+      application/javascript js;
+      image/gif gif;
+      image/jpeg jpg;
+      image/jpeg jpeg;
+      image/svg+xml svg;
+      text/css css;
+      text/html html;
     }
     rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
@@ -796,11 +800,6 @@ http {
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
         add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
       }
-    }
-    types {
-      text/html  html;
-      application/javascript  js;
-      text/css   css;
     }
     rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;

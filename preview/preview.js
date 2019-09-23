@@ -165,7 +165,9 @@ const diffItr = async function* (branch) {
 const serveBlob = (response, templateName, branch, templateExists, requestedObject) => {
   return new Promise((resolve, reject) => {
     let raw = git.catBlob(requestedObject);
-    if (templateExists && requestedObject.endsWith(".html")) {
+    const type = contentType(requestedObject);
+    response.setHeader('Content-Type', type);
+    if (templateExists && type === "text/html; charset=utf-8") {
       raw.on("error", reject);
       applyTemplate(branch, templateName, requestedObject, raw)
         .then(out => pipeToResponse(out, response, resolve, reject))
@@ -176,11 +178,33 @@ const serveBlob = (response, templateName, branch, templateExists, requestedObje
   });
 };
 
-const applyTemplate = async (branch, templateName, requestedObject, out) => {
+const contentType = requestedObject => {
+  const ext = path.extname(requestedObject);
+  switch (ext) {
+    case ".css":
+      return "text/css";
+    case ".gif":
+      return "image/gif";
+    case ".html":
+    case ".htm":
+      return "text/html; charset=utf-8";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".js":
+      return "application/javascript";
+    case ".svg":
+      return "image/svg+xml";
+    default:
+      return "text/plain";
+  }
+};
+
+const applyTemplate = async (branch, templateName, requestedObject, raw) => {
   const template = Template(() => git.catBlob(`${branch}:${templateName}`));
   const lang = await loadLang(requestedObject);
   const initialJsState = await loadInitialJsState(requestedObject);
-  return template.apply(out[Symbol.asyncIterator](), lang, initialJsState);
+  return template.apply(raw[Symbol.asyncIterator](), lang, initialJsState);
 };
 
 const loadLang = async requestedObject => {
