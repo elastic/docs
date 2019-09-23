@@ -39,7 +39,7 @@ const git = Git("/docs_build/.repos/target_repo.git");
 
 const requestHandler = async (request, response) => {
   const parsedUrl = url.parse(request.url);
-  const branch = gitBranch(request.headers['host']);
+  const [templateName, branch] = branchInfo(request.headers['host']);
   if (parsedUrl.pathname === '/diff') {
     return serveDiff(branch, response);
   }
@@ -72,7 +72,7 @@ const requestHandler = async (request, response) => {
       response.end();
       return;
     case 'blob':
-      return serveBlob(response, branch, templateExists, requestedObject);
+      return serveBlob(response, templateName, branch, templateExists, requestedObject);
     default:
       throw new Error(`Don't know how to return ${objecType}`);
   }
@@ -162,14 +162,14 @@ const diffItr = async function* (branch) {
   yield `</html>\n`;
 };
 
-const serveBlob = (response, branch, templateExists, requestedObject) => {
+const serveBlob = (response, templateName, branch, templateExists, requestedObject) => {
   return new Promise((resolve, reject) => {
     let raw = git.catBlob(requestedObject);
     const type = contentType(requestedObject);
     response.setHeader('Content-Type', type);
     if (templateExists && type === "text/html; charset=utf-8") {
       raw.on("error", reject);
-      applyTemplate(branch, requestedObject, raw)
+      applyTemplate(branch, templateName, requestedObject, raw)
         .then(out => pipeToResponse(out, response, resolve, reject))
         .catch(reject);
     } else {
@@ -200,11 +200,11 @@ const contentType = requestedObject => {
   }
 };
 
-const applyTemplate = async (branch, requestedObject, out) => {
-  const template = Template(() => git.catBlob(`${branch}:template.html`));
+const applyTemplate = async (branch, templateName, requestedObject, raw) => {
+  const template = Template(() => git.catBlob(`${branch}:${templateName}`));
   const lang = await loadLang(requestedObject);
   const initialJsState = await loadInitialJsState(requestedObject);
-  return template.apply(out[Symbol.asyncIterator](), lang, initialJsState);
+  return template.apply(raw[Symbol.asyncIterator](), lang, initialJsState);
 };
 
 const loadLang = async requestedObject => {
@@ -226,11 +226,20 @@ const loadInitialJsState = async requestedObject => {
   }
 };
 
-function gitBranch(host) {
-  if (!host) {
-    return 'master';
+const branchInfo = host => {
+  const dot = host.indexOf(".");
+  if (dot === -1) {
+    return ["template.html", "master"];
   }
-  return host.split('.')[0];
+  let prefix = host.substring(0, dot);
+  let template;
+  if (prefix.startsWith("gapped_")) {
+    template = "air_gapped_template.html";
+    prefix = prefix.substring("gapped_".length);
+  } else {
+    template = "template.html";
+  }
+  return [template, prefix];
 }
 
 const server = http.createServer((request, response) => {
