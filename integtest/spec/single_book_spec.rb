@@ -393,7 +393,7 @@ RSpec.describe 'building a single book' do
   context 'for README.asciidoc' do
     convert_single_before_context do |src|
       root = File.expand_path('../../', __dir__)
-      ['cat.jpg', 'screenshot.png'].each do |img|
+      ['cat.jpg', 'example.svg', 'screenshot.png'].each do |img|
         src.cp "#{root}/resources/readme/#{img}", "resources/readme/#{img}"
       end
       txt = File.open("#{root}/README.asciidoc", 'r:UTF-8', &:read)

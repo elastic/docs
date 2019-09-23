@@ -12,17 +12,20 @@ require 'securerandom'
 RSpec.describe 'previewing built docs', order: :defined do
   very_large_text = 'muchtext' * 1024 * 1024 * 5 # 40mb
   repo_root = File.expand_path '../../', __dir__
+  readme_resources = "#{repo_root}/resources/readme"
 
   convert_before do |src, dest|
     repo = src.repo_with_index 'repo', <<~ASCIIDOC
       Some text.
 
       image::resources/readme/cat.jpg[A cat]
+      image::resources/readme/example.svg[An example svg]
       image::resources/very_large.jpg[Not a jpg but very big]
     ASCIIDOC
-    repo.cp "#{repo_root}/resources/readme/cat.jpg", 'resources/readme/cat.jpg'
+    repo.cp "#{readme_resources}/cat.jpg", 'resources/readme/cat.jpg'
+    repo.cp "#{readme_resources}/example.svg", 'resources/readme/example.svg'
     repo.write 'resources/very_large.jpg', very_large_text
-    repo.commit 'add cat image'
+    repo.commit 'add images'
     book = src.book 'Test'
     book.source repo, 'index.asciidoc'
     book.source repo, 'resources'
@@ -77,6 +80,9 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:current_index) { get watermark, branch, "#{current_url}/index.html" }
     let(:cat_image) do
       get watermark, branch, "#{current_url}/resources/readme/cat.jpg"
+    end
+    let(:svg_image) do
+      get watermark, branch, "#{current_url}/resources/readme/example.svg"
     end
     let(:very_large) do
       get watermark, branch, "#{current_url}/resources/very_large.jpg"
@@ -176,9 +182,23 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:branch) { 'master' }
     include_context 'docs for branch'
     include_examples 'serves some docs'
-    it 'serves an image' do
-      bytes = File.open("#{repo_root}/resources/readme/cat.jpg", 'rb', &:read)
-      expect(cat_image).to serve(eq(bytes))
+    context 'for a JPG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/cat.jpg", 'rb', &:read)
+        expect(cat_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(cat_image['Content-Type']).to eq('image/jpeg')
+      end
+    end
+    context 'for an SVG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/example.svg", 'rb', &:read)
+        expect(svg_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(svg_image['Content-Type']).to eq('image/svg+xml')
+      end
     end
     it 'serves a very large image' do
       expect(very_large).to serve(eq(very_large_text))
@@ -351,6 +371,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         Some text.
 
         image::resources/readme/cat.jpg[A cat]
+        image::resources/readme/example.svg[An example svg]
         image::resources/very_large.jpg[Not a jpg but very big]
       ASCIIDOC
       repo.commit 'test change for test_noop branch2'
