@@ -140,6 +140,7 @@ module.exports = templateSource => {
   const applyToDir = async (sourcePath, destPath, tocMode) => {
     const langFile = `${sourcePath}/lang`;
     const alternativesSummaryFile = `${sourcePath}/alternatives_summary.json`;
+    const alternativesReportFile = `${sourcePath}/alternatives_report.json`;
     const initialJsState = await buildInitialJsStateFromFile(alternativesSummaryFile);
     const lang = (await readFile(langFile, {
       encoding: "utf8",
@@ -151,10 +152,13 @@ module.exports = templateSource => {
       const source = path.join(sourcePath, basename);
       const dest = path.join(destPath, basename);
 
+      if (source === langFile) {
+        continue;
+      }
       if (source === alternativesSummaryFile) {
         continue;
       }
-      if (source === langFile) {
+      if (source === alternativesReportFile) {
         continue;
       }
 
