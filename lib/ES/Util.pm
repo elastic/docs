@@ -921,9 +921,11 @@ sub build_web_resources {
 
     # Copy the template to the root of the repo so we can apply it on the fly.
     # NOTE: We only apply it on the fly for preview right now.
-    my $template_source = file('resources/web/template.html');
-    my $template = $dest->file('template.html');
-    rcopy( $template_source, $template );
+    for ( qw(template air_gapped_template) ) {
+        my $template_source = file("resources/web/$_.html");
+        my $template = $dest->file("$_.html");
+        rcopy( $template_source, $template );
+    }
 }
 
 1
