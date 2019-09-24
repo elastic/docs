@@ -14,6 +14,5 @@ class OpenedDocs < ServingDocs
 
     wait_for_logs(/start worker processes$/, 60)
     wait_for_logs(/^preview server is listening on 3000$/, 60) if uses_preview
-    puts "waited for preview #{uses_preview}"
   end
 end

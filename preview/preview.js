@@ -58,11 +58,8 @@ const requestHandler = async (core, parsedUrl, response) => {
   response.setHeader('Content-Type', type);
   if (file.hasTemplate && type === "text/html; charset=utf-8") {
     const template = Template(file.template);
-    console.log("asdfadsf1");
     const lang = await file.lang();
-    console.log("asdfadsf2");
     const initialJsState = await buildInitialJsState(file.alternativesReport);
-    console.log("asdfadsf3");
     const templated = template.apply(
       file.stream[Symbol.asyncIterator](), lang.trim(), initialJsState
     );
@@ -108,9 +105,7 @@ const contentType = rawPath => {
 
 const buildInitialJsState = async alternativesReportSource => {
   try {
-    console.log("checking alternatives");
     const parsed = JSON.parse(await alternativesReportSource());
-    console.log("building initial js");
     return JSON.stringify(Template.buildInitialJsState(parsed));
   } catch (err) {
     if (err === "missing") {
