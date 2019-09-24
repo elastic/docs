@@ -560,8 +560,17 @@ RSpec.describe 'building a single book' do
       @opened_docs.exit
     end
 
-    let(:static) { 'http://localhost:8000/guide/static' }
-    let(:index) { Net::HTTP.get_response(URI('http://localhost:8000/guide/')) }
+    let(:root) { 'http://localhost:8000/guide' }
+    let(:static) { "#{root}/static" }
+    let(:index) { Net::HTTP.get_response(URI("#{root}/index.html")) }
+    let(:air_gapped_index) do
+      uri = URI("#{root}/index.html")
+      req = Net::HTTP::Get.new(uri)
+      req['Host'] = 'gapped.localhost'
+      Net::HTTP.start(uri.hostname, uri.port, read_timeout: 20) do |http|
+        http.request(req)
+      end
+    end
     let(:js) do
       Net::HTTP.get_response(URI("#{static}/docs.js"))
     end
@@ -569,10 +578,31 @@ RSpec.describe 'building a single book' do
       Net::HTTP.get_response(URI("#{static}/styles.css"))
     end
 
-    it 'serves the book' do
-      expect(index).to serve(doc_body(include(<<~HTML.strip)))
-        <a href="chapter.html">Chapter
-      HTML
+    context 'the index' do
+      context 'when not air gapped' do
+        it 'contains the gtag js' do
+          expect(index).to serve(include(<<~HTML.strip))
+            https://www.googletagmanager.com/gtag/js
+          HTML
+        end
+        it 'serves the chapter header' do
+          expect(index).to serve(doc_body(include(<<~HTML.strip)))
+            <a href="chapter.html">Chapter
+          HTML
+        end
+      end
+      context 'when air gapped' do
+        it "doesn't contain the gtag js" do
+          expect(air_gapped_index).not_to serve(include(<<~HTML.strip))
+            https://www.googletagmanager.com/gtag/js
+          HTML
+        end
+        it 'serves the chapter header' do
+          expect(air_gapped_index).to serve(doc_body(include(<<~HTML.strip)))
+            <a href="chapter.html">Chapter
+          HTML
+        end
+      end
     end
 
     context 'the js' do

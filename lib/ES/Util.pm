@@ -25,6 +25,7 @@ our @EXPORT_OK = qw(
     write_nginx_test_config
     write_nginx_preview_config
     start_web_resources_watcher
+    start_preview
     build_web_resources
 );
 
@@ -675,7 +676,7 @@ sub write_nginx_redirects {
     $dest->spew( iomode => '>:utf8', $redirects );
 
     my $test_nginx_conf = $temp_dir->file( 'nginx.conf' );
-    write_nginx_test_config( $test_nginx_conf, $docs_dir, $dest, 0 );
+    write_nginx_test_config( $test_nginx_conf, $docs_dir, $dest, 0, 0 );
     run( qw(nginx -t -c), $test_nginx_conf );
 }
 
@@ -688,22 +689,63 @@ sub write_nginx_redirects {
 # redirects_file  - file containing redirects or 0 if there aren't
 #                 - any redirects : Path::Class::file||0
 # waching_web     - Truthy if we are watching web resources.
+# preview_enabled - Truthy if the preview application is running and we should
+#                   delegate to that.
 #===================================
 sub write_nginx_test_config {
 #===================================
-    my ( $dest, $docs_dir, $redirects_file, $watching_web ) = @_;
+    my ( $dest, $docs_dir, $redirects_file, $watching_web, $preview_enabled ) = @_;
 
     my $redirects_line = $redirects_file ? "include $redirects_file;\n" : '';
     my $web_conf;
     if ( $watching_web ) {
         $web_conf = <<"CONF"
     rewrite ^/guide/static/docs\\.js(.*)\$ /guide/static/docs_js/index.js\$1 last;
-    location /guide/static/ {
+    location ^~ /guide/static/ {
       proxy_pass http://0.0.0.0:1234;
     }
 CONF
     } else {
         $web_conf = '';
+    }
+
+    my $guide_conf;
+    if ( $preview_enabled ) {
+        $guide_conf = <<"CONF"
+    location ~/(guide|diff) {
+      proxy_pass http://0.0.0.0:3000;
+      proxy_http_version 1.1;
+      proxy_set_header Host \$host;
+      proxy_cache_bypass \$http_upgrade;
+      proxy_buffering off;
+      gzip on;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+CONF
+    } else {
+        $guide_conf = <<"CONF"
+    location /guide {
+      alias $docs_dir;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+    }
+    types {
+      application/javascript js;
+      image/gif gif;
+      image/jpeg jpg;
+      image/jpeg jpeg;
+      image/svg+xml svg;
+      text/css css;
+      text/html html;
+    }
+CONF
     }
 
     my $nginx_conf = <<"CONF";
@@ -722,30 +764,14 @@ http {
 
   server {
     listen 8000;
-    $web_conf
-    location /guide {
-      alias $docs_dir;
-      add_header 'Access-Control-Allow-Origin' '*';
-      if (\$request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
-      }
-    }
-    types {
-      application/javascript js;
-      image/gif gif;
-      image/jpeg jpg;
-      image/jpeg jpeg;
-      image/svg+xml svg;
-      text/css css;
-      text/html html;
-    }
+$web_conf
+$guide_conf
     rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
     rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
-    $redirects_line
+$redirects_line
   }
 }
 CONF
@@ -865,6 +891,20 @@ sub start_web_resources_watcher {
              --hmr-port 8001
              -d /tmp/parcel/
              resources/web/docs_js/index.js resources/web/styles.pcss) );
+}
+
+#===================================
+sub start_preview {
+#===================================
+    my ( $command, $root ) = @_;
+
+    my $preview_pid = fork;
+    return $preview_pid if $preview_pid;
+
+    close STDIN;
+    open( STDIN, "</dev/null" );
+    exec( qw(node --max-old-space-size=128 /docs_build/preview/cli.js),
+          $command, $root );
 }
 
 #===================================

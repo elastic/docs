@@ -36,6 +36,7 @@ use ES::Util qw(
     write_nginx_test_config
     write_nginx_preview_config
     start_web_resources_watcher
+    start_preview
     build_web_resources
 );
 
@@ -123,7 +124,10 @@ sub build_local {
 
     say "Done";
 
-    serve_and_open_browser( $dir, 0, $web_resources_pid ) if $Opts->{open};
+    if ( $Opts->{open} ) {
+        my $preview_pid = start_preview( 'fs', $raw_dir );
+        serve_local_preview( $dir, 0, $web_resources_pid, $preview_pid );
+    }
 }
 
 #===================================
@@ -286,7 +290,7 @@ sub build_all {
     }
     $tracker->prune_out_of_date( @$contents );
     push_changes( $build_dir, $target_repo, $tracker ) if $Opts->{push};
-    serve_and_open_browser( $build_dir, $redirects, 0 ) if $Opts->{open};
+    serve_local_preview( $build_dir, $redirects, 0, 0 ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -621,39 +625,34 @@ sub preview {
     my $nginx_config = file('/tmp/nginx.conf');
     write_nginx_preview_config( $nginx_config );
 
-    if ( my $node_pid = fork ) {
+    if ( my $nginx_pid = fork ) {
         my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
 
         say "Cloning built docs";
         my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
         say "Built docs are ready";
 
-        if ( my $nginx_pid = fork ) {
-            $SIG{TERM} = sub {
-                # We should be a good citizen and shut down the subprocesses.
-                # This isn't so important in k8s or docker because we shoot
-                # the entire container when we're done, but it is nice when
-                # testing.
-                say 'Terminating preview services...nginx';
-                kill 'TERM', $nginx_pid;
-                wait;
-                say 'Terminating preview services...node';
-                kill 'TERM', $node_pid;
-                wait;
-                say 'Terminated preview services';
-                exit 0;
-            };
-            while (1) {
-                sleep 1;
-                my $fetch_result = $target_repo->fetch;
-                say "$fetch_result" if ( $fetch_result );
-            }
-            exit;
-        } else {
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            exec( qw(node --max-old-space-size=128 /docs_build/preview/preview.js) );
+        my $preview_pid = start_preview( 'git', '/docs_build/.repos/target_repo.git' );
+        $SIG{TERM} = sub {
+            # We should be a good citizen and shut down the subprocesses.
+            # This isn't so important in k8s or docker because we shoot
+            # the entire container when we're done, but it is nice when
+            # testing.
+            say 'Terminating preview services...nginx';
+            kill 'TERM', $nginx_pid;
+            wait;
+            say 'Terminating preview services...preview';
+            kill 'TERM', $preview_pid;
+            wait;
+            say 'Terminated preview services';
+            exit 0;
+        };
+        while (1) {
+            sleep 1;
+            my $fetch_result = $target_repo->fetch;
+            say "$fetch_result" if ( $fetch_result );
         }
+        exit;
     } else {
         close STDIN;
         open( STDIN, "</dev/null" );
@@ -801,32 +800,46 @@ sub pick_conf {
 }
 
 #===================================
-# Serve the documentation that we just built and open a browser to look at it.
+# Serve the documentation that we just built.
 #
 # docs_dir        - directory containing generated docs : Path::Class::dir
 # redirects_file  - file containing redirects or 0 if there aren't
 #                 - any redirects : Path::Class::file||0
+# web_resources_pid - pid of a subprocess that rebuilds the web resources on
+#                     the fly if we're running one or 0
+# preview_pid     - pid of the preview application or 0 if we're not running it
 #===================================
-sub serve_and_open_browser {
+sub serve_local_preview {
 #===================================
-    my ( $docs_dir, $redirects_file, $web_resources_pid ) = @_;
+    my ( $docs_dir, $redirects_file, $web_resources_pid, $preview_pid ) = @_;
 
-    if ( my $pid = fork ) {
+    if ( my $nginx_pid = fork ) {
         # parent
         $SIG{INT} = sub {
-            kill 'TERM', $pid;
-            kill 'TERM', $web_resources_pid if $web_resources_pid;
+            say 'Terminating preview services...nginx';
+            kill 'TERM', $nginx_pid;
+            wait;
+            if ( $preview_pid ) {
+                say 'Terminating preview services...preview';
+                kill 'TERM', $preview_pid;
+                wait;
+            }
+            if ( $web_resources_pid ) {
+                say 'Terminating preview services...parcel';
+                kill 'TERM', $web_resources_pid;
+                wait;
+            }
         };
         $SIG{TERM} = $SIG{INT};
 
         wait;
         say 'Terminated preview services';
         exit;
-    }
-    else {
+    } else {
         my $nginx_config = file('/tmp/nginx.conf');
         write_nginx_test_config(
-            $nginx_config, $docs_dir, $redirects_file, $web_resources_pid
+            $nginx_config, $docs_dir, $redirects_file,
+            $web_resources_pid, $preview_pid
         );
         close STDIN;
         open( STDIN, "</dev/null" );
