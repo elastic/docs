@@ -125,7 +125,6 @@ sub build_local {
     say "Done";
 
     if ( $Opts->{open} ) {
-        # TODO wait for this to start before opening browser
         my $preview_pid = start_preview( 'fs', $raw_dir );
         serve_local_preview( $dir, 0, $web_resources_pid, $preview_pid );
     }
