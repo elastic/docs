@@ -35,7 +35,7 @@ const GitCore = repoPath => {
     if (!hostPrefix) {
       return ["template.html", "master"];
     }
-    let prefix = host.substring(0, dot);
+    let prefix = hostPrefix;
     let template;
     if (prefix.startsWith("gapped_")) {
       template = "air_gapped_template.html";
@@ -74,9 +74,9 @@ const GitCore = repoPath => {
               hasTemplate: templateExists,
               stream: git.catBlob(requestedObject),
               template: () => git.catBlob(`${branch}:${templateName}`),
-              lang: () => git.catBlobToString(`${dir}lang`),
+              lang: () => git.catBlobToString(`${dir}/lang`),
               alternativesReport: () => git.catBlobToString(
-                `${dir}alternatives_summary.json`, 10 * 1024
+                `${dir}/alternatives_summary.json`, 10 * 1024
               ),
             };
           default:
