@@ -608,7 +608,7 @@ RSpec.describe 'building a single book' do
     end
     context 'the table of contents' do
       it "isn't templated" do
-        expect(toc).not_to serve(start_with('<div class="toc">'))
+        expect(toc).to serve(start_with('<div class="toc">'))
       end
     end
 
