@@ -56,7 +56,7 @@ const requestHandler = async (core, parsedUrl, response) => {
   }
 
   response.setHeader('Content-Type', type);
-  if (file.hasTemplate && type === "text/html; charset=utf-8") {
+  if (file.hasTemplate && !path.endsWith("toc.html") && type === "text/html; charset=utf-8") {
     const template = Template(file.template);
     const lang = await file.lang();
     const initialJsState = await buildInitialJsState(file.alternativesReport);

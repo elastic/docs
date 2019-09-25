@@ -77,6 +77,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:robots_txt) { get watermark, branch, 'robots.txt' }
     let(:root) { get watermark, branch, 'guide/index.html' }
     let(:current_index) { get watermark, branch, "#{current_url}/index.html" }
+    let(:current_toc) { get watermark, branch, "#{current_url}/toc.html" }
     let(:cat_image) do
       get watermark, branch, "#{current_url}/resources/readme/cat.jpg"
     end
@@ -141,6 +142,11 @@ RSpec.describe 'previewing built docs', order: :defined do
         expect(current_index).to serve(include(<<~HTML.strip))
           <section id="guide" lang="#{expected_language}">
         HTML
+      end
+    end
+    context 'the current table of contents' do
+      it "isn't templated" do
+        expect(current_toc).to serve(start_with('<div class="toc">'))
       end
     end
     it 'serves a "go away" robots.txt' do

@@ -187,8 +187,8 @@ sub build_chunked {
         $child_dest->spew( iomode => '>:utf8', $contents );
         unlink $_ or die "Coudln't remove $_ $!";
     }
+    extract_toc_from_index( $raw_dest );
     finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
-    extract_toc_from_index( $dest );
     $chunk_dir->rmtree;
 }
 
