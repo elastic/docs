@@ -54,6 +54,7 @@ RSpec.describe 'building all books' do
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
     file_context 'html/static/styles.css' do
+      has_license 'Bootstrap', 'The MIT License (MIT)'
       has_license 'Inter', 'SIL OPEN FONT LICENSE'
       has_license 'Noto Sans Japanese', 'SIL OPEN FONT LICENSE'
     end
