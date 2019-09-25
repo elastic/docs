@@ -141,6 +141,7 @@ module.exports = templateSource => {
     const langFile = `${sourcePath}/lang`;
     const alternativesSummaryFile = `${sourcePath}/alternatives_summary.json`;
     const alternativesReportFile = `${sourcePath}/alternatives_report.json`;
+    const tocFile = `${sourcePath}/toc.html`;
     const initialJsState = await buildInitialJsStateFromFile(alternativesSummaryFile);
     const lang = (await readFile(langFile, {
       encoding: "utf8",
@@ -178,7 +179,7 @@ module.exports = templateSource => {
         }
         continue;
       }
-      if (!basename.endsWith(".html")) {
+      if (source === tocFile || !basename.endsWith(".html")) {
         await recursiveCopy(source, dest);
         continue;
       }

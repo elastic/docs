@@ -54,6 +54,7 @@ RSpec.describe 'building a single book' do
           expect(contents).to initial_js_state(be_nil)
         end
       end
+      page_context 'raw/toc.html'
       page_context 'raw/index.html' do
         it "doesn't have the xml prolog" do
           expect(contents).not_to include('?xml')
@@ -571,6 +572,7 @@ RSpec.describe 'building a single book' do
         http.request(req)
       end
     end
+    let(:toc) { Net::HTTP.get_response(URI("#{root}/toc.html")) }
     let(:js) do
       Net::HTTP.get_response(URI("#{static}/docs.js"))
     end
@@ -602,6 +604,11 @@ RSpec.describe 'building a single book' do
             <a href="chapter.html">Chapter
           HTML
         end
+      end
+    end
+    context 'the table of contents' do
+      it "isn't templated" do
+        expect(toc).to serve(start_with('<div class="toc">'))
       end
     end
 
