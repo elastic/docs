@@ -4,11 +4,11 @@ require 'net/http'
 require 'securerandom'
 
 ##
-# Test for the `--preview` functionality that is usually deployed in
-# Elastic Apps. It previews all branches of the `--target_repo`. The test runs
-# everything in the defined order because starting the preview is fairly heavy
-# and the preview is designed to update itself as its target repo changes so
-# we start it once and play with the target repo during the tests.
+# Test for a preview that is usually deployed in Elastic Apps. It previews all
+# branches of the `--target_repo`. The test runs everything in the defined
+# order because starting the preview is fairly heavy and the preview is
+# designed to update itself as its target repo changes so we start it once and
+# play with the target repo during the tests.
 RSpec.describe 'previewing built docs', order: :defined do
   very_large_text = 'muchtext' * 1024 * 1024 * 5 # 40mb
   repo_root = File.expand_path '../../', __dir__

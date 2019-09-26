@@ -30,18 +30,21 @@ process.on('unhandledRejection', error => {
 });
 
 yargs
+  .option("default-template", {
+    default: "template.html"
+  })
   .command({
     command: "git <repo>",
     desc: "Serve a repo",
     handler: argv => {
-      preview(core.Git(argv.repo));
+      preview(core.Git(argv["default-template"], argv.repo));
     },
   })
   .command({
     command: "fs <path>",
     desc: "Serve some files from disk",
     handler: argv => {
-      preview(core.Fs(argv.path));
+      preview(core.Fs(argv["default-template"], argv.path));
     },
   })
   .version(false)

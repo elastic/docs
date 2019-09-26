@@ -125,7 +125,7 @@ sub build_local {
     say "Done";
 
     if ( $Opts->{open} ) {
-        my $preview_pid = start_preview( 'fs', $raw_dir );
+        my $preview_pid = start_preview( 'fs', $raw_dir, 'template.html' );
         serve_local_preview( $dir, 0, $web_resources_pid, $preview_pid );
     }
 }
@@ -628,11 +628,17 @@ sub preview {
     if ( my $nginx_pid = fork ) {
         my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
 
-        say "Cloning built docs";
-        my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+        my $target_repo;
+        unless ( $Opts->{gapped} ) {
+            say "Cloning built docs";
+            $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+        }
         say "Built docs are ready";
 
-        my $preview_pid = start_preview( 'git', '/docs_build/.repos/target_repo.git' );
+        my $default_template = $Opts->{gapped} ? "air_gapped_template.html" : "template.html";
+        my $preview_pid = start_preview(
+            'git', '/docs_build/.repos/target_repo.git', $default_template
+        );
         $SIG{TERM} = sub {
             # We should be a good citizen and shut down the subprocesses.
             # This isn't so important in k8s or docker because we shoot
@@ -647,10 +653,14 @@ sub preview {
             say 'Terminated preview services';
             exit 0;
         };
-        while (1) {
-            sleep 1;
-            my $fetch_result = $target_repo->fetch;
-            say "$fetch_result" if ( $fetch_result );
+        if ( $Opts->{gapped} ) {
+            wait;
+        } else {
+            while (1) {
+                sleep 1;
+                my $fetch_result = $target_repo->fetch;
+                say "$fetch_result" if ( $fetch_result );
+            }
         }
         exit;
     } else {
@@ -881,6 +891,7 @@ sub command_line_opts {
         'user=s',
         # Options only compatible with --preview
         'preview',
+        'gapped',
         # Options that do *something* for either --doc or --all or --preview
         'conf=s',
         'in_standard_docker',
@@ -1000,8 +1011,11 @@ sub check_opts {
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
         die('--user only compatible with --all') if $Opts->{user};
     }
+    if ( !$Opts->{preview} ) {
+        die('--gapped only compatible with --preview') if $Opts->{gapped};
+    }
     if ( !$Opts->{all} && !$Opts->{preview} ) {
-        die('--reference only compatible with --all') if $Opts->{reference};
+        die('--reference only compatible with --all or --preview') if $Opts->{reference};
         die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
     }
 }

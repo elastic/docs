@@ -3,7 +3,7 @@
 # Performs a quick and dirty local test on the preview. Because this runs as
 # it would in k8s you'll need to `docker kill` it when you are done. We do
 # have integration tests for this in integtest/spec/preview_spec.rb which are
-# much faster because they don't use real data.
+# much faster because they don't use real data but this is useful too.
 
 set -e
 

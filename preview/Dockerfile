@@ -1,4 +1,4 @@
-from docker.elastic.co/docs/build:1
+FROM docker.elastic.co/docs/build:1
 
 RUN mkdir /var/log/nginx
 RUN mkdir -p /run/nginx

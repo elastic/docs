@@ -30,10 +30,10 @@ const { promisify } = require('util');
 const stat = promisify(fs.stat);
 const readFile = promisify(fs.readFile);
 
-const GitCore = repoPath => {
+const GitCore = (defaultTemplate, repoPath) => {
   const hostInfo = hostPrefix => {
     if (!hostPrefix) {
-      return ["template.html", "master"];
+      return [defaultTemplate, "master"];
     }
     let prefix = hostPrefix;
     let template;
@@ -87,9 +87,15 @@ const GitCore = repoPath => {
   };
 };
 
-const FsCore = rootPath => {
+const FsCore = (defaultTemplate, rootPath) => {
+  const hostInfo = hostPrefix => {
+    if (!hostPrefix) {
+      return defaultTemplate;
+    }
+    return "gapped" === hostPrefix ? "air_gapped_template.html" : "template.html";
+  };
   return hostPrefix => {
-    const template = "gapped" === hostPrefix ? "air_gapped_template.html" : "template.html";
+    const template = hostInfo(hostPrefix);
     const readAlternativesReport = async dir => {
       try {
         return await readFile(`${dir}alternatives_summary.json`, { encoding: "utf8" });

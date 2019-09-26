@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'open3'
 
 require_relative 'opened_docs'
@@ -98,6 +99,17 @@ class Dest
   # Start the preview service.
   def start_preview
     Preview.new(bare_repo)
+  end
+
+  ##
+  # Start the preview service in air gapped mode.
+  def start_air_gapped
+    # The air gapped build expects the built docs to be *exactly* where the
+    # Dockerfile puts them. So we put them there too.
+    FileUtils.rm_rf '/docs_build/.repos/target_repo.git'
+    FileUtils.mkdir_p '/docs_build/.repos'
+    FileUtils.cp_r bare_repo, '/docs_build/.repos/target_repo.git'
+    Preview.new(bare_repo, air_gapped: true)
   end
 
   def remove_target_brach(branch_name)
