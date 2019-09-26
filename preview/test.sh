@@ -9,12 +9,12 @@ set -e
 
 cd $(git rev-parse --show-toplevel)
 ../infra/ansible/roles/git_fetch_reference/files/git-fetch-reference.sh built-docs.git
-docker build -t docker.elastic.co/docs/preview:7 -f preview/Dockerfile .
+docker build -t docker.elastic.co/docs/preview:8 -f preview/Dockerfile .
 id=$(docker run --rm \
           --publish 8000:8000/tcp \
           -v $HOME/.git-references:/root/.git-references \
           -d \
-          docker.elastic.co/docs/preview:7 \
+          docker.elastic.co/docs/preview:8 \
           /docs_build/build_docs.pl --in_standard_docker \
               --preview --reference /root/.git-references \
               --target_repo https://github.com/elastic/built-docs.git)
