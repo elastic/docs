@@ -576,6 +576,9 @@ RSpec.describe 'building a single book' do
     let(:js) do
       Net::HTTP.get_response(URI("#{static}/docs.js"))
     end
+    let(:jquery) do
+      Net::HTTP.get_response(URI("#{static}/jquery.js"))
+    end
     let(:css) do
       Net::HTTP.get_response(URI("#{static}/styles.css"))
     end
@@ -625,6 +628,18 @@ RSpec.describe 'building a single book' do
       end
       it 'includes a source map' do
         expect(js).to serve(include('sourceMappingURL='))
+      end
+    end
+    context 'jquery' do
+      it 'is unminified' do
+        # This comment is a little brittle to detect but I don't expect us to
+        # rely on jquery forever.
+        expect(jquery).to serve(include(<<~JS))
+          Includes Sizzle.js
+        JS
+      end
+      it "doesn't include a source map" do
+        expect(jquery).not_to serve(include('sourceMappingURL='))
       end
     end
     context 'the css' do
