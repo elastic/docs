@@ -69,6 +69,16 @@ module Dsl
           expect(contents).not_to include('sourceMappingURL=')
         end
       end
+      file_context 'html/static/jquery.js' do
+        it 'is minified' do
+          expect(contents).to include(<<~JS.strip)
+            /*! jQuery v1.12.4 | (c) jQuery Foundation | jquery.org/license */
+          JS
+        end
+        it "doesn't include a source map" do
+          expect(contents).not_to include('sourceMappingURL=')
+        end
+      end
       file_context 'html/static/styles.css' do
         it 'is minified' do
           expect(contents).to include(<<~CSS.strip)

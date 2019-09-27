@@ -701,6 +701,12 @@ sub write_nginx_test_config {
     if ( $watching_web ) {
         $web_conf = <<"CONF"
     rewrite ^/guide/static/docs\\.js(.*)\$ /guide/static/docs_js/index.js\$1 last;
+    location ^~ /guide/static/jquery.js {
+      alias /node_modules/jquery/dist/jquery.js;
+      types {
+        application/javascript js;
+      }
+    }
     location ^~ /guide/static/ {
       proxy_pass http://0.0.0.0:1234;
     }
@@ -951,6 +957,8 @@ sub build_web_resources {
         next unless /.+\.woff2?/;
         rcopy( $_, $static_dir );
     }
+
+    rcopy( '/node_modules/jquery/dist/jquery.min.js', $static_dir->file( 'jquery.js' ) );
 
     # The public site can't ready anything from the raw directory so we have to
     # copy the static files to html as well.
