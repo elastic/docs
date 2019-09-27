@@ -13,7 +13,7 @@ cd $(git rev-parse --show-toplevel)
 id=$(docker run --rm \
           --publish 8000:8000/tcp \
           -d \
-          docker.elastic.co/docs/air_gapped:latest)
+          docker.elastic.co/docs-private/air_gapped:latest)
 echo "Started the air gapped docs. Some useful commands:"
 echo "   docker kill $id"
 echo "   docker logs -tf $id"

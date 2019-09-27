@@ -21,4 +21,4 @@ GIT_DIR=air_gapped/work/target_repo.git git fetch
 ./build_docs --just-build-image
 docker build -t docker.elastic.co/docs/preview:8 -f preview/Dockerfile .
 # Use buildkit here to pick up the customized dockerignore file
-DOCKER_BUILDKIT=1 docker build -t docker.elastic.co/docs/air_gapped:latest -f air_gapped/Dockerfile .
+DOCKER_BUILDKIT=1 docker build -t docker.elastic.co/docs-private/air_gapped:latest -f air_gapped/Dockerfile .
