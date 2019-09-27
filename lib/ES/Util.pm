@@ -742,15 +742,6 @@ CONF
         add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
       }
     }
-    types {
-      application/javascript js;
-      image/gif gif;
-      image/jpeg jpg;
-      image/jpeg jpeg;
-      image/svg+xml svg;
-      text/css css;
-      text/html html;
-    }
 CONF
     }
 
@@ -772,9 +763,20 @@ http {
     listen 8000;
 $web_conf
 $guide_conf
-    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
+    location / {
+      alias /docs_build/resources/web/static/;
+      autoindex off;
+    }
+    types {
+      application/javascript js;
+      image/gif gif;
+      image/jpeg jpg;
+      image/jpeg jpeg;
+      image/svg+xml svg;
+      text/css css;
+      text/html html;
+    }
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
-    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
 $redirects_line
@@ -833,9 +835,11 @@ http {
         add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
       }
     }
-    rewrite ^/android-chrome-(.+)\$ https://www.elastic.co/android-chrome-\$1 permanent;
+    location / {
+      alias /docs_build/resources/web/static/;
+      autoindex off;
+    }
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
-    rewrite ^/favicon(.+)\$ https://www.elastic.co/favicon\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
     rewrite ^/static/(.+)\$ https://www.elastic.co/static/\$1 permanent;
   }
