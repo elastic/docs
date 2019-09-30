@@ -14,7 +14,7 @@ test_watch: tests
 
 .PHONY: jest
 jest: tests
-	/node_modules/jest/bin/jest.js ./tests/**
+	/node_modules/jest/bin/jest.js ./tests/** ./__test__/**
 
 .PHONY: tests
 tests:

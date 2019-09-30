@@ -583,6 +583,8 @@ RSpec.describe 'building a single book' do
       Net::HTTP.get_response(URI("#{static}/styles.css"))
     end
 
+    include_examples 'the favicon'
+
     context 'the index' do
       context 'when not air gapped' do
         it 'contains the gtag js' do

@@ -98,6 +98,7 @@ RSpec.describe 'previewing built docs', order: :defined do
   it 'logs that the built docs are ready' do
     wait_for_logs(/Built docs are ready/)
   end
+  include_examples 'the favicon'
 
   shared_examples 'serves some docs' do |supports_gapped: true|
     context 'the docs root' do

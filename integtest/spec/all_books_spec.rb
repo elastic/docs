@@ -441,6 +441,8 @@ RSpec.describe 'building all books' do
       Net::HTTP.get_response(URI("#{book_root}/resources/readme/example.svg"))
     end
 
+    include_examples 'the favicon'
+
     it 'serves the root index' do
       expect(root_index).to serve(doc_body(include(<<~HTML.strip)))
         <a class="ulink" href="test/current/index.html" target="_top">Test
