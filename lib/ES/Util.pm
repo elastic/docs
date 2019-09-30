@@ -761,6 +761,9 @@ http {
 
   server {
     listen 8000;
+    location = / {
+      return 301 /guide/index.html;
+    }
 $web_conf
 $guide_conf
     location / {
@@ -819,6 +822,9 @@ http {
 
   server {
     listen 8000;
+    location = / {
+      return 301 /guide/index.html;
+    }
     location = /robots.txt {
       return 200 "User-agent: *\nDisallow: /\n";
     }

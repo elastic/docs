@@ -43,6 +43,17 @@ module Dsl
     end
   end
 
+  RSpec.shared_examples 'the root' do
+    context 'the root' do
+      let(:root) do
+        Net::HTTP.get_response(URI('http://localhost:8000/'))
+      end
+      it 'redirects to the guide root' do
+        expect(root.code).to eq('301')
+        expect(root['Location']).to eq('http://localhost:8000/guide/index.html')
+      end
+    end
+  end
   RSpec.shared_examples 'the favicon' do
     context 'the favicon' do
       let(:favicon) do

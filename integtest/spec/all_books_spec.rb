@@ -430,7 +430,7 @@ RSpec.describe 'building all books' do
 
     let(:root) { 'http://localhost:8000/guide' }
     let(:book_root) { "#{root}/test/current" }
-    let(:root_index) { Net::HTTP.get_response(URI("#{root}/")) }
+    let(:guide_index) { Net::HTTP.get_response(URI("#{root}/")) }
     let(:legacy_redirect) do
       Net::HTTP.get_response(URI("#{root}/reference/setup/"))
     end
@@ -441,10 +441,10 @@ RSpec.describe 'building all books' do
       Net::HTTP.get_response(URI("#{book_root}/resources/readme/example.svg"))
     end
 
+    include_examples 'the root'
     include_examples 'the favicon'
-
-    it 'serves the root index' do
-      expect(root_index).to serve(doc_body(include(<<~HTML.strip)))
+    it 'serves the guide index' do
+      expect(guide_index).to serve(doc_body(include(<<~HTML.strip)))
         <a class="ulink" href="test/current/index.html" target="_top">Test
       HTML
     end

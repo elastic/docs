@@ -75,7 +75,8 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:current_url) { 'guide/test/current' }
     let(:diff) { get watermark, branch, 'diff' }
     let(:robots_txt) { get watermark, branch, 'robots.txt' }
-    let(:root) { get watermark, branch, 'guide/index.html' }
+    let(:root) { get watermark, branch, '' }
+    let(:guide_root) { get watermark, branch, 'guide/index.html' }
     let(:current_index) { get watermark, branch, "#{current_url}/index.html" }
     let(:current_toc) { get watermark, branch, "#{current_url}/toc.html" }
     let(:cat_image) do
@@ -101,18 +102,36 @@ RSpec.describe 'previewing built docs', order: :defined do
   include_examples 'the favicon'
 
   shared_examples 'serves some docs' do |supports_gapped: true|
+    context 'the root' do
+      it 'redirects to the guide root' do
+        expect(root.code).to eq('301')
+        expect(root['Location']).to eq("http://#{host}:8000/guide/index.html")
+      end
+      it 'logs the access to the docs root' do
+        wait_for_access '/'
+        expect(logs).to include(<<~LOGS)
+          #{watermark} #{host} GET / HTTP/1.1 301
+        LOGS
+      end
+    end
     context 'the docs root' do
       it 'contains a link to the current index' do
-        expect(root).to serve(doc_body(include(<<~HTML.strip)))
+        expect(guide_root).to serve(doc_body(include(<<~HTML.strip)))
           <a class="ulink" href="test/current/index.html" target="_top">Test</a>
         HTML
       end
+      it 'logs access to the docs root' do
+        wait_for_access '/'
+        expect(logs).to include(<<~LOGS)
+          #{watermark} #{host} GET /guide/index.html HTTP/1.1 200
+        LOGS
+      end
       it 'contains the gtag js' do
-        expect(root).to serve(include(<<~HTML.strip))
+        expect(guide_root).to serve(include(<<~HTML.strip))
           https://www.googletagmanager.com/gtag/js
         HTML
       end
-      it 'logs the access to the docs root' do
+      it 'logs the access to the guide root' do
         wait_for_access '/guide/index.html'
         expect(logs).to include(<<~LOGS)
           #{watermark} #{host} GET /guide/index.html HTTP/1.1 200
@@ -122,7 +141,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         context 'when air gapped' do
           let(:host) { "gapped_#{branch}.localhost" }
           it "doesn't contain the gtag js" do
-            expect(root).not_to serve(include(<<~HTML.strip))
+            expect(guide_root).not_to serve(include(<<~HTML.strip))
               https://www.googletagmanager.com/gtag/js
             HTML
           end
@@ -160,7 +179,7 @@ RSpec.describe 'previewing built docs', order: :defined do
   end
   shared_examples '404s' do
     it '404s for the docs root' do
-      expect(root.code).to eq('404')
+      expect(guide_root.code).to eq('404')
     end
     it 'logs the access to the docs root' do
       wait_for_access '/guide/index.html'
@@ -326,7 +345,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         end
         include_examples 'logs the fetch'
         it 'is immediately reflected in the root' do
-          expect(root).to serve(include(<<~HTML.strip))
+          expect(guide_root).to serve(include(<<~HTML.strip))
             </html>\ntrailing garbage
           HTML
         end
