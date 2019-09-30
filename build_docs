@@ -84,6 +84,7 @@ class OpenBrowserState:
     def __init__(self):
         self.need_nginx = True
         self.need_parcel = False
+        self.need_preview = False
         self.opened = False
 
     def building_single_book(self):
@@ -94,6 +95,7 @@ class OpenBrowserState:
         of the build before starting nginx so we don't have to wait for it.
         """
         self.need_parcel = True
+        self.need_preview = True
 
     def handle_line(self, line):
         if self.opened:
@@ -107,7 +109,12 @@ class OpenBrowserState:
             # server might not yet be up and nginx will fail to proxy to it.
             self.need_parcel = False
             show = False
-        if not self.need_nginx and not self.need_parcel:
+        if 'preview server is listening on 3000' in line:
+            self.need_preview = False
+            show = False
+        if not self.need_nginx and \
+                not self.need_parcel and \
+                not self.need_preview:
             if platform == "darwin" and 'BROWSER' not in environ:
                 # On mac webbrowser seeem to want to default to safari which
                 # is weird. If we tell it that the browser's name is `open`

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'open3'
 
 require_relative 'opened_docs'
@@ -100,6 +101,17 @@ class Dest
     Preview.new(bare_repo)
   end
 
+  ##
+  # Start the preview service in air gapped mode.
+  def start_air_gapped
+    # The air gapped build expects the built docs to be *exactly* where the
+    # Dockerfile puts them. So we put them there too.
+    FileUtils.rm_rf '/docs_build/.repos/target_repo.git'
+    FileUtils.mkdir_p '/docs_build/.repos'
+    FileUtils.cp_r bare_repo, '/docs_build/.repos/target_repo.git'
+    Preview.new(bare_repo, air_gapped: true)
+  end
+
   def remove_target_brach(branch_name)
     Dir.chdir bare_repo do
       sh "git branch -D #{branch_name}"
@@ -133,10 +145,10 @@ class Dest
     @convert_statuses << status.exitstatus
   end
 
-  def run_convert_and_open(cmd)
+  def run_convert_and_open(cmd, uses_preview)
     cmd.unshift '/docs_build/build_docs.pl', '--in_standard_docker'
     cmd += ['--open']
-    OpenedDocs.new cmd
+    OpenedDocs.new cmd, uses_preview
   end
 
   class CmdBuilder
@@ -147,7 +159,7 @@ class Dest
     def open
       raise 'env unsupported' unless @env.empty?
 
-      @dest.run_convert_and_open @cmd
+      @dest.run_convert_and_open @cmd, uses_preview
     end
 
     def node_name(node_name)
@@ -183,6 +195,10 @@ class Dest
     def alternatives(source_lang, dest_lang, dir)
       @cmd += ['--alternatives', "#{source_lang}:#{dest_lang}:#{dir}"]
       self
+    end
+
+    def uses_preview
+      true
     end
   end
 
@@ -222,6 +238,10 @@ class Dest
     def sub_dir(repo, branch)
       @cmd += ['--sub_dir', "#{repo.name}:#{branch}:#{repo.root}"]
       self
+    end
+
+    def uses_preview
+      false
     end
   end
 end

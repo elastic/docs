@@ -54,9 +54,12 @@ RSpec.describe 'building all books' do
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
     file_context 'html/static/styles.css' do
+      has_license 'Bootstrap', 'The MIT License (MIT)'
       has_license 'Inter', 'SIL OPEN FONT LICENSE'
+      has_license 'Noto Sans Japanese', 'SIL OPEN FONT LICENSE'
     end
     file_context 'html/static/Inter-Medium.5d08e0ba.woff2'
+    file_context 'html/static/NotoSansJP-Black.df80409c.woff2'
     file_context 'html/sitemap.xml' do
       it 'has an entry for the chapter' do
         expect(contents).to include(<<~XML)
@@ -112,10 +115,12 @@ RSpec.describe 'building all books' do
       book.source repo, 'resources'
     end
     include_examples 'book basics', 'Test', 'test'
-    context 'raw/test/current' do
-      it "doesn't exist" do
-        # Because "current" doesn't exist at all in "raw"
-        expect(dest_file('raw/test/current')).not_to file_exist
+    page_context "the current version's raw chapter page",
+                 'raw/test/current/chapter.html' do
+      it 'has a link to the image' do
+        expect(body).to include(<<~HTML.strip)
+          <img src="resources/readme/cat.jpg" alt="A cat" />
+        HTML
       end
     end
     page_context "the current version's chapter page",
@@ -143,6 +148,7 @@ RSpec.describe 'building all books' do
       end
     end
     file_context 'html/test/current/resources/readme/cat.jpg'
+    file_context 'raw/test/current/resources/readme/cat.jpg'
     file_context 'html/test/master/resources/readme/cat.jpg'
     file_context 'raw/test/master/resources/readme/cat.jpg'
   end
@@ -398,33 +404,73 @@ RSpec.describe 'building all books' do
   end
 
   context 'when run with --open' do
+    repo_root = File.expand_path '../../', __dir__
+    readme_resources = "#{repo_root}/resources/readme"
     include_context 'source and dest'
+
     before(:context) do
-      repo = @src.repo_with_index 'repo', 'Words'
+      repo = @src.repo_with_index 'repo', <<~ASCIIDOC
+        Some text.
+
+        image::resources/readme/cat.jpg[A cat]
+        image::resources/readme/example.svg[An example svg]
+      ASCIIDOC
+      repo.cp "#{readme_resources}/cat.jpg", 'resources/readme/cat.jpg'
+      repo.cp "#{readme_resources}/example.svg", 'resources/readme/example.svg'
+      repo.commit 'add images'
+
       book = @src.book 'Test'
       book.source repo, 'index.asciidoc'
+      book.source repo, 'resources'
       @opened_docs = @dest.prepare_convert_all(@src.conf).open
     end
     after(:context) do
-      @opened_docs.exit
+      @opened_docs&.exit
     end
 
-    let(:root) { 'http://localhost:8000/guide/' }
-    let(:index) { Net::HTTP.get_response(URI(root)) }
+    let(:root) { 'http://localhost:8000/guide' }
+    let(:book_root) { "#{root}/test/current" }
+    let(:root_index) { Net::HTTP.get_response(URI("#{root}/")) }
     let(:legacy_redirect) do
-      Net::HTTP.get_response(URI("#{root}reference/setup/"))
+      Net::HTTP.get_response(URI("#{root}/reference/setup/"))
+    end
+    let(:cat_image) do
+      Net::HTTP.get_response(URI("#{book_root}/resources/readme/cat.jpg"))
+    end
+    let(:svg_image) do
+      Net::HTTP.get_response(URI("#{book_root}/resources/readme/example.svg"))
     end
 
-    it 'serves the book' do
-      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+    include_examples 'the favicon'
+
+    it 'serves the root index' do
+      expect(root_index).to serve(doc_body(include(<<~HTML.strip)))
         <a class="ulink" href="test/current/index.html" target="_top">Test
       HTML
     end
     it 'serves a legacy redirect' do
       expect(legacy_redirect.code).to eq('301')
       expect(legacy_redirect['location']).to eq(
-        "#{root}en/elasticsearch/reference/current/setup.html"
+        "#{root}/en/elasticsearch/reference/current/setup.html"
       )
+    end
+    context 'for a JPG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/cat.jpg", 'rb', &:read)
+        expect(cat_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(cat_image['Content-Type']).to eq('image/jpeg')
+      end
+    end
+    context 'for an SVG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/example.svg", 'rb', &:read)
+        expect(svg_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(svg_image['Content-Type']).to eq('image/svg+xml')
+      end
     end
   end
 

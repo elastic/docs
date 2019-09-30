@@ -2,6 +2,7 @@
  * source libraries. All such libraries are available from npm or
  * https://github.com/elastic/docs/tree/master/resources/web/lib
  * and these are their licenses: */
+
 /* code-prettify
  * The Apache 2.0 License
  *

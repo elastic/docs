@@ -24,6 +24,10 @@ class Book
   # Should this book allow overriding :edit_url:? Defaults to false.
   attr_accessor :respect_edit_url_overrides
 
+  ##
+  # The language of the book. Defaults to `en`.
+  attr_accessor :lang
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
@@ -33,6 +37,7 @@ class Book
     @branches = ['master']
     @current_branch = 'master'
     @respect_edit_url_overrides = false
+    @lang = 'en'
   end
 
   ##
@@ -81,6 +86,7 @@ class Book
       tags:       test tag
       subject:    Test
       asciidoctor: #{@asciidoctor}
+      lang:       #{@lang}
     YAML
   end
 

@@ -45,15 +45,16 @@ RSpec.describe 'building a single book' do
           expect(language).to eq('en')
         end
         it 'has an empty initial js state' do
-          expect(initial_js_state).to be_empty
+          expect(contents).to initial_js_state(be_empty)
         end
       end
       page_context 'toc.html' do
-        it "doesn't have the initail js state" do
+        it "doesn't have the initial js state" do
           # because we didn't apply the template
-          expect(initial_js_state).to be_nil
+          expect(contents).to initial_js_state(be_nil)
         end
       end
+      page_context 'raw/toc.html'
       page_context 'raw/index.html' do
         it "doesn't have the xml prolog" do
           expect(contents).not_to include('?xml')
@@ -63,6 +64,12 @@ RSpec.describe 'building a single book' do
         end
         it "doesn't have any xmlns declarations" do
           expect(contents).not_to include('xmlns=')
+        end
+        it "doesn't have a meta generator" do
+          expect(contents).not_to include('<meta name="generator"')
+        end
+        it "doesn't have a meta description" do
+          expect(contents).not_to include('<meta name="description"')
         end
         it "doesn't have any xml:lang tags" do
           expect(contents).not_to include('xml:lang=')
@@ -75,7 +82,7 @@ RSpec.describe 'building a single book' do
         end
         it "doesn't have the initial js state" do
           # because we don't apply the template which is how that gets in there
-          expect(initial_js_state).to be_nil
+          expect(contents).to initial_js_state(be_nil)
         end
       end
       page_context 'chapter.html' do
@@ -387,7 +394,7 @@ RSpec.describe 'building a single book' do
   context 'for README.asciidoc' do
     convert_single_before_context do |src|
       root = File.expand_path('../../', __dir__)
-      ['cat.jpg', 'screenshot.png'].each do |img|
+      ['cat.jpg', 'example.svg', 'screenshot.png'].each do |img|
         src.cp "#{root}/resources/readme/#{img}", "resources/readme/#{img}"
       end
       txt = File.open("#{root}/README.asciidoc", 'r:UTF-8', &:read)
@@ -554,19 +561,60 @@ RSpec.describe 'building a single book' do
       @opened_docs.exit
     end
 
-    let(:static) { 'http://localhost:8000/guide/static' }
-    let(:index) { Net::HTTP.get_response(URI('http://localhost:8000/guide/')) }
+    let(:root) { 'http://localhost:8000/guide' }
+    let(:static) { "#{root}/static" }
+    let(:index) { Net::HTTP.get_response(URI("#{root}/index.html")) }
+    let(:air_gapped_index) do
+      uri = URI("#{root}/index.html")
+      req = Net::HTTP::Get.new(uri)
+      req['Host'] = 'gapped.localhost'
+      Net::HTTP.start(uri.hostname, uri.port, read_timeout: 20) do |http|
+        http.request(req)
+      end
+    end
+    let(:toc) { Net::HTTP.get_response(URI("#{root}/toc.html")) }
     let(:js) do
       Net::HTTP.get_response(URI("#{static}/docs.js"))
+    end
+    let(:jquery) do
+      Net::HTTP.get_response(URI("#{static}/jquery.js"))
     end
     let(:css) do
       Net::HTTP.get_response(URI("#{static}/styles.css"))
     end
 
-    it 'serves the book' do
-      expect(index).to serve(doc_body(include(<<~HTML.strip)))
-        <a href="chapter.html">Chapter
-      HTML
+    include_examples 'the favicon'
+
+    context 'the index' do
+      context 'when not air gapped' do
+        it 'contains the gtag js' do
+          expect(index).to serve(include(<<~HTML.strip))
+            https://www.googletagmanager.com/gtag/js
+          HTML
+        end
+        it 'serves the chapter header' do
+          expect(index).to serve(doc_body(include(<<~HTML.strip)))
+            <a href="chapter.html">Chapter
+          HTML
+        end
+      end
+      context 'when air gapped' do
+        it "doesn't contain the gtag js" do
+          expect(air_gapped_index).not_to serve(include(<<~HTML.strip))
+            https://www.googletagmanager.com/gtag/js
+          HTML
+        end
+        it 'serves the chapter header' do
+          expect(air_gapped_index).to serve(doc_body(include(<<~HTML.strip)))
+            <a href="chapter.html">Chapter
+          HTML
+        end
+      end
+    end
+    context 'the table of contents' do
+      it "isn't templated" do
+        expect(toc).to serve(start_with('<div class="toc">'))
+      end
     end
 
     context 'the js' do
@@ -582,6 +630,18 @@ RSpec.describe 'building a single book' do
       end
       it 'includes a source map' do
         expect(js).to serve(include('sourceMappingURL='))
+      end
+    end
+    context 'jquery' do
+      it 'is unminified' do
+        # This comment is a little brittle to detect but I don't expect us to
+        # rely on jquery forever.
+        expect(jquery).to serve(include(<<~JS))
+          Includes Sizzle.js
+        JS
+      end
+      it "doesn't include a source map" do
+        expect(jquery).not_to serve(include('sourceMappingURL='))
       end
     end
     context 'the css' do
