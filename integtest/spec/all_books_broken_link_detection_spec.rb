@@ -5,15 +5,23 @@
 # repositories or the book's configuration.
 RSpec.describe 'building all books' do
   KIBANA_LINKS_FILE = 'src/ui/public/documentation_links/documentation_links.js'
-  shared_context 'there is a broken link in the docs' do |check_links|
+  shared_context 'there is a broken link in the docs' do |text, check_links|
     convert_before do |src, dest|
-      repo = src.repo_with_index 'repo', 'https://www.elastic.co/guide/foo'
+      repo = src.repo_with_index 'repo', text
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
       convert = dest.prepare_convert_all src.conf
       convert.skip_link_check unless check_links
       convert.convert(expect_failure: check_links)
     end
+  end
+  shared_context 'there is a broken absolute link in the docs' do |check_links|
+    include_context 'there is a broken link in the docs',
+                    'https://www.elastic.co/guide/foo', check_links
+  end
+  shared_context 'there is a broken relative link in the docs' do |check_links|
+    include_context 'there is a broken link in the docs',
+                    'link:/guide/foo[]', check_links
   end
   shared_context 'there is a broken link in kibana' do |check_links|
     convert_before do |src, dest|
@@ -39,8 +47,14 @@ RSpec.describe 'building all books' do
   end
 
   describe 'when broken link detection is disabled' do
-    describe 'when there is a broken link in the docs' do
-      include_context 'there is a broken link in the docs', false
+    describe 'when there is a broken absolute link in the docs' do
+      include_context 'there is a broken absolute link in the docs', false
+      it 'logs that it skipped link checking' do
+        expect(outputs[0]).to include('Skipped Checking links')
+      end
+    end
+    describe 'when there is a broken relative link in the docs' do
+      include_context 'there is a broken relative link in the docs', false
       it 'logs that it skipped link checking' do
         expect(outputs[0]).to include('Skipped Checking links')
       end
@@ -56,6 +70,17 @@ RSpec.describe 'building all books' do
     shared_examples 'all links are ok' do
       it 'logs that all the links are ok' do
         expect(outputs[-1]).to include('All cross-document links OK')
+      end
+    end
+    shared_examples 'there are broken links in the docs' do
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          /tmp/docsbuild/target_repo/html/test/current/chapter.html:
+           - foo
+        LOG
       end
     end
     shared_examples 'there are broken links in kibana' do
@@ -81,17 +106,14 @@ RSpec.describe 'building all books' do
       end
       include_examples 'all links are ok'
     end
-    describe 'when there is a broken link in the docs' do
-      include_context 'there is a broken link in the docs', true
-      it 'logs there are bad cross document links' do
-        expect(outputs[0]).to include('Bad cross-document links:')
-      end
-      it 'logs the bad link' do
-        expect(outputs[0]).to include(indent(<<~LOG.strip, '  '))
-          /tmp/docsbuild/target_repo/html/test/current/chapter.html:
-           - foo
-        LOG
-      end
+    shared_examples ''
+    describe 'when there is a broken absolute link in the docs' do
+      include_context 'there is a broken absolute link in the docs', true
+      include_examples 'there are broken links in the docs'
+    end
+    describe 'when there is a broken relative link in the docs' do
+      include_context 'there is a broken relative link in the docs', true
+      include_examples 'there are broken links in the docs'
     end
     describe 'when there is a broken link in kibana' do
       include_context 'there is a broken link in kibana', true
