@@ -61,7 +61,7 @@ sub check_source {
     my $seen    = $self->seen;
 
     while ( my ( $path, $fragment ) = $link_it->() ) {
-        say "$path";
+
         my $dest = $self->root->file($path);
         unless ( $self->_file_exists( $dest, $path ) ) {
             $self->add_bad( $file_descr, $path );
