@@ -6,7 +6,7 @@ use v5.10;
 use ES::Util qw(run);
 
 our $Link_Re = qr{
-    https?://(?:www.)?elastic.co/guide/
+    (?:https?://(?:www.)?elastic.co|[ "])/guide/
     ([^"\#<>\s]+)           # path
     (?:\#([^"<>\s]+))?      # fragment
 }x;
