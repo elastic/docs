@@ -44,7 +44,7 @@ module Dsl
   end
 
   RSpec.shared_examples 'the favicon' do
-    context 'the fivicon' do
+    context 'the favicon' do
       let(:favicon) do
         Net::HTTP.get_response(URI('http://localhost:8000/favicon.ico'))
       end
