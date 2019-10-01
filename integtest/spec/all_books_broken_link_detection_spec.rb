@@ -106,7 +106,6 @@ RSpec.describe 'building all books' do
       end
       include_examples 'all links are ok'
     end
-    shared_examples ''
     describe 'when there is a broken absolute link in the docs' do
       include_context 'there is a broken absolute link in the docs', true
       include_examples 'there are broken links in the docs'

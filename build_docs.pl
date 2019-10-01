@@ -125,7 +125,7 @@ sub build_local {
     say "Done";
 
     if ( $Opts->{open} ) {
-        my $preview_pid = start_preview( 'fs', $raw_dir, 'template.html' );
+        my $preview_pid = start_preview( 'fs', $raw_dir, 'template.html', 0 );
         serve_local_preview( $dir, 0, $web_resources_pid, $preview_pid );
     }
 }
@@ -637,7 +637,7 @@ sub preview {
 
         my $default_template = $Opts->{gapped} ? "air_gapped_template.html" : "template.html";
         my $preview_pid = start_preview(
-            'git', '/docs_build/.repos/target_repo.git', $default_template
+            'git', '/docs_build/.repos/target_repo.git', $default_template, $Opts->{gapped}
         );
         $SIG{TERM} = sub {
             # We should be a good citizen and shut down the subprocesses.

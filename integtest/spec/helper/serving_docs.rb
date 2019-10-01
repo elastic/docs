@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'net/http'
 require 'open3'
 
 ##
@@ -35,6 +36,19 @@ class ServingDocs
     Process.kill 'TERM', @wait_thr.pid
     @wait_thr.exit
     wait_for_logs(/^Terminated preview services$/, 10)
+  end
+
+  ##
+  # Perform an HTTP GET.
+  def get(path, host: 'localhost', watermark: false, timeout: 20)
+    uri = URI("http://localhost:8000/#{path}")
+    req = Net::HTTP::Get.new(uri)
+
+    req['X-Opaque-Id'] = watermark if watermark
+    req['Host'] = host
+    Net::HTTP.start(uri.hostname, uri.port, read_timeout: timeout) do |http|
+      http.request(req)
+    end
   end
 
   private

@@ -912,7 +912,7 @@ sub start_web_resources_watcher {
 #===================================
 sub start_preview {
 #===================================
-    my ( $command, $root, $default_template ) = @_;
+    my ( $command, $root, $default_template, $ignore_host ) = @_;
 
     my $preview_pid = fork;
     return $preview_pid if $preview_pid;
@@ -920,7 +920,10 @@ sub start_preview {
     close STDIN;
     open( STDIN, "</dev/null" );
     exec( qw(node --max-old-space-size=128 /docs_build/preview/cli.js),
-          $command, $root, '--default-template', $default_template );
+          $command, $root,
+          '--default-template', $default_template,
+          ( $ignore_host ? ('--ignore-host') : () )
+    );
 }
 
 #===================================
