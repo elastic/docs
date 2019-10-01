@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../log_util'
+require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative '../log_util'
 require_relative 'copier'
 
 ##
