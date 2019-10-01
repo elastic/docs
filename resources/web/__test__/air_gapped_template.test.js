@@ -55,9 +55,21 @@ describe("air_gapped_template.html", () => {
     beforeAll(async () => {
       staticResources = (await readdir("static")).map(e => `/${e}`);
     });
+    /**
+     * Links outside of the docs that are required and therefore ok.
+     */
+    const allowedExternalLinks = [
+      "https://www.apache.org/",
+      "https://www.elastic.co/legal/terms-of-use",
+    ]
 
     it("to expected resources", () => {
-      const allResources = ["/guide/", ...compiledWebResources, ...staticResources].sort();
+      const allResources = [
+        "/guide/",
+        ...compiledWebResources,
+        ...staticResources,
+        ...allowedExternalLinks,
+      ].sort();
       expect(links).toEqual(allResources);
     });
   });
