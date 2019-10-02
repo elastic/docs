@@ -658,8 +658,9 @@ sub preview {
         } else {
             while (1) {
                 sleep 1;
-                my $fetch_result = $target_repo->fetch;
-                say "$fetch_result" if ( $fetch_result );
+                my $fetch_result = eval { $target_repo->fetch };
+                say $fetch_result if $fetch_result;
+                say $@ if $@;
             }
         }
         exit;

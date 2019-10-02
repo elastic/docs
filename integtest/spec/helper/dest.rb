@@ -119,7 +119,7 @@ class Dest
   end
 
   ##
-  # The location of the bare repository. the first time this is called in a
+  # The location of the bare repository. The first time this is called in a
   # given context the bare repository is initialized
   def bare_repo
     unless @initialized_bare_repo

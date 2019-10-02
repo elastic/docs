@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'net/http'
 require 'securerandom'
 
@@ -530,5 +531,46 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:expected_language) { 'foo' }
     include_context 'docs for branch'
     include_examples 'serves some docs'
+  end
+  describe "when we can't pull from the repo" do
+    before(:context) do
+      FileUtils.rm_rf '/tmp/backup'
+      FileUtils.mv @dest.bare_repo, '/tmp/backup'
+    end
+    it 'logs an angry message' do
+      wait_for_logs(/Could not read from remote repository./)
+    end
+  end
+  describe 'when we can pull again' do
+    before(:context) do
+      FileUtils.mv '/tmp/backup', @dest.bare_repo
+      @dest.convert_all @src.conf, target_branch: 'restored'
+    end
+    it 'fetches' do
+      wait_for_logs(
+        /\[new branch\]\s+restored\s+->\s+restored/
+      )
+      # The leading space in the second line is important because it causes
+      # filebeat to group the two log lines.
+      expect(logs).to include("\n" + <<~LOGS)
+        From #{repo}
+         * [new branch]      restored   -> restored
+      LOGS
+    end
+    let(:branch) { 'restored' }
+    include_context 'docs for branch'
+    context 'the docs root' do
+      it 'contains a link to the current index' do
+        expect(guide_root).to serve(doc_body(include(<<~HTML.strip)))
+          <a class="ulink" href="test/current/index.html" target="_top">Test</a>
+        HTML
+      end
+      it 'logs access to the docs root' do
+        wait_for_access '/'
+        expect(logs).to include(<<~LOGS)
+          #{watermark} #{host} GET /guide/index.html HTTP/1.1 200
+        LOGS
+      end
+    end
   end
 end
