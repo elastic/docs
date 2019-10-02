@@ -43,6 +43,13 @@ class Repo
   end
 
   ##
+  # Append some text to a file.
+  def append(source_relative_path, extra_text)
+    text = read source_relative_path
+    write source_relative_path, text + extra_text
+  end
+
+  ##
   # Delete a file in the repo.
   def delete(source_relative_path)
     realpath = path source_relative_path
@@ -101,6 +108,15 @@ class Repo
   end
 
   ##
+  # The hash of the last commit to a file.
+  def last_commit(path)
+    Dir.chdir @root do
+      hash = sh "git log -n 1 --pretty=format:%h -- #{path}"
+      hash.strip
+    end
+  end
+
+  ##
   # Create a worktree at `dest` for the branch `branch`.
   def create_worktree(dest, branch)
     Dir.chdir @root do
@@ -121,6 +137,11 @@ class Repo
     Dir.chdir @root do
       sh "git push #{dest}"
     end
+  end
+
+  def copy_shared_conf
+    FileUtils.mkdir_p @root
+    sh "cp -r /docs_build/shared #{@root}"
   end
 
   private

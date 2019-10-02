@@ -6,7 +6,6 @@ use v5.10;
 
 use Path::Class();
 use URI();
-use Encode qw(decode_utf8);
 use ES::Util qw(run);
 
 #===================================
@@ -16,12 +15,11 @@ sub new {
 
     my $name = $args{name} or die "No <name> specified";
     my $url  = $args{url}  or die "No <url> specified for repo <$name>";
+    # TODO drop user because we no longer use it.
     if ( my $user = $args{user} ) {
         $url = URI->new($url);
         $url->userinfo($user);
     }
-
-    my $dir = $args{dir} or die "No <dir> specified for repo <$name>";
 
     my $reference_dir = 0;
     if ($args{reference}) {
@@ -34,7 +32,7 @@ sub new {
 
     return bless {
         name          => $name,
-        git_dir       => $dir->subdir("$name.git"),
+        git_dir       => $args{git_dir},
         url           => $url,
         reference_dir => $reference_dir,
         sub_dirs      => {},
@@ -61,12 +59,40 @@ sub update_from_remote {
 }
 
 #===================================
+sub sha_for_branch {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    local $ENV{GIT_DIR} = $self->git_dir;
+    $branch = $self->normalize_branch( $branch );
+    my $sha = eval { run 'git', 'rev-parse', $branch } || ''; # NOCOMMIT check if eval is still useful
+    chomp $sha; # NOCOMMIT check if we still need to chomp
+    return $sha;
+}
+
+#===================================
 sub fetch {
 #===================================
     my $self = shift;
     local $ENV{GIT_DIR} = $self->git_dir;
 
     return run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
+}
+
+#===================================
+sub normalize_path {
+#===================================
+    my ( $self, $path, $branch ) = @_;
+
+    return $path;
+}
+
+#===================================
+sub normalize_branch {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    return $branch;
 }
 
 #===================================

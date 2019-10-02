@@ -257,7 +257,7 @@ sub _build_book {
     return 0 unless $rebuild ||
         $source->has_changed( $self->title, $branch, $self->asciidoctor );
 
-    my ( $checkout, $edit_urls, $first_path, $alternatives ) =
+    my ( $checkout, $edit_urls, $first_path, $alternatives, $roots ) =
         $source->prepare($self->title, $branch);
 
     $pm->start($branch) and return 1;
@@ -285,6 +285,7 @@ sub _build_book {
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
                 branch => $branch,
+                roots => $roots,
             );
         }
         else {
@@ -309,6 +310,7 @@ sub _build_book {
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
                 branch => $branch,
+                roots => $roots,
             );
         }
         $checkout->rmtree;

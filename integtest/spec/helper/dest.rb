@@ -135,14 +135,22 @@ class Dest
     # docker-image-always-removed paranoia in build_docs.pl
     _stdin, out, wait_thr = Open3.popen2e(env, *cmd)
     status = wait_thr.value
-    out = out.read
+    out = out.read.force_encoding 'UTF-8'
     ok = status.success?
     ok = !ok if expect_failure
     raise_status cmd, out, status unless ok
-    raise "Perl warnings:\n#{out}" if out.include? 'Use of uninitialized value'
+    check_for_perl_warnings out
+    save_conversion out, status.exitstatus
+  end
 
+  def check_for_perl_warnings(out)
+    raise "Perl warnings:\n#{out}" if out.include? 'Use of uninitialized value'
+    raise "Perl warnings:\n#{out}" if out.include? 'masks earlier declaration'
+  end
+
+  def save_conversion(out, status)
     @convert_outputs << out
-    @convert_statuses << status.exitstatus
+    @convert_statuses << status
   end
 
   def run_convert_and_open(cmd, uses_preview)

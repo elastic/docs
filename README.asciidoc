@@ -1,7 +1,7 @@
 = Docs HOWTO
 
-include::{asciidoc-dir}/../../shared/versions/stack/current.asciidoc[]
-include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
+include::{docs-root}/shared/versions/stack/current.asciidoc[]
+include::{docs-root}/shared/attributes.asciidoc[]
 
 ////
 This file contains the sequence `&#x5f;` to escape from around Elastic's
@@ -760,10 +760,12 @@ attributes file] to resolve links:
 = My Book Title
 
 # Use this if your repo is versioned with the Elastic stack:
-\include::{asciidoc-dir}/../../shared/versions/stack/{source_branch}.asciidoc[]
+\include::{docs-root}/shared/versions/stack/{source_branch}.asciidoc[]
 # Or use this to alway point to the most recent version of the stack
-\include::{asciidoc-dir}/../../shared/versions/stack/current.asciidoc[]
-\include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
+\include::{docs-root}/shared/versions/stack/current.asciidoc[]
+# Either way, you'll want to include a reference to the attributes file
+# which builds the links from the versions.
+\include::{docs-root}/shared/attributes.asciidoc[]
 
 Here is a link to the {ref}/search.html[search page]
 ----------------------------------
@@ -771,6 +773,30 @@ Here is a link to the {ref}/search.html[search page]
 Here is a link to the {ref}/search.html[search page]
 ==================================
 
+Books that use the attributes file should declare a dependency on it in
+https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`] like this:
+
+[source,yaml]
+----
+  -
+    repo:   docs
+    path:   shared/versions/stack/{version}.asciidoc
+  -
+    repo:   docs
+    path:   shared/attributes.asciidoc
+----
+
+or
+
+[source,yaml]
+----
+  -
+    repo:   docs
+    path:   shared/versions/stack/current.asciidoc
+  -
+    repo:   docs
+    path:   shared/attributes.asciidoc
+----
 
 For books that don't use the
 https://github.com/elastic/docs/blob/master/shared/attributes.asciidoc[shared
@@ -1253,11 +1279,34 @@ include them where appropriate:
 [source,asciidoc]
 ----------------------------------
 \include::myfolder/mydoc.asciidoc[]
-
 ----------------------------------
 
 Paths are relative to the file which
 contains the `include` statement.
+
+[[cross-repo-includes]]
+=== Across repositories
+
+If you have to include files in a different repository then use its `-root`
+attribute to locate the files:
+
+[source,asciidoc]
+----------------------------------
+\include::{elasticsearch-root}/docs/foo.asciidoc[]
+----------------------------------
+
+Books that reference another repository should register that reference in
+https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`].
+
+[source,yaml]
+----
+  -
+    repo:   elasticsearch
+    path:   docs/foo.asciidoc
+----
+
+The path should be as specific as possible because we skip rebuilding books if
+changes to the referenced repository don't change the referenced path.
 
 [[changes]]
 == Additions and deprecations

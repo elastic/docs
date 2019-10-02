@@ -32,6 +32,7 @@ module Dsl
       FileUtils.remove_entry @tmp
     end
 
+    let(:src) { @src }
     let(:books) { @src.books }
     let(:outputs) { @dest.convert_outputs }
     let(:statuses) { @dest.convert_statuses }

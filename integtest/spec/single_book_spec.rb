@@ -397,6 +397,7 @@ RSpec.describe 'building a single book' do
       ['cat.jpg', 'example.svg', 'screenshot.png'].each do |img|
         src.cp "#{root}/resources/readme/#{img}", "resources/readme/#{img}"
       end
+      src.copy_shared_conf
       txt = File.open("#{root}/README.asciidoc", 'r:UTF-8', &:read)
       src.write 'index.asciidoc', txt
     end
