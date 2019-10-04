@@ -15,6 +15,7 @@ sub new {
 
     my $name = $args{name} or die "No <name> specified";
     my $url  = $args{url}  or die "No <url> specified for repo <$name>";
+    my $git_dir = $args{git_dir} or die "No <git_dir> specified";
     # TODO drop user because we no longer use it.
     if ( my $user = $args{user} ) {
         $url = URI->new($url);
@@ -32,7 +33,7 @@ sub new {
 
     return bless {
         name          => $name,
-        git_dir       => $args{git_dir} or die "No <git_dir> specified",
+        git_dir       => $git_dir,
         url           => $url,
         reference_dir => $reference_dir,
         sub_dirs      => {},
