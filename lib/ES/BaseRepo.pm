@@ -65,7 +65,7 @@ sub sha_for_branch {
 
     local $ENV{GIT_DIR} = $self->git_dir;
     $branch = $self->normalize_branch( $branch );
-    my $sha = eval { run 'git', 'rev-parse', $branch } || ''; # NOCOMMIT check if eval is still useful
+    my $sha = run 'git', 'rev-parse', $branch;
     return $sha;
 }
 
