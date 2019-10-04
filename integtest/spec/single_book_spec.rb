@@ -397,6 +397,7 @@ RSpec.describe 'building a single book' do
       ['cat.jpg', 'example.svg', 'screenshot.png'].each do |img|
         src.cp "#{root}/resources/readme/#{img}", "resources/readme/#{img}"
       end
+      src.copy_shared_conf
       txt = File.open("#{root}/README.asciidoc", 'r:UTF-8', &:read)
       src.write 'index.asciidoc', txt
     end
@@ -735,6 +736,24 @@ RSpec.describe 'building a single book' do
     it 'logs the missing file' do
       expect(outputs[0]).to include(<<~LOG.strip)
         ERROR: index.asciidoc: line 5: include file not found: #{@src.repo('src').root}/missing.asciidoc
+      LOG
+    end
+  end
+  context 'when a referenced id is missing' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'src', <<~ASCIIDOC
+        <<missing-ref>>
+      ASCIIDOC
+      dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+          .asciidoctor
+          .convert(expect_failure: true)
+    end
+    it 'fails with an appropriate error status' do
+      expect(statuses[0]).to eq(255)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to include(<<~LOG.strip)
+        asciidoctor: WARNING: invalid reference: missing-ref
       LOG
     end
   end

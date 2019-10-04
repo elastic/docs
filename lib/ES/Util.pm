@@ -18,7 +18,6 @@ our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    sha_for
     timestamp
     write_html_redirect
     write_nginx_redirects
@@ -55,6 +54,7 @@ sub build_chunked {
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
     my $branch = $opts{branch};
+    my $roots = $opts{roots};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -122,23 +122,34 @@ sub build_chunked {
                     '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
                 '-a' => 'relativize-link=https://www.elastic.co/',
+                roots_opts( $roots ),
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
             );
-            if ( !$lenient ) {
-                $output .= _xml_lint($dest_xml);
-            }
-            $output .= run(
+            1;
+        } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+
+        if ( !$lenient ) {
+            eval {
+                $output = _xml_lint($dest_xml);
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        eval {
+            $output = run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
                 '--stringparam', 'base.dir', $chunks_path->absolute . '/',
                 file('resources/website_chunked.xsl')->absolute,
                 $dest_xml
             );
-            unlink $dest_xml;
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
     else {
         my $edit_url = $edit_urls->{$root_dir};
@@ -158,6 +169,7 @@ sub build_chunked {
                 # expect that
                 '-a' => 'compat-mode=legacy',
                 $private ? ( '-a' => 'edit_url!' ) : (),
+                roots_opts( $roots ),
                 '--xsl-file'      => 'resources/website_chunked.xsl',
                 '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
                 '--destination-dir=' . $raw_dest,
@@ -168,9 +180,8 @@ sub build_chunked {
             );
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
     }
-
-    _check_build_error( $output, $died, $lenient );
 
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
         or die "Couldn't find chunk dir in <$raw_dest>";
@@ -218,6 +229,7 @@ sub build_single {
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
     my $branch = $opts{branch};
+    my $roots = $opts{roots};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -289,23 +301,34 @@ sub build_single {
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'relativize-link=https://www.elastic.co/',
+                roots_opts( $roots ),
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
             );
-            if ( !$lenient ) {
-                $output .= _xml_lint($dest_xml);
-            }
-            $output .= run(
+            1;
+        } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+
+        if ( !$lenient ) {
+            eval {
+                $output = _xml_lint($dest_xml);
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        eval {
+            $output = run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
                 '--output' => "$raw_dest/index.html",
                 file('resources/website.xsl')->absolute,
                 $dest_xml
             );
-            unlink $dest_xml;
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
     else {
         my $edit_url = $edit_urls->{$root_dir};
@@ -322,6 +345,7 @@ sub build_single {
                 '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
                 $private ? ( '-a' => 'edit_url!' ) : (),
+                roots_opts( $roots ),
                 '--xsl-file'      => 'resources/website.xsl',
                 '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
                 '--destination-dir=' . $raw_dest,
@@ -332,9 +356,8 @@ sub build_single {
             );
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
     }
-
-    _check_build_error( $output, $died, $lenient );
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
@@ -498,6 +521,18 @@ sub extract_toc_from_index {
     $html =~ s/^.+<!--START_TOC-->//s;
     $html =~ s/<!--END_TOC-->.*$//s;
     $dir->file('toc.html')->spew( iomode => '>:utf8', $html );
+}
+
+#===================================
+sub roots_opts {
+#===================================
+    my $roots = shift;
+    my @result;
+
+    for ( keys %$roots ) {
+        push @result, ( '-a', $_ . '-root=' . $$roots{ $_ } );
+    }
+    return @result;
 }
 
 #===================================
@@ -874,15 +909,6 @@ sub proc_man {
     );
     return $pm;
 
-}
-
-#===================================
-sub sha_for {
-#===================================
-    my $rev = shift;
-    my $sha = eval { run 'git', 'rev-parse', $rev } || '';
-    chomp $sha;
-    return $sha;
 }
 
 #===================================

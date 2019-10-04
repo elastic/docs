@@ -46,6 +46,7 @@ use Path::Class qw(dir file);
 use Sys::Hostname;
 
 use ES::BranchTracker();
+use ES::DocsRepo();
 use ES::Repo();
 use ES::Book();
 use ES::TargetRepo();
@@ -87,7 +88,8 @@ sub build_local {
     $Opts->{resource}
         = [ map { dir($_)->absolute($Old_Pwd) } @{ $Opts->{resource} || [] } ];
 
-    _guess_opts_from_file($index);
+    _guess_opts( $index );
+    $Opts->{roots}{docs} = '/docs_build' unless $Opts->{roots}{docs};
 
     my @alternatives;
     if ( $Opts->{alternatives} ) {
@@ -131,30 +133,36 @@ sub build_local {
 }
 
 #===================================
-sub _guess_opts_from_file {
+sub _guess_opts {
 #===================================
     my $index = shift;
 
-    my %edit_urls = ();
-    my $doc_toplevel = _find_toplevel($index->parent);
-    unless ( $doc_toplevel ) {
-        $Opts->{root_dir} = $index->parent;
-        $Opts->{branch} = 'master';
-        # If we can't find the edit url for the document then we're never
-        # going to find it for anyone.
-        return;
-    }
-    $Opts->{root_dir} = $doc_toplevel;
-    my $edit_url = _guess_edit_url($doc_toplevel);
-    $edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
+    $Opts->{edit_urls} = {};
+    $Opts->{roots} = {};
+    my $toplevel = _find_toplevel( $index->parent );
+    my $remote = _pick_best_remote( $toplevel );
+    my $branch = _guess_branch( $toplevel );
+    my $repo_name = _guess_repo_name( $remote );
+    # We couldn't find the top level so lets make a wild guess.
+    $toplevel = $index->parent unless $toplevel;
+    $Opts->{branch} = $branch;
+    $Opts->{root_dir} = $toplevel;
+    $Opts->{roots}{ $repo_name } = $toplevel;
+    $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
+        $remote || 'unknown', $branch
+    );
     for my $resource ( @{ $Opts->{resource} } ) {
-        my $resource_toplevel = _find_toplevel($resource);
-        next unless $resource_toplevel;
-
-        my $resource_edit_url = _guess_edit_url($resource_toplevel);
-        $edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
+        $toplevel = _find_toplevel( $resource );
+        $remote = _pick_best_remote( $toplevel );
+        $branch = _guess_branch( $toplevel );
+        $repo_name = _guess_repo_name( $remote );
+        # We couldn't find the top level so lets make a wild guess.
+        $toplevel = $resource unless $toplevel;
+        $Opts->{roots}{ $repo_name } = $toplevel;
+        $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
+            $remote || 'unknown', $branch
+        );
     }
-    $Opts->{edit_urls} = { %edit_urls };
 }
 
 #===================================
@@ -167,38 +175,39 @@ sub _find_toplevel {
     my $toplevel = eval { run qw(git rev-parse --show-toplevel) };
     chdir $original_pwd;
     say "Couldn't find repo toplevel for $docpath" unless $toplevel;
-    return $toplevel;
+    return $toplevel || 0;
 }
 
 #===================================
-sub _guess_edit_url {
+sub _pick_best_remote {
 #===================================
     my $toplevel = shift;
 
+    return 0 unless $toplevel;
+
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $remotes = eval { run qw(git remote -v) } || '';
-    my $remote;
     if ($remotes =~ m|\s+(\S+[/:]elastic(?:search-cn)?/\S+)|) {
-        $remote = $1;
         # We prefer either an elastic or elasticsearch-cn organization. All
         # but two books are in elastic but elasticsearch-cn is special.
-    } else {
-        say "Couldn't find edit url because there isn't an Elastic remote";
-        if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
-            $remote = $1;
-        } else {
-            $remote = 'unknown';
-        }
+        return $1;
     }
-    my $branch = eval { run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
-    $Opts->{branch} = _guess_branch( $branch ) unless $Opts->{branch};
-    return ES::Repo::edit_url_for_url_and_branch($remote, $branch);
+    say "Couldn't an Elastic remote for $toplevel";
+    if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
+        return $1;
+    }
+    return 0;
 }
 
 #===================================
 sub _guess_branch {
 #===================================
-    my $real_branch = shift;
+    my $toplevel = shift;
+
+    return 'master' unless $toplevel;
+
+    local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
+    my $real_branch = eval { run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
 
     # Detects common branch patterns like:
     # 7.x
@@ -216,6 +225,19 @@ sub _guess_branch {
     # obviously won't always be right, but for the most part that *should* be
     # ok because we have pull request builds which will double check the links.
     return 'master';
+}
+
+#===================================
+sub _guess_repo_name {
+#===================================
+    my ( $remote ) = @_;
+
+    return 'repo' unless $remote;
+
+    $remote = dir( $remote )->basename;
+    $remote =~ s/\.git$//;
+
+    return $remote;
 }
 
 #===================================
@@ -265,7 +287,9 @@ sub build_all {
     }
     else {
         say "Building docs";
-        build_entries( $raw_build_dir, $build_dir, $temp_dir, $toc, @$contents );
+        build_entries(
+            $raw_build_dir, $build_dir, $temp_dir, $toc, $tracker, @$contents
+        );
 
         say "Writing main TOC";
         $toc->write( $raw_build_dir, $build_dir, $temp_dir, 0 );
@@ -288,7 +312,7 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
-    $tracker->prune_out_of_date( @$contents );
+    $tracker->prune_out_of_date;
     push_changes( $build_dir, $target_repo, $tracker ) if $Opts->{push};
     serve_local_preview( $build_dir, $redirects, 0, 0 ) if $Opts->{open};
 
@@ -383,7 +407,7 @@ sub check_kibana_links {
 #===================================
 sub build_entries {
 #===================================
-    my ( $raw_build, $build, $temp_dir, $toc, @entries ) = @_;
+    my ( $raw_build, $build, $temp_dir, $toc, $tracker, @entries ) = @_;
 
     while ( my $entry = shift @entries ) {
         my $title = $entry->{title}
@@ -395,8 +419,8 @@ sub build_entries {
             my $sub_build = $build->subdir($base_dir);
             my $section_toc = build_entries(
                 $raw_sub_build, $sub_build, $temp_dir,
-                ES::Toc->new( $title, $entry->{lang} ),
-                @$sections
+                ES::Toc->new( $title, $entry->{lang}, ),
+                $tracker, @$sections
             );
             if ($base_dir) {
                 $section_toc->write( $raw_sub_build, $sub_build, $temp_dir );
@@ -418,6 +442,7 @@ sub build_entries {
             %$entry
         );
         $toc->add_entry( $book->build( $Opts->{rebuild} ) );
+        $tracker->allowed_book( $book );
     }
 
     return $toc;
@@ -531,7 +556,7 @@ sub init_target_repo {
     my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
 
     my $target_repo = ES::TargetRepo->new(
-        dir         => $repos_dir,
+        git_dir     => $repos_dir->subdir('target_repo.git'),
         user        => $Opts->{user},
         url         => $Opts->{target_repo},
         reference   => $reference_dir,
@@ -571,13 +596,15 @@ sub init_repos {
         $pm->finish;
     }
     for my $name (@repo_names) {
+        next if $name eq 'docs';
+
         my $url = $conf->{$name};
         # We always use ssh-style urls regardless of conf.yaml so we can use
         # our ssh key for the cloning.
         $url =~ s|https://([^/]+)/|git\@$1:|;
         my $repo = ES::Repo->new(
             name      => $name,
-            dir       => $repos_dir,
+            git_dir   => $repos_dir->subdir("$name.git"),
             tracker   => $tracker,
             user      => $Opts->{user},
             url       => $url,
@@ -613,6 +640,11 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
+
+    # Setup the docs repo
+    # We support configuring the remote for the docs repo for testing
+    ES::DocsRepo->new( $tracker, $conf->{docs} || '/docs_build' );
+
     return $tracker;
 }
 
