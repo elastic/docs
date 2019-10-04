@@ -18,7 +18,6 @@ our @EXPORT_OK = qw(
     run $Opts
     build_chunked build_single build_pdf
     proc_man
-    sha_for
     timestamp
     write_html_redirect
     write_nginx_redirects
@@ -55,6 +54,7 @@ sub build_chunked {
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
     my $branch = $opts{branch};
+    my $roots = $opts{roots};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -121,6 +121,7 @@ sub build_chunked {
                     '-a' => "alternative_language_report=$raw_dest/alternatives_report.json",
                     '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
+                roots_opts( $roots ),
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
@@ -167,6 +168,7 @@ sub build_chunked {
                 # expect that
                 '-a' => 'compat-mode=legacy',
                 $private ? ( '-a' => 'edit_url!' ) : (),
+                roots_opts( $roots ),
                 '--xsl-file'      => 'resources/website_chunked.xsl',
                 '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
                 '--destination-dir=' . $raw_dest,
@@ -226,6 +228,7 @@ sub build_single {
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
     my $branch = $opts{branch};
+    my $roots = $opts{roots};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -296,6 +299,7 @@ sub build_single {
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
+                roots_opts( $roots ),
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
@@ -339,6 +343,7 @@ sub build_single {
                 '-a' => 'base_edit_url=' . $edit_url,
                 '-a' => 'root_dir=' . $root_dir,
                 $private ? ( '-a' => 'edit_url!' ) : (),
+                roots_opts( $roots ),
                 '--xsl-file'      => 'resources/website.xsl',
                 '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
                 '--destination-dir=' . $raw_dest,
@@ -514,6 +519,18 @@ sub extract_toc_from_index {
     $html =~ s/^.+<!--START_TOC-->//s;
     $html =~ s/<!--END_TOC-->.*$//s;
     $dir->file('toc.html')->spew( iomode => '>:utf8', $html );
+}
+
+#===================================
+sub roots_opts {
+#===================================
+    my $roots = shift;
+    my @result;
+
+    for ( keys %$roots ) {
+        push @result, ( '-a', $_ . '-root=' . $$roots{ $_ } );
+    }
+    return @result;
 }
 
 #===================================
@@ -890,15 +907,6 @@ sub proc_man {
     );
     return $pm;
 
-}
-
-#===================================
-sub sha_for {
-#===================================
-    my $rev = shift;
-    my $sha = eval { run 'git', 'rev-parse', $rev } || '';
-    chomp $sha;
-    return $sha;
 }
 
 #===================================

@@ -6,7 +6,7 @@ use v5.10;
 
 use Path::Class();
 use Encode qw(decode_utf8);
-use ES::Util qw(run sha_for);
+use ES::Util qw(run);
 
 use parent qw( ES::BaseRepo );
 
@@ -52,6 +52,9 @@ sub has_changed {
     my $self = shift;
     my ( $title, $branch, $path, $asciidoctor ) = @_;
 
+    $path = $self->normalize_path( $path, $branch );
+    $branch = $self->normalize_branch( $branch );
+
     local $ENV{GIT_DIR} = $self->git_dir;
     my $old_info = $self->_last_commit_info(@_);
 
@@ -74,7 +77,7 @@ sub has_changed {
         # a hash that means that this is a new repo so we should build it.
         return 'changed' unless $old_info;
 
-        $new = sha_for($branch) or die(
+        $new = $self->sha_for_branch( $branch ) or die(
                 "Remote branch <origin/$branch> doesn't exist in repo "
                 . $self->name);
     }
@@ -120,8 +123,7 @@ sub mark_done {
         $new = $self->_last_commit($title, $branch, $path);
         return unless $new; # Skipped if nil
     } else {
-        local $ENV{GIT_DIR} = $self->git_dir;
-        $new = sha_for($branch);
+        $new = $self->sha_for_branch( $branch );
     }
     $new .= '|asciidoctor' if $asciidoctor;
 
@@ -130,33 +132,23 @@ sub mark_done {
 }
 
 #===================================
-sub extract {
+sub prepare {
 #===================================
     my $self = shift;
-    my ( $title, $branch, $path, $dest ) = @_;
+    my ( $title, $branch, $path, $dest_root, $prefix ) = @_;
+    my $dest = $dest_root->subdir( $prefix );
 
     if ( exists $self->{sub_dirs}->{$branch} ) {
-        # Copies the $path from the subsitution directory. It is tempting to
-        # just symlink the substitution directory into the destination and
-        # call it a day and that *almost* works! The trouble is that we often
-        # use relative paths to include asciidoc files from other repositories
-        # and those relative paths don't work at all with symlinks.
-        my $realpath = $self->{sub_dirs}->{$branch}->subdir($path);
-        my $realdest = $dest->subdir($path)->parent;
-        die "Can't find $realpath" unless -e $realpath;
-        $realdest->mkpath;
-        eval {
-            run qw(cp -r), $realpath, $realdest;
-            1;
-        } or die "Error copying from $realpath: $@";
-        return;
+        my $source_root = $self->{sub_dirs}->{$branch};
+        $self->_extract_from_dir( $source_root, $dest, $path );
+        return $dest;
     }
 
     my $resolved_branch = $self->_resolve_branch( @_ );
     unless ( $resolved_branch ) {
         printf(" - %40.40s: Skipping new repo %s for branch %s.\n",
                $title, $self->{name}, $branch);
-        return;
+        return $dest;
     }
 
     local $ENV{GIT_DIR} = $self->git_dir;
@@ -168,6 +160,28 @@ sub extract {
 
     run "tar", "-x", "-C", $dest, "-f", $tar;
     $tar->remove;
+
+    return $dest;
+}
+
+#===================================
+sub _extract_from_dir {
+#===================================
+    my ( $self, $source_root, $dest_root, $path ) = @_;
+
+    # Copies the $path from the subsitution directory. It is tempting to
+    # just symlink the substitution directory into the destination and
+    # call it a day and that *almost* works! The trouble is that we often
+    # use relative paths to include asciidoc files from other repositories
+    # and those relative paths don't work at all with symlinks.
+    my $source = $source_root->file( $path );
+    die "Can't find $source" unless -e $source;
+    my $dest = $dest_root->subdir( $path )->parent;
+    $dest->mkpath;
+    eval {
+        run qw(cp -r), $source, $dest;
+        1;
+    } or die "Error copying from $source: $@";
 }
 
 #===================================
@@ -177,6 +191,7 @@ sub _tracker_branch {
     my $title  = shift or die "No <title> specified";
     my $branch = shift or die "No <branch> specified";
     my $path   = shift or die "No <path> specified";
+    $path = $self->normalize_path( $path, $branch );
     return "$title/${path}/${branch}";
 }
 
@@ -184,6 +199,8 @@ sub _tracker_branch {
 sub edit_url {
 #===================================
     my ( $self, $branch ) = @_;
+
+    $branch = $self->normalize_branch( $branch );
     return edit_url_for_url_and_branch($self->url, $branch);
 }
 
@@ -204,6 +221,8 @@ sub dump_recent_commits {
 #===================================
     my ( $self, $title, $branch, $src_path ) = @_;
 
+    $branch = $self->normalize_branch( $branch );
+    $src_path = $self->normalize_path( $src_path, $branch );
     my $description = $self->name . "/$title:$branch:$src_path";
     if ( exists $self->{sub_dirs}->{$branch} ) {
         return "Used " . $self->{sub_dirs}->{$branch} .
@@ -222,7 +241,7 @@ sub dump_recent_commits {
 
     unless ( $commits =~ /\S/ ) {
         $commits
-            = run( 'git', 'log',
+            = decode_utf8 run( 'git', 'log',
             $branch, '--pretty=format:%h -%d %s (%cr) <%an>',
             '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
     }
@@ -290,6 +309,23 @@ sub _resolve_branch {
     die "--keep_hash can't build on top of --sub_dir" if $branch eq 'local';
     return $branch;
 }
+
+#===================================
+sub add_source {
+#===================================
+    my ( $self, $sources, $prefix, $path, $exclude, $map_branches, $private, $alternatives ) = @_;
+
+    push @$sources, {
+        repo => $self,
+        prefix => $prefix,
+        path => $path,
+        exclude => $exclude,
+        map_branches => $map_branches,
+        private => $private,
+        alternatives => $alternatives,
+    };
+}
+
 
 #===================================
 sub tracker       { shift->{tracker} }

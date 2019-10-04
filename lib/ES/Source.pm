@@ -16,23 +16,18 @@ sub new {
 
     my @sources;
     for ( @{ $args{sources} } ) {
-        my $path   = dir('.')->subdir( $_->{path} )->relative('.');
         my $repo   = ES::Repo->get_repo( $_->{repo} );
         my $prefix = defined $_->{prefix} ? $_->{prefix} : $repo->name;
+        my $path   = dir('.')->subdir( $_->{path} )->relative('.');
+        my $exclude = { map { $_ => 1 } @{ $_->{exclude_branches} || [] } };
+        my $map_branches = $_->{map_branches} || {};
+        my $private = $_->{private} || 0;
         my $alternatives = $_->{alternatives} || 0;
         if ($alternatives) {
             die 'source_lang is required' unless $alternatives->{source_lang};
             die 'alternative_lang is required' unless $alternatives->{alternative_lang};
         }
-        push @sources, {
-            repo    => $repo,
-            prefix  => $prefix,
-            path    => $path,
-            exclude => { map { $_ => 1 } @{ $_->{exclude_branches} || [] } },
-            map_branches => $_->{map_branches} || {},
-            private => $_->{private} || 0,
-            alternatives => $_->{alternatives} || 0,
-        };
+        $repo->add_source( \@sources, $prefix, $path, $exclude, $map_branches, $private, $alternatives );
     }
 
     bless { sources => \@sources, temp_dir => $args{temp_dir} }, $class;
@@ -41,7 +36,7 @@ sub new {
 #===================================
 sub first {
 #===================================
-    return shift->_sources->[0];
+    return shift->sources->[0];
 }
 
 #===================================
@@ -118,16 +113,16 @@ sub prepare {
     my %edit_urls = ();
     my $first_path = 0;
     my @alternatives;
+    my %roots;
 
     # need to handle repo name here, not in Repo
     for my $source ( $self->_sources_for_branch($branch) ) {
         my $repo   = $source->{repo};
         my $prefix = $source->{prefix};
         my $path   = $source->{path};
-        my $source_checkout = $checkout->subdir($prefix);
         my $repo_branch = $source->{map_branches}->{$branch} || $branch;
 
-        $repo->extract( $title, $repo_branch, $path, $source_checkout );
+        my $source_checkout = $repo->prepare( $title, $repo_branch, $path, $checkout, $prefix );
         $edit_urls{ $source_checkout->absolute } = $source->{private} ?
             '<disable>' : $repo->edit_url($repo_branch);
         $first_path = $source_checkout unless $first_path;
@@ -138,8 +133,9 @@ sub prepare {
                 dir => $source_checkout->subdir( $source->{path} ),
             };
         }
+        $roots{ $repo->name } = $source_checkout;
     }
-    return ( $checkout, \%edit_urls, $first_path, \@alternatives );
+    return ( $checkout, \%edit_urls, $first_path, \@alternatives, \%roots );
 }
 
 #===================================
@@ -147,11 +143,11 @@ sub _sources_for_branch {
 #===================================
     my $self   = shift;
     my $branch = shift;
-    return grep { !$_->{exclude}{$branch} } @{ $self->_sources };
+    return grep { !$_->{exclude}{$branch} } @{ $self->sources };
 }
 
 #===================================
-sub _sources { shift->{sources} }
+sub sources { shift->{sources} }
 sub temp_dir { shift->{temp_dir} }
 #===================================
 

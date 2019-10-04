@@ -42,6 +42,7 @@ RSpec.describe 'building all books' do
       == Chapter 2
       Some text.
     ASCIIDOC
+    STACK_VERSIONS = 'shared/versions/stack/'
 
     def self.build_twice(
         before_first_build:,
@@ -111,12 +112,13 @@ RSpec.describe 'building all books' do
     end
 
     def self.build_one_book_out_of_two_repos_twice(
+        init: ->(src) { init_include src },
         before_first_build: ->(src, config) {},
         before_second_build: ->(src, config) {}
       )
       build_twice(
         before_first_build: lambda do |src, config|
-          init_include src
+          init.call src
           # Allow the caller to customize the source
           before_first_build.call src, config
         end,
@@ -140,6 +142,22 @@ RSpec.describe 'building all books' do
       book = src.book 'Test'
       book.source repo1, 'index.asciidoc'
       book.source repo2, 'included.asciidoc'
+    end
+
+    def self.init_docs(src, included, body)
+      include_ref = included.sub '{branch}', '{source_branch}'
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        include::{docs-root}/#{include_ref}[]
+
+        #{body}
+      ASCIIDOC
+      docs_repo = src.repo 'docs'
+      docs_repo.copy_shared_conf
+      docs_repo.commit 'add shared conf'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.source docs_repo, included
     end
 
     def self.build_one_book_then_two_books(
@@ -710,6 +728,14 @@ RSpec.describe 'building all books' do
             end
           end
         end
+        context "because the docs repo's attribute file changes" do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, 'shared/attributes.asciidoc', '{stack}'
+            end
+          )
+          include_examples 'second build is noop'
+        end
       end
       context "when the second build isn't a noop" do
         context 'because the index repo changes' do
@@ -801,6 +827,72 @@ RSpec.describe 'building all books' do
               expect(out).to include('Test: Building foo...')
             end
           end
+        end
+        context "because the docs repo's attribute file changes" do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, 'shared/attributes.asciidoc', '{stack}'
+            end,
+            before_second_build: lambda do |src, _config|
+              docs_repo = src.repo 'docs'
+              docs_repo.append 'shared/attributes.asciidoc', <<~ASCIIDOC
+                :stack: Changed Stack
+              ASCIIDOC
+              docs_repo.commit 'changed'
+            end
+          )
+          include_examples 'second build is not a noop'
+        end
+        context "because the docs repo's stack version file " \
+                'for master changes' do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, "#{STACK_VERSIONS}/{branch}.asciidoc", '{version}'
+            end,
+            before_second_build: lambda do |src, _config|
+              docs_repo = src.repo 'docs'
+              docs_repo.append "#{STACK_VERSIONS}/master.asciidoc", <<~ASCIIDOC
+                :version: pig
+              ASCIIDOC
+              docs_repo.commit 'changed'
+            end
+          )
+          include_examples 'second build is not a noop'
+        end
+        context "because the docs repo's current stack version file changes" do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, "#{STACK_VERSIONS}/current.asciidoc", '{version}'
+            end,
+            before_second_build: lambda do |src, _config|
+              docs_repo = src.repo 'docs'
+              docs_repo.write "#{STACK_VERSIONS}/current.asciidoc", <<~ASCIIDOC
+                include::master.asciidoc[]
+              ASCIIDOC
+              docs_repo.commit 'changed'
+            end
+          )
+          include_examples 'second build is not a noop'
+        end
+        context "because the file referenced by the docs repo's current " \
+                'stack version file changes' do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              path = "#{STACK_VERSIONS}/current.asciidoc"
+              init_docs src, path, '{version}'
+              docs_repo = src.repo 'docs'
+              docs_repo.write path, 'include::master.asciidoc[]'
+              docs_repo.commit 'use master'
+            end,
+            before_second_build: lambda do |src, _config|
+              docs_repo = src.repo 'docs'
+              docs_repo.append "#{STACK_VERSIONS}/master.asciidoc", <<~ASCIIDOC
+                :version: cow
+              ASCIIDOC
+              docs_repo.commit 'changed'
+            end
+          )
+          include_examples 'second build is not a noop'
         end
       end
     end
