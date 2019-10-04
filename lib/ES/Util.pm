@@ -131,13 +131,13 @@ sub build_chunked {
 
         if ( !$lenient ) {
             eval {
-                $output .= _xml_lint($dest_xml);
+                $output = _xml_lint($dest_xml);
                 1;
             } or do { $output = $@; $died = 1; };
             _check_build_error( $output, $died, $lenient );
         }
         eval {
-            $output .= run(
+            $output = run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
                 '--stringparam', 'base.dir', $chunks_path->absolute . '/',
@@ -306,13 +306,13 @@ sub build_single {
 
         if ( !$lenient ) {
             eval {
-                $output .= _xml_lint($dest_xml);
+                $output = _xml_lint($dest_xml);
                 1;
             } or do { $output = $@; $died = 1; };
             _check_build_error( $output, $died, $lenient );
         }
         eval {
-            $output .= run(
+            $output = run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
                 '--output' => "$raw_dest/index.html",
