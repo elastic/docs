@@ -121,6 +121,7 @@ sub build_chunked {
                     '-a' => "alternative_language_report=$raw_dest/alternatives_report.json",
                     '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
+                '-a' => 'relativize-link=https://www.elastic.co/',
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
@@ -287,6 +288,7 @@ sub build_single {
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
+                '-a' => 'relativize-link=https://www.elastic.co/',
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
                 $index
