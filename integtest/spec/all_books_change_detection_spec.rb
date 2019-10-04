@@ -728,10 +728,45 @@ RSpec.describe 'building all books' do
             end
           end
         end
-        context "because the docs repo's attribute file changes" do
+        context "because the docs repo's attribute file doesn't change" do
           build_one_book_out_of_two_repos_twice(
             init: lambda do |src|
               init_docs src, 'shared/attributes.asciidoc', '{stack}'
+            end
+          )
+          include_examples 'second build is noop'
+        end
+        context 'even though there is an unrelated change to the docs repo' do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, 'shared/attributes.asciidoc', '{stack}'
+            end,
+            before_second_build: lambda do |src, config|
+              docs_repo = src.repo 'docs'
+              docs_repo.write 'shared/foo.asciidoc', 'bar'
+              docs_repo.commit 'changed'
+              config.keep_hash = true
+            end
+          )
+          include_examples 'second build is noop'
+        end
+        # It is important that changes to the docs repo don't trigger a rebuild
+        # when `--keep_hash` is specified or else every time we change this
+        # file we'll rebuild all books in every PR build. That is a waste of
+        # time and a potential source of spurious errors.
+        context "because the docs repo's attributes file doesn't change but " \
+                'the build has --keep_hash' do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, 'shared/attributes.asciidoc', '{stack}'
+            end,
+            before_second_build: lambda do |src, config|
+              docs_repo = src.repo 'docs'
+              docs_repo.append 'shared/attributes.asciidoc', <<~ASCIIDOC
+                :stack: Changed Stack
+              ASCIIDOC
+              docs_repo.commit 'changed'
+              config.keep_hash = true
             end
           )
           include_examples 'second build is noop'

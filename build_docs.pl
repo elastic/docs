@@ -643,7 +643,11 @@ sub init_repos {
 
     # Setup the docs repo
     # We support configuring the remote for the docs repo for testing
-    ES::DocsRepo->new( $tracker, $conf->{docs} || '/docs_build' );
+    ES::DocsRepo->new( 
+        tracker => $tracker,
+        dir => $conf->{docs} || '/docs_build',
+        keep_hash => $Opts->{keep_hash}
+    );
 
     return $tracker;
 }
