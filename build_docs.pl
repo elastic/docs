@@ -139,30 +139,25 @@ sub _guess_opts {
 
     $Opts->{edit_urls} = {};
     $Opts->{roots} = {};
-    my $toplevel = _find_toplevel($index->parent);
-    unless ( $toplevel ) {
-        $Opts->{root_dir} = $index->parent;
-        $Opts->{branch} = 'master';
-        # If we can't find the edit url for the document then we're never
-        # going to find it for anyone.
-        return;
-    }
+    my $toplevel = _find_toplevel( $index->parent );
     my $remote = _pick_best_remote( $toplevel );
     my $branch = _guess_branch( $toplevel );
     my $repo_name = _guess_repo_name( $remote );
+    # We couldn't find the top level so lets make a wild guess.
+    $toplevel = $index->parent unless $toplevel;
     $Opts->{branch} = $branch;
     $Opts->{root_dir} = $toplevel;
     $Opts->{roots}{ $repo_name } = $toplevel;
-    $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch( 
+    $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
         $remote || 'unknown', $branch
     );
     for my $resource ( @{ $Opts->{resource} } ) {
         $toplevel = _find_toplevel( $resource );
-        next unless $toplevel;
-
         $remote = _pick_best_remote( $toplevel );
         $branch = _guess_branch( $toplevel );
         $repo_name = _guess_repo_name( $remote );
+        # We couldn't find the top level so lets make a wild guess.
+        $toplevel = $resource unless $toplevel;
         $Opts->{roots}{ $repo_name } = $toplevel;
         $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
             $remote || 'unknown', $branch
@@ -180,13 +175,15 @@ sub _find_toplevel {
     my $toplevel = eval { run qw(git rev-parse --show-toplevel) };
     chdir $original_pwd;
     say "Couldn't find repo toplevel for $docpath" unless $toplevel;
-    return $toplevel;
+    return $toplevel || 0;
 }
 
 #===================================
 sub _pick_best_remote {
 #===================================
     my $toplevel = shift;
+
+    return 0 unless $toplevel;
 
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $remotes = eval { run qw(git remote -v) } || '';
@@ -206,6 +203,8 @@ sub _pick_best_remote {
 sub _guess_branch {
 #===================================
     my $toplevel = shift;
+
+    return 'master' unless $toplevel;
 
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $real_branch = eval { run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
@@ -232,6 +231,8 @@ sub _guess_branch {
 sub _guess_repo_name {
 #===================================
     my ( $remote ) = @_;
+
+    return 'repo' unless $remote;
 
     $remote = dir( $remote )->basename;
     $remote =~ s/\.git$//;
