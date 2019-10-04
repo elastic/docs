@@ -125,9 +125,18 @@ sub build_chunked {
                 docinfo($index),
                 $index
             );
-            if ( !$lenient ) {
+            1;
+        } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+
+        if ( !$lenient ) {
+            eval {
                 $output .= _xml_lint($dest_xml);
-            }
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        eval {
             $output .= run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
@@ -135,9 +144,10 @@ sub build_chunked {
                 file('resources/website_chunked.xsl')->absolute,
                 $dest_xml
             );
-            unlink $dest_xml;
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
     else {
         my $edit_url = $edit_urls->{$root_dir};
@@ -167,9 +177,8 @@ sub build_chunked {
             );
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
     }
-
-    _check_build_error( $output, $died, $lenient );
 
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
         or die "Couldn't find chunk dir in <$raw_dest>";
@@ -291,9 +300,18 @@ sub build_single {
                 docinfo($index),
                 $index
             );
-            if ( !$lenient ) {
+            1;
+        } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+
+        if ( !$lenient ) {
+            eval {
                 $output .= _xml_lint($dest_xml);
-            }
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        eval {
             $output .= run(
                 'xsltproc',
                 rawxsltopts(%xsltopts),
@@ -301,9 +319,10 @@ sub build_single {
                 file('resources/website.xsl')->absolute,
                 $dest_xml
             );
-            unlink $dest_xml;
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
     else {
         my $edit_url = $edit_urls->{$root_dir};
@@ -330,9 +349,8 @@ sub build_single {
             );
             1;
         } or do { $output = $@; $died = 1; };
+        _check_build_error( $output, $died, $lenient );
     }
-
-    _check_build_error( $output, $died, $lenient );
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
