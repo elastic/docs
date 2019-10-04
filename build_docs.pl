@@ -557,7 +557,6 @@ sub init_target_repo {
 
     my $target_repo = ES::TargetRepo->new(
         git_dir     => $repos_dir->subdir('target_repo.git'),
-        user        => $Opts->{user},
         url         => $Opts->{target_repo},
         reference   => $reference_dir,
         destination => dir( "$temp_dir/target_repo" ),
@@ -606,7 +605,6 @@ sub init_repos {
             name      => $name,
             git_dir   => $repos_dir->subdir("$name.git"),
             tracker   => $tracker,
-            user      => $Opts->{user},
             url       => $url,
             reference => $reference_dir,
             keep_hash => $Opts->{keep_hash},
@@ -1042,7 +1040,6 @@ sub check_opts {
         die('--reposcache only compatible with --all') if $Opts->{reposcache};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
-        die('--user only compatible with --all') if $Opts->{user};
     }
     if ( !$Opts->{preview} ) {
         die('--gapped only compatible with --preview') if $Opts->{gapped};
