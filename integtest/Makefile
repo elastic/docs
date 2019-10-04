@@ -24,4 +24,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec
+	rspec -e "when there isn't an elastic remot"

@@ -150,11 +150,12 @@ sub _guess_opts {
     my $remote = _pick_best_remote( $toplevel );
     my $branch = _guess_branch( $toplevel );
     my $repo_name = _guess_repo_name( $remote );
-    say "$repo_name $toplevel";
     $Opts->{branch} = $branch;
     $Opts->{root_dir} = $toplevel;
     $Opts->{roots}{ $repo_name } = $toplevel;
-    $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch( $remote, $branch );
+    $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch( 
+        $remote || 'unknown', $branch
+    );
     for my $resource ( @{ $Opts->{resource} } ) {
         $toplevel = _find_toplevel( $resource );
         next unless $toplevel;
@@ -163,8 +164,9 @@ sub _guess_opts {
         $branch = _guess_branch( $toplevel );
         $repo_name = _guess_repo_name( $remote );
         $Opts->{roots}{ $repo_name } = $toplevel;
-        $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch( $remote, $branch );
-        say "$repo_name $toplevel";
+        $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
+            $remote || 'unknown', $branch
+        );
     }
 }
 
