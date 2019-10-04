@@ -83,7 +83,6 @@ sub has_changed {
     }
     my $new_info = $new;
     $new_info .= '|asciidoctor' if $asciidoctor;
-    say "ASDFADF " . $self->{name} . " $branch $path $old_info -> $new_info";
 
     # We check sub_dirs *after* the checks above so we can handle sub_dir for
     # new sources specially.
