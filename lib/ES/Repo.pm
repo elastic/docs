@@ -88,8 +88,6 @@ sub has_changed {
     # new sources specially.
     return 'changed' if exists $self->{sub_dirs}->{$branch};
 
-    say "ASDFSADF $path $old_info $new_info";
-
     if ($self->{keep_hash}) {
         return $old_info ne $new_info ? 'changed' : 'not_changed';
     }
