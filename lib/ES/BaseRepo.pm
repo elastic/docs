@@ -32,7 +32,7 @@ sub new {
 
     return bless {
         name          => $name,
-        git_dir       => $args{git_dir},
+        git_dir       => $args{git_dir} or die "No <git_dir> specified",
         url           => $url,
         reference_dir => $reference_dir,
         sub_dirs      => {},
