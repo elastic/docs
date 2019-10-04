@@ -6,6 +6,7 @@ require 'open3'
 require_relative 'opened_docs'
 require_relative 'preview'
 require_relative 'sh'
+require_relative 'shell_repo'
 
 ##
 # Helper class for initiating a conversion and dealing with the results.
@@ -31,6 +32,7 @@ class Dest
     @initialized_bare_repo = false
     @convert_outputs = []
     @convert_statuses = []
+    @init_from_shell = true
   end
 
   ##
@@ -123,10 +125,27 @@ class Dest
   # given context the bare repository is initialized
   def bare_repo
     unless @initialized_bare_repo
-      sh "git init --bare #{@bare_dest}"
+      if @init_from_shell
+        ShellRepo.build!
+        sh "git clone --bare /tmp/shell #{@bare_dest}"
+      else
+        sh "git init --bare #{@bare_dest}"
+      end
       @initialized_bare_repo = true
     end
     @bare_dest
+  end
+
+  ##
+  # Should the bare repository that holds the destination docs be initailized
+  # from a "shell" repository for speed or not to actually test adding
+  # everything to an empty repository
+  def init_from_shell=(init_from_shell)
+    if @initialized_bare_repo
+      raise "can't change initialization after initialized"
+    end
+
+    @init_from_shell = init_from_shell
   end
 
   def run_convert(env, cmd, expect_failure)
