@@ -24,7 +24,7 @@ RSpec.describe 'building all books' do
     end
   end
   context 'for a single book built by a single repo' do
-    convert_all_before_context do |src|
+    convert_all_before_context(init_from_shell: false) do |src|
       repo = src.repo_with_index 'repo', 'Some text.'
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
