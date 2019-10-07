@@ -5,7 +5,6 @@ use warnings;
 use v5.10;
 
 use Path::Class();
-use URI();
 use ES::Util qw(run);
 
 #===================================
@@ -16,11 +15,6 @@ sub new {
     my $name = $args{name} or die "No <name> specified";
     my $url  = $args{url}  or die "No <url> specified for repo <$name>";
     my $git_dir = $args{git_dir} or die "No <git_dir> specified";
-    # TODO drop user because we no longer use it.
-    if ( my $user = $args{user} ) {
-        $url = URI->new($url);
-        $url->userinfo($user);
-    }
 
     my $reference_dir = 0;
     if ($args{reference}) {
