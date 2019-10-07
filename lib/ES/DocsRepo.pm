@@ -11,15 +11,17 @@ use parent qw( ES::Repo );
 #===================================
 sub new {
 #===================================
-    my ( $class, $tracker, $dir ) = @_;
+    my ( $class, %args ) = @_;
 
+    my $tracker = $args{tracker} or die 'Missing <tracker>';
+    my $dir = $args{dir} or die 'Missing <dir>';
     $dir = Path::Class::dir( $dir );
     my $self = $class->SUPER::new(
         name      => 'docs',
         git_dir   => $dir->subdir( '.git' ),
         tracker   => $tracker,
         url       => 'git@github.com:elastic/docs.git',
-        keep_hash => 0,
+        keep_hash => $args{keep_hash},
     );
     $self->{dir} = $dir;
     return $self;
