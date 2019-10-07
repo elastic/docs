@@ -4,9 +4,10 @@ use strict;
 use warnings;
 use v5.10;
 
-use Path::Class();
+use Cwd;
 use Encode qw(decode_utf8);
 use ES::Util qw(run);
+use Path::Class();
 
 use parent qw( ES::BaseRepo );
 
@@ -139,8 +140,7 @@ sub prepare {
     my $dest = $dest_root->subdir( $prefix );
 
     if ( exists $self->{sub_dirs}->{$branch} ) {
-        my $source_root = $self->{sub_dirs}->{$branch};
-        $self->_extract_from_dir( $source_root, $dest, $path );
+        $self->_prepare_sub_dir( $title, $branch, $path, $dest );
         return $dest;
     }
 
@@ -151,17 +151,94 @@ sub prepare {
         return $dest;
     }
 
-    local $ENV{GIT_DIR} = $self->git_dir;
-
-    $dest->mkpath;
-    my $tar = $dest->file('.temp_git_archive.tar');
-    die "File <$tar> already exists" if -e $tar;
-    run qw(git archive --format=tar -o ), $tar, $resolved_branch, $path;
-
-    run "tar", "-x", "-C", $dest, "-f", $tar;
-    $tar->remove;
-
+    $self->_extract_from_ref( $dest, $branch, $path );
     return $dest;
+}
+
+#===================================
+sub _prepare_sub_dir {
+#===================================
+    my ( $self, $title, $branch, $path, $dest ) = @_;
+    my $source_root = $self->{sub_dirs}->{$branch};
+
+    unless ( $self->{keep_hash} ) {
+        $self->_extract_from_dir( $source_root, $dest, $path );
+        return $dest;
+    }
+
+    my $has_uncommitted_changes = eval {
+        local $ENV{GIT_WORK_TREE} = $source_root;
+        local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
+        run qw(git diff-index --quiet HEAD --);
+        1;
+    };
+    unless ( $has_uncommitted_changes ) {
+        printf(" - %40.40s: Not merging the subbed dir for [%s][%s][%s] because it has uncommitted changes.\n",
+                $title, $self->{name}, $branch, $path);
+        $self->_extract_from_dir( $source_root, $dest, $path );
+        return $dest;
+    }
+
+    my $resolved_branch = $self->_resolve_branch( $title, $branch, $path );
+    unless ( $resolved_branch ) {
+        printf(" - %40.40s: Not merging the subbed dir for [%s][%s][%s] because it is new.\n",
+                $title, $self->{name}, $branch, $path);
+        $self->_extract_from_dir( $source_root, $dest, $path );
+        return $dest;
+    }
+
+    local $ENV{GIT_DIR} = "$source_root/.git";
+    my $subbed_head = run qw(git rev-parse HEAD);
+    delete local $ENV{GIT_DIR};
+    my $merge_branch = "${resolved_branch}_${subbed_head}_$path";
+    $merge_branch =~ s|/|_|g;
+
+    # Check if we've already merged this path by looking for the merged_branch
+    # in the source repo. This is safe because:
+    # 1. We prune all branches from the source repo before the build.
+    # 2. The merge branch contains the hash of the subbed head.
+    my $already_built = eval { 
+        local $ENV{GIT_DIR} = $self->{git_dir};
+        run qw(git rev-parse), $merge_branch;
+        1;
+    };
+    if ( $already_built ) {
+        # Logging here would be pretty noisy.
+        $self->_extract_from_ref( $dest, $merge_branch, $path );
+        return;
+    }
+
+    # Merge the HEAD of the subbed dir into the commit that last successfully
+    # built the docs.
+    printf(" - %40.40s: Merging the subbed dir for [%s][%s][%s] into the last successful build.\n",
+            $title, $self->{name}, $branch, $path);
+    my $work = Path::Class::dir( '/tmp/mergework' );
+    $work->rmtree;
+    run qw(git clone --no-checkout), $self->{git_dir}, $work;
+    my $original_pwd = Cwd::cwd();
+    chdir $work;
+    my $merged = eval {
+        run qw(git remote add subbed_repo), $source_root;
+        run qw(git fetch subbed_repo), $subbed_head;
+        run qw(git remote remove subbed_repo);
+        run qw(git config core.sparseCheckout true);
+        $self->_write_sparse_config( $work, $path );
+        run qw(git checkout -b), $merge_branch, $resolved_branch;
+        run qw(git merge -m merge), $subbed_head;
+        run qw(git push origin -f), $merge_branch; # Origin here is just our clone.
+        1;
+    };
+    chdir $original_pwd;
+    unless ( $merged ) {
+        printf(" - %40.40s: Failed to merge the subbed dir for [%s][%s][%s] into the last successful build:\n%s",
+                $title, $self->{name}, $branch, $path, $@);
+        $dest->rmtree;
+        $self->_extract_from_dir( $source_root, $dest, $path );
+        return $dest;
+    }
+    printf(" - %40.40s: Merged the subbed dir for [%s][%s][%s] into the last successful build.\n",
+            $title, $self->{name}, $branch, $path);
+    $self->_extract_from_ref( $dest, $merge_branch, $path );
 }
 
 #===================================
@@ -182,6 +259,21 @@ sub _extract_from_dir {
         run qw(cp -r), $source, $dest;
         1;
     } or die "Error copying from $source: $@";
+}
+
+#===================================
+sub _extract_from_ref {
+#===================================
+    my ( $self, $dest, $ref, $path ) = @_;
+    local $ENV{GIT_DIR} = $self->{git_dir};
+
+    $dest->mkpath;
+    my $tar = $dest->file( '.temp_git_archive.tar' );
+    die "File <$tar> already exists" if -e $tar;
+    run qw(git archive --format=tar -o), $tar, $ref, $path;
+
+    run qw(tar -x -C), $dest, '-f', $tar;
+    $tar->remove;
 }
 
 #===================================

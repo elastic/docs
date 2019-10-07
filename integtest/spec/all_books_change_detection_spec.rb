@@ -401,6 +401,7 @@ RSpec.describe 'building all books' do
             before_second_build: lambda do |src, config|
               repo = src.repo 'repo'
               repo.write 'dummy', 'dummy'
+              repo.commit 'dummy'
 
               config.extra do |conversion|
                 conversion.keep_hash.sub_dir(repo, 'master')
@@ -619,7 +620,9 @@ RSpec.describe 'building all books' do
               book = src.book 'Test'
               book.source repo2, 'not_used_actually'
               repo = src.repo 'repo'
+              repo.switch_to_newbranch 'subbed'
               repo.write 'index.asciidoc', TWO_CHAPTERS + "\nmore words"
+              repo.commit 'sub'
               config.extra do |conversion|
                 conversion.keep_hash.sub_dir(repo, 'master')
               end
@@ -722,9 +725,9 @@ RSpec.describe 'building all books' do
           context 'the second build' do
             let(:out) { outputs[1] }
             include_examples 'commits changes'
-            it "doesn't print that it is building the original branch" do
+            it "doesn't print that it is building any branch" do
               # The original book hasn't changed so we don't rebuild it
-              expect(out).not_to include('Test: Building master...')
+              expect(out).not_to include('Test: Building')
             end
           end
         end
