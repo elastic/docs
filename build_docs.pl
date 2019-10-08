@@ -18,7 +18,7 @@ use Cwd;
 use FindBin;
 use Data::Dumper;
 use XML::LibXML;
-use URI;
+use URI();
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
