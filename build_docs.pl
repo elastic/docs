@@ -18,7 +18,6 @@ use Cwd;
 use FindBin;
 use Data::Dumper;
 use XML::LibXML;
-use URI();
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -26,6 +25,8 @@ BEGIN {
 }
 
 use lib 'lib';
+
+use URI();
 
 use ES::Util qw(
     run $Opts
