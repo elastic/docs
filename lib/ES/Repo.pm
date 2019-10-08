@@ -166,13 +166,13 @@ sub _prepare_sub_dir {
         return $dest;
     }
 
-    my $has_uncommitted_changes = eval {
+    my $no_uncommitted_changes = eval {
         local $ENV{GIT_WORK_TREE} = $source_root;
         local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
         run qw(git diff-index --quiet HEAD --);
         1;
     };
-    unless ( $has_uncommitted_changes ) {
+    unless ( $no_uncommitted_changes ) {
         printf(" - %40.40s: Not merging the subbed dir for [%s][%s][%s] because it has uncommitted changes.\n",
                 $title, $self->{name}, $branch, $path);
         $self->_extract_from_dir( $source_root, $dest, $path );

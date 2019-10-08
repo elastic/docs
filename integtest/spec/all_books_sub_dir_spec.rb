@@ -108,12 +108,12 @@ RSpec.describe 'building all books' do
       include_examples 'examples', 'too new'
     end
     shared_examples 'log merge' do |path|
-      it 'log that it started merging' do
+      it "log that it started merging [#{path}]" do
         expect(logs).to include(<<~LOGS)
           Test: Merging the subbed dir for [repo][master][#{path}] into the last successful build.
         LOGS
       end
-      it 'log that it merged' do
+      it "log that it merged [#{path}]" do
         expect(logs).to include(<<~LOGS)
           Test: Merged the subbed dir for [repo][master][#{path}] into the last successful build.
         LOGS
