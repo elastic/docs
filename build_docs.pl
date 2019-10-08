@@ -556,14 +556,16 @@ sub init_target_repo {
 #===================================
     my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
 
-    my $git_uri = URI->new($Opts->{target_repo});
+    my $git_repo = $Opts->{target_repo};
+    my $git_uri = URI->new($git_repo);
     if ( $git_uri->scheme eq "https" && $ENV{GITHUB_USER} ){
         $git_uri->userinfo( $ENV{GITHUB_USER} . ":" . $ENV{GITHUB_PASS} );
+        $git_repo = $git_uri->as_string;
     }
 
     my $target_repo = ES::TargetRepo->new(
         git_dir     => $repos_dir->subdir('target_repo.git'),
-        url         => $git_uri->as_string,
+        url         => $git_repo,
         reference   => $reference_dir,
         destination => dir( "$temp_dir/target_repo" ),
         branch      => $Opts->{target_branch} || 'master',
