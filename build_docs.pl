@@ -18,6 +18,7 @@ use Cwd;
 use FindBin;
 use Data::Dumper;
 use XML::LibXML;
+use URI;
 
 BEGIN {
     $Old_Pwd = Cwd::cwd();
@@ -555,9 +556,14 @@ sub init_target_repo {
 #===================================
     my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
 
+    my $git_uri = URI->new($Opts->{target_repo});
+    if ( $ENV{GITHUB_USER} ){
+        $git_uri->userinfo( $ENV{GITHUB_USER} . ":" . $ENV{GITHUB_PASS} );
+    }
+
     my $target_repo = ES::TargetRepo->new(
         git_dir     => $repos_dir->subdir('target_repo.git'),
-        url         => $Opts->{target_repo},
+        url         => $git_uri->as_string,
         reference   => $reference_dir,
         destination => dir( "$temp_dir/target_repo" ),
         branch      => $Opts->{target_branch} || 'master',
