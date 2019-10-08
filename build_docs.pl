@@ -559,7 +559,8 @@ sub init_target_repo {
 
     my $git_repo = $Opts->{target_repo};
     my $git_uri = URI->new($git_repo);
-    if ( $git_uri->scheme eq "https" && $ENV{GITHUB_USER} ){
+
+    if ( ( $git_uri->scheme || "" ) eq "https" && defined $ENV{GITHUB_USER} && defined $ENV{GITHUB_PASS} ){
         $git_uri->userinfo( $ENV{GITHUB_USER} . ":" . $ENV{GITHUB_PASS} );
         $git_repo = $git_uri->as_string;
     }
