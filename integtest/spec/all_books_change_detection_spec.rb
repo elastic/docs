@@ -620,7 +620,7 @@ RSpec.describe 'building all books' do
               book = src.book 'Test'
               book.source repo2, 'not_used_actually'
               repo = src.repo 'repo'
-              repo.switch_to_newbranch 'subbed'
+              repo.switch_to_new_branch 'subbed'
               repo.write 'index.asciidoc', TWO_CHAPTERS + "\nmore words"
               repo.commit 'sub'
               config.extra do |conversion|

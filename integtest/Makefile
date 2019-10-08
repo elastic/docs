@@ -17,4 +17,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec
+	rspec -e'because we add a source to the book and specify --keep_hash and --sub_dir'
