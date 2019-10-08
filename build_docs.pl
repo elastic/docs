@@ -607,7 +607,7 @@ sub init_repos {
             tracker   => $tracker,
             url       => $url,
             reference => $reference_dir,
-            keep_hash => $Opts->{keep_hash},
+            keep_hash => $Opts->{keep_hash} || 0,
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
@@ -644,7 +644,7 @@ sub init_repos {
     ES::DocsRepo->new( 
         tracker => $tracker,
         dir => $conf->{docs} || '/docs_build',
-        keep_hash => $Opts->{keep_hash}
+        keep_hash => $Opts->{keep_hash} || 0
     );
 
     return $tracker;
