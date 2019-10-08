@@ -449,9 +449,10 @@ RSpec.describe 'building all books' do
       HTML
     end
     it 'serves a legacy redirect' do
-      expect(legacy_redirect.code).to eq('301')
-      expect(legacy_redirect['location']).to eq(
-        "#{root}/en/elasticsearch/reference/current/setup.html"
+      expect(legacy_redirect).to redirect_to(
+        eq(
+          "#{root}/en/elasticsearch/reference/current/setup.html"
+        )
       )
     end
     context 'for a JPG' do

@@ -92,6 +92,9 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:directory) do
       get watermark, branch, 'guide'
     end
+    let(:legacy_redirect) do
+      get watermark, branch, 'guide/reference/setup/'
+    end
   end
 
   let(:expected_js_state) { {} }
@@ -105,8 +108,7 @@ RSpec.describe 'previewing built docs', order: :defined do
   shared_examples 'serves some docs' do |supports_gapped: true|
     context 'the root' do
       it 'redirects to the guide root' do
-        expect(root.code).to eq('301')
-        expect(root['Location']).to eq("http://#{host}:8000/guide/index.html")
+        expect(root).to redirect_to(eq("http://#{host}:8000/guide/index.html"))
       end
       it 'logs the access to the docs root' do
         wait_for_access '/'
@@ -176,6 +178,21 @@ RSpec.describe 'previewing built docs', order: :defined do
         Disallow: /
       TXT
       expect(robots_txt['Content-Type']).to eq('text/plain')
+    end
+    context 'for a legacy redirect' do
+      it 'serves the redirect' do
+        expect(legacy_redirect).to redirect_to(
+          eq(
+            '/guide/en/elasticsearch/reference/current/setup.html'
+          )
+        )
+      end
+      it 'logs the access to the legacy redirect' do
+        wait_for_access '/guide/reference/setup/'
+        expect(logs).to include(<<~LOGS)
+          #{watermark} #{host} GET /guide/reference/setup/ HTTP/1.1 301
+        LOGS
+      end
     end
   end
   shared_examples '404s' do
@@ -252,8 +269,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     end
     context 'when you request a directory' do
       it 'redirects to index.html' do
-        expect(directory.code).to eq('301')
-        expect(directory['Location']).to eq('/guide/index.html')
+        expect(directory).to redirect_to(eq('/guide/index.html'))
       end
     end
   end

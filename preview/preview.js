@@ -40,8 +40,15 @@ const requestHandler = async (core, parsedUrl, response) => {
   }
 
   const path = parsedUrl.pathname.substring("/guide".length);
-  const type = contentType(path);
-  const file = await core.file(path, type);
+  const redirect = await checkRedirects(core, path);
+  if (redirect) {
+    response.statusCode = 301;
+    response.setHeader('Location', redirect);
+    response.end();
+    return;
+  }
+
+  const file = await core.file(path);
   if (file === "dir") {
     response.statusCode = 301;
     const sep = parsedUrl.pathname.endsWith('/') ? '' : '/';
@@ -55,6 +62,7 @@ const requestHandler = async (core, parsedUrl, response) => {
     return;
   }
 
+  const type = contentType(path);
   response.setHeader('Content-Type', type);
   if (file.hasTemplate && !path.endsWith("toc.html") && type === "text/html; charset=utf-8") {
     const template = Template(file.template);
@@ -125,6 +133,47 @@ const hostPrefix = host => {
   }
   return host.substring(0, dot);
 };
+
+const checkRedirects = async (core, path) => {
+  /*
+   * This parses the nginx redirects.conf file we have in the built docs and
+   * performs the redirects. It makes no effort to properly emulate nginx. It
+   * just runs the regexes from start to finish. Which is fine becaues of the
+   * redirects that we have. But it is ugly.
+   *
+   * It also doesen't make any effort to be fast or efficient, buffering the
+   * entire file into memory then splitting it into lines and compiling all of
+   * the regexes on the fly. We can absolutely do better. But this feels like
+   * a fine place to start.
+   */
+  // TODO Rebuild redirects file without nginx stuff. And stream it properly.
+  let target = "/guide" + path;
+  const redirectsStart = Date.now();
+  const streamToString = stream => {
+    const chunks = []
+    return new Promise((resolve, reject) => {
+      stream.on('data', chunk => chunks.push(chunk));
+      stream.on('error', reject);
+      stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    });
+  }
+  const redirectsStream = await core.redirects();
+  if (!redirectsStream) {
+    // If we don't have the redirects file we skip redirects.
+    return;
+  }
+  const redirectsString = await streamToString(redirectsStream);
+  for (const line of redirectsString.split('\n')) {
+    if (!line.startsWith("rewrite")) {
+      continue;
+    }
+    const [_marker, regexText, replacement] = line.split(' ');
+    const regex = new RegExp(regexText.replace('(?i)', ''), 'i');
+    target = target.replace(regex, replacement);
+  }
+  console.log("took", Date.now() - redirectsStart);
+  return "/guide" + path === target ? null : target;
+}
 
 module.exports = Core => {
   const server = http.createServer((request, response) => {
