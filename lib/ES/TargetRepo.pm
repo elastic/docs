@@ -68,7 +68,7 @@ sub checkout_minimal {
             $self->{started_empty} = 0;
             chdir $self->{destination};
             run qw(git config core.sparseCheckout true);
-            $self->_write_sparse_config( $self->{destination}, "/*\n!html/*/\n!raw/*/" );
+            $self->_write_sparse_config("/*\n!html/*/\n!raw/*/");
             run qw(git checkout master);
             return 1 if $self->{branch} eq 'master';
             if ( $self->_branch_exists( 'origin/' . $self->{branch} ) ) {
@@ -95,7 +95,7 @@ sub checkout_all {
     my $original_pwd = Cwd::cwd();
     chdir $self->{destination};
     eval {
-        $self->_write_sparse_config( $self->{destination}, "*\n" );
+        $self->_write_sparse_config("*\n");
         run qw(git read-tree -mu HEAD) unless $self->{started_empty};
         1;
     } or die "Error checking out repo <target_repo>: $@";
@@ -150,6 +150,23 @@ sub push_changes {
     local $ENV{GIT_DIR} = $self->{git_dir};
     run qw(git push origin master) if $self->{initialized_empty_master};
     run @push_branch;
+}
+
+#===================================
+# Write a sparse checkout config for the repo.
+#===================================
+sub _write_sparse_config {
+#===================================
+    my ( $self, $config ) = @_;
+
+    open(my $sparse, '>',
+        $self->{destination}
+             ->subdir( '.git' )
+             ->subdir( 'info' )
+             ->file( 'sparse-checkout' ))
+        or dir("Couldn't write sparse config");
+    print $sparse $config;
+    close $sparse;
 }
 
 #===================================

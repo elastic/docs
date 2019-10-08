@@ -93,7 +93,6 @@ class Repo
   ##
   # Checks out a branch.
   def switch_to_branch(branch)
-    # TODO: rename to checkout?
     Dir.chdir @root do
       sh "git checkout #{branch}"
     end
@@ -137,12 +136,6 @@ class Repo
   def push_to(dest)
     Dir.chdir @root do
       sh "git push #{dest}"
-    end
-  end
-
-  def merge(ref)
-    Dir.chdir @root do
-      sh "git merge #{ref}"
     end
   end
 
