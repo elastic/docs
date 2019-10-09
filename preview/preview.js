@@ -148,7 +148,6 @@ const checkRedirects = async (core, path) => {
    */
   // TODO Rebuild redirects file without nginx stuff. And stream it properly.
   let target = "/guide" + path;
-  const redirectsStart = Date.now();
   const streamToString = stream => {
     const chunks = []
     return new Promise((resolve, reject) => {
@@ -171,7 +170,6 @@ const checkRedirects = async (core, path) => {
     const regex = new RegExp(regexText.replace('(?i)', ''), 'i');
     target = target.replace(regex, replacement);
   }
-  console.log("took", Date.now() - redirectsStart);
   return "/guide" + path === target ? null : target;
 }
 
