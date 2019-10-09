@@ -52,6 +52,7 @@ const GitCore = (defaultTemplate, ignoreHost, repoPath) => {
 
     return {
       diff: () => Readable.from(bufferItr(diffItr(git, branch), 16 * 1024)),
+      redirects: () => git.catBlob(`${branch}:redirects.conf`),
       file: async requestedPath => {
         const templateExists = await hasTemplate(git, branch);
         /*
@@ -113,6 +114,7 @@ const FsCore = (defaultTemplate, ignoreHost, rootPath) => {
         r.push(null);
         return r;
       },
+      redirects: () => null,
       file: async requestedPath => {
         const realPath = `${rootPath}/${requestedPath}`;
         let pathStat;

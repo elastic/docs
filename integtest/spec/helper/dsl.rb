@@ -46,12 +46,10 @@ module Dsl
 
   RSpec.shared_examples 'the root' do
     context 'the root' do
-      let(:root) do
-        Net::HTTP.get_response(URI('http://localhost:8000/'))
-      end
+      let(:root_uri) { 'http://localhost:8000' }
+      let(:root) { Net::HTTP.get_response(URI(root_uri)) }
       it 'redirects to the guide root' do
-        expect(root.code).to eq('301')
-        expect(root['Location']).to eq('http://localhost:8000/guide/index.html')
+        expect(root).to redirect_to(eq("#{root_uri}/guide/index.html"))
       end
     end
   end
