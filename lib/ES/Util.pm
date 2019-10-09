@@ -473,7 +473,7 @@ sub run (@) {
     return $combined if $ok;
 
     my $git_dir = $ENV{GIT_DIR} ? "in GIT_DIR $ENV{GIT_DIR}" : "";
-    die "Error executing: @args $git_dir\n$out\n---\n$err"
+    die "Error executing: @args $git_dir\n---out---\n$out\n---err---\n$err\n---------\n"
         unless $ok;
 
     return $combined;
