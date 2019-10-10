@@ -8,7 +8,7 @@ MAKEFLAGS += --silent
 check: unit_test integration_test
 
 .PHONY: unit_test
-unit_test: style asciidoctor_check web_check preview_check
+unit_test: style asciidoctor_check web_check template_check preview_check
 
 .PHONY: style
 style: build_docs
@@ -21,6 +21,10 @@ asciidoctor_check:
 .PHONY: web_check
 web_check:
 	$(MAKE) -C resources/web
+
+.PHONY: template_check
+template_check:
+	$(MAKE) -C template
 
 .PHONY: preview_check
 preview_check:

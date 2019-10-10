@@ -1,48 +1,45 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module AlternativeLanguageLookup
   ##
   # Reports on the result of processing a lookup.
   class Report
     def self.open(path)
       File.open path, 'w' do |f|
-        yield Report.new(f)
+        f.print '['
+        yield Report.new f
+        f.print "]\n"
       end
     end
 
     def initialize(file)
       @file = file
-      @file.puts <<~ASCIIDOC
-        == Alternatives Report
-
-      ASCIIDOC
+      @first = true
     end
 
     def report(listing, found_langs)
-      @file.puts <<~ASCIIDOC
-        === #{listing.source_location}: #{listing.digest}.adoc
-        [source,#{listing.lang}]
-        ----
-        #{listing.source.gsub(/<([^>])>/, '\\<\1>')}
-        ----
-        |===
-        #{lang_header listing}
-
-        #{lang_line listing, found_langs}
-        |===
-      ASCIIDOC
+      if @first
+        @first = false
+      else
+        @file.print ','
+      end
+      @file.print "\n"
+      @file.print json(listing, found_langs)
     end
 
-    def lang_header(listing)
-      suffix = listing.is_result ? '-result' : ''
-      listing.alternatives.map { |a| "| #{a[:lang]}#{suffix}" }.join ' '
-    end
-
-    def lang_line(listing, found_langs)
-      listing
-        .alternatives
-        .map { |a| found_langs.include?(a[:lang]) ? '| &check;' : '| &cross;' }
-        .join ' '
+    def json(listing, found_langs)
+      JSON.generate(
+        source_location: {
+          file: listing.source_location.path,
+          line: listing.source_location.lineno,
+        },
+        digest: listing.digest,
+        lang: listing.lang,
+        found: found_langs,
+        source: listing.source
+      )
     end
   end
 end

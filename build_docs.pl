@@ -26,6 +26,8 @@ BEGIN {
 
 use lib 'lib';
 
+use URI();
+
 use ES::Util qw(
     run $Opts
     build_chunked build_single build_pdf
@@ -36,6 +38,7 @@ use ES::Util qw(
     write_nginx_test_config
     write_nginx_preview_config
     start_web_resources_watcher
+    start_preview
     build_web_resources
 );
 
@@ -45,12 +48,12 @@ use Path::Class qw(dir file);
 use Sys::Hostname;
 
 use ES::BranchTracker();
+use ES::DocsRepo();
 use ES::Repo();
 use ES::Book();
 use ES::TargetRepo();
 use ES::Toc();
 use ES::LinkCheck();
-use ES::Template();
 
 GetOptions($Opts, @{ command_line_opts() }) || exit usage();
 check_opts();
@@ -62,10 +65,6 @@ our $Conf = LoadFile(pick_conf());
 die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_standard_docker};
 
 init_env();
-
-$Opts->{template} = ES::Template->new(
-    %{ $Conf->{template} },
-);
 
 $Opts->{doc}           ? build_local()
     : $Opts->{all}     ? build_all()
@@ -86,11 +85,13 @@ sub build_local {
     say "Building HTML from $doc";
 
     my $dir = dir( $Opts->{out} || 'html_docs' )->absolute($Old_Pwd);
+    my $raw_dir = $dir->subdir( 'raw' );
 
     $Opts->{resource}
         = [ map { dir($_)->absolute($Old_Pwd) } @{ $Opts->{resource} || [] } ];
 
-    _guess_opts_from_file($index);
+    _guess_opts( $index );
+    $Opts->{roots}{docs} = '/docs_build' unless $Opts->{roots}{docs};
 
     my @alternatives;
     if ( $Opts->{alternatives} ) {
@@ -113,15 +114,13 @@ sub build_local {
 
     my $latest = !$Opts->{suppress_migration_warnings};
     if ( $Opts->{single} ) {
-        $dir->rmtree;
-        $dir->mkpath;
-        build_single( $index, $dir, %$Opts,
+        build_single( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
         );
     }
     else {
-        build_chunked( $index, $dir, %$Opts,
+        build_chunked( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
         );
@@ -129,33 +128,43 @@ sub build_local {
 
     say "Done";
 
-    serve_and_open_browser( $dir, 0, $web_resources_pid ) if $Opts->{open};
+    if ( $Opts->{open} ) {
+        my $preview_pid = start_preview( 'fs', $raw_dir, 'template.html', 0 );
+        serve_local_preview( $dir, 0, $web_resources_pid, $preview_pid );
+    }
 }
 
 #===================================
-sub _guess_opts_from_file {
+sub _guess_opts {
 #===================================
     my $index = shift;
 
-    my %edit_urls = ();
-    my $doc_toplevel = _find_toplevel($index->parent);
-    unless ( $doc_toplevel ) {
-        $Opts->{root_dir} = $index->parent;
-        # If we can't find the edit url for the document then we're never
-        # going to find it for anyone.
-        return;
-    }
-    $Opts->{root_dir} = $doc_toplevel;
-    my $edit_url = _guess_edit_url($doc_toplevel);
-    $edit_urls{ $doc_toplevel } = $edit_url if $edit_url;
+    $Opts->{edit_urls} = {};
+    $Opts->{roots} = {};
+    my $toplevel = _find_toplevel( $index->parent );
+    my $remote = _pick_best_remote( $toplevel );
+    my $branch = _guess_branch( $toplevel );
+    my $repo_name = _guess_repo_name( $remote );
+    # We couldn't find the top level so lets make a wild guess.
+    $toplevel = $index->parent unless $toplevel;
+    $Opts->{branch} = $branch;
+    $Opts->{root_dir} = $toplevel;
+    $Opts->{roots}{ $repo_name } = $toplevel;
+    $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
+        $remote || 'unknown', $branch
+    );
     for my $resource ( @{ $Opts->{resource} } ) {
-        my $resource_toplevel = _find_toplevel($resource);
-        next unless $resource_toplevel;
-
-        my $resource_edit_url = _guess_edit_url($resource_toplevel);
-        $edit_urls{ $resource_toplevel } = $resource_edit_url if $resource_edit_url;
+        $toplevel = _find_toplevel( $resource );
+        $remote = _pick_best_remote( $toplevel );
+        $branch = _guess_branch( $toplevel );
+        $repo_name = _guess_repo_name( $remote );
+        # We couldn't find the top level so lets make a wild guess.
+        $toplevel = $resource unless $toplevel;
+        $Opts->{roots}{ $repo_name } = $toplevel;
+        $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
+            $remote || 'unknown', $branch
+        );
     }
-    $Opts->{edit_urls} = { %edit_urls };
 }
 
 #===================================
@@ -168,31 +177,69 @@ sub _find_toplevel {
     my $toplevel = eval { run qw(git rev-parse --show-toplevel) };
     chdir $original_pwd;
     say "Couldn't find repo toplevel for $docpath" unless $toplevel;
-    return $toplevel;
+    return $toplevel || 0;
 }
 
 #===================================
-sub _guess_edit_url {
+sub _pick_best_remote {
 #===================================
     my $toplevel = shift;
 
+    return 0 unless $toplevel;
+
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
     my $remotes = eval { run qw(git remote -v) } || '';
-    my $remote;
     if ($remotes =~ m|\s+(\S+[/:]elastic(?:search-cn)?/\S+)|) {
-        $remote = $1;
         # We prefer either an elastic or elasticsearch-cn organization. All
         # but two books are in elastic but elasticsearch-cn is special.
-    } else {
-        say "Couldn't find edit url because there isn't an Elastic remote";
-        if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
-            $remote = $1;
-        } else {
-            $remote = 'unknown';
-        }
+        return $1;
     }
-    my $branch = eval {run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
-    return ES::Repo::edit_url_for_url_and_branch($remote, $branch);
+    say "Couldn't an Elastic remote for $toplevel";
+    if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
+        return $1;
+    }
+    return 0;
+}
+
+#===================================
+sub _guess_branch {
+#===================================
+    my $toplevel = shift;
+
+    return 'master' unless $toplevel;
+
+    local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
+    my $real_branch = eval { run qw(git rev-parse --abbrev-ref HEAD) } || 'master';
+
+    # Detects common branch patterns like:
+    # 7.x
+    # 7.1
+    # 18.5
+    # Also normalizes brackport style patters like:
+    # blah_blah_7.x
+    # bort_foo_7_x
+    # zip_zop_12.8
+    # qux_12_8
+    return $1 if $real_branch =~ /(\d+[\._][\dx]+)$/;
+
+    # Otherwise we just assume we're trageting master. This'll be right when
+    # the branch is actually 'master' and when this is a feature branch. It
+    # obviously won't always be right, but for the most part that *should* be
+    # ok because we have pull request builds which will double check the links.
+    return 'master';
+}
+
+#===================================
+sub _guess_repo_name {
+#===================================
+    my ( $remote ) = @_;
+
+    return 'repo' unless $remote;
+
+    $remote = dir( $remote )->basename;
+    $remote =~ s/\.git$//;
+
+    return $remote;
 }
 
 #===================================
@@ -227,10 +274,9 @@ sub build_all {
     my $tracker = init_repos(
             $repos_dir, $temp_dir, $reference_dir, $target_repo );
 
-    my $build_dir = $Conf->{paths}{build}
-        or die "Missing <paths.build> in config";
-    $build_dir = $target_repo->destination->subdir( $build_dir );
+    my $build_dir = $target_repo->destination->subdir( 'html' );
     $build_dir->mkpath;
+    my $raw_build_dir = $target_repo->destination->subdir( 'raw' );
 
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
@@ -243,13 +289,14 @@ sub build_all {
     }
     else {
         say "Building docs";
-        build_entries( $build_dir, $temp_dir, $toc, @$contents );
+        build_entries(
+            $raw_build_dir, $build_dir, $temp_dir, $toc, $tracker, @$contents
+        );
 
         say "Writing main TOC";
-        $toc->write( $build_dir, 0 );
+        $toc->write( $raw_build_dir, $build_dir, $temp_dir, 0 );
 
-        my $static_dir = $build_dir->subdir( 'static' );
-        build_web_resources( $static_dir );
+        build_web_resources( $target_repo->destination );
 
         say "Writing extra HTML redirects";
         for ( @{ $Conf->{redirects} } ) {
@@ -267,9 +314,9 @@ sub build_all {
         say "Checking links";
         check_links($build_dir);
     }
-    $tracker->prune_out_of_date( @$contents );
+    $tracker->prune_out_of_date;
     push_changes( $build_dir, $target_repo, $tracker ) if $Opts->{push};
-    serve_and_open_browser( $build_dir, $redirects, 0 ) if $Opts->{open};
+    serve_local_preview( $build_dir, $redirects, 0, 0 ) if $Opts->{open};
 
     $temp_dir->rmtree;
 }
@@ -362,7 +409,7 @@ sub check_kibana_links {
 #===================================
 sub build_entries {
 #===================================
-    my ( $build, $temp_dir, $toc, @entries ) = @_;
+    my ( $raw_build, $build, $temp_dir, $toc, $tracker, @entries ) = @_;
 
     while ( my $entry = shift @entries ) {
         my $title = $entry->{title}
@@ -370,12 +417,15 @@ sub build_entries {
 
         if ( my $sections = $entry->{sections} ) {
             my $base_dir = $entry->{base_dir} || '';
+            my $raw_sub_build = $raw_build->subdir($base_dir);
+            my $sub_build = $build->subdir($base_dir);
             my $section_toc = build_entries(
-                $build->subdir($base_dir), $temp_dir,
-                ES::Toc->new( $title, $entry->{lang} ), @$sections
+                $raw_sub_build, $sub_build, $temp_dir,
+                ES::Toc->new( $title, $entry->{lang}, ),
+                $tracker, @$sections
             );
             if ($base_dir) {
-                $section_toc->write( $build->subdir($base_dir) );
+                $section_toc->write( $raw_sub_build, $sub_build, $temp_dir );
                 $toc->add_entry(
                     {   title => $title,
                         url   => $base_dir . '/index.html'
@@ -389,11 +439,12 @@ sub build_entries {
         }
         my $book = ES::Book->new(
             dir      => $build,
-            template => $Opts->{template},
+            raw_dir  => $raw_build,
             temp_dir => $temp_dir,
             %$entry
         );
         $toc->add_entry( $book->build( $Opts->{rebuild} ) );
+        $tracker->allowed_book( $book );
     }
 
     return $toc;
@@ -506,10 +557,17 @@ sub init_target_repo {
 #===================================
     my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
 
+    my $git_repo = $Opts->{target_repo};
+    my $git_uri = URI->new($git_repo);
+
+    if ( ( $git_uri->scheme || "" ) eq "https" && defined $ENV{GITHUB_USER} && defined $ENV{GITHUB_PASS} ){
+        $git_uri->userinfo( $ENV{GITHUB_USER} . ":" . $ENV{GITHUB_PASS} );
+        $git_repo = $git_uri->as_string;
+    }
+
     my $target_repo = ES::TargetRepo->new(
-        dir         => $repos_dir,
-        user        => $Opts->{user},
-        url         => $Opts->{target_repo},
+        git_dir     => $repos_dir->subdir('target_repo.git'),
+        url         => $git_repo,
         reference   => $reference_dir,
         destination => dir( "$temp_dir/target_repo" ),
         branch      => $Opts->{target_branch} || 'master',
@@ -536,9 +594,7 @@ sub init_repos {
 
     delete $child_dirs{ $target_repo->git_dir->absolute };
 
-    my $tracker_path = $Conf->{paths}{branch_tracker}
-        or die "Missing <paths.branch_tracker> in config";
-    $tracker_path = $target_repo->destination . "/$tracker_path";
+    my $tracker_path = $target_repo->destination . '/html/branches.yaml';
 
     # check out all remaining repos in parallel
     my $tracker = ES::BranchTracker->new( file($tracker_path), @repo_names );
@@ -549,18 +605,19 @@ sub init_repos {
         $pm->finish;
     }
     for my $name (@repo_names) {
+        next if $name eq 'docs';
+
         my $url = $conf->{$name};
         # We always use ssh-style urls regardless of conf.yaml so we can use
         # our ssh key for the cloning.
         $url =~ s|https://([^/]+)/|git\@$1:|;
         my $repo = ES::Repo->new(
             name      => $name,
-            dir       => $repos_dir,
+            git_dir   => $repos_dir->subdir("$name.git"),
             tracker   => $tracker,
-            user      => $Opts->{user},
             url       => $url,
             reference => $reference_dir,
-            keep_hash => $Opts->{keep_hash},
+            keep_hash => $Opts->{keep_hash} || 0,
         );
         delete $child_dirs{ $repo->git_dir->absolute };
 
@@ -591,6 +648,15 @@ sub init_repos {
         say "Removing old repo <" . $dir->basename . ">";
         $dir->rmtree;
     }
+
+    # Setup the docs repo
+    # We support configuring the remote for the docs repo for testing
+    ES::DocsRepo->new( 
+        tracker => $tracker,
+        dir => $conf->{docs} || '/docs_build',
+        keep_hash => $Opts->{keep_hash} || 0
+    );
+
     return $tracker;
 }
 
@@ -603,39 +669,45 @@ sub preview {
     my $nginx_config = file('/tmp/nginx.conf');
     write_nginx_preview_config( $nginx_config );
 
-    if ( my $node_pid = fork ) {
+    if ( my $nginx_pid = fork ) {
         my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
 
-        say "Cloning built docs";
-        my $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+        my $target_repo;
+        unless ( $Opts->{gapped} ) {
+            say "Cloning built docs";
+            $target_repo = init_target_repo( $repos_dir, $temp_dir, $reference_dir );
+        }
         say "Built docs are ready";
 
-        if ( my $nginx_pid = fork ) {
-            $SIG{TERM} = sub {
-                # We should be a good citizen and shut down the subprocesses.
-                # This isn't so important in k8s or docker because we shoot
-                # the entire container when we're done, but it is nice when
-                # testing.
-                say 'Terminating preview services...nginx';
-                kill 'TERM', $nginx_pid;
-                wait;
-                say 'Terminating preview services...node';
-                kill 'TERM', $node_pid;
-                wait;
-                say 'Terminated preview services';
-                exit 0;
-            };
+        my $default_template = $Opts->{gapped} ? "air_gapped_template.html" : "template.html";
+        my $preview_pid = start_preview(
+            'git', '/docs_build/.repos/target_repo.git', $default_template, $Opts->{gapped}
+        );
+        $SIG{TERM} = sub {
+            # We should be a good citizen and shut down the subprocesses.
+            # This isn't so important in k8s or docker because we shoot
+            # the entire container when we're done, but it is nice when
+            # testing.
+            say 'Terminating preview services...nginx';
+            kill 'TERM', $nginx_pid;
+            wait;
+            say 'Terminating preview services...preview';
+            kill 'TERM', $preview_pid;
+            wait;
+            say 'Terminated preview services';
+            exit 0;
+        };
+        if ( $Opts->{gapped} ) {
+            wait;
+        } else {
             while (1) {
                 sleep 1;
-                my $fetch_result = $target_repo->fetch;
-                say "$fetch_result" if ( $fetch_result );
+                my $fetch_result = eval { $target_repo->fetch };
+                say $fetch_result if $fetch_result;
+                say $@ if $@;
             }
-            exit;
-        } else {
-            close STDIN;
-            open( STDIN, "</dev/null" );
-            exec( qw(node --max-old-space-size=128 /docs_build/preview/preview.js) );
         }
+        exit;
     } else {
         close STDIN;
         open( STDIN, "</dev/null" );
@@ -783,32 +855,46 @@ sub pick_conf {
 }
 
 #===================================
-# Serve the documentation that we just built and open a browser to look at it.
+# Serve the documentation that we just built.
 #
 # docs_dir        - directory containing generated docs : Path::Class::dir
 # redirects_file  - file containing redirects or 0 if there aren't
 #                 - any redirects : Path::Class::file||0
+# web_resources_pid - pid of a subprocess that rebuilds the web resources on
+#                     the fly if we're running one or 0
+# preview_pid     - pid of the preview application or 0 if we're not running it
 #===================================
-sub serve_and_open_browser {
+sub serve_local_preview {
 #===================================
-    my ( $docs_dir, $redirects_file, $web_resources_pid ) = @_;
+    my ( $docs_dir, $redirects_file, $web_resources_pid, $preview_pid ) = @_;
 
-    if ( my $pid = fork ) {
+    if ( my $nginx_pid = fork ) {
         # parent
         $SIG{INT} = sub {
-            kill 'TERM', $pid;
-            kill 'TERM', $web_resources_pid if $web_resources_pid;
+            say 'Terminating preview services...nginx';
+            kill 'TERM', $nginx_pid;
+            wait;
+            if ( $preview_pid ) {
+                say 'Terminating preview services...preview';
+                kill 'TERM', $preview_pid;
+                wait;
+            }
+            if ( $web_resources_pid ) {
+                say 'Terminating preview services...parcel';
+                kill 'TERM', $web_resources_pid;
+                wait;
+            }
         };
         $SIG{TERM} = $SIG{INT};
 
         wait;
         say 'Terminated preview services';
         exit;
-    }
-    else {
+    } else {
         my $nginx_config = file('/tmp/nginx.conf');
         write_nginx_test_config(
-            $nginx_config, $docs_dir, $redirects_file, $web_resources_pid
+            $nginx_config, $docs_dir, $redirects_file,
+            $web_resources_pid, $preview_pid
         );
         close STDIN;
         open( STDIN, "</dev/null" );
@@ -850,6 +936,7 @@ sub command_line_opts {
         'user=s',
         # Options only compatible with --preview
         'preview',
+        'gapped',
         # Options that do *something* for either --doc or --all or --preview
         'conf=s',
         'in_standard_docker',
@@ -964,14 +1051,15 @@ sub check_opts {
         die('--push only compatible with --all') if $Opts->{push};
         die('--announce_preview only compatible with --all') if $Opts->{announce_preview};
         die('--rebuild only compatible with --all') if $Opts->{rebuild};
-        die('--reference only compatible with --all') if $Opts->{reference};
         die('--reposcache only compatible with --all') if $Opts->{reposcache};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
-        die('--user only compatible with --all') if $Opts->{user};
+    }
+    if ( !$Opts->{preview} ) {
+        die('--gapped only compatible with --preview') if $Opts->{gapped};
     }
     if ( !$Opts->{all} && !$Opts->{preview} ) {
-        die('--target_branch only compatible with --all or --preview') if $Opts->{target_branch};
+        die('--reference only compatible with --all or --preview') if $Opts->{reference};
         die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
     }
 }

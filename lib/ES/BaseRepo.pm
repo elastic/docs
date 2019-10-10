@@ -5,8 +5,6 @@ use warnings;
 use v5.10;
 
 use Path::Class();
-use URI();
-use Encode qw(decode_utf8);
 use ES::Util qw(run);
 
 #===================================
@@ -16,12 +14,7 @@ sub new {
 
     my $name = $args{name} or die "No <name> specified";
     my $url  = $args{url}  or die "No <url> specified for repo <$name>";
-    if ( my $user = $args{user} ) {
-        $url = URI->new($url);
-        $url->userinfo($user);
-    }
-
-    my $dir = $args{dir} or die "No <dir> specified for repo <$name>";
+    my $git_dir = $args{git_dir} or die "No <git_dir> specified";
 
     my $reference_dir = 0;
     if ($args{reference}) {
@@ -34,7 +27,7 @@ sub new {
 
     return bless {
         name          => $name,
-        git_dir       => $dir->subdir("$name.git"),
+        git_dir       => $git_dir,
         url           => $url,
         reference_dir => $reference_dir,
         sub_dirs      => {},
@@ -61,12 +54,39 @@ sub update_from_remote {
 }
 
 #===================================
+sub sha_for_branch {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    local $ENV{GIT_DIR} = $self->git_dir;
+    $branch = $self->normalize_branch( $branch );
+    my $sha = run 'git', 'rev-parse', $branch;
+    return $sha;
+}
+
+#===================================
 sub fetch {
 #===================================
     my $self = shift;
     local $ENV{GIT_DIR} = $self->git_dir;
 
     return run qw(git fetch --prune origin +refs/heads/*:refs/heads/*);
+}
+
+#===================================
+sub normalize_path {
+#===================================
+    my ( $self, $path, $branch ) = @_;
+
+    return $path;
+}
+
+#===================================
+sub normalize_branch {
+#===================================
+    my ( $self, $branch ) = @_;
+
+    return $branch;
 }
 
 #===================================
@@ -119,6 +139,19 @@ sub _reference_args {
     say " - Reference missing so not caching: " . $self->{reference_dir};
     $self->{reference_dir} = 0;  # NOCOMMIT check me
     return ();
+}
+
+#===================================
+# Write a sparse checkout config for the repo.
+#===================================
+sub _write_sparse_config {
+#===================================
+    my ( $self, $root, $config ) = @_;
+
+    my $dest = $root->subdir( '.git' )->subdir( 'info' )->file( 'sparse-checkout' );
+    open(my $sparse, '>', $dest) or dir("Couldn't write sparse config");
+    print $sparse $config;
+    close $sparse;
 }
 
 #===================================

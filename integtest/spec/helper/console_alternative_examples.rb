@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module ConsoleExamples
   README_LIKE = <<~ASCIIDOC
     When you execute this:
@@ -34,7 +36,7 @@ module ConsoleExamples
   ASCIIDOC
 end
 
-RSpec.shared_examples 'README-like console alternatives' do |path|
+RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
   page_context "#{path}/chapter.html" do
     let(:has_classes) { 'has-js has-csharp' }
     let(:console_widget) do
@@ -85,71 +87,90 @@ RSpec.shared_examples 'README-like console alternatives' do |path|
     end
     context 'the initial js state' do
       it 'contains the available alternatives' do
-        expect(initial_js_state).to include(
-          alternatives: {
-            console: {
-              js: { hasAny: true },
-              csharp: { hasAny: true },
-              java: { hasAny: false },
-            },
-          }
+        expect(contents).to initial_js_state(
+          include(
+            alternatives: {
+              console: {
+                js: { hasAny: true },
+                csharp: { hasAny: true },
+                java: { hasAny: false },
+              },
+            }
+          )
         )
       end
     end
   end
-  file_context "#{path}/alternatives_report.adoc" do
+  file_context "#{raw_path}/alternatives_report.json" do
+    let(:parsed) { JSON.parse contents, symbolize_names: true }
     it 'has a report on the example with all alternatives' do
-      expect(contents).to include(<<~ASCIIDOC)
-        === index.asciidoc: line 7: 8a7e0a79b1743d5fd94d79a7106ee930.adoc
-        [source,console]
-        ----
-        GET /_search
-        {
-            "query": "foo bar" \\<1>
-        }
-        ----
-        |===
-        | js | csharp | java
-
-        | &check; | &check; | &cross;
-        |===
-      ASCIIDOC
+      expect(parsed).to include(
+        source_location: { file: 'index.asciidoc', line: 7 },
+        digest: '8a7e0a79b1743d5fd94d79a7106ee930',
+        lang: 'console',
+        found: %w[js csharp],
+        source: <<~ASCIIDOC.strip
+          GET /_search
+          {
+              "query": "foo bar" <1>
+          }
+        ASCIIDOC
+      )
     end
     it 'has a report on the example result' do
-      expect(contents).to include(<<~ASCIIDOC)
-        === index.asciidoc: line 17: 9fa2da152878d1d5933d483a3c2af35e.adoc
-        [source,console-result]
-        ----
-        {
-            "hits": {
-                "total": { "value": 0, "relation": "eq" },
-                "hits": []
-            }
-        }
-        ----
-        |===
-        | js-result | csharp-result | java-result
-
-        | &check; | &cross; | &cross;
-        |===
-      ASCIIDOC
+      expect(parsed).to include(
+        source_location: { file: 'index.asciidoc', line: 17 },
+        digest: '9fa2da152878d1d5933d483a3c2af35e',
+        lang: 'console-result',
+        found: %w[js],
+        source: <<~JSON.strip
+          {
+              "hits": {
+                  "total": { "value": 0, "relation": "eq" },
+                  "hits": []
+              }
+          }
+        JSON
+      )
     end
     it 'has a report on the example without any alternatives' do
-      expect(contents).to include(<<~ASCIIDOC)
-        === index.asciidoc: line 28: d21765565081685a36dfc4af89e7cece.adoc
-        [source,console]
-        ----
-        GET /_search
-        {
-            "query": "missing"
+      expect(parsed).to include(
+        source_location: { file: 'index.asciidoc', line: 28 },
+        digest: 'd21765565081685a36dfc4af89e7cece',
+        lang: 'console',
+        found: [],
+        source: <<~ASCIIDOC.strip
+          GET /_search
+          {
+              "query": "missing"
+          }
+        ASCIIDOC
+      )
+    end
+  end
+  context "#{path}/alternatives_report.json" do
+    it "doesn't exist" do
+      expect(dest_file("#{path}/alternatives_report.json")).not_to file_exist
+    end
+  end
+  file_context "#{raw_path}/alternatives_summary.json" do
+    let(:parsed) { JSON.parse contents, symbolize_names: true }
+    it 'has proper counts' do
+      expect(parsed).to include(
+        console: {
+          alternatives: {
+            js: { found: 2 },
+            csharp: { found: 1 },
+            java: { found: 0 },
+          },
+          total: 3,
         }
-        ----
-        |===
-        | js | csharp | java
-
-        | &cross; | &cross; | &cross;
-        |===
-      ASCIIDOC
+      )
+    end
+  end
+  context "#{path}/alternatives_summary.json" do
+    it "doesn't exist" do
+      expect(dest_file("#{path}/alternatives_summary.json")).not_to file_exist
     end
   end
 end

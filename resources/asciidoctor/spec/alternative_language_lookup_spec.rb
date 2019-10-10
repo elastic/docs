@@ -91,54 +91,49 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         console,java,#{example_alternatives}/java
       CSV
     end
+    # Important: we have to keep a hard reference to these tempfile objects
+    # until the test is done so they aren't deleted.
+    let(:report_file) { Tempfile.new %w[alternatives_report .json] }
+    let(:summary_file) { Tempfile.new %w[alternatives_summary .json] }
     let(:convert_attributes) do
       {
         'alternative_language_lookups' => config,
-        'alternative_language_report' =>
-          Tempfile.new(%w[alternatives_report adoc]).path,
-        'alternative_language_summary' =>
-          Tempfile.new(%w[alternatives_summary json]).path,
+        'alternative_language_report' => report_file.path,
+        'alternative_language_summary' => summary_file.path,
       }
     end
     let(:report) do
-      # read the result of the conversion to populate the dir
+      # read the result of the conversion to populate the report
       converted
       # grab the contents
-      File.read convert_attributes['alternative_language_report']
+      txt = File.read report_file.path
+      JSON.parse txt, symbolize_names: true
     end
     let(:summary) do
-      # read the result of the conversion to populate the dir
+      # read the result of the conversion to populate the summary
       converted
       # grab the contents
-      txt = File.read convert_attributes['alternative_language_summary']
-      JSON.parse(txt, symbolize_names: true) unless txt.empty?
+      txt = File.read summary_file.path
+      JSON.parse txt, symbolize_names: true
     end
     context "when there aren't any alternatives" do
       include_context 'convert without logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /no_alternatives' }
       include_examples "doesn't modify the output"
-      let(:expected_log) do
-        <<~LOG
-          * 3fcdfa6097c68c04f3e175dcf3934af6.adoc: <stdin>: line 2
-        LOG
-      end
       context 'the alternatives report' do
-        it 'contains the source' do
-          expect(report).to include(<<~ASCIIDOC)
-            === <stdin>: line 2: 3fcdfa6097c68c04f3e175dcf3934af6.adoc
-            [source,console]
-            ----
-            GET /no_alternatives
-            ----
-          ASCIIDOC
-        end
-        it 'shows all languages as missing' do
-          expect(report).to include(<<~ASCIIDOC)
-            | js | csharp | java
-
-            | &cross; | &cross; | &cross;
-          ASCIIDOC
+        it 'contains an entry for the snippet' do
+          expect(report).to eq(
+            [
+              {
+                source_location: { file: '<stdin>', line: 2 },
+                digest: '3fcdfa6097c68c04f3e175dcf3934af6',
+                lang: 'console',
+                found: [],
+                source: snippet_contents,
+              },
+            ]
+          )
         end
       end
       context 'the summary' do
@@ -171,11 +166,17 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
       context 'the alternatives report' do
         it 'shows only js populated' do
-          expect(report).to include(<<~ASCIIDOC)
-            | js | csharp | java
-
-            | &check; | &cross; | &cross;
-          ASCIIDOC
+          expect(report).to eq(
+            [
+              {
+                source_location: { file: '<stdin>', line: 2 },
+                digest: '39f76498cca438ba11af18a7075d24c9',
+                lang: 'console',
+                found: ['js'],
+                source: snippet_contents,
+              },
+            ]
+          )
         end
       end
       context 'the summary' do
@@ -210,11 +211,17 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
       context 'the alternatives report' do
         it 'shows all languages populated' do
-          expect(report).to include(<<~ASCIIDOC)
-            | js | csharp | java
-
-            | &check; | &check; | &check;
-          ASCIIDOC
+          expect(report).to eq(
+            [
+              {
+                source_location: { file: '<stdin>', line: 2 },
+                digest: '5712902c12d9db15d01e8639ece9ec84',
+                lang: 'console',
+                found: %w[js csharp java],
+                source: snippet_contents,
+              },
+            ]
+          )
         end
       end
       context 'the summary' do
@@ -261,40 +268,22 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         DOCBOOK
       end
       context 'the alternatives report' do
-        it 'shows the request snippet' do
-          expect(report).to include(<<~ASCIIDOC)
-            === <stdin>: line 2: 39f76498cca438ba11af18a7075d24c9.adoc
-            [source,console]
-            ----
-            GET /just_js_alternative
-            ----
-            |===
-            | js | csharp | java
-
-            | &check; | &cross; | &cross;
-            |===
-          ASCIIDOC
+        it 'includes the request snippet' do
+          expect(report).to include(
+            source_location: { file: '<stdin>', line: 2 },
+            digest: '39f76498cca438ba11af18a7075d24c9',
+            lang: 'console',
+            found: ['js'],
+            source: snippet_contents
+          )
         end
-        it 'shows the result snippet' do
-          expect(report).to include(<<~ASCIIDOC)
-            === <stdin>: line 7: c4f54085e4784ead2ef4a758d03edd16.adoc
-            [source,console-result]
-            ----
-            {"just_js_result": {}}
-            ----
-            |===
-            | js-result | csharp-result | java-result
-
-            | &check; | &cross; | &cross;
-            |===
-          ASCIIDOC
-        end
-        it 'shows the result snippet after the request snippet' do
-          expect(report.lines.grep(/stdin/)).to eq(
-            [
-              "=== <stdin>: line 2: 39f76498cca438ba11af18a7075d24c9.adoc\n",
-              "=== <stdin>: line 7: c4f54085e4784ead2ef4a758d03edd16.adoc\n",
-            ]
+        it 'includes the result snippet' do
+          expect(report).to include(
+            source_location: { file: '<stdin>', line: 7 },
+            digest: 'c4f54085e4784ead2ef4a758d03edd16',
+            lang: 'console-result',
+            found: ['js'],
+            source: result_contents
           )
         end
       end

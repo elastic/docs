@@ -43,6 +43,20 @@ class Repo
   end
 
   ##
+  # Append some text to a file.
+  def append(source_relative_path, extra_text)
+    text = read source_relative_path
+    write source_relative_path, text + extra_text
+  end
+
+  ##
+  # Delete a file in the repo.
+  def delete(source_relative_path)
+    realpath = path source_relative_path
+    File.delete realpath
+  end
+
+  ##
   # Copy a file into the source path, returning the destination path.
   def cp(source_file, dest_relative_path)
     realpath = path dest_relative_path
@@ -77,11 +91,64 @@ class Repo
   end
 
   ##
+  # Checks out a branch.
+  def switch_to_branch(branch)
+    # TODO: rename to checkout?
+    Dir.chdir @root do
+      sh "git checkout #{branch}"
+    end
+  end
+
+  ##
+  # The hash of the last commit.
+  def short_hash
+    Dir.chdir @root do
+      hash = sh 'git rev-parse --short HEAD'
+      hash.strip
+    end
+  end
+
+  ##
+  # The hash of the last commit to a file.
+  def last_commit(path)
+    Dir.chdir @root do
+      hash = sh "git log -n 1 --pretty=format:%h -- #{path}"
+      hash.strip
+    end
+  end
+
+  ##
   # Create a worktree at `dest` for the branch `branch`.
   def create_worktree(dest, branch)
     Dir.chdir @root do
       sh "git worktree add #{dest} #{branch}"
     end
+  end
+
+  ##
+  # Clone this repo from some directory on disk
+  def clone_from(src)
+    @initialized = true
+    sh "git clone #{src} #{@root}"
+  end
+
+  ##
+  # Push commits in this repo to some remote, maybe a directory on disk.
+  def push_to(dest)
+    Dir.chdir @root do
+      sh "git push #{dest}"
+    end
+  end
+
+  def merge(ref)
+    Dir.chdir @root do
+      sh "git merge #{ref}"
+    end
+  end
+
+  def copy_shared_conf
+    FileUtils.mkdir_p @root
+    sh "cp -r /docs_build/shared #{@root}"
   end
 
   private

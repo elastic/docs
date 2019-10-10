@@ -5,9 +5,7 @@ require 'edit_me/extension'
 
 RSpec.describe EditMe do
   before(:each) do
-    Asciidoctor::Extensions.register do
-      tree_processor EditMe
-    end
+    Asciidoctor::Extensions.register EditMe
   end
 
   after(:each) do

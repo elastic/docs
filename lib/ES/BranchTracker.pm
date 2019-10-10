@@ -4,10 +4,9 @@ use strict;
 use warnings;
 use v5.10;
 
+use ES::Repo();
 use Path::Class qw(dir);
-use ES::Util qw(run sha_for);
 use YAML qw(Dump Load);
-use Storable qw(dclone);
 
 my %Repos;
 
@@ -26,6 +25,7 @@ sub new {
         file => $file,
         shas => \%shas,
         has_non_local_changes => 0,
+        allowed => {},
     }, $class;
 
     return $self;
@@ -43,21 +43,38 @@ sub set_sha_for_branch {
 #===================================
     my ( $self, $repo, $branch, $sha ) = @_;
 
+    return if defined $self->shas->{$repo}{$branch} && $self->shas->{$repo}{$branch} eq $sha;
     $self->{has_non_local_changes} = 1 unless $sha =~ /^local/;
     $self->shas->{$repo}{$branch} = $sha;
 }
 
 #===================================
-sub prune_out_of_date {
+# Mark a book to keep to it isn't pruned before saving.
+#===================================
+sub allowed_book {
+#===================================
+    my ( $self, $book ) = @_;
+
+    my $title = $book->{title};
+    for my $branch ( @{ $book->{branches} } ) {
+        for my $source ( @{ $book->source->sources } ) {
+            my $repo = $source->{repo};
+            my $path = $repo->normalize_path( $source->{path}, $branch );
+            my $mapped_branch = $source->{map_branches}{$branch} || $branch;
+            $self->{allowed}->{$repo->name}{"$title/$path/$mapped_branch"} = 1;
+        }
+    }
+}
+
 #===================================
 # Prunes tracker entries for books that are no longer built.
 #===================================
-    my ( $self, @entries ) = @_;
-    my %allowed;
-    _allowed_entries_from_books( \%allowed, @entries );
+sub prune_out_of_date {
+#===================================
+    my ( $self ) = @_;
 
     while ( my ($repo, $branches) = each %{ $self->{shas} } ) {
-        my $allowed_for_repo = $allowed{$repo} || '';
+        my $allowed_for_repo = $self->{allowed}{$repo} || '';
         unless ($allowed_for_repo) {
             delete $self->{shas}->{$repo};
             next;
@@ -76,28 +93,6 @@ sub prune_out_of_date {
         # building at this time and we don't want that to force a commit so we
         # clean them up while we're purging here.
         delete $self->{shas}->{$repo} unless keys %{ $branches };
-    }
-}
-
-#===================================
-sub _allowed_entries_from_books {
-#===================================
-    my ( $allowed, @entries ) = @_;
-
-    foreach my $book ( @entries ) {
-        my $title = $book->{title};
-        foreach ( @{ $book->{branches} } ) {
-            my ( $branch, $branch_title ) = ref $_ eq 'HASH' ? (%$_) : ( $_, $_ );
-            foreach my $source ( @{ $book->{sources} } ) {
-                my $repo = $source->{repo};
-                my $path = dir('.')->subdir( $source->{path} )->relative('.');
-                my $mapped_branch = $source->{map_branches}{$branch} || $branch;
-                $allowed->{$repo}{"$title/$path/$mapped_branch"} = 1;
-            }
-        }
-        if (exists $book->{sections}) {
-            _allowed_entries_from_books( $allowed, @{ $book->{sections} } );
-        }
     }
 }
 

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'net/http'
+
 require_relative 'dsl/convert_all'
 require_relative 'dsl/convert_single'
 require_relative 'dsl/file_contexts'
@@ -30,6 +32,7 @@ module Dsl
       FileUtils.remove_entry @tmp
     end
 
+    let(:src) { @src }
     let(:books) { @src.books }
     let(:outputs) { @dest.convert_outputs }
     let(:statuses) { @dest.convert_statuses }
@@ -38,6 +41,28 @@ module Dsl
     # Build a path to a file in the destination.
     def dest_file(file)
       @dest.path(file)
+    end
+  end
+
+  RSpec.shared_examples 'the root' do
+    context 'the root' do
+      let(:root_uri) { 'http://localhost:8000' }
+      let(:root) { Net::HTTP.get_response(URI(root_uri)) }
+      it 'redirects to the guide root' do
+        expect(root).to redirect_to(eq("#{root_uri}/guide/index.html"))
+      end
+    end
+  end
+  RSpec.shared_examples 'the favicon' do
+    context 'the favicon' do
+      let(:favicon) do
+        Net::HTTP.get_response(URI('http://localhost:8000/favicon.ico'))
+      end
+      let(:path) { '/docs_build/resources/web/static/favicon.ico' }
+      let(:expected_bits) { File.open dest_file(path), 'rb', &:read }
+      it 'serves the favicon' do
+        expect(favicon).to serve(eq(expected_bits))
+      end
     end
   end
 

@@ -2,7 +2,7 @@
 # regenerate Gemfile.lock or building the docker image will fail.
 source "https://rubygems.org"
 
-ruby "~> 2.3"
+ruby "~> 2.5"
 
 # We commit Gemfile.lock so we're not going to have "unexpected" version bumps
 # of our gems. This file specifies what we think *should* work. Gemfile.lock

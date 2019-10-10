@@ -68,14 +68,8 @@ sub new {
     my $title = $args{title}
         or die "No <title> specified: " . Dumper( \%args );
 
-    my $dir = $args{dir}
-        or die "No <dir> specified for book <$title>";
-
-    my $temp_dir = $args{temp_dir}
-        or die "No <temp_dir> specified for book <$title>";
-
     my $source = ES::Source->new(
-        temp_dir => $temp_dir,
+        temp_dir => $args{temp_dir},
         sources  => $args{sources},
         examples => $args{examples},
     );
@@ -103,9 +97,6 @@ sub new {
 
     die "Current branch <$current> is not in <branches> in book <$title>"
         unless $branch_titles{$current};
-
-    my $template = $args{template}
-        or die "No <template> specified for book <$title>";
 
     my $tags = $args{tags}
         or die "No <tags> specified for book <$title>";
@@ -143,8 +134,9 @@ sub new {
 
     bless {
         title         => $title,
-        dir           => $dir->subdir($prefix),
-        template      => $template,
+        raw_dir       => $args{raw_dir}->subdir( $prefix ),
+        dir           => $args{dir}->subdir( $prefix ),
+        temp_dir      => $args{temp_dir},
         source        => $source,
         prefix        => $prefix,
         chunk         => $chunk,
@@ -216,11 +208,11 @@ sub build {
             # We could get away with only doing this if we added or removed
             # any branches or changed the current branch, but we don't have
             # that information right now.
-            $toc->write($dir);
+            $toc->write( $self->{raw_dir}, $dir, $self->{temp_dir} );
             for ( @{ $self->branches } ) {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $_ ), $_ );
             }
-            $self->_update_title_and_version_drop_downs( $dir->subdir( 'current') , $self->current );
+            $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -254,9 +246,9 @@ sub _build_book {
 #===================================
     my ( $self, $branch, $pm, $rebuild, $latest ) = @_;
 
+    my $raw_branch_dir = $self->{raw_dir}->subdir( $branch );
     my $branch_dir    = $self->dir->subdir($branch);
     my $source        = $self->source;
-    my $template      = $self->template;
     my $index         = $self->index;
     my $section_title = $self->section_title($branch);
     my $subject       = $self->subject;
@@ -265,17 +257,16 @@ sub _build_book {
     return 0 unless $rebuild ||
         $source->has_changed( $self->title, $branch, $self->asciidoctor );
 
-    my ( $checkout, $edit_urls, $first_path, $alternatives ) =
+    my ( $checkout, $edit_urls, $first_path, $alternatives, $roots ) =
         $source->prepare($self->title, $branch);
 
     $pm->start($branch) and return 1;
     printf(" - %40.40s: Building %s...\n", $self->title, $branch);
     eval {
         if ( $self->single ) {
-            $branch_dir->rmtree;
-            $branch_dir->mkpath;
             build_single(
                 $first_path->file($index),
+                $raw_branch_dir,
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,
@@ -288,17 +279,19 @@ sub _build_book {
                 section_title => $section_title,
                 subject       => $subject,
                 toc           => $self->toc,
-                template      => $template,
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
+                branch => $branch,
+                roots => $roots,
             );
         }
         else {
             build_chunked(
                 $first_path->file($index),
+                $raw_branch_dir,
                 $branch_dir,
                 version       => $branch,
                 lang          => $lang,
@@ -311,12 +304,13 @@ sub _build_book {
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 subject       => $subject,
-                template      => $template,
                 resource      => [$checkout],
                 asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
+                branch => $branch,
+                roots => $roots,
             );
         }
         $checkout->rmtree;
@@ -369,12 +363,17 @@ sub _copy_branch_to_current {
 #===================================
     my ( $self ) = @_;
 
-    my $branch_dir  = $self->dir->subdir( $self->current );
-    my $current_dir = $self->dir->subdir('current');
+    my $branch_dir  = $self->{dir}->subdir( $self->current );
+    my $current_dir = $self->{dir}->subdir('current');
+    my $raw_branch_dir  = $self->{raw_dir}->subdir( $self->current );
+    my $raw_current_dir = $self->{raw_dir}->subdir('current');
 
     $current_dir->rmtree;
     rcopy( $branch_dir, $current_dir )
         or die "Couldn't copy <$branch_dir> to <$current_dir>: $!";
+    $raw_current_dir->rmtree;
+    rcopy( $raw_branch_dir, $raw_current_dir )
+        or die "Couldn't copy <$raw_branch_dir> to <$raw_current_dir>: $!";
 }
 
 #===================================
@@ -440,7 +439,6 @@ sub section_title {
 #===================================
 sub title            { shift->{title} }
 sub dir              { shift->{dir} }
-sub template         { shift->{template} }
 sub prefix           { shift->{prefix} }
 sub chunk            { shift->{chunk} }
 sub toc              { shift->{toc} }

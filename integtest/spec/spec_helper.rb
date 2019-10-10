@@ -2,6 +2,8 @@
 
 require_relative 'helper/matcher/doc_body'
 require_relative 'helper/matcher/have_same_keys'
+require_relative 'helper/matcher/initial_js_state'
+require_relative 'helper/matcher/redirect_to'
 require_relative 'helper/matcher/serve'
 require_relative 'helper/console_alternative_examples'
 require_relative 'helper/dest'
@@ -56,10 +58,10 @@ RSpec::Matchers.define :file_exist do
   end
   failure_message do |actual|
     msg = "expected that #{actual} exists"
-    parent = File.expand_path('..', actual)
-    return msg unless Dir.exist? parent
+    parent = File.expand_path '..', actual
+    parent = File.expand_path '..', parent until Dir.exist? parent
 
     entries = Dir.entries(parent).reject { |e| e.start_with? '.' }
-    msg + " but only #{entries.sort} exist"
+    msg + " but only #{parent}/#{entries.sort} exist"
   end
 end

@@ -48,6 +48,11 @@ module Dsl
     end
     shared_context 'Dsl_page' do |file_name|
       include_context 'Dsl_file', file_name
+      let(:head) do
+        return unless contents
+
+        contents.sub(/.+<head>/, '').sub(%r{</head>.+}, '')
+      end
       let(:body) do
         return unless contents
 
@@ -57,22 +62,20 @@ module Dsl
       let(:title) do
         return unless body
 
-        m = body.match %r{<h1 class="title"><a id=".+"></a>([^<]+)(<a.+?)?</h1>}
+        m = body.match(
+          %r{<h\d class="title"><a id="[^"]+"></a>([^<]+)(<a.+?)?</h\d>}
+        )
         raise "Can't find title in #{body}" unless m
 
         m[1]
       end
-      let(:initial_js_state) do
-        start_boundry = 'window.initial_state = '
-        start = contents.index start_boundry
-        return unless start
+      let(:language) do
+        return unless contents
 
-        start += start_boundry.length
-        stop = contents.index '</script>', start
-        return unless stop
+        m = contents.match(/<section id="guide" lang="([^"]+)">/)
+        raise "Can't find language in #{contents}" unless m
 
-        txt = contents[start, stop - start]
-        JSON.parse txt, symbolize_names: true
+        m[1]
       end
     end
   end

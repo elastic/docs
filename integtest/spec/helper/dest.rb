@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'open3'
 
 require_relative 'opened_docs'
 require_relative 'preview'
 require_relative 'sh'
+require_relative 'shell_repo'
 
 ##
 # Helper class for initiating a conversion and dealing with the results.
@@ -30,6 +32,7 @@ class Dest
     @initialized_bare_repo = false
     @convert_outputs = []
     @convert_statuses = []
+    @init_from_shell = true
   end
 
   ##
@@ -100,6 +103,17 @@ class Dest
     Preview.new(bare_repo)
   end
 
+  ##
+  # Start the preview service in air gapped mode.
+  def start_air_gapped
+    # The air gapped build expects the built docs to be *exactly* where the
+    # Dockerfile puts them. So we put them there too.
+    FileUtils.rm_rf '/docs_build/.repos/target_repo.git'
+    FileUtils.mkdir_p '/docs_build/.repos'
+    FileUtils.cp_r bare_repo, '/docs_build/.repos/target_repo.git'
+    Preview.new(bare_repo, air_gapped: true)
+  end
+
   def remove_target_brach(branch_name)
     Dir.chdir bare_repo do
       sh "git branch -D #{branch_name}"
@@ -107,14 +121,31 @@ class Dest
   end
 
   ##
-  # The location of the bare repository. the first time this is called in a
+  # The location of the bare repository. The first time this is called in a
   # given context the bare repository is initialized
   def bare_repo
     unless @initialized_bare_repo
-      sh "git init --bare #{@bare_dest}"
+      if @init_from_shell
+        ShellRepo.build!
+        sh "git clone --bare /tmp/shell #{@bare_dest}"
+      else
+        sh "git init --bare #{@bare_dest}"
+      end
       @initialized_bare_repo = true
     end
     @bare_dest
+  end
+
+  ##
+  # Should the bare repository that holds the destination docs be initailized
+  # from a "shell" repository for speed or not to actually test adding
+  # everything to an empty repository
+  def init_from_shell=(init_from_shell)
+    if @initialized_bare_repo
+      raise "can't change initialization after initialized"
+    end
+
+    @init_from_shell = init_from_shell
   end
 
   def run_convert(env, cmd, expect_failure)
@@ -123,19 +154,28 @@ class Dest
     # docker-image-always-removed paranoia in build_docs.pl
     _stdin, out, wait_thr = Open3.popen2e(env, *cmd)
     status = wait_thr.value
-    out = out.read
+    out = out.read.force_encoding 'UTF-8'
     ok = status.success?
     ok = !ok if expect_failure
     raise_status cmd, out, status unless ok
-
-    @convert_outputs << out
-    @convert_statuses << status.exitstatus
+    check_for_perl_warnings out
+    save_conversion out, status.exitstatus
   end
 
-  def run_convert_and_open(cmd)
+  def check_for_perl_warnings(out)
+    raise "Perl warnings:\n#{out}" if out.include? 'Use of uninitialized value'
+    raise "Perl warnings:\n#{out}" if out.include? 'masks earlier declaration'
+  end
+
+  def save_conversion(out, status)
+    @convert_outputs << out
+    @convert_statuses << status
+  end
+
+  def run_convert_and_open(cmd, uses_preview)
     cmd.unshift '/docs_build/build_docs.pl', '--in_standard_docker'
     cmd += ['--open']
-    OpenedDocs.new cmd
+    OpenedDocs.new cmd, uses_preview
   end
 
   class CmdBuilder
@@ -146,7 +186,7 @@ class Dest
     def open
       raise 'env unsupported' unless @env.empty?
 
-      @dest.run_convert_and_open @cmd
+      @dest.run_convert_and_open @cmd, uses_preview
     end
 
     def node_name(node_name)
@@ -182,6 +222,10 @@ class Dest
     def alternatives(source_lang, dest_lang, dir)
       @cmd += ['--alternatives', "#{source_lang}:#{dest_lang}:#{dir}"]
       self
+    end
+
+    def uses_preview
+      true
     end
   end
 
@@ -221,6 +265,10 @@ class Dest
     def sub_dir(repo, branch)
       @cmd += ['--sub_dir', "#{repo.name}:#{branch}:#{repo.root}"]
       self
+    end
+
+    def uses_preview
+      false
     end
   end
 end

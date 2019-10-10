@@ -115,13 +115,6 @@ class Source
     <<~YAML
       template:
         defaults:
-          POSTHEAD: |
-            <link rel="stylesheet" type="text/css" href="styles.css" />
-          FINAL: |
-            <script type="text/javascript" src="/guide/static/docs.js"></script>
-      paths:
-        build:          html/
-        branch_tracker: html/branches.yaml
       contents_title: Test
     YAML
   end

@@ -24,21 +24,21 @@ RSpec.describe 'building all books' do
     end
   end
   context 'for a single book built by a single repo' do
-    convert_all_before_context do |src|
+    convert_all_before_context(init_from_shell: false) do |src|
       repo = src.repo_with_index 'repo', 'Some text.'
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
     end
     include_examples 'book basics', 'Test', 'test'
-    file_context 'html/static/docs.js' do
-      def self.has_license(name, heading)
-        it "has license for #{name}" do
-          expect(contents).to include(<<~TXT)
-            /* #{name}
-             * #{heading}
-          TXT
-        end
+    def self.has_license(name, heading)
+      it "has license for #{name}" do
+        expect(contents).to include(<<~TXT)
+          /* #{name}
+           * #{heading}
+        TXT
       end
+    end
+    file_context 'html/static/docs.js' do
       has_license 'code-prettify', 'The Apache 2.0 License'
       has_license "code-prettify's lang-sql", 'The Apache 2.0 License'
       has_license "code-prettify's lang-yaml", 'The Apache 2.0 License'
@@ -53,6 +53,13 @@ RSpec.describe 'building all books' do
       has_license 'redux-thunk', 'The MIT License (MIT)'
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
+    file_context 'html/static/styles.css' do
+      has_license 'Bootstrap', 'The MIT License (MIT)'
+      has_license 'Inter', 'SIL OPEN FONT LICENSE'
+      has_license 'Noto Sans Japanese', 'SIL OPEN FONT LICENSE'
+    end
+    file_context 'html/static/Inter-Medium.5d08e0ba.woff2'
+    file_context 'html/static/NotoSansJP-Black.df80409c.woff2'
     file_context 'html/sitemap.xml' do
       it 'has an entry for the chapter' do
         expect(contents).to include(<<~XML)
@@ -98,25 +105,52 @@ RSpec.describe 'building all books' do
       repo = src.repo_with_index 'repo', <<~ASCIIDOC
         Some text.
 
-        image::resources/cat.jpg[A cat]
+        image::resources/readme/cat.jpg[A cat]
       ASCIIDOC
       root = File.expand_path '../../', __dir__
-      repo.cp "#{root}/resources/cat.jpg", 'resources/cat.jpg'
+      repo.cp "#{root}/resources/readme/cat.jpg", 'resources/readme/cat.jpg'
       repo.commit 'add cat image'
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
       book.source repo, 'resources'
     end
     include_examples 'book basics', 'Test', 'test'
+    page_context "the current version's raw chapter page",
+                 'raw/test/current/chapter.html' do
+      it 'has a link to the image' do
+        expect(body).to include(<<~HTML.strip)
+          <img src="resources/readme/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
     page_context "the current version's chapter page",
                  'html/test/current/chapter.html' do
       it 'has a link to the image' do
         expect(body).to include(<<~HTML.strip)
-          <img src="resources/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat" />
         HTML
       end
     end
-    file_context 'html/test/current/resources/cat.jpg'
+    page_context "the master version's chapter page",
+                 'html/test/master/chapter.html' do
+      it 'has a link to the image' do
+        expect(body).to include(<<~HTML.strip)
+          <img src="resources/readme/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
+    file_context "the master version's raw chapter page",
+                 'raw/test/master/chapter.html' do
+      it 'has a link to the image' do
+        expect(contents).to include(<<~HTML.strip)
+          <img src="resources/readme/cat.jpg" alt="A cat" />
+        HTML
+      end
+    end
+    file_context 'html/test/current/resources/readme/cat.jpg'
+    file_context 'raw/test/current/resources/readme/cat.jpg'
+    file_context 'html/test/master/resources/readme/cat.jpg'
+    file_context 'raw/test/master/resources/readme/cat.jpg'
   end
   context 'for a single book built by two repos' do
     def self.single_book_built_by_two_repos
@@ -242,7 +276,7 @@ RSpec.describe 'building all books' do
       override_edit_me false
       let(:repo) { @src.repo 'repo' }
       let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
-      page_context 'the book index', 'html/test/master/chapter.html' do
+      page_context 'html/test/master/chapter.html' do
         it 'contains the standard edit_me link' do
           expect(body).to include(edit_me)
         end
@@ -251,11 +285,42 @@ RSpec.describe 'building all books' do
     context 'when respect_edit_url_overrides is specified' do
       override_edit_me true
       let(:edit_url) { 'overridden' }
-      page_context 'the book index', 'html/test/master/chapter.html' do
+      page_context 'html/test/master/chapter.html' do
         it 'contains the overridden edit_me link' do
           expect(body).to include(edit_me)
         end
       end
+    end
+  end
+  context 'for a book that uses {source_branch}' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        The branch is {source_branch}.
+      ASCIIDOC
+      repo.switch_to_new_branch 'foo'
+      repo.switch_to_new_branch '7.x'
+      repo.switch_to_new_branch '1.2'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.branches.push 'foo', '7.x', '1.2'
+    end
+    shared_examples 'contains branch' do |branch|
+      it 'contains the branch name' do
+        expect(body).to include("The branch is #{branch}.")
+      end
+    end
+    page_context 'html/test/master/chapter.html' do
+      include_examples 'contains branch', 'master'
+    end
+    page_context 'html/test/foo/chapter.html' do
+      include_examples 'contains branch', 'foo'
+    end
+    page_context 'html/test/7.x/chapter.html' do
+      include_examples 'contains branch', '7.x'
+    end
+    page_context 'html/test/1.2/chapter.html' do
+      include_examples 'contains branch', '1.2'
     end
   end
 
@@ -334,37 +399,79 @@ RSpec.describe 'building all books' do
       java_alts = { source_lang: 'console', alternative_lang: 'java' }
       book.source(java_repo, 'examples', alternatives: java_alts)
     end
-    include_examples 'README-like console alternatives', 'html/test/master'
+    include_examples 'README-like console alternatives',
+                     'raw/test/master', 'html/test/master'
   end
 
   context 'when run with --open' do
+    repo_root = File.expand_path '../../', __dir__
+    readme_resources = "#{repo_root}/resources/readme"
     include_context 'source and dest'
+
     before(:context) do
-      repo = @src.repo_with_index 'repo', 'Words'
+      repo = @src.repo_with_index 'repo', <<~ASCIIDOC
+        Some text.
+
+        image::resources/readme/cat.jpg[A cat]
+        image::resources/readme/example.svg[An example svg]
+      ASCIIDOC
+      repo.cp "#{readme_resources}/cat.jpg", 'resources/readme/cat.jpg'
+      repo.cp "#{readme_resources}/example.svg", 'resources/readme/example.svg'
+      repo.commit 'add images'
+
       book = @src.book 'Test'
       book.source repo, 'index.asciidoc'
+      book.source repo, 'resources'
       @opened_docs = @dest.prepare_convert_all(@src.conf).open
     end
     after(:context) do
-      @opened_docs.exit
+      @opened_docs&.exit
     end
 
-    let(:root) { 'http://localhost:8000/guide/' }
-    let(:index) { Net::HTTP.get_response(URI(root)) }
+    let(:root) { 'http://localhost:8000/guide' }
+    let(:book_root) { "#{root}/test/current" }
+    let(:guide_index) { Net::HTTP.get_response(URI("#{root}/")) }
     let(:legacy_redirect) do
-      Net::HTTP.get_response(URI("#{root}reference/setup/"))
+      Net::HTTP.get_response(URI("#{root}/reference/setup/"))
+    end
+    let(:cat_image) do
+      Net::HTTP.get_response(URI("#{book_root}/resources/readme/cat.jpg"))
+    end
+    let(:svg_image) do
+      Net::HTTP.get_response(URI("#{book_root}/resources/readme/example.svg"))
     end
 
-    it 'serves the book' do
-      expect(index).to serve(doc_body(include(<<~HTML.strip)))
+    include_examples 'the root'
+    include_examples 'the favicon'
+    it 'serves the guide index' do
+      expect(guide_index).to serve(doc_body(include(<<~HTML.strip)))
         <a class="ulink" href="test/current/index.html" target="_top">Test
       HTML
     end
     it 'serves a legacy redirect' do
-      expect(legacy_redirect.code).to eq('301')
-      expect(legacy_redirect['location']).to eq(
-        "#{root}en/elasticsearch/reference/current/setup.html"
+      expect(legacy_redirect).to redirect_to(
+        eq(
+          "#{root}/en/elasticsearch/reference/current/setup.html"
+        )
       )
+    end
+    context 'for a JPG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/cat.jpg", 'rb', &:read)
+        expect(cat_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(cat_image['Content-Type']).to eq('image/jpeg')
+      end
+    end
+    context 'for an SVG' do
+      it 'serves the right bytes' do
+        bytes = File.open("#{readme_resources}/example.svg", 'rb', &:read)
+        expect(svg_image).to serve(eq(bytes))
+      end
+      it 'serves the right Content-Type' do
+        expect(svg_image['Content-Type']).to eq('image/svg+xml')
+      end
     end
   end
 

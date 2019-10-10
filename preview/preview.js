@@ -1,277 +1,214 @@
-'use strict';
-
-/*
- * Little server that listens for requests in the form of
- * `${branch}.host/guide/${doc}`, looks up the doc from git and streams
- * it back over the response.
+/**
+ * @license
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * It uses subprocesses to access git. It is tempting to use NodeGit to prevent
- * the fork overhead but for the most part the subprocesses are fast enough and
- * I'm worried that NodeGit's `Blog.getContent` methods are synchronous.
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-const child_process = require('child_process');
-const dedent = require('dedent');
-const http = require('http');
-const stream = require('stream');
-const url = require('url');
+'use strict';
+
+const http = require("http");
+const path = require("path");
+const url = require("url");
+const Template = require("../template/template");
 
 const port = 3000;
-const checkTypeOpts = {
-  'cwd': '/docs_build/.repos/target_repo.git',
-  'max_buffer': 64,
-};
-const catOpts = {
-  'cwd': '/docs_build/.repos/target_repo.git',
-};
 
-const requestHandler = (request, response) => {
-  const parsedUrl = url.parse(request.url);
-  const branch = gitBranch(request.headers['host']);
+const requestHandler = async (core, parsedUrl, response) => {
   if (parsedUrl.pathname === '/diff') {
-    serveDiff(branch, response);
-    return;
+    return new Promise((resolve, reject) => {
+      pipeToResponse(core.diff(), response, resolve, reject);
+    });
   }
   if (!parsedUrl.pathname.startsWith('/guide')) {
     response.statusCode = 404;
     response.end();
     return;
   }
-  const path = 'html' + parsedUrl.pathname.substring('/guide'.length);
-  const requestedObject = `${branch}:${path}`;
-  child_process.execFile('git', ['cat-file', '-t', requestedObject], checkTypeOpts, (err, stdout, stderr) => {
-    if (err) {
-      if (err.message.includes('Not a valid object name')) {
-        response.statusCode = 404;
-        response.end(`Can't find ${requestedObject}\n`);
-      } else {
-        console.warn('unhandled error', err);
-        response.statusCode = 500;
-        response.end(err.message);
-      }
-      return;
-    }
 
-    if (stdout.trim() === 'tree') {
-      response.statusCode = 301;
-      const sep = requestedObject.endsWith('/') ? '' : '/';
-      response.setHeader('Location', `${parsedUrl.pathname}${sep}index.html`);
-      response.end();
-      return;
-    }
+  const path = parsedUrl.pathname.substring("/guide".length);
+  const redirect = await checkRedirects(core, path);
+  if (redirect) {
+    response.statusCode = 301;
+    response.setHeader('Location', redirect);
+    response.end();
+    return;
+  }
 
-    const child = child_process.spawn(
-      'git', ['cat-file', 'blob', requestedObject], catOpts
+  const file = await core.file(path);
+  if (file === "dir") {
+    response.statusCode = 301;
+    const sep = parsedUrl.pathname.endsWith('/') ? '' : '/';
+    response.setHeader('Location', `${parsedUrl.pathname}${sep}index.html`);
+    response.end();
+    return;
+  }
+  if (file === "missing") {
+    response.statusCode = 404;
+    response.end(`Can't find ${parsedUrl.pathname}\n`);
+    return;
+  }
+
+  const type = contentType(path);
+  response.setHeader('Content-Type', type);
+  if (file.hasTemplate && !path.endsWith("toc.html") && type === "text/html; charset=utf-8") {
+    const template = Template(file.template);
+    const lang = await file.lang();
+    const initialJsState = await buildInitialJsState(file.alternativesReport);
+    const templated = template.apply(
+      file.stream[Symbol.asyncIterator](), lang.trim(), initialJsState
     );
-    rigHandlers(child, response, child.stdout, response => {});
-  });
-}
-
-function serveDiff(branch, response) {
-  const child = child_process.spawn(
-    'git',
-    ['diff-tree', '-z', '--find-renames', '--numstat', branch, '--'],
-    catOpts
-  );
-
-  let chunk = '';
-  let first = true;
-  let completeSuccess = true;
-  const handleChunk = () => {
-    /*
-     * Parses output from `git diff-tree -z` which is in
-     * one of two formats:
-     * * added lines<tab>removed lines<tab>path<nul>
-     * * added lines<tab>removed lines<nul>source path<nul>destination path<nul>
-     * The second one is only used when git detects a rename.
-     */
-    let out = '';
-    let entryStart;
-    let nextNul = -1;
-    let added;
-    let removed;
-    let path;
-    let movedToPath;
-
-    if (first) {
-      out = dedent `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Diff for ${branch}</title>
-        </head>
-        <body><ul>\n`
-      first = false;
-    }
-
-    while (true) {
-      /* When this loop starts nextNul is either -1 or the end of the last
-       * message so we can pick up from nextNul + 1. */
-      entryStart = nextNul + 1;
-      nextNul = chunk.indexOf('\0', entryStart);
-      if (nextNul === -1) {
-        chunk = chunk.substring(entryStart);
-        return out;
-      }
-      const parts = chunk.substring(entryStart, nextNul).trim().split('\t');
-      switch (parts.length) {
-      case 3:
-        [added, removed, path] = parts;
-        movedToPath = null;
-        break;
-      case 2:
-        [added, removed] = parts;
-        const pathStart = nextNul + 1;
-        nextNul = chunk.indexOf('\0', pathStart);
-        if (nextNul === -1) {
-          chunk = chunk.substring(entryStart);
-          return out;
-        }
-        path = chunk.substring(pathStart, nextNul);
-        const moveToPathStat = nextNul + 1;
-        nextNul = chunk.indexOf('\0', moveToPathStat);
-        if (nextNul === -1) {
-          chunk = chunk.substring(entryStart);
-          return out;
-        }
-        movedToPath = chunk.substring(moveToPathStat, nextNul);
-        break;
-      case 1:
-        // The commit hash. Ignore it.
-        continue;
-      default:
-        console.warn("Unknown message from git", parts);
-        completeSuccess = false;
-        continue;
-      }
-
-      // Skip boring files
-      if ([
-            'html/branches.yaml', 'html/sitemap.xml',
-          ].includes(path)) {
-        continue;
-      }
-
-      // Strip the prefix from the paths
-      path = path.substring('html/'.length);
-      movedToPath =
-        movedToPath === null ? null : movedToPath.substring('html/'.length);
-
-      // Build the output html
-      const diff = `+${added} -${removed}`;
-      const linkText =
-        movedToPath === null ? path : `${path} -> ${movedToPath}`;
-      const linkTarget =
-        "/guide/" + (movedToPath === null ? path : movedToPath);
-      const link = `<a href="${linkTarget}">${linkText}</a>`;
-      out += `  <li>${diff} ${link}\n`;
-    }
-  };
-
-  const handle = new stream.Transform({
-    writableObjectMode: true,
-    transform(chunkIn, encoding, callback) {
-      chunk += chunkIn;
-      callback(null, handleChunk());
-    }
-  });
-
-  const pipeline = child.stdout.pipe(handle);
-  rigHandlers(child, response, pipeline, response => {
-    response.write(handleChunk());
-    if (chunk !== '') {
-      console.error('unprocessed results from git', chunk);
-      response.write(`  <li>Unprocessed results from git: <pre>${chunk}</pre>`);
-      response.status = 500;
-    } else if (!completeSuccess) {
-      response.write(`  <li>Error processing some entries from git. See logs.`);
-      response.status = 500;
-    }
-    response.write('</ul></html>');
-  });
-}
-
-function rigHandlers(child, response, pipeline, endHandler) {
-  response.setHeader('Transfer-Encoding', 'chunked');
-
-  // We spool stderr into a string because it is never super big.
-  child.stderr.setEncoding('utf8');
-  let childstderr = '';
-  child.stderr.addListener('data', chunk => {
-    childstderr += chunk;
-  });
-
-  /* We end the response either when an error occurs or when *both* the child
-   * process *and* its pipeline have been consumed. If we didn't wait for the
-   * child process then we'd end early on failures. If we didn't wait for the
-   * pipeline we could throw out the end of the response. */
-  let childExited = false;
-  let pipelineEnded = false;
-  const checkForNormalEnd = () => {
-    if (childExited && pipelineEnded) {
-      endHandler(response);
-      response.end();
-    }
+    return new Promise((resolve, reject) => {
+      file.stream.on("error", reject);
+      pipeToResponse(templated, response, resolve, reject);
+    });
+  } else {
+    return new Promise((resolve, reject) => {
+      pipeToResponse(file.stream, response, resolve, reject);
+    });
   }
-
-  child.addListener('close', (code, signal) => {
-    /* This can get invoked multiple times but we can only do anything
-     * the first time so we just drop the second time on the floor. */
-    if (childExited) return;
-    childExited = true;
-
-    if (code === 0 && signal === null) {
-      checkForNormalEnd();
-      return;
-    }
-    if (childstderr.includes('bad revision')) {
-      response.statusCode = 404;
-      response.end();
-      return;
-    }
-    /* Note that we're playing a little fast and loose here with the status.
-     * If we've already sent a chunk we can't change the status code. We're
-     * out of luck. We just terminate the response anyway. The server log
-     * is the best we can do for tracking these. */
-    console.warn('unhandled error', code, signal, childstderr);
-    response.statusCode = 500;
-    response.end(childstderr);
-  });
-  child.addListener('error', err => {
-    child.stdout.destroy();
-    child.stderr.destroy();
-    console.warn('unhandled error', err);
-    response.statusCode = 500;
-    response.end(err.message);
-  });
-
-  pipeline.on('end', () => {
-    pipelineEnded = true;
-    checkForNormalEnd();
-  });
-  pipeline.pipe(response, {end: false});
 }
 
-function gitBranch(host) {
+const pipeToResponse = (out, response, resolve, reject) => {
+  response.on("close", resolve);
+  response.on("error", reject);
+  out.on("error", reject);
+  out.pipe(response);
+}
+
+const contentType = rawPath => {
+  const ext = path.extname(rawPath);
+  switch (ext) {
+    case ".css":
+      return "text/css";
+    case ".gif":
+      return "image/gif";
+    case ".html":
+    case ".htm":
+      return "text/html; charset=utf-8";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".js":
+      return "application/javascript";
+    case ".svg":
+      return "image/svg+xml";
+    default:
+      return "text/plain";
+  }
+};
+
+const buildInitialJsState = async alternativesReportSource => {
+  try {
+    const parsed = JSON.parse(await alternativesReportSource());
+    return JSON.stringify(Template.buildInitialJsState(parsed));
+  } catch (err) {
+    if (err === "missing") {
+      return "{}";
+    }
+    throw err;
+  }
+};
+
+const hostPrefix = host => {
   if (!host) {
-    return 'master';
+    return null;
   }
-  return host.split('.')[0];
+  const dot = host.indexOf(".");
+  if (dot === -1) {
+    return null;
+  }
+  return host.substring(0, dot);
+};
+
+const checkRedirects = async (core, path) => {
+  /*
+   * This parses the nginx redirects.conf file we have in the built docs and
+   * performs the redirects. It makes no effort to properly emulate nginx. It
+   * just runs the regexes from start to finish. Which is fine becaues of the
+   * redirects that we have. But it is ugly.
+   *
+   * It also doesen't make any effort to be fast or efficient, buffering the
+   * entire file into memory then splitting it into lines and compiling all of
+   * the regexes on the fly. We can absolutely do better. But this feels like
+   * a fine place to start.
+   */
+  // TODO Rebuild redirects file without nginx stuff. And stream it properly.
+  let target = "/guide" + path;
+  const streamToString = stream => {
+    const chunks = []
+    return new Promise((resolve, reject) => {
+      stream.on('data', chunk => chunks.push(chunk));
+      stream.on('error', reject);
+      stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    });
+  }
+  const redirectsStream = await core.redirects();
+  if (!redirectsStream) {
+    // If we don't have the redirects file we skip redirects.
+    return;
+  }
+  const redirectsString = await streamToString(redirectsStream);
+  for (const line of redirectsString.split('\n')) {
+    if (!line.startsWith("rewrite")) {
+      continue;
+    }
+    const [_marker, regexText, replacement] = line.split(' ');
+    const regex = new RegExp(regexText.replace('(?i)', ''), 'i');
+    target = target.replace(regex, replacement);
+  }
+  return "/guide" + path === target ? null : target;
 }
 
-const server = http.createServer(requestHandler);
-
-server.listen(port, (err) => {
-  if (err) {
-    return console.info("preview server couldn't listen", err);
-  }
-
-  console.info(`preview server is listening on ${port}`);
-});
-
-process.on('SIGTERM', () => {
-  console.info('preview server shutting down');
-  server.close(() => {
-    process.exit();
+module.exports = Core => {
+  const server = http.createServer((request, response) => {
+    const parsedUrl = url.parse(request.url);
+    const prefix = hostPrefix(request.headers['host']);
+    const core = Core(prefix);
+    requestHandler(core, parsedUrl, response)
+      .catch(err => {
+        if (err === "missing") {
+          response.statusCode = 404;
+          response.end("404!");
+        } else {
+          console.warn('unhandled error for', prefix, parsedUrl, err);
+          /*
+           * *try* to set the status code to 500. This might not be possible
+           * because we might be in the middle of a chunked transfer. In that
+           * case this'll look funny.
+           */
+          response.statusCode = 500;
+          response.end(err.message);
+        }
+      });
   });
-});
+
+  server.listen(port, err => {
+    if (err) {
+      console.error("preview server couldn't listen", err);
+      process.exit(1);
+    }
+
+    console.info(`preview server is listening on ${port}`);
+  });
+
+  process.on('SIGTERM', () => {
+    console.info('preview server shutting down');
+    server.close(() => {
+      process.exit();
+    });
+  });
+};

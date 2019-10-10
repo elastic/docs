@@ -1,5 +1,7 @@
 = Docs HOWTO
-:ref:  http://www.elastic.co/guide/elasticsearch/reference/current
+
+include::{docs-root}/shared/versions/stack/current.asciidoc[]
+include::{docs-root}/shared/attributes.asciidoc[]
 
 ////
 This file contains the sequence `&#x5f;` to escape from around Elastic's
@@ -229,13 +231,21 @@ To check links before you merge your changes:
   into the master branch of the `elasticsearch` repo, run:
 +
 ----------------------------
-./docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git --open --sub_dir elasticsearch:master:./elasticsearch 
+./docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git \
+                  --open --keep_hash --sub_dir elasticsearch:master:./elasticsearch
 ----------------------------
 
-To run a full build to mimic the website build, omit the `--sub_dir` option:
+NOTE: If there are no outstanding changes in the `../elasticsearch` directory
+      then this will build against the result of merging the last successful
+      docs build and the contents of `../elasticsearch`. If there *are*
+      outstanding changes then it'll just build against the contents of
+      `../elasticsearch`.
+
+To run a full build to mimic the website build, omit the `--sub_dir` and
+`--keep_hash` options:
 
 ----------------------------
-build_docs --all --target_repo git@github.com:elastic/built-docs.git --open
+./build_docs --all --target_repo git@github.com:elastic/built-docs.git --open
 ----------------------------
 
 The first time you run a full build is slow as it needs to:
@@ -757,7 +767,13 @@ attributes file] to resolve links:
 ----------------------------------
 = My Book Title
 
-\include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
+# Use this if your repo is versioned with the Elastic stack:
+\include::{docs-root}/shared/versions/stack/{source_branch}.asciidoc[]
+# Or use this to alway point to the most recent version of the stack
+\include::{docs-root}/shared/versions/stack/current.asciidoc[]
+# Either way, you'll want to include a reference to the attributes file
+# which builds the links from the versions.
+\include::{docs-root}/shared/attributes.asciidoc[]
 
 Here is a link to the {ref}/search.html[search page]
 ----------------------------------
@@ -765,6 +781,30 @@ Here is a link to the {ref}/search.html[search page]
 Here is a link to the {ref}/search.html[search page]
 ==================================
 
+Books that use the attributes file should declare a dependency on it in
+https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`] like this:
+
+[source,yaml]
+----
+  -
+    repo:   docs
+    path:   shared/versions/stack/{version}.asciidoc
+  -
+    repo:   docs
+    path:   shared/attributes.asciidoc
+----
+
+or
+
+[source,yaml]
+----
+  -
+    repo:   docs
+    path:   shared/versions/stack/current.asciidoc
+  -
+    repo:   docs
+    path:   shared/attributes.asciidoc
+----
 
 For books that don't use the
 https://github.com/elastic/docs/blob/master/shared/attributes.asciidoc[shared
@@ -777,7 +817,6 @@ book title:
 [source,asciidoc]
 ----------------------------------
 = My Book Title
-:ref:  https://www.elastic.co/guide/en/elasticsearch/reference/current
 
 Here is a link to the {ref}/search.html[search page]
 ----------------------------------
@@ -1248,11 +1287,34 @@ include them where appropriate:
 [source,asciidoc]
 ----------------------------------
 \include::myfolder/mydoc.asciidoc[]
-
 ----------------------------------
 
 Paths are relative to the file which
 contains the `include` statement.
+
+[[cross-repo-includes]]
+=== Across repositories
+
+If you have to include files in a different repository then use its `-root`
+attribute to locate the files:
+
+[source,asciidoc]
+----------------------------------
+\include::{elasticsearch-root}/docs/foo.asciidoc[]
+----------------------------------
+
+Books that reference another repository should register that reference in
+https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`].
+
+[source,yaml]
+----
+  -
+    repo:   elasticsearch
+    path:   docs/foo.asciidoc
+----
+
+The path should be as specific as possible because we skip rebuilding books if
+changes to the referenced repository don't change the referenced path.
 
 [[changes]]
 == Additions and deprecations
@@ -1502,16 +1564,16 @@ to the document where the `image::` statement appears.
 ----------------------------------
 [[cat]]
 .A scaredy cat
-image::resources/cat.jpg[Alt text]
+image::resources/readme/cat.jpg[Alt text]
 
 A link to <<cat>>
 ----------------------------------
 
 [[cat]]
 .A scaredy cat
-image::resources/cat.jpg[Alt text]
+image::resources/readme/cat.jpg[Alt text]
 
-A link to <<cat>>
+A link to <<cat>>.
 
 === Width and height
 
@@ -1520,12 +1582,12 @@ specified in pixels or as a percentage:
 
 [source,asciidoc]
 ----------------------------------
-image::resources/cat.jpg["Alt text",width=50]
-image::resources/cat.jpg["Alt text",width="20%"]
+image::resources/readme/cat.jpg["Alt text",width=50]
+image::resources/readme/cat.jpg["Alt text",width="20%"]
 ----------------------------------
 
-image::resources/cat.jpg["Alt text",width=50]
-image::resources/cat.jpg["Alt text",width="20%"]
+image::resources/readme/cat.jpg["Alt text",width=50]
+image::resources/readme/cat.jpg["Alt text",width="20%"]
 
 === Alignment
 
@@ -1534,14 +1596,43 @@ be centred or right-aligned:
 
 [source,asciidoc]
 ----------------------------------
-image::resources/cat.jpg["Alt text",width=100,align="left"]
-image::resources/cat.jpg["Alt text",width=100,align="right"]
-image::resources/cat.jpg["Alt text",width=100,align="center"]
+image::resources/readme/cat.jpg["Alt text",width=100,align="left"]
+image::resources/readme/cat.jpg["Alt text",width=100,align="right"]
+image::resources/readme/cat.jpg["Alt text",width=100,align="center"]
 ----------------------------------
 
-image::resources/cat.jpg["Alt text",width=100,align="left"]
-image::resources/cat.jpg["Alt text",width=100,align="right"]
-image::resources/cat.jpg["Alt text",width=100,align="center"]
+image::resources/readme/cat.jpg["Alt text",width=100,align="left"]
+image::resources/readme/cat.jpg["Alt text",width=100,align="right"]
+image::resources/readme/cat.jpg["Alt text",width=100,align="center"]
+
+=== Screenshots
+
+Screenshots get extra margins and a box-shadow:
+
+[role="screenshot"]
+image::resources/readme/screenshot.png[A screenshot example]
+
+You can activate it with:
+
+[source,asciidoc]
+----
+[role="screenshot"]
+image::resources/readme/screenshot.png[A screenshot example]
+----
+
+[[svgs]]
+=== SVGs
+
+SVGs are also supported. Just use them like you would any other image:
+
+[source,asciidoc]
+----
+image::resources/readme/example.svg[An example svg]
+----
+
+Which looks like:
+
+image::resources/readme/example.svg[An example svg]
 
 [[tables]]
 == Tables

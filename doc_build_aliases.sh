@@ -46,7 +46,7 @@ alias docbldstkold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stac
 
 
 # Glossary
-alias docbldgls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
+alias docbldgls='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs'
 
 # Getting started
 alias docbldgs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
@@ -81,26 +81,26 @@ alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/heroku/ind
 alias docbldk8s='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Beats
-alias docbldbpr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
+alias docbldbpr='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldbdg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/docs/devguide/index.asciidoc --chunk 1'
+alias docbldbdg='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/docs/devguide/index.asciidoc --chunk 1'
 
-alias docbldpb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/packetbeat/docs/index.asciidoc --chunk 1'
+alias docbldpb='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/packetbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldfb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/filebeat/docs/index.asciidoc --chunk 1'
+alias docbldfb='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/filebeat/docs/index.asciidoc --chunk 1'
 
-alias docbldwb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/winlogbeat/docs/index.asciidoc --chunk 1'
+alias docbldwb='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/winlogbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldmb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/metricbeat/docs/index.asciidoc --chunk 1'
+alias docbldmb='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/metricbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldhb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/heartbeat/docs/index.asciidoc --chunk 1'
+alias docbldhb='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/heartbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldab='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/auditbeat/docs/index.asciidoc --chunk 1'
-alias docbldabx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/auditbeat/docs/index.asciidoc --resource=$GIT_HOME/beats/x-pack/auditbeat --chunk 1'
+alias docbldab='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/auditbeat/docs/index.asciidoc --chunk 1'
+alias docbldabx='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/auditbeat/docs/index.asciidoc --resource=$GIT_HOME/beats/x-pack/auditbeat --chunk 1'
 
-alias docbldfnb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/x-pack/functionbeat/docs/index.asciidoc --chunk 1'
+alias docbldfnb='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/x-pack/functionbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldjb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
+alias docbldjb='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
 
 # APM
 alias docbldamg='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
