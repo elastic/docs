@@ -160,7 +160,7 @@ RSpec.describe 'building all books' do
           book.source repo, '/'
         end
         convert_with_sub
-        include_examples 'log merge', 'docs'
+        include_examples 'log merge', '.'
         include_examples 'contains the new master and subbed changes'
       end
       describe 'when the subbed dir has already been merged' do
