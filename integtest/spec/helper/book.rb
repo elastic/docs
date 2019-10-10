@@ -28,6 +28,11 @@ class Book
   # The language of the book. Defaults to `en`.
   attr_accessor :lang
 
+  ##
+  # Should this book suppress all migration warnings, even in the newest
+  # version? Defaults to false.
+  attr_accessor :suppress_migration_warnings
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
@@ -38,6 +43,7 @@ class Book
     @current_branch = 'master'
     @respect_edit_url_overrides = false
     @lang = 'en'
+    @suppress_migration_warnings = false
   end
 
   ##
@@ -69,6 +75,9 @@ class Book
     # only supports 1.0.....
     conf = standard_conf
     conf += "respect_edit_url_overrides: true\n" if @respect_edit_url_overrides
+    if @suppress_migration_warnings
+      conf += "suppress_migration_warnings: #{@suppress_migration_warnings}\n"
+    end
     conf += <<~YAML
       sources:
       #{sources_conf}

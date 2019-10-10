@@ -153,6 +153,7 @@ sub new {
         lang          => $lang,
         asciidoctor   => $asciidoctor,
         respect_edit_url_overrides => $respect_edit_url_overrides,
+        suppress_migration_warnings => $args{suppress_migration_warnings} || 0,
     }, $class;
 }
 
@@ -175,7 +176,7 @@ sub build {
         }
     );
 
-    my $latest = 1;
+    my $latest = !$self->{suppress_migration_warnings};
     my $update_version_toc = 0;
     my $rebuilding_current_branch = 0;
     for my $branch ( @{ $self->branches } ) {
