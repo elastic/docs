@@ -196,6 +196,7 @@ sub _prepare_sub_dir {
     delete local $ENV{GIT_DIR};
     my $merge_branch = "${resolved_branch}_${subbed_head}_$path";
     $merge_branch =~ s|/|_|g;
+    $merge_branch =~ s|\.$||g; # Fix funny shaped paths
 
     # Check if we've already merged this path by looking for the merged_branch
     # in the source repo. This is safe because:
@@ -225,8 +226,10 @@ sub _prepare_sub_dir {
         run qw(git remote add subbed_repo), $source_root;
         run qw(git fetch subbed_repo), $subbed_head;
         run qw(git remote remove subbed_repo);
-        run qw(git config core.sparseCheckout true);
-        $self->_write_sparse_config( $work, $path );
+        unless ($path eq '.') {
+            run qw(git config core.sparseCheckout true);
+            $self->_write_sparse_config( $work, $path );
+        }
         run qw(git checkout -b), $merge_branch, $resolved_branch;
         run qw(git merge -m merge), $subbed_head;
         run qw(git push origin -f), $merge_branch; # Origin here is just our clone.
