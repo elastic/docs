@@ -24,6 +24,7 @@ const bufferItr = require("../buffer_itr.js");
 
 const bufferedCollect = async itrGen => {
   const all = [];
+  // Use 20 chunking point to make it easy to write test strings.
   for await (const c of bufferItr(itrGen(), 20)) {
     all.push(c);
   }
