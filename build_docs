@@ -53,6 +53,7 @@ def build_docker_image():
     docker_logger.info('Building the docker image that will build the docs. ' +
                        'Expect this to take somewhere between a hundred ' +
                        'milliseconds and five minutes.')
+    # TODO we can probably drop opening the dockerfile
     with open(join(DIR, 'Dockerfile')) as dockerfile:
         # We attempt to spool up the output from docker build so we can hide it
         # if the command is successful *and* runs quickly. If it takes longer
@@ -132,8 +133,9 @@ def run_build_docs(args):
 
     mounted_doc_repo_roots = set()
     mounted_doc_repo_names = set()
+    mounted_alternates = set()
 
-    def mount_docs_repo_and_dockerify_path(repo_search_path, path):
+    def mount_docs_repo_and_dockerify_path(path_in_repo, path):
         """Adds a mount for the root of the repository into the docker
         container and rewrites the path so that it is inside that mount.
 
@@ -141,7 +143,7 @@ def run_build_docs(args):
         """
         repo_root = subprocess.check_output(
                 ['git', 'rev-parse', '--show-toplevel'],
-                cwd=repo_search_path)
+                cwd=path_in_repo)
         repo_root = repo_root.decode('utf-8').strip()
         repo_name = basename(repo_root)
         if 'x-pack-' in repo_name:
@@ -168,6 +170,7 @@ def run_build_docs(args):
                 '-v',
                 '%s:%s:ro,cached' % (repo_root, repo_mount)
             ])
+            mount_alternates(path_in_repo)
         if not path.startswith(repo_root):
             cmd = 'git rev-parse --show-toplevel'
             err = ("provided path doesn't contain `%s`:\n"
@@ -177,6 +180,31 @@ def run_build_docs(args):
                 (cmd, path, repo_root)
             raise ArgError(err)
         return repo_mount + path[len(repo_root):]
+
+    def mount_alternates(path_in_repo):
+        git_dir = subprocess.check_output(
+                ['git', 'rev-parse', '--git-dir'],
+                cwd=path_in_repo)
+        git_dir = git_dir.decode('utf-8').strip()
+        alternates_file = git_dir + '/objects/info/alternates'
+        if not exists(alternates_file):
+            return
+
+        with open(alternates_file, 'r') as f:
+            for line in f.readlines():
+                # Sadly, the alternates have to be mounted in the docker image
+                # in *exactly* the same spot where they are in the host
+                # filesystem or else git will not be able to find them!
+                alternates_root = line.strip()
+                if alternates_root in mounted_alternates:
+                    continue
+                mounted_alternates.add(alternates_root)
+                docker_args.extend([
+                    '-v',
+                    '%s:%s:ro,cached' % (alternates_root, alternates_root)
+                ])
+                logger.info("mounted " + alternates_root)
+                mount_alternates(alternates_root)
 
     open_browser = False
     args = Args(args)
@@ -313,7 +341,7 @@ def run_build_docs(args):
     cmd.extend(docker_args)
     cmd.extend([DOCKER_TAG, '/docs_build/build_docs.pl'])
     cmd.extend(build_docs_args)
-    # Use a PIPE for stdin so if our process dies then the docs build  sees
+    # Use a PIPE for stdin so if our process dies then the docs build sees
     # stdin close which it will use as a signal to die.
     docker_run = common_popen(cmd, subprocess.PIPE)
 

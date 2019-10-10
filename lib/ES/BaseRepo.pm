@@ -142,6 +142,19 @@ sub _reference_args {
 }
 
 #===================================
+# Write a sparse checkout config for the repo.
+#===================================
+sub _write_sparse_config {
+#===================================
+    my ( $self, $root, $config ) = @_;
+
+    my $dest = $root->subdir( '.git' )->subdir( 'info' )->file( 'sparse-checkout' );
+    open(my $sparse, '>', $dest) or dir("Couldn't write sparse config");
+    print $sparse $config;
+    close $sparse;
+}
+
+#===================================
 sub name          { shift->{name} }
 sub git_dir       { shift->{git_dir} }
 sub url           { shift->{url} }
