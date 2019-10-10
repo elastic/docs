@@ -26,7 +26,6 @@ const fs = require("fs");
 const child_process = require("child_process");
 const Git = require("../git");
 const rmfr = require("rmfr");
-const { Readable } = require("stream");
 
 const execFile = promisify(child_process.execFile);
 const mkdir = promisify(fs.mkdir);
