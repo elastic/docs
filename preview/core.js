@@ -20,6 +20,7 @@
 
 'use strict';
 
+const bufferItr = require("./buffer_itr");
 const fs = require("fs");
 const dedent = require("dedent");
 const Git = require("./git");
@@ -158,21 +159,6 @@ const hasTemplate = async (git, branch) => {
       throw new Error(`The template is a strange object type: ${type}`);
   }
 }
-
-/**
- * Buffers an async iterator until its output is at least min characters
- * @param {Generator} itr async iterator that returns a string to buffer 
- */
-const bufferItr = async function* (itr, min) {
-  let buffer = '';
-  for await (const chunk of itr) {
-    buffer += chunk;
-    if (buffer.length > min) {
-      yield buffer;
-    }
-  }
-  yield buffer;
-};
 
 /**
  * Creates an async iterator describing the diff. The iterator is very "chatty"
