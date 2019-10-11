@@ -475,6 +475,47 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'when a book contains migration warnings' do
+    shared_context 'convert with migration warnings' do |suppress|
+      convert_before do |src, dest|
+        repo = src.repo_with_index 'repo', <<~ASCIIDOC
+          --------
+          CODE HERE
+          ----
+        ASCIIDOC
+        book = src.book 'Test'
+        book.source repo, 'index.asciidoc'
+        book.suppress_migration_warnings = suppress
+        dest.prepare_convert_all(src.conf).convert(expect_failure: !suppress)
+        dest.checkout_conversion if suppress
+      end
+    end
+    context 'and they are not suppressed' do
+      include_context 'convert with migration warnings', false
+      it 'fails with an appropriate error status' do
+        expect(statuses[0]).to eq(2)
+      end
+      it 'complains about the MIGRATION warning' do
+        expect(outputs[0]).to include(<<~LOG)
+          asciidoctor: WARNING: index.asciidoc: line 7: MIGRATION: code block end doesn't match start
+        LOG
+      end
+    end
+    context 'and they are suppressed' do
+      include_context 'convert with migration warnings', true
+      it "doesn't complain about the MIGRATION warning" do
+        expect(outputs[0]).not_to include(<<~LOG)
+          asciidoctor: WARNING: index.asciidoc: line 7: MIGRATION: code block end doesn't match start
+        LOG
+      end
+      file_context 'raw/test/master/chapter.html' do
+        it 'contains the snippet' do
+          expect(contents).to include('CODE HERE')
+        end
+      end
+    end
+  end
+
   context 'when run with --announce_preview' do
     target_branch = 'foo_1'
     preview_location = "http://#{target_branch}.docs-preview.app.elstc.co/guide"
