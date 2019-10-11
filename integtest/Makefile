@@ -17,4 +17,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec -e '--sub_dir'
+	rspec
