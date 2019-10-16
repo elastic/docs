@@ -61,7 +61,9 @@ alias docbldsoold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack
 alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
+alias docbldmet='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
+
+alias docbldlog='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/logs/index.asciidoc --chunk 1'
 
 alias docbldup='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
 
