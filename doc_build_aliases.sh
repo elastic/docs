@@ -173,5 +173,6 @@ alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:el
 # NOTE: To build all books and pick up un-merged changes from your local repos,
 # use one or more --sub_dir options. Specify the repo and branch you want to
 # override and the directory that contains your changes.
+# Do not include the docs repo in this list. The build always uses your local files.
 # For example:
 # --sub_dir elasticsearch:master:./elasticsearch
