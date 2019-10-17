@@ -34,8 +34,15 @@ const requestHandler = async (core, parsedUrl, response) => {
     });
   }
   if (!parsedUrl.pathname.startsWith('/guide')) {
-    response.statusCode = 404;
-    response.end();
+    const redirect = core.outsideOfGuide(parsedUrl.pathname);
+    if (redirect) {
+      response.statusCode = 302;
+      response.setHeader('Location', redirect);
+      response.end();
+    } else {
+      response.statusCode = 404;
+      response.end();
+    }
     return;
   }
 
