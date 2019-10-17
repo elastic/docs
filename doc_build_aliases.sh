@@ -21,13 +21,13 @@ alias docbldes=docbldesx
 alias docbldesold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
 
 # Kibana
-alias docbldkbx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
+alias docbldkbx='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
 
 alias docbldkb=docbldkbx
 
-# Kibana 6.2 and earlier
+# Kibana 6.2 to 5.3
 
-alias docbldkbold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
+alias docbldkbold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
 alias docbldlsx='$GIT_HOME/docs/build_docs --asciidoctor --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
@@ -168,7 +168,7 @@ alias docbldecs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/ecs/doc
 alias docbldgke='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
 
 # Build all
-alias docbldall='GIT_HOME/docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git'
+alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git'
 # NOTE: To build all books and pick up un-merged changes from your local repos,
 # use one or more --sub_dir options. Specify the repo and branch you want to
 # override and the directory that contains your changes.
