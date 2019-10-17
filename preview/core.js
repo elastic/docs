@@ -53,6 +53,12 @@ const GitCore = (defaultTemplate, ignoreHost, repoPath) => {
 
     return {
       diff: () => Readable.from(bufferItr(diffItr(git, branch), 16 * 1024)),
+      outsideOfGuide: path => {
+        if (templateName === "air_gapped_template.html") {
+          return null;
+        }
+        return "https://www.elastic.co" + path;
+      },
       redirects: () => git.catBlob(`${branch}:redirects.conf`),
       file: async requestedPath => {
         const templateExists = await hasTemplate(git, branch);
@@ -115,6 +121,7 @@ const FsCore = (defaultTemplate, ignoreHost, rootPath) => {
         r.push(null);
         return r;
       },
+      outsideOfGuide: _path => null,
       redirects: () => null,
       file: async requestedPath => {
         const realPath = `${rootPath}/${requestedPath}`;

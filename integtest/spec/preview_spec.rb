@@ -95,6 +95,9 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:legacy_redirect) do
       get watermark, branch, 'guide/reference/setup/'
     end
+    let(:outside_of_guide) do
+      get watermark, branch, 'cloud/elasticsearch-service/signup'
+    end
   end
 
   let(:expected_js_state) { {} }
@@ -192,6 +195,34 @@ RSpec.describe 'previewing built docs', order: :defined do
         expect(logs).to include(<<~LOGS)
           #{watermark} #{host} GET /guide/reference/setup/ HTTP/1.1 301
         LOGS
+      end
+    end
+    context 'for a url outside of the docs' do
+      it 'redirects to the public site' do
+        expect(outside_of_guide).to redirect_to(
+          eq('https://www.elastic.co/cloud/elasticsearch-service/signup'),
+          '302'
+        )
+      end
+      it 'logs the access to the url outside of the docs' do
+        wait_for_access '/cloud/elasticsearch-service/signup'
+        expect(logs).to include(<<~LOGS)
+          #{watermark} #{host} GET /cloud/elasticsearch-service/signup HTTP/1.1 302
+        LOGS
+      end
+      if supports_gapped
+        context 'when air gapped' do
+          let(:host) { "gapped_#{branch}.localhost" }
+          it '404s' do
+            expect(outside_of_guide.code).to eq('404')
+          end
+          it 'logs the access to the url outside of the docs' do
+            wait_for_access '/cloud/elasticsearch-service/signup'
+            expect(logs).to include(<<~LOGS)
+              #{watermark} #{host} GET /cloud/elasticsearch-service/signup HTTP/1.1 404
+            LOGS
+          end
+        end
       end
     end
   end

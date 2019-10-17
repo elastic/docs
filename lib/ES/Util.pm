@@ -835,8 +835,19 @@ sub write_nginx_preview_config {
 #===================================
     my ( $dest ) = @_;
 
-    # TODO pull redirects from branches
-
+    my $preview_conf = <<"CONF";
+      proxy_pass http://0.0.0.0:3000;
+      proxy_http_version 1.1;
+      proxy_set_header Host \$host;
+      proxy_cache_bypass \$http_upgrade;
+      proxy_buffering off;
+      gzip on;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+CONF
     # We log the X-Opaque-Id which is a header that Elasticsearch uses to mark
     # requests with an id that is opaque to Elasticsearch. Presumably this is
     # a standard. Either way we follow along. We use it in our tests so we can
@@ -866,21 +877,15 @@ http {
       return 200 "User-agent: *\nDisallow: /\n";
     }
     location ~/(guide|diff) {
-      proxy_pass http://0.0.0.0:3000;
-      proxy_http_version 1.1;
-      proxy_set_header Host \$host;
-      proxy_cache_bypass \$http_upgrade;
-      proxy_buffering off;
-      gzip on;
-      add_header 'Access-Control-Allow-Origin' '*';
-      if (\$request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
-      }
+$preview_conf
     }
     location / {
       alias /docs_build/resources/web/static/;
+      try_files \$uri \@preview;
       autoindex off;
+    }
+    location \@preview {
+$preview_conf
     }
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;
