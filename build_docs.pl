@@ -115,12 +115,14 @@ sub build_local {
         build_single( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
+                relativize => 0,
         );
     }
     else {
         build_chunked( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
+                relativize => 0,
         );
     }
 

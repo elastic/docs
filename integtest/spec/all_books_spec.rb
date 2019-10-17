@@ -292,6 +292,24 @@ RSpec.describe 'building all books' do
       end
     end
   end
+
+  context 'when there is a link to elastic.co' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        https://www.elastic.co/cloud/[link]
+      ASCIIDOC
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+    end
+    page_context 'raw/test/master/chapter.html' do
+      it 'contains a relative link to www.elatic.co' do
+        expect(body).to include(<<~HTML.strip)
+          <a class="ulink" href="/cloud/" target="_top">link</a>
+        HTML
+      end
+    end
+  end
+
   context 'for a book that uses {source_branch}' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', <<~ASCIIDOC

@@ -287,6 +287,7 @@ sub _build_book {
                 alternatives  => $alternatives,
                 branch => $branch,
                 roots => $roots,
+                relativize => 1,
             );
         }
         else {
@@ -312,6 +313,7 @@ sub _build_book {
                 alternatives  => $alternatives,
                 branch => $branch,
                 roots => $roots,
+                relativize => 1,
             );
         }
         $checkout->rmtree;

@@ -273,6 +273,24 @@ RSpec.describe 'building a single book' do
       end
     end
   end
+  context 'when there is a link to elastic.co' do
+    convert_single_before_context do |src|
+      src.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[chapter]]
+        == Chapter
+        https://www.elastic.co/cloud/[link]
+      ASCIIDOC
+    end
+    page_context 'chapter.html' do
+      it 'contains an absolute link to www.elatic.co' do
+        expect(body).to include(<<~HTML.strip)
+          <a class="ulink" href="https://www.elastic.co/cloud/" target="_top">link</a>
+        HTML
+      end
+    end
+  end
 
   context 'regarding the xpack tag' do
     let(:edit_me) do
