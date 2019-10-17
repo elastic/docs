@@ -168,7 +168,7 @@ alias docbldecs='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/ecs/doc
 alias docbldgke='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
 
 # Build all
-alias docbldall='GIT_HOME/docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git'
+alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git'
 # NOTE: To build all books and pick up un-merged changes from your local repos,
 # use one or more --sub_dir options. Specify the repo and branch you want to
 # override and the directory that contains your changes.
