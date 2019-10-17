@@ -123,7 +123,7 @@ alias docbldamnet='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/apm-a
 
 
 # Definitive Guide
-alias docblddg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
+alias docblddg='$GIT_HOME/docs/build_docs --asciidoctor --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
 
 
 # Elasticsearch Extras
