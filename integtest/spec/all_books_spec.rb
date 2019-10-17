@@ -567,4 +567,45 @@ RSpec.describe 'building all books' do
       }x)
     end
   end
+  context 'when asciidoctor fails' do
+    def self.setup
+      convert_before do |src, dest|
+        repo = src.repo_with_index 'src', 'include::missing.adoc[]'
+        yield repo if block_given?
+        book = src.book 'Test'
+        book.source repo, 'index.asciidoc'
+        dest.prepare_convert_all(src.conf).convert(expect_failure: true)
+      end
+    end
+    shared_examples 'error logging' do
+      it 'fails with an appropriate error status' do
+        expect(statuses[0]).to eq(2)
+      end
+      it 'logs the init' do
+        expect(outputs[0]).to match(/init \(.+\) <Test>/)
+      end
+      it 'logs the failure from asciidoc' do
+        expect(outputs[0]).to match(/
+          ERROR:\ index\.asciidoc:\ line\ \d+:
+            \ include\ file\ not\ found:\ .+missing.adoc
+        /x)
+      end
+    end
+    context "when the last commit doesn't have utf8 characters" do
+      setup
+      include_examples 'error logging'
+    end
+    context 'when the last commit has utf8 characters' do
+      setup do |repo|
+        repo.append 'index.asciidoc', <<~ASCIIDOC
+          words
+        ASCIIDOC
+        repo.commit 'utf8: á'
+      end
+      include_examples 'error logging'
+      it 'logs the utf8 line' do
+        expect(outputs[0]).to match(/utf8: á \(.+\) <Test>/)
+      end
+    end
+  end
 end
