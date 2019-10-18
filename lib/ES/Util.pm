@@ -875,6 +875,9 @@ http {
     location = / {
       return 301 /guide/index.html;
     }
+    location = /liveness {
+      return 200 "Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.";
+    }
     location = /robots.txt {
       return 200 "User-agent: *\nDisallow: /\n";
     }
