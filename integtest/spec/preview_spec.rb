@@ -74,6 +74,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     watermark = SecureRandom.uuid
     let(:watermark) { watermark }
     let(:current_url) { 'guide/test/current' }
+    let(:liveness) { get watermark, branch, 'liveness' }
     let(:diff) { get watermark, branch, 'diff' }
     let(:robots_txt) { get watermark, branch, 'robots.txt' }
     let(:root) { get watermark, branch, '' }
@@ -109,6 +110,11 @@ RSpec.describe 'previewing built docs', order: :defined do
   include_examples 'the favicon'
 
   shared_examples 'serves some docs' do |supports_gapped: true|
+    context 'the liveness check' do
+      it '200s' do
+        expect(liveness).to serve(include("R'lyeh"))
+      end
+    end
     context 'the root' do
       it 'redirects to the guide root' do
         expect(root).to redirect_to(eq("http://#{host}:8000/guide/index.html"))
@@ -227,6 +233,11 @@ RSpec.describe 'previewing built docs', order: :defined do
     end
   end
   shared_examples '404s' do
+    context 'the liveness check' do
+      it '200s' do
+        expect(liveness).to serve(include("R'lyeh"))
+      end
+    end
     it '404s for the docs root' do
       expect(guide_root.code).to eq('404')
     end
