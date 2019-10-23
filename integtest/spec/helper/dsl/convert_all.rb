@@ -10,11 +10,13 @@ module Dsl
     # 2. Configure the books that should be built
     def convert_all_before_context(relative_conf: false, target_branch: nil,
                                    init_from_shell: true)
+      # TODO: simplify this in the style of builders
       convert_before do |src, dest|
         yield src
         dest.init_from_shell = init_from_shell
-        dest.convert_all src.conf(relative_path: relative_conf),
-                         target_branch: target_branch
+        c = dest.prepare_convert_all(src.conf(relative_path: relative_conf))
+        c.target_branch(target_branch) if target_branch
+        c.convert
         dest.checkout_conversion branch: target_branch
       end
       include_examples 'convert all'

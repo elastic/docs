@@ -14,7 +14,7 @@ module Dsl
         repo = src.repo 'src'
         from = yield repo
         repo.commit 'commit outstanding'
-        dest.convert_single from, '.'
+        dest.prepare_convert_single(from, '.').convert
       end
       include_examples 'convert single'
     end

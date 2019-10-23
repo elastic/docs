@@ -686,7 +686,8 @@ RSpec.describe 'building a single book' do
       worktree = src.path 'worktree'
       repo.create_worktree worktree, 'HEAD'
       FileUtils.rm_rf repo.root
-      dest.convert_single "#{worktree}/index.asciidoc", '.'
+      dest.prepare_convert_single("#{worktree}/index.asciidoc", '.')
+          .convert
     end
     page_context 'chapter.html' do
       it 'complains about not being able to find the repo toplevel' do
@@ -706,9 +707,9 @@ RSpec.describe 'building a single book' do
           CODE HERE
           ----
         ASCIIDOC
-        dest.convert_single "#{repo.root}/index.asciidoc", '.',
-                            expect_failure: !suppress,
-                            suppress_migration_warnings: suppress
+        c = dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+        c.suppress_migration_warnings if suppress
+        c.convert(expect_failure: !suppress)
       end
     end
     context 'and they are not suppressed' do
@@ -742,8 +743,8 @@ RSpec.describe 'building a single book' do
       repo = src.repo_with_index 'src', <<~ASCIIDOC
         include::missing.asciidoc[]
       ASCIIDOC
-      dest.convert_single "#{repo.root}/index.asciidoc", '.',
-                          expect_failure: true
+      dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+          .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do
       expect(statuses[0]).to eq(255)
