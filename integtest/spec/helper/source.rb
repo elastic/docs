@@ -71,7 +71,7 @@ class Source
   end
 
   ##
-  # Create a repo with an index.asciidoctor file and a book that uses it as
+  # Create a repo with an index.asciidoct file and a book that uses it as
   # a source.
   def book_and_repo(repo_name, book_name, index_content)
     repo = repo_with_index repo_name, index_content

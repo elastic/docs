@@ -51,11 +51,9 @@ class Dest
   # Convert a single book.
   def convert_single(from, to,
                      expect_failure: false,
-                     suppress_migration_warnings: false,
-                     asciidoctor:)
+                     suppress_migration_warnings: false)
     # TODO: replace all calls with prepare_convert_single
     convert = prepare_convert_single from, to
-    convert.asciidoctor if asciidoctor
     convert.suppress_migration_warnings if suppress_migration_warnings
     convert.convert expect_failure: expect_failure
   end
@@ -207,11 +205,6 @@ class Dest
         --out #{dest.path(to)}
       ]
       @dest = dest
-    end
-
-    def asciidoctor
-      @cmd += ['--asciidoctor']
-      self
     end
 
     def suppress_migration_warnings

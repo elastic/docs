@@ -17,4 +17,4 @@ rubocop:
 
 .PHONY: rspec
 rspec:
-	rspec
+	rspec spec/all_books_change_detection_spec.rb

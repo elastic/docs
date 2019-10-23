@@ -437,28 +437,6 @@ RSpec.describe 'building all books' do
           include_examples 'second build is not a noop'
           include_examples 'second build only changes chapter2'
         end
-        context 'because the book changes from asciidoc to asciidoctor' do
-          build_one_book_out_of_one_repo_twice(
-            before_first_build: lambda do |src, _config|
-              book = src.book 'Test'
-              book.asciidoctor = false
-            end,
-            before_second_build: lambda do |src, _config|
-              book = src.book 'Test'
-              book.asciidoctor = true
-            end
-          )
-          include_examples 'second build is not a noop'
-        end
-        context 'because the book changes from asciidoctor to asciidoc' do
-          build_one_book_out_of_one_repo_twice(
-            before_second_build: lambda do |src, _config|
-              book = src.book 'Test'
-              book.asciidoctor = false
-            end
-          )
-          include_examples 'second build is not a noop'
-        end
         context 'because there is a target_branch and we have changes' do
           # We always fork the target_branch from master so if the target
           # branch contains any changes from master we rebuild them every time.
