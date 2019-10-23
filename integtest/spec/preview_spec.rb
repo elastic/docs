@@ -30,7 +30,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     book = src.book 'Test'
     book.source repo, 'index.asciidoc'
     book.source repo, 'resources'
-    dest.convert_all src.conf
+    dest.prepare_convert_all(src.conf).convert
   end
   before(:context) do
     @preview = @dest.start_preview
@@ -344,7 +344,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         Some text.
       ASCIIDOC
       repo.commit 'test change for test branch'
-      @dest.convert_all @src.conf, target_branch: 'test'
+      @dest.prepare_convert_all(@src.conf).target_branch('test').convert
     end
     it 'logs the fetch' do
       wait_for_logs(/\[new branch\]\s+test\s+->\s+test/)
@@ -492,7 +492,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         image::resources/very_large.jpg[Not a jpg but very big]
       ASCIIDOC
       repo.commit 'test change for test_noop branch2'
-      @dest.convert_all @src.conf, target_branch: 'test_noop'
+      @dest.prepare_convert_all(@src.conf).target_branch('test_noop').convert
     end
     it 'logs the fetch' do
       wait_for_logs(/\[new branch\]\s+test_noop\s+->\s+test_noop/)
@@ -533,7 +533,9 @@ RSpec.describe 'previewing built docs', order: :defined do
         'examples',
         alternatives: { source_lang: 'console', alternative_lang: 'csharp' }
       )
-      @dest.convert_all @src.conf, target_branch: 'alternative_examples'
+      @dest.prepare_convert_all(@src.conf)
+           .target_branch('alternative_examples')
+           .convert
     end
     it 'logs the fetch' do
       wait_for_logs(
@@ -563,7 +565,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     before(:context) do
       book = @src.book 'Test'
       book.lang = 'foo'
-      @dest.convert_all @src.conf, target_branch: 'foolang'
+      @dest.prepare_convert_all(@src.conf).target_branch('foolang').convert
     end
     it 'logs the fetch' do
       wait_for_logs(
@@ -602,7 +604,7 @@ RSpec.describe 'previewing built docs', order: :defined do
   describe 'when we can pull again' do
     before(:context) do
       FileUtils.mv '/tmp/backup', @dest.bare_repo
-      @dest.convert_all @src.conf, target_branch: 'restored'
+      @dest.prepare_convert_all(@src.conf).target_branch('restored').convert
     end
     it 'fetches' do
       wait_for_logs(
