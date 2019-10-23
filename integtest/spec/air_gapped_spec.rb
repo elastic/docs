@@ -11,7 +11,7 @@ RSpec.describe 'air gapped deploy', order: :defined do
     ASCIIDOC
     book = src.book 'Test'
     book.source repo, 'index.asciidoc'
-    dest.convert_all src.conf
+    dest.prepare_convert_all(src.conf).convert
   end
   before(:context) do
     @air_gapped = @dest.start_air_gapped

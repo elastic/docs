@@ -19,11 +19,11 @@ module Dsl
         repo = src.repo 'src'
         from = yield repo
         repo.commit 'commit outstanding'
-        dest.convert_single from, '.', asciidoctor: true
+        dest.prepare_convert_single(from, '.').asciidoctor.convert
         # Convert a second time with the legacy `AsciiDoc` tool and stick the
         # result into the `asciidoc` directory. We will compare the results of
         # this conversion with the results of the `Asciidoctor` conversion.
-        dest.convert_single from, 'asciidoc', asciidoctor: false
+        dest.prepare_convert_single(from, 'asciidoc').convert
       end
       include_examples 'convert single'
     end
