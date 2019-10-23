@@ -114,7 +114,6 @@ sub build_chunked {
                 # '-a' => 'attribute-missing=warn',
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
@@ -291,7 +290,6 @@ sub build_single {
                     edit_urls_for_asciidoctor($edit_urls) ),
                 '-a' => 'asciidoc-dir=' . $asciidoc_dir,
                 '-a' => 'resources=' . join(',', @$resources),
-                '-a' => 'copy-admonition-images=png',
                 $latest ? () : ('-a' => "migration-warnings=false"),
                 $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
                 @{ $alternatives } ? (
