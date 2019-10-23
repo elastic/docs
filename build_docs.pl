@@ -65,7 +65,7 @@ die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_sta
 if ( $Opts->{asciidoctor} ) {
     say <<MSG
 The Asciidoctor migration is complete! --asciidoctor will emit this message
-forever in honor of our success but otherwises doesn't do anything.
+forever in honor of our success but otherwise doesn't do anything.
 MSG
 }
 
