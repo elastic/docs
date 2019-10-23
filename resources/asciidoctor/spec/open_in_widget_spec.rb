@@ -4,9 +4,7 @@ require 'open_in_widget/extension'
 
 RSpec.describe OpenInWidget do
   before(:each) do
-    Asciidoctor::Extensions.register do
-      treeprocessor OpenInWidget
-    end
+    Asciidoctor::Extensions.register OpenInWidget
   end
 
   after(:each) do
