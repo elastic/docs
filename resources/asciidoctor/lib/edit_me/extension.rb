@@ -60,19 +60,19 @@ module EditMe
 
     RESPECT_OVERRIDES = 'respect_edit_url_overrides'
 
-    def preamble(block)
+    def convert_preamble(block)
       yield.sub '</title>' do
         "#{link_for block}</title>"
       end
     end
 
-    def section(block)
+    def convert_section(block)
       yield.sub '</title>' do
         "#{link_for block}</title>"
       end
     end
 
-    def floating_title(block)
+    def convert_floating_title(block)
       yield.sub '</bridgehead>' do
         "#{link_for block}</bridgehead>"
       end
@@ -88,9 +88,9 @@ module EditMe
     end
 
     def edit_url(block)
-      return edit_url_by_path block unless block.attr RESPECT_OVERRIDES
+      return edit_url_by_path block unless block.document.attr RESPECT_OVERRIDES
 
-      url = block.attr 'edit_url'
+      url = block.document.attr 'edit_url'
       return false if url == ''
       return url if url
 
@@ -105,7 +105,7 @@ module EditMe
       # standard name for such strings.
       path = block.source_location&.file || '<stdin>'
 
-      edit_urls = block.attr 'edit_urls'
+      edit_urls = block.document.attr 'edit_urls'
       entry = edit_urls.find { |e| path.start_with? e[:toplevel] }
       return url_for_path path, entry if entry
 

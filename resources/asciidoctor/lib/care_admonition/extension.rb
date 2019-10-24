@@ -52,14 +52,18 @@ class CareAdmonition < Asciidoctor::Extensions::Group
   class ChangeAdmonitionInline < Asciidoctor::Extensions::InlineMacroProcessor
     use_dsl
     name_positional_attributes :text
-    with_format :short
+    format :short
 
     def initialize(role)
       super(nil)
       @role = role
     end
 
-    def process(_parent, _target, attrs)
+    def process(parent, _target, attrs)
+      Asciidoctor::Inline.new(parent, :quoted, text(attrs))
+    end
+
+    def text(attrs)
       if attrs[:text]
         <<~DOCBOOK
           <phrase role="#{@role}">

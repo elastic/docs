@@ -769,11 +769,18 @@ RSpec.describe 'building a single book' do
           .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do
-      expect(statuses[0]).to eq(255)
+      expect(statuses[0]).to eq(4)
     end
-    it 'logs the missing file' do
+    # Asciidoctor 2 logs these as "potentially missing" and at info level so
+    # they don't cause failures. We need to figure this one out.....
+    # it 'logs the file that contains the missing include' do
+    #   expect(outputs[0]).to include(<<~LOG.strip)
+    #     asciidoctor: WARNING: invalid reference: missing-ref
+    #   LOG
+    # end
+    it 'logs the file that contains the missing include' do
       expect(outputs[0]).to include(<<~LOG.strip)
-        asciidoctor: WARNING: invalid reference: missing-ref
+        IDREF attribute linkend references an unknown ID "missing-ref"
       LOG
     end
   end
