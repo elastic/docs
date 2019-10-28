@@ -101,11 +101,6 @@ RSpec.describe ElasticIncludeTagged do
       absolute_path = "#{__dir__}/#{include_file}"
       "ERROR: <stdin>: line 5: include file not found: #{absolute_path}"
     end
-    it 'the conversion contains a warning about unresolved directives' do
-      expect(converted).to include(
-        "Unresolved directive in &lt;stdin&gt; - include::#{include_file}"
-      )
-    end
     it 'logs a warning about the missing file' do
       expect(logs).to include(expected_log)
     end

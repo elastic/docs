@@ -32,7 +32,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
   ##
   # Properly renders change admonitions.
   class Converter < DelegatingConverter
-    def admonition(node)
+    def convert_admonition(node)
       return yield unless (flag = node.attr 'revisionflag')
 
       <<~DOCBOOK.strip
@@ -74,14 +74,18 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
   class ChangeAdmonitionInline < Asciidoctor::Extensions::InlineMacroProcessor
     use_dsl
     name_positional_attributes :version, :text
-    with_format :short
+    format :short
 
     def initialize(revisionflag)
       super(nil)
       @revisionflag = revisionflag
     end
 
-    def process(_parent, _target, attrs)
+    def process(parent, _target, attrs)
+      Asciidoctor::Inline.new(parent, :quoted, text(attrs))
+    end
+
+    def text(attrs)
       if attrs[:text]
         <<~DOCBOOK
           <phrase revisionflag="#{@revisionflag}" revision="#{attrs[:version]}">
