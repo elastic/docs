@@ -61,7 +61,9 @@ alias docbldsoold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack
 alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
+alias docbldmet='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
+
+alias docbldlog='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/logs/index.asciidoc --chunk 1'
 
 alias docbldup='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
 
@@ -171,5 +173,6 @@ alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:el
 # NOTE: To build all books and pick up un-merged changes from your local repos,
 # use one or more --sub_dir options. Specify the repo and branch you want to
 # override and the directory that contains your changes.
+# Do not include the docs repo in this list. The build always uses your local files.
 # For example:
 # --sub_dir elasticsearch:master:./elasticsearch
