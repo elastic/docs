@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'asciidoctor/extensions'
+require_relative '../log_util'
 
 # Extension to emulate Elastic's asciidoc customization to include tagged
 # portions of a file. While it was originally modeled after asciidoctor's
@@ -15,27 +16,26 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
     /^elastic-include-tagged:/.match target
   end
 
-  def process(_doc, reader, target, attrs)
+  def process(doc, reader, target, attrs)
     target = target.sub(/^elastic-include-tagged:/, '')
 
-    Includer.new(reader, target, attrs).include_lines
+    Includer.new(doc, reader, target, attrs).include_lines
   end
 
   ##
   # Helper to include lines.
   class Includer
-    include Asciidoctor::Logging
+    include LogUtil
 
-    def initialize(reader, target, attrs)
+    def initialize(doc, reader, target, attrs)
       @reader = reader
       @target = target
       @tag = attrs[1]
       @attrs = attrs
-      # resolve_include_path returns the path if can't resolve the file and logs
-      # the error.
-      @path, _target_type, @relpath = reader.resolve_include_path(
-        target, attrs, attrs
+      @path = doc.normalize_system_path(
+        target, reader.dir, nil, target_name: 'include file'
       )
+      @relpath = doc.path_resolver.relative_path @path, doc.base_dir
 
       # These are used when scanning the file
       @start_match = /^(\s*).+tag::#{@tag}\b/
@@ -57,14 +57,9 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
         warn "elastic-include-tagged expects only a tag but got: #{@attrs}"
         return @target
       end
-      return @path unless @relpath
 
-      begin
-        File.open(@path, 'r') { |f| scan_file(f) }
-      rescue IOError => e
-        warn "error including [#{e.message}]"
-        return @path
-      end
+      return @path unless read_file
+
       if @start_of_include.nil?
         warn "missing start tag [#{@tag}]"
         return @path
@@ -75,6 +70,16 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
         )
       end
       @reader.push_include @lines, @path, @relpath, @start_of_include, @attrs
+    end
+
+    def read_file
+      File.open(@path, 'r') { |f| scan_file(f) }
+      true
+    rescue Errno::ENOENT
+      error message: "include file not found: #{@path}",
+            location: @reader.cursor
+    rescue IOError => e
+      warn "error including [#{e.message}]"
     end
 
     ##

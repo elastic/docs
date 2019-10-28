@@ -771,7 +771,7 @@ RSpec.describe 'building a single book' do
     it 'fails with an appropriate error status' do
       expect(statuses[0]).to eq(255)
     end
-    it 'logs the missing file' do
+    it 'logs the file that contains the missing include' do
       expect(outputs[0]).to include(<<~LOG.strip)
         asciidoctor: WARNING: invalid reference: missing-ref
       LOG

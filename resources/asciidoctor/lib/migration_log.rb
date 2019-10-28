@@ -11,15 +11,16 @@ module MigrationLog
   # Emit a migration warning if migration warnings are enabled overall and if
   # this particular migration warning is enabled.
   def migration_warn(block, cursor, key, message)
+    # TODO: playback_attributes will almost never work propery. We should remove
+    # this *somehow*
     # We have to play the block's attributes against the document, then clear
     # them on the way out so we can override this behavior inside a block.
-    block.document.playback_attributes block.attributes
-    return unless block.attr('migration-warnings', 'true') == 'true'
-    return unless block.attr("migration-warning-#{key}", 'true') == 'true'
+    doc = block.document
+    doc.playback_attributes block.attributes
+    return unless doc.attr('migration-warnings', 'true') == 'true'
+    return unless doc.attr("migration-warning-#{key}", 'true') == 'true'
 
     logger.warn message_with_context "MIGRATION: #{message}",
                                      source_location: cursor
-  ensure
-    block.document.clear_playback_attributes block.attributes
   end
 end
