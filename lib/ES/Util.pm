@@ -384,6 +384,7 @@ sub _check_build_error {
 #===================================
     my ( $output, $died, $lenient ) = @_;
 
+    $output =~ s/INFO: possible invalid reference: /WARNING: invalid reference: /;
     my @lines = split "\n", $output;
     my @build_warnings = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} @lines;
     my $warned = @build_warnings;
