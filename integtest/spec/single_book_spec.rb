@@ -773,6 +773,9 @@ RSpec.describe 'building a single book' do
     end
     # Asciidoctor 2 logs these as "potentially missing" and at info level so
     # they don't cause failures. We need to figure this one out.....
+    # The big problem is that is logs *a lot* of warnings that are obviously
+    # not actually problems. I've filed
+    # https://github.com/asciidoctor/asciidoctor/issues/3469
     # it 'logs the file that contains the missing include' do
     #   expect(outputs[0]).to include(<<~LOG.strip)
     #     asciidoctor: WARNING: invalid reference: missing-ref
