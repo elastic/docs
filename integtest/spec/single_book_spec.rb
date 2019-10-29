@@ -273,6 +273,24 @@ RSpec.describe 'building a single book' do
       end
     end
   end
+  context 'when there is a link to elastic.co' do
+    convert_single_before_context do |src|
+      src.write 'index.asciidoc', <<~ASCIIDOC
+        = Title
+
+        [[chapter]]
+        == Chapter
+        https://www.elastic.co/cloud/[link]
+      ASCIIDOC
+    end
+    page_context 'chapter.html' do
+      it 'contains an absolute link to www.elatic.co' do
+        expect(body).to include(<<~HTML.strip)
+          <a class="ulink" href="https://www.elastic.co/cloud/" target="_top">link</a>
+        HTML
+      end
+    end
+  end
 
   context 'regarding the xpack tag' do
     let(:edit_me) do
@@ -669,7 +687,9 @@ RSpec.describe 'building a single book' do
       worktree = src.path 'worktree'
       repo.create_worktree worktree, 'HEAD'
       FileUtils.rm_rf repo.root
-      dest.convert_single "#{worktree}/index.asciidoc", '.', asciidoctor: true
+      dest.prepare_convert_single("#{worktree}/index.asciidoc", '.')
+          .asciidoctor
+          .convert
     end
     page_context 'chapter.html' do
       it 'complains about not being able to find the repo toplevel' do
@@ -689,10 +709,10 @@ RSpec.describe 'building a single book' do
           CODE HERE
           ----
         ASCIIDOC
-        dest.convert_single "#{repo.root}/index.asciidoc", '.',
-                            asciidoctor: true,
-                            expect_failure: !suppress,
-                            suppress_migration_warnings: suppress
+        c = dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+        c.asciidoctor
+        c.suppress_migration_warnings if suppress
+        c.convert(expect_failure: !suppress)
       end
     end
     context 'and they are not suppressed' do
@@ -726,9 +746,9 @@ RSpec.describe 'building a single book' do
       repo = src.repo_with_index 'src', <<~ASCIIDOC
         include::missing.asciidoc[]
       ASCIIDOC
-      dest.convert_single "#{repo.root}/index.asciidoc", '.',
-                          asciidoctor: true,
-                          expect_failure: true
+      dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+          .asciidoctor
+          .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do
       expect(statuses[0]).to eq(255)
@@ -751,7 +771,7 @@ RSpec.describe 'building a single book' do
     it 'fails with an appropriate error status' do
       expect(statuses[0]).to eq(255)
     end
-    it 'logs the missing file' do
+    it 'logs the file that contains the missing include' do
       expect(outputs[0]).to include(<<~LOG.strip)
         asciidoctor: WARNING: invalid reference: missing-ref
       LOG

@@ -333,14 +333,14 @@ sub dump_recent_commits {
     my $rev_range = $self->{keep_hash} ? $start : "$start...$branch";
 
     my $commits = eval {
-        decode_utf8 run( 'git', 'log', $rev_range,
+        run( 'git', 'log', $rev_range,
             '--pretty=format:%h -%d %s (%cr) <%an>',
             '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
     } || '';
 
     unless ( $commits =~ /\S/ ) {
         $commits
-            = decode_utf8 run( 'git', 'log',
+            = run( 'git', 'log',
             $branch, '--pretty=format:%h -%d %s (%cr) <%an>',
             '-n', 10, '--abbrev-commit', '--date=relative', '--', $src_path );
     }

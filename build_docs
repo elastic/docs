@@ -31,7 +31,7 @@ from __future__ import print_function
 import logging
 from os import environ, getgid, getuid
 from os.path import basename, dirname, exists, expanduser, isdir
-from os.path import join, realpath
+from os.path import join, normpath, realpath
 import re
 import subprocess
 from sys import platform, version_info
@@ -182,10 +182,12 @@ def run_build_docs(args):
         return repo_mount + path[len(repo_root):]
 
     def mount_alternates(path_in_repo):
+        # We'd prefer to use --absolute-git-dir here but not all users have it
         git_dir = subprocess.check_output(
                 ['git', 'rev-parse', '--git-dir'],
                 cwd=path_in_repo)
         git_dir = git_dir.decode('utf-8').strip()
+        git_dir = normpath(join(path_in_repo, git_dir))
         alternates_file = git_dir + '/objects/info/alternates'
         if not exists(alternates_file):
             return
@@ -203,7 +205,6 @@ def run_build_docs(args):
                     '-v',
                     '%s:%s:ro,cached' % (alternates_root, alternates_root)
                 ])
-                logger.info("mounted " + alternates_root)
                 mount_alternates(alternates_root)
 
     open_browser = False
@@ -317,6 +318,10 @@ def run_build_docs(args):
             build_docs_args.append("%s:%s:%s" % (
                     m.group('repo'), m.group('branch'), mounted_path))
         arg = args.next_arg()
+
+    # Mount alternatives used by the docs repo if there are any in case we have
+    # to use git on the docs repo itself.
+    mount_alternates(DIR)
 
     if saw_doc and not saw_out:
         # If you don't specify --out then we dump the output into

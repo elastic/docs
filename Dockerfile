@@ -84,6 +84,8 @@ RUN pip3 install \
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 RUN bundle install --binstubs --system --frozen
+COPY .docker/asciidoctor_2_0_10.patch /
+RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
 # --frozen forces us to regenerate Gemfile.lock locally before using it in
 # docker which is important because we need Gemfile.lock to lock the gems to a
 # consistent version and we can't rely on running bundler in docker to update

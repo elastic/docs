@@ -292,6 +292,24 @@ RSpec.describe 'building all books' do
       end
     end
   end
+
+  context 'when there is a link to elastic.co' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        https://www.elastic.co/cloud/[link]
+      ASCIIDOC
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+    end
+    page_context 'raw/test/master/chapter.html' do
+      it 'contains a relative link to www.elatic.co' do
+        expect(body).to include(<<~HTML.strip)
+          <a class="ulink" href="/cloud/" target="_top">link</a>
+        HTML
+      end
+    end
+  end
+
   context 'for a book that uses {source_branch}' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', <<~ASCIIDOC
@@ -565,6 +583,47 @@ RSpec.describe 'building all books' do
       expect(outputs[0]).to match(%r{
         Can't\ find\ index\ \[.+/src/not_index.asciidoc\]
       }x)
+    end
+  end
+  context 'when asciidoctor fails' do
+    def self.setup
+      convert_before do |src, dest|
+        repo = src.repo_with_index 'src', 'include::missing.adoc[]'
+        yield repo if block_given?
+        book = src.book 'Test'
+        book.source repo, 'index.asciidoc'
+        dest.prepare_convert_all(src.conf).convert(expect_failure: true)
+      end
+    end
+    shared_examples 'error logging' do
+      it 'fails with an appropriate error status' do
+        expect(statuses[0]).to eq(2)
+      end
+      it 'logs the init' do
+        expect(outputs[0]).to match(/init \(.+\) <Test>/)
+      end
+      it 'logs the failure from asciidoc' do
+        expect(outputs[0]).to match(/
+          ERROR:\ index\.asciidoc:\ line\ \d+:
+            \ include\ file\ not\ found:\ .+missing.adoc
+        /x)
+      end
+    end
+    context "when the last commit doesn't have utf8 characters" do
+      setup
+      include_examples 'error logging'
+    end
+    context 'when the last commit has utf8 characters' do
+      setup do |repo|
+        repo.append 'index.asciidoc', <<~ASCIIDOC
+          words
+        ASCIIDOC
+        repo.commit 'utf8: á'
+      end
+      include_examples 'error logging'
+      it 'logs the utf8 line' do
+        expect(outputs[0]).to match(/utf8: á \(.+\) <Test>/)
+      end
     end
   end
 end

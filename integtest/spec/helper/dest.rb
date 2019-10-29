@@ -47,30 +47,8 @@ class Dest
     ConvertSingle.new from, to, self
   end
 
-  ##
-  # Convert a single book.
-  def convert_single(from, to,
-                     expect_failure: false,
-                     suppress_migration_warnings: false,
-                     asciidoctor:)
-    # TODO: replace all calls with prepare_convert_single
-    convert = prepare_convert_single from, to
-    convert.asciidoctor if asciidoctor
-    convert.suppress_migration_warnings if suppress_migration_warnings
-    convert.convert expect_failure: expect_failure
-  end
-
   def prepare_convert_all(conf)
     ConvertAll.new conf, @repos_cache, bare_repo, self
-  end
-
-  ##
-  # Convert a conf file worth of books and check it out.
-  def convert_all(conf, expect_failure: false, target_branch: nil)
-    # TODO: remove this in favor of prepare_convert_all
-    convert = prepare_convert_all conf
-    convert.target_branch target_branch if target_branch
-    convert.convert expect_failure: expect_failure
   end
 
   ##

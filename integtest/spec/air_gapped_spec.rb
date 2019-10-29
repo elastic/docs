@@ -11,7 +11,7 @@ RSpec.describe 'air gapped deploy', order: :defined do
     ASCIIDOC
     book = src.book 'Test'
     book.source repo, 'index.asciidoc'
-    dest.convert_all src.conf
+    dest.prepare_convert_all(src.conf).convert
   end
   before(:context) do
     @air_gapped = @dest.start_air_gapped
@@ -23,6 +23,9 @@ RSpec.describe 'air gapped deploy', order: :defined do
 
   let(:host) { 'localhost' }
   let(:books_index) { air_gapped.get 'guide/index.html', host: host }
+  let(:outside_of_guide) do
+    air_gapped.get 'cloud/elasticsearch-service/signup', host: host
+  end
 
   context 'the logs' do
     it "don't contain anything git" do
@@ -31,6 +34,7 @@ RSpec.describe 'air gapped deploy', order: :defined do
       expect(air_gapped.logs).not_to include('git')
     end
   end
+  include_examples 'the favicon'
 
   context 'the books index' do
     it 'links to the book' do
@@ -48,6 +52,11 @@ RSpec.describe 'air gapped deploy', order: :defined do
       expect(books_index).not_to serve(include(<<~HTML.strip))
         https://www.googletagmanager.com/gtag/js
       HTML
+    end
+  end
+  context 'for a url outside of the docs' do
+    it '404s' do
+      expect(outside_of_guide.code).to eq('404')
     end
   end
   context "when the host isn't localhost" do

@@ -1,4 +1,4 @@
-FROM docker.elastic.co/docs/preview:12
+FROM docker.elastic.co/docs/preview:14
 
 COPY air_gapped/work/target_repo.git /docs_build/.repos/target_repo.git
 

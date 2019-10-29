@@ -30,7 +30,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     book = src.book 'Test'
     book.source repo, 'index.asciidoc'
     book.source repo, 'resources'
-    dest.convert_all src.conf
+    dest.prepare_convert_all(src.conf).convert
   end
   before(:context) do
     @preview = @dest.start_preview
@@ -74,6 +74,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     watermark = SecureRandom.uuid
     let(:watermark) { watermark }
     let(:current_url) { 'guide/test/current' }
+    let(:liveness) { get watermark, branch, 'liveness' }
     let(:diff) { get watermark, branch, 'diff' }
     let(:robots_txt) { get watermark, branch, 'robots.txt' }
     let(:root) { get watermark, branch, '' }
@@ -95,6 +96,9 @@ RSpec.describe 'previewing built docs', order: :defined do
     let(:legacy_redirect) do
       get watermark, branch, 'guide/reference/setup/'
     end
+    let(:outside_of_guide) do
+      get watermark, branch, 'cloud/elasticsearch-service/signup'
+    end
   end
 
   let(:expected_js_state) { {} }
@@ -106,6 +110,11 @@ RSpec.describe 'previewing built docs', order: :defined do
   include_examples 'the favicon'
 
   shared_examples 'serves some docs' do |supports_gapped: true|
+    context 'the liveness check' do
+      it '200s' do
+        expect(liveness).to serve(include("R'lyeh"))
+      end
+    end
     context 'the root' do
       it 'redirects to the guide root' do
         expect(root).to redirect_to(eq("http://#{host}:8000/guide/index.html"))
@@ -194,8 +203,41 @@ RSpec.describe 'previewing built docs', order: :defined do
         LOGS
       end
     end
+    context 'for a url outside of the docs' do
+      it 'redirects to the public site' do
+        expect(outside_of_guide).to redirect_to(
+          eq('https://www.elastic.co/cloud/elasticsearch-service/signup'),
+          '302'
+        )
+      end
+      it 'logs the access to the url outside of the docs' do
+        wait_for_access '/cloud/elasticsearch-service/signup'
+        expect(logs).to include(<<~LOGS)
+          #{watermark} #{host} GET /cloud/elasticsearch-service/signup HTTP/1.1 302
+        LOGS
+      end
+      if supports_gapped
+        context 'when air gapped' do
+          let(:host) { "gapped_#{branch}.localhost" }
+          it '404s' do
+            expect(outside_of_guide.code).to eq('404')
+          end
+          it 'logs the access to the url outside of the docs' do
+            wait_for_access '/cloud/elasticsearch-service/signup'
+            expect(logs).to include(<<~LOGS)
+              #{watermark} #{host} GET /cloud/elasticsearch-service/signup HTTP/1.1 404
+            LOGS
+          end
+        end
+      end
+    end
   end
   shared_examples '404s' do
+    context 'the liveness check' do
+      it '200s' do
+        expect(liveness).to serve(include("R'lyeh"))
+      end
+    end
     it '404s for the docs root' do
       expect(guide_root.code).to eq('404')
     end
@@ -302,7 +344,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         Some text.
       ASCIIDOC
       repo.commit 'test change for test branch'
-      @dest.convert_all @src.conf, target_branch: 'test'
+      @dest.prepare_convert_all(@src.conf).target_branch('test').convert
     end
     it 'logs the fetch' do
       wait_for_logs(/\[new branch\]\s+test\s+->\s+test/)
@@ -450,7 +492,7 @@ RSpec.describe 'previewing built docs', order: :defined do
         image::resources/very_large.jpg[Not a jpg but very big]
       ASCIIDOC
       repo.commit 'test change for test_noop branch2'
-      @dest.convert_all @src.conf, target_branch: 'test_noop'
+      @dest.prepare_convert_all(@src.conf).target_branch('test_noop').convert
     end
     it 'logs the fetch' do
       wait_for_logs(/\[new branch\]\s+test_noop\s+->\s+test_noop/)
@@ -491,7 +533,9 @@ RSpec.describe 'previewing built docs', order: :defined do
         'examples',
         alternatives: { source_lang: 'console', alternative_lang: 'csharp' }
       )
-      @dest.convert_all @src.conf, target_branch: 'alternative_examples'
+      @dest.prepare_convert_all(@src.conf)
+           .target_branch('alternative_examples')
+           .convert
     end
     it 'logs the fetch' do
       wait_for_logs(
@@ -521,7 +565,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     before(:context) do
       book = @src.book 'Test'
       book.lang = 'foo'
-      @dest.convert_all @src.conf, target_branch: 'foolang'
+      @dest.prepare_convert_all(@src.conf).target_branch('foolang').convert
     end
     it 'logs the fetch' do
       wait_for_logs(
@@ -560,7 +604,7 @@ RSpec.describe 'previewing built docs', order: :defined do
   describe 'when we can pull again' do
     before(:context) do
       FileUtils.mv '/tmp/backup', @dest.bare_repo
-      @dest.convert_all @src.conf, target_branch: 'restored'
+      @dest.prepare_convert_all(@src.conf).target_branch('restored').convert
     end
     it 'fetches' do
       wait_for_logs(

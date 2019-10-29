@@ -26,8 +26,6 @@ BEGIN {
 
 use lib 'lib';
 
-use URI();
-
 use ES::Util qw(
     run $Opts
     build_chunked build_single build_pdf
@@ -117,12 +115,14 @@ sub build_local {
         build_single( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
+                relativize => 0,
         );
     }
     else {
         build_chunked( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
+                relativize => 0,
         );
     }
 
@@ -557,17 +557,9 @@ sub init_target_repo {
 #===================================
     my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
 
-    my $git_repo = $Opts->{target_repo};
-    my $git_uri = URI->new($git_repo);
-
-    if ( ( $git_uri->scheme || "" ) eq "https" && defined $ENV{GITHUB_USER} && defined $ENV{GITHUB_PASS} ){
-        $git_uri->userinfo( $ENV{GITHUB_USER} . ":" . $ENV{GITHUB_PASS} );
-        $git_repo = $git_uri->as_string;
-    }
-
     my $target_repo = ES::TargetRepo->new(
         git_dir     => $repos_dir->subdir('target_repo.git'),
-        url         => $git_repo,
+        url         => $Opts->{target_repo},
         reference   => $reference_dir,
         destination => dir( "$temp_dir/target_repo" ),
         branch      => $Opts->{target_branch} || 'master',

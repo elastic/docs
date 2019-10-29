@@ -55,6 +55,7 @@ sub build_chunked {
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
     my $branch = $opts{branch};
     my $roots = $opts{roots};
+    my $relativize = $opts{relativize};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -121,7 +122,7 @@ sub build_chunked {
                     '-a' => "alternative_language_report=$raw_dest/alternatives_report.json",
                     '-a' => "alternative_language_summary=$alternatives_summary",
                 ) : (),
-                '-a' => 'relativize-link=https://www.elastic.co/',
+                $relativize ? ('-a' => 'relativize-link=https://www.elastic.co/') : (),
                 roots_opts( $roots ),
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
@@ -230,6 +231,7 @@ sub build_single {
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
     my $branch = $opts{branch};
     my $roots = $opts{roots};
+    my $relativize = $opts{relativize};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -300,7 +302,7 @@ sub build_single {
                 # Disable warning on missing attributes because we have
                 # missing attributes!
                 # '-a' => 'attribute-missing=warn',
-                '-a' => 'relativize-link=https://www.elastic.co/',
+                $relativize ? ('-a' => 'relativize-link=https://www.elastic.co/') : (),
                 roots_opts( $roots ),
                 '--destination-dir=' . $raw_dest,
                 docinfo($index),
@@ -382,6 +384,7 @@ sub _check_build_error {
 #===================================
     my ( $output, $died, $lenient ) = @_;
 
+    $output =~ s/INFO: possible invalid reference: /WARNING: invalid reference: /;
     my @lines = split "\n", $output;
     my @build_warnings = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} @lines;
     my $warned = @build_warnings;
@@ -835,8 +838,19 @@ sub write_nginx_preview_config {
 #===================================
     my ( $dest ) = @_;
 
-    # TODO pull redirects from branches
-
+    my $preview_conf = <<"CONF";
+      proxy_pass http://0.0.0.0:3000;
+      proxy_http_version 1.1;
+      proxy_set_header Host \$host;
+      proxy_cache_bypass \$http_upgrade;
+      proxy_buffering off;
+      gzip on;
+      add_header 'Access-Control-Allow-Origin' '*';
+      if (\$request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
+      }
+CONF
     # We log the X-Opaque-Id which is a header that Elasticsearch uses to mark
     # requests with an id that is opaque to Elasticsearch. Presumably this is
     # a standard. Either way we follow along. We use it in our tests so we can
@@ -862,25 +876,22 @@ http {
     location = / {
       return 301 /guide/index.html;
     }
+    location = /liveness {
+      return 200 "Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.";
+    }
     location = /robots.txt {
       return 200 "User-agent: *\nDisallow: /\n";
     }
     location ~/(guide|diff) {
-      proxy_pass http://0.0.0.0:3000;
-      proxy_http_version 1.1;
-      proxy_set_header Host \$host;
-      proxy_cache_bypass \$http_upgrade;
-      proxy_buffering off;
-      gzip on;
-      add_header 'Access-Control-Allow-Origin' '*';
-      if (\$request_method = 'OPTIONS') {
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
-        add_header 'Access-Control-Allow-Headers' 'kbn-xsrf-token';
-      }
+$preview_conf
     }
     location / {
       alias /docs_build/resources/web/static/;
+      try_files \$uri \@preview;
       autoindex off;
+    }
+    location \@preview {
+$preview_conf
     }
     rewrite ^/assets/(.+)\$ https://www.elastic.co/assets/\$1 permanent;
     rewrite ^/gdpr-data\$ https://www.elastic.co/gdpr-data permanent;

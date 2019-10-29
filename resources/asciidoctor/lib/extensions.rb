@@ -5,6 +5,7 @@ require_relative 'care_admonition/extension'
 require_relative 'change_admonition/extension'
 require_relative 'copy_images/extension'
 require_relative 'cramped_include/extension'
+require_relative 'docbook45/converter'
 require_relative 'edit_me/extension'
 require_relative 'elastic_compat_tree_processor/extension'
 require_relative 'elastic_compat_preprocessor/extension'
@@ -22,6 +23,7 @@ Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
 Asciidoctor::Extensions.register CopyImages
 Asciidoctor::Extensions.register EditMe
+Asciidoctor::Extensions.register OpenInWidget
 Asciidoctor::Extensions.register RelativizeLink
 Asciidoctor::Extensions.register do
   block_macro LangOverride
@@ -31,6 +33,5 @@ Asciidoctor::Extensions.register do
   # The tree processors after this must come after ElasticComptTreeProcessor
   # or they won't see the right tree.
   treeprocessor AlternativeLanguageLookup::AlternativeLanguageLookup
-  treeprocessor OpenInWidget
   include_processor ElasticIncludeTagged
 end
