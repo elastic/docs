@@ -1,0 +1,79 @@
+// These tagged sections pertain to configuring monitoring in Kibana
+
+// Enable the Kibana X-Pack module in Metricbeat
+tag::enable-kibana-module[]
+For example, to enable the default configuration in the `modules.d` directory, 
+run the following command:
+
+["source","sh",subs="attributes,callouts"]
+----------------------------------------------------------------------
+metricbeat modules enable kibana-xpack
+----------------------------------------------------------------------
+
+For more information, see 
+{metricbeat-ref}/configuration-metricbeat.html[Specify which modules to run] and 
+{metricbeat-ref}/metricbeat-module-kibana.html[{kib} module]. 
+end::enable-kibana-module[]
+
+// Disable the default collection of Kibana monitoring metrics
+tag::disable-kibana-collection[]
+Add the following setting in the {kib} configuration file (`kibana.yml`): 
+
+[source,yaml]
+----------------------------------
+xpack.monitoring.kibana.collection.enabled: false
+----------------------------------
+
+Leave the `xpack.monitoring.enabled` set to its default value (`true`). 
+end::disable-kibana-collection[]
+
+// Configure the Kibana X-Pack module in Metricbeat
+tag::configure-kibana-module[]
+The `modules.d/kibana-xpack.yml` file contains the following settings:
+
+[source,yaml]
+----------------------------------
+- module: kibana
+  metricsets:
+    - stats
+  period: 10s
+  hosts: ["localhost:5601"]
+  #basepath: ""
+  #username: "user"
+  #password: "secret"
+  xpack.enabled: true
+----------------------------------
+
+By default, the module collects {kib} monitoring metrics from `localhost:5601`.
+If that host and port number are not correct, you must update the `hosts`
+setting. If you configured {kib} to use encrypted communications, you must
+access it via HTTPS. For example, use a `hosts` setting like
+`https://localhost:5601`.
+end::configure-kibana-module[]
+
+// Disable the system module in Metricbeat
+tag::disable-system-module[]
+By default, the {metricbeat-ref}/metricbeat-module-system.html[system module] is
+enabled. The information it collects, however, is not shown on the *Monitoring*
+page in {kib}. Unless you want to use that information for other purposes, run
+the following command:
+
+["source","sh",subs="attributes,callouts"]
+----------------------------------------------------------------------
+metricbeat modules disable system
+----------------------------------------------------------------------
+end::disable-system-module[]
+
+// Create a remote monitoring user
+tag::remote-monitoring-user[]
+If the Elastic {security-features} are enabled, you must also provide a user 
+ID and password so that {metricbeat} can collect metrics successfully: 
+
+.. Create a user on the production cluster that has the 
+`remote_monitoring_collector` {ref}/built-in-roles.html[built-in role]. 
+Alternatively, use the `remote_monitoring_user` 
+{ref}/built-in-users.html[built-in user].
+
+.. Add the `username` and `password` settings to the {kib} module configuration 
+file.
+end::remote-monitoring-user[]
