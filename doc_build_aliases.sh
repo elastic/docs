@@ -75,10 +75,15 @@ alias docbldcr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/curator/
 # Cloud
 alias docbldec='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
+# Cloud - Elastic Cloud Enterprise
 alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
 alias docbldech='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud/docs/heroku/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/saas --chunk 1'
 
+# Cloud - Elastic Cloud Control
+alias docbldecctl='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/ecctl/docs/index.asciidoc --chunk 1'
+
+# Cloud - Elastic Cloud for K8s
 alias docbldk8s='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Beats
