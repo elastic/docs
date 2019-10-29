@@ -460,4 +460,17 @@ RSpec.describe ElasticCompatPreprocessor do
       expect(converted).not_to match(has_any_link)
     end
   end
+
+  context 'when a file is included with leveloffset' do
+    include_context 'convert without logs'
+    let(:input) do
+      <<~ASCIIDOC
+        = Foo
+        include::resources/elastic_compat_preprocessor/target.adoc[leveloffset=+1]
+      ASCIIDOC
+    end
+    it 'has the right offset' do
+      expect(converted).to include('<chapter id="_target">')
+    end
+  end
 end
