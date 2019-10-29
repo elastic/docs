@@ -432,13 +432,7 @@
       <div class="{local-name(.)} admon">
         <xsl:call-template name="id.attribute"/>
 
-        <div class="icon">
-            <img alt="{$alt}">
-                <xsl:attribute name="src">
-                  <xsl:call-template name="admon.graphic"/>
-                </xsl:attribute>
-            </img>
-        </div>
+        <div class="icon"/>
         <div class="admon_content">
           <xsl:choose>
             <xsl:when test="attribute::revisionflag != ''">

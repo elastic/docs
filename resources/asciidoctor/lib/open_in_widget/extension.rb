@@ -53,7 +53,7 @@ module OpenInWidget
 
     CALLOUT_SCAN_RX = / ?#{Asciidoctor::CalloutScanRx}/
 
-    def listing(block)
+    def convert_listing(block)
       return yield unless block.style == 'source'
 
       lang = block.attr 'language'

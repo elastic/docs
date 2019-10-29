@@ -15,9 +15,9 @@ class DelegatingConverter
     @delegate = delegate
   end
 
-  def convert(node, transform = nil, opts = {})
+  def convert(node, transform = node.node_name, opts = nil)
     # The behavior of this method mirrors Asciidoctor::Base.convert
-    t = transform || node.node_name
+    t = "convert_#{transform}"
     if respond_to? t
       send t, node do
         # Passes a block that subclasses can call to run the converter chain.
