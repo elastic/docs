@@ -71,7 +71,7 @@ def build_docker_image():
             acc.append(line)
 
     cmd = ["docker", "image", "build", "-t", DOCKER_TAG, DIR]
-    build = common_popen(cmd)
+    build = common_popen(cmd, env={'DOCKER_BUILDKIT':'1'})
     handle_popen(build, handle_line)
     if build.returncode != 0:
         for line in acc:
@@ -495,7 +495,7 @@ class Args:
         return next_arg
 
 
-def common_popen(cmd):
+def common_popen(cmd, env=None):
     """Start a subprocess in a way that is compatible with handle_popen.
     """
     # Use a PIPE for stdin so if our process dies then the docs build sees
@@ -503,7 +503,8 @@ def common_popen(cmd):
     return subprocess.Popen(cmd,
                             stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+                            stderr=subprocess.STDOUT,
+                            env=env)
 
 
 def handle_popen(popen, handle_line):
