@@ -4,6 +4,10 @@
 
 set -eo pipefail
 
+export AIR_GAPPED=docker.elastic.co/docs/preview:latest
+
+cd $(git rev-parse --show-toplevel)
+
 if [[ ! -d ~/.git-references/built-docs.git ]]; then
   echo "~/.git-references/built-docs.git must exist and contain a reference clone of the built-docs repo"
   exit 1
@@ -18,7 +22,5 @@ git clone --reference ~/.git-references/built-docs.git --dissociate \
 GIT_DIR=air_gapped/work/target_repo.git git fetch
 
 # Build the images
-./build_docs --just-build-image
-docker build -t docker.elastic.co/docs/preview:14 -f preview/Dockerfile .
-# Use buildkit here to pick up the customized dockerignore file
-DOCKER_BUILDKIT=1 docker build -t docker.elastic.co/docs-private/air_gapped:latest -f air_gapped/Dockerfile .
+source preview/build.sh
+DOCKER_BUILDKIT=1 docker build -t $AIR_GAPPED -f air_gapped/Dockerfile .
