@@ -67,8 +67,6 @@ RUN install_packages \
     # Clone source repositories and commit to destination repositories
   libnss-wrapper \
     # Used to clean up user id differences in the docker image.
-  libxml-libxml-perl \
-    # Parses the sitemap
   libxml2-utils \
     # Validates the docsbook xml
   make \
@@ -84,8 +82,16 @@ RUN install_packages \
     # The "glue" of the docs build is written in perl
   python \
     # AKA python2. Runs AsciiDoc but *not* Asciidoctor.
-  xsltproc
+  xsltproc \
     # Converts the docbook xml into html
+    # Perl libraries used by the docs build
+  libcapture-tiny-perl \
+  libfile-copy-recursive-perl \
+  libparallel-forkmanager-perl \
+  libpath-class-perl \
+  libxml-libxml-perl \
+  libyaml-perl
+
 COPY --from=node_deps /node_modules /node_modules
 COPY --from=py_deps /usr/local/lib/python3.7/dist-packages /usr/local/lib/python3.7/dist-packages
 COPY --from=py_deps /usr/local/bin/pycodestyle /usr/local/bin/pycodestyle
