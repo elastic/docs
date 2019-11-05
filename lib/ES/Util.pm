@@ -41,7 +41,6 @@ sub build_chunked {
     my $lenient   = $opts{lenient}       || '';
     my $lang      = $opts{lang}          || 'en';
     my $edit_urls = $opts{edit_urls};
-    my $root_dir  = $opts{root_dir};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
@@ -73,6 +72,9 @@ sub build_chunked {
             "local.book.section.title" => "Learn/Docs/$section",
             "local.book.subject"       => $subject,
             "local.noindex"            => $noindex,
+            'navig.graphics'           => 1,
+            'admon.textlabel'          => 0,
+            'admon.graphics'           => 1,
     );
 
     my ( $output, $died );
@@ -80,11 +82,6 @@ sub build_chunked {
     $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
     $dest_xml = $raw_dest->file($dest_xml);
 
-    %xsltopts = (%xsltopts,
-            'navig.graphics'   => 1,
-            'admon.textlabel'  => 0,
-            'admon.graphics'   => 1,
-    );
     my $chunks_path = dir("$raw_dest/.chunked");
     $chunks_path->mkpath;
     # Emulate asciidoc_dir because we use it to find shared asciidoc files
@@ -181,7 +178,6 @@ sub build_single {
     my $multi     = $opts{multi}         || 0;
     my $lang      = $opts{lang}          || 'en';
     my $edit_urls = $opts{edit_urls};
-    my $root_dir  = $opts{root_dir};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
@@ -219,21 +215,19 @@ sub build_single {
             "local.book.section.title" => "Learn/Docs/$section",
             "local.book.subject"       => $subject,
             "local.noindex"            => $noindex,
+            'navig.graphics'           => 1,
+            'admon.textlabel'          => 0,
+            'admon.graphics'           => 1,
     );
+    if ( $type eq 'book' ) {
+        $xsltopts{'chunk.section.depth'} = 0;
+    }
 
     my ( $output, $died );
     my $dest_xml = $index->basename;
     $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
     $dest_xml = $raw_dest->file($dest_xml);
 
-    %xsltopts = (%xsltopts,
-            'navig.graphics'   => 1,
-            'admon.textlabel'  => 0,
-            'admon.graphics'   => 1,
-    );
-    if ( $type eq 'book' ) {
-        $xsltopts{'chunk.section.depth'} = 0;
-    }
     # Emulate asciidoc_dir because we use it to find shared asciidoc files
     # but asciidoctor doesn't support it.
     my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
@@ -422,7 +416,6 @@ sub finish_build {
     # templating can apply it now *and* on the fly later
     $raw_dest->file('lang')->spew( iomode => '>:utf8', "$lang\n" );
 
-
     # Apply template to HTML files
     run 'node', 'template/cli.js', '--template', 'resources/web/template.html',
         '--source', $raw_dest, '--dest', $dest,
@@ -430,20 +423,6 @@ sub finish_build {
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
-
-    # If lenient, look for snippets in parent directories
-    my $levels = $Opts->{lenient} ? 5 : 1;
-    while ( $levels-- ) {
-        $snippets_src = $source->subdir('snippets');
-        last if -e $snippets_src;
-        $source = $source->parent;
-    }
-
-    # Copy custom sense snippets to dest
-    if ( -e $snippets_src ) {
-        rcopy( $snippets_src, $snippets_dest )
-            or die "Couldn't copy <$snippets_src> to <$snippets_dest>: $!";
-    }
 }
 
 #===================================

@@ -154,7 +154,6 @@ sub _guess_opts {
     # We couldn't find the top level so lets make a wild guess.
     $toplevel = $index->parent unless $toplevel;
     $Opts->{branch} = $branch;
-    $Opts->{root_dir} = $toplevel;
     $Opts->{roots}{ $repo_name } = $toplevel;
     $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
         $remote || 'unknown', $branch
