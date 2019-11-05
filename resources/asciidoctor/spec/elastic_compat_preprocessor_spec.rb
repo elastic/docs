@@ -13,12 +13,12 @@ RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
     Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register ChangeAdmonition
+    Asciidoctor::Extensions.register OpenInWidget
     Asciidoctor::Extensions.register do
       block_macro LangOverride
       preprocessor ElasticCompatPreprocessor
       include_processor ElasticIncludeTagged
       treeprocessor ElasticCompatTreeProcessor
-      treeprocessor OpenInWidget
     end
   end
 

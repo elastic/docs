@@ -41,9 +41,8 @@ module CopyImages
     end
 
     #### "Conversion" methods
-
-    def admonition(node)
-      if (extension = node.attr 'copy-admonition-images')
+    def convert_admonition(node)
+      if (extension = node.document.attr 'copy-admonition-images')
         if (image = admonition_image node)
           path = "images/icons/#{image}.#{extension}"
           @copier.copy_image node, path
@@ -52,8 +51,8 @@ module CopyImages
       yield
     end
 
-    def colist(node)
-      if (extension = node.attr 'copy-callout-images')
+    def convert_colist(node)
+      if (extension = node.document.attr 'copy-callout-images')
         node.items.each do |item|
           copy_image_for_callout_items extension, item
         end
@@ -61,12 +60,12 @@ module CopyImages
       yield
     end
 
-    def image(node)
+    def convert_image(node)
       copy_image node, node.attr('target')
       yield
     end
 
-    def inline_image(node)
+    def convert_inline_image(node)
       # Inline images aren't "real" and don't have a source_location so we have
       # to get the location from the parent.
       copy_image node.parent, node.target

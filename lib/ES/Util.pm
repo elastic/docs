@@ -112,7 +112,6 @@ sub build_chunked {
             # '-a' => 'attribute-missing=warn',
             '-a' => 'asciidoc-dir=' . $asciidoc_dir,
             '-a' => 'resources=' . join(',', @$resources),
-            '-a' => 'copy-admonition-images=png',
             $latest ? () : ('-a' => "migration-warnings=false"),
             $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
             @{ $alternatives } ? (
@@ -254,7 +253,6 @@ sub build_single {
                 edit_urls_for_asciidoctor($edit_urls) ),
             '-a' => 'asciidoc-dir=' . $asciidoc_dir,
             '-a' => 'resources=' . join(',', @$resources),
-            '-a' => 'copy-admonition-images=png',
             $latest ? () : ('-a' => "migration-warnings=false"),
             $respect_edit_url_overrides ? ('-a' => "respect_edit_url_overrides=true") : (),
             @{ $alternatives } ? (
@@ -317,6 +315,7 @@ sub _check_build_error {
 #===================================
     my ( $output, $died, $lenient ) = @_;
 
+    $output =~ s/INFO: possible invalid reference: /WARNING: invalid reference: /;
     my @lines = split "\n", $output;
     my @build_warnings = grep {/^(a2x|asciidoc(tor)?): (WARNING|ERROR):/} @lines;
     my $warned = @build_warnings;
@@ -762,9 +761,6 @@ http {
 
   server {
     listen 8000;
-    location = / {
-      return 301 /guide/index.html;
-    }
     location = /liveness {
       return 200 "Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.";
     }

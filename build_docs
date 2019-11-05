@@ -40,12 +40,14 @@ import webbrowser
 
 # The tag we use for our docker image. This should line up with the tags
 # in preview/Dockerfile and publish_docker.sh
-DOCKER_TAG = 'docker.elastic.co/docs/build:1'
+DOCKER_TAG = 'docker.elastic.co/docs/build:latest'
 DOCKER_BUILD_QUIET_TIME = 3  # seconds
 SSH_AGENT_HELP = 'https://help.github.com/en/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#adding-your-ssh-key-to-the-ssh-agent'  # noqa
 
 DIR = dirname(realpath(__file__))
 logger = logging.getLogger('build_docs')
+# Enable Docker's fancy buildkit
+environ['DOCKER_BUILDKIT'] = '1'
 
 
 def build_docker_image():
@@ -53,32 +55,30 @@ def build_docker_image():
     docker_logger.info('Building the docker image that will build the docs. ' +
                        'Expect this to take somewhere between a hundred ' +
                        'milliseconds and five minutes.')
-    # TODO we can probably drop opening the dockerfile
-    with open(join(DIR, 'Dockerfile')) as dockerfile:
-        # We attempt to spool up the output from docker build so we can hide it
-        # if the command is successful *and* runs quickly. If it takes longer
-        # than the DOCKER_BUILD_QUIET_TIME then we log all of the output. I
-        # know this is a little sneaky, but folks run this from the command
-        # line so frequently that they'll appreciate cleaner output. I hope.
-        start_logging_at = time.time() + DOCKER_BUILD_QUIET_TIME
-        acc = []
+    # We attempt to spool up the output from docker build so we can hide it
+    # if the command is successful *and* runs quickly. If it takes longer
+    # than the DOCKER_BUILD_QUIET_TIME then we log all of the output. I
+    # know this is a little sneaky, but folks run this from the command
+    # line so frequently that they'll appreciate cleaner output. I hope.
+    start_logging_at = time.time() + DOCKER_BUILD_QUIET_TIME
+    acc = []
 
-        def handle_line(line):
-            if time.time() >= start_logging_at:
-                for line in acc:
-                    docker_logger.info(line)
-                del acc[:]
-                docker_logger.info(line)
-            else:
-                acc.append(line)
-
-        cmd = ["docker", "image", "build", "-t", DOCKER_TAG, DIR]
-        build = common_popen(cmd, dockerfile)
-        handle_popen(build, handle_line)
-        if build.returncode != 0:
+    def handle_line(line):
+        if time.time() >= start_logging_at:
             for line in acc:
-                docker_logger.error(line)
-            raise subprocess.CalledProcessError(build.returncode, cmd)
+                docker_logger.info(line)
+            del acc[:]
+            docker_logger.info(line)
+        else:
+            acc.append(line)
+
+    cmd = ["docker", "image", "build", "-t", DOCKER_TAG, DIR]
+    build = common_popen(cmd)
+    handle_popen(build, handle_line)
+    if build.returncode != 0:
+        for line in acc:
+            docker_logger.error(line)
+        raise subprocess.CalledProcessError(build.returncode, cmd)
 
 
 class OpenBrowserState:
@@ -346,9 +346,7 @@ def run_build_docs(args):
     cmd.extend(docker_args)
     cmd.extend([DOCKER_TAG, '/docs_build/build_docs.pl'])
     cmd.extend(build_docs_args)
-    # Use a PIPE for stdin so if our process dies then the docs build sees
-    # stdin close which it will use as a signal to die.
-    docker_run = common_popen(cmd, subprocess.PIPE)
+    docker_run = common_popen(cmd)
 
     if open_browser and saw_doc:
         open_browser.building_single_book()
@@ -396,7 +394,7 @@ def forward_ssh_auth_into_container(container, docker_run):
         public_keys.append(public_key)
 
     cmd = ['ssh-add', '-L']
-    get_ssh_public_key = common_popen(cmd, subprocess.PIPE)
+    get_ssh_public_key = common_popen(cmd)
     handle_popen(get_ssh_public_key, record_public_key)
     keys = "\n".join(public_keys) + "\n"
     if get_ssh_public_key.returncode != 0:
@@ -420,7 +418,7 @@ def forward_ssh_auth_into_container(container, docker_run):
         'chmod 600 /root/.ssh/authorized_keys &&' +
         'service ssh start'
     ]
-    setup_ssh = common_popen(cmd, subprocess.PIPE)
+    setup_ssh = common_popen(cmd)
     setup_ssh.stdin.write(encode(keys))
     setup_ssh.stdin.close()
     line = decode(setup_ssh.stdout.readline()).rstrip()
@@ -443,7 +441,7 @@ def forward_ssh_auth_into_container(container, docker_run):
         '-AT', 'root@localhost',
         '-p', '8022'
     ]
-    setup_auth_socket = common_popen(cmd, subprocess.PIPE)
+    setup_auth_socket = common_popen(cmd)
     setup_auth_socket.stdin.write(
             encode('ln -s $SSH_AUTH_SOCK /tmp/forwarded_ssh_auth\n'))
     setup_auth_socket.stdin.write(
@@ -499,11 +497,13 @@ class Args:
         return next_arg
 
 
-def common_popen(cmd, stdin):
+def common_popen(cmd):
     """Start a subprocess in a way that is compatible with handle_popen.
     """
+    # Use a PIPE for stdin so if our process dies then the docs build sees
+    # stdin close which it will use as a signal to die.
     return subprocess.Popen(cmd,
-                            stdin=stdin,
+                            stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
 

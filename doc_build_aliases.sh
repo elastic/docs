@@ -61,7 +61,9 @@ alias docbldsoold='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack
 alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldinf='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/infraops/index.asciidoc --chunk 1'
+alias docbldmet='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
+
+alias docbldlog='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-docs/docs/en/logs/index.asciidoc --chunk 1'
 
 alias docbldup='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
 
@@ -71,13 +73,17 @@ alias docbldsec='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/stack-d
 alias docbldcr='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
 
 # Cloud
-alias docbldec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
+alias docbldec='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
-alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
+# Cloud - Elastic Cloud Enterprise
+alias docbldece='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
-# Cloud
 alias docbldech='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud/docs/heroku/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/saas --chunk 1'
 
+# Cloud - Elastic Cloud Control
+alias docbldecctl='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/ecctl/docs/index.asciidoc --chunk 1'
+
+# Cloud - Elastic Cloud for K8s
 alias docbldk8s='$GIT_HOME/docs/build_docs --asciidoctor --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Beats
@@ -172,5 +178,6 @@ alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:el
 # NOTE: To build all books and pick up un-merged changes from your local repos,
 # use one or more --sub_dir options. Specify the repo and branch you want to
 # override and the directory that contains your changes.
+# Do not include the docs repo in this list. The build always uses your local files.
 # For example:
 # --sub_dir elasticsearch:master:./elasticsearch

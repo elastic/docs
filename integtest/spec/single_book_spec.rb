@@ -226,13 +226,10 @@ RSpec.describe 'building a single book' do
   end
 
   shared_context 'care admonition' do
-    it 'copies the warning image' do
-      expect(dest_file('images/icons/warning.png')).to file_exist
-    end
     page_context 'chapter.html' do
-      it 'includes the warning image' do
+      it 'includes the warning admonition' do
         expect(body).to include(
-          '<img alt="Warning" src="images/icons/warning.png" />'
+          '<div class="warning admon">'
         )
       end
     end
@@ -481,10 +478,6 @@ RSpec.describe 'building a single book' do
     end
     file_context 'resources/readme/cat.jpg'
     file_context 'resources/readme/screenshot.png'
-    file_context 'images/icons/caution.png'
-    file_context 'images/icons/important.png'
-    file_context 'images/icons/note.png'
-    file_context 'images/icons/warning.png'
   end
 
   context 'for a book with console alternatives' do
@@ -766,7 +759,7 @@ RSpec.describe 'building a single book' do
     it 'fails with an appropriate error status' do
       expect(statuses[0]).to eq(255)
     end
-    it 'logs the missing file' do
+    it 'logs the file that contains the missing include' do
       expect(outputs[0]).to include(<<~LOG.strip)
         asciidoctor: WARNING: invalid reference: missing-ref
       LOG
