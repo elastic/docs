@@ -157,7 +157,7 @@ sub build {
         $Opts->{procs},
         sub {
             my ( $pid, $error, $branch ) = @_;
-            $self->source->mark_done( $title, $branch, 1 );
+            $self->source->mark_done( $title, $branch, 0 );
         }
     );
 
@@ -241,7 +241,7 @@ sub _build_book {
     my $lang          = $self->lang;
 
     return 0 unless $rebuild ||
-        $source->has_changed( $self->title, $branch, 1 );
+        $source->has_changed( $self->title, $branch, 0 );
 
     my ( $checkout, $edit_urls, $first_path, $alternatives, $roots ) =
         $source->prepare($self->title, $branch);

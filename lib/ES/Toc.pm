@@ -37,7 +37,7 @@ sub write {
     build_single( $adoc_file, $raw_dir, $dir,
             type        => 'article',
             lang        => $self->lang,
-            asciidoctor => 1,
+            direct_html => 1,
             is_toc      => 1,
             root_dir    => '',  # Required but thrown on the floor with asciidoctor
             latest      => 1,   # Run all of our warnings
