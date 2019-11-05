@@ -62,6 +62,13 @@ our $Conf = LoadFile(pick_conf());
 # passing this argument.
 die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_standard_docker};
 
+if ( $Opts->{asciidoctor} ) {
+    say <<MSG
+The Asciidoctor migration is complete! --asciidoctor will emit this message
+forever in honor of our success but otherwise doesn't do anything.
+MSG
+}
+
 init_env();
 
 $Opts->{doc}           ? build_local()
@@ -93,7 +100,6 @@ sub build_local {
 
     my @alternatives;
     if ( $Opts->{alternatives} ) {
-        die '--alternatives requires --asciidoctor' unless $Opts->{asciidoctor};
         for ( @{ $Opts->{alternatives} } ) {
             my @parts = split /:/;
             unless (scalar @parts == 3) {
@@ -901,7 +907,6 @@ sub command_line_opts {
         # Options only compatible with --doc
         'doc=s',
         'alternatives=s@',
-        'asciidoctor',
         'chunk=i',
         'lang=s',
         'lenient',
@@ -930,6 +935,7 @@ sub command_line_opts {
         'preview',
         'gapped',
         # Options that do *something* for either --doc or --all or --preview
+        'asciidoctor',
         'conf=s',
         'in_standard_docker',
         'open',
@@ -948,7 +954,6 @@ sub usage {
         build_docs --doc path/to/index.asciidoc [opts]
 
         Opts:
-          --asciidoctor     Use asciidoctor instead of asciidoc.
           --chunk 1         Also chunk sections into separate files
           --alternatives <source_lang>:<alternative_lang>:<dir>
                             Examples in alternative languages.
@@ -992,6 +997,7 @@ sub usage {
           --user            Specify which GitHub user to use, if not your own
 
     General Opts:
+          --asciidoctor     Emit a happy message.
           --conf <ymlfile>  Use your own configuration file, defaults to the
                             bundled conf.yaml
           --in_standard_docker
@@ -1026,7 +1032,6 @@ sub check_opts {
 #===================================
     if ( !$Opts->{doc} ) {
         die('--alternatives only compatible with --doc') if $Opts->{alternatives};
-        die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
         die('--lenient only compatible with --doc') if $Opts->{lenient};

@@ -496,7 +496,6 @@ RSpec.describe 'building a single book' do
       repo.commit 'commit outstanding'
       # Points java to a directory without any examples so we can report that.
       dest.prepare_convert_single(from, '.')
-          .asciidoctor
           .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
           .alternatives(
             'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
@@ -681,7 +680,6 @@ RSpec.describe 'building a single book' do
       repo.create_worktree worktree, 'HEAD'
       FileUtils.rm_rf repo.root
       dest.prepare_convert_single("#{worktree}/index.asciidoc", '.')
-          .asciidoctor
           .convert
     end
     page_context 'chapter.html' do
@@ -703,7 +701,6 @@ RSpec.describe 'building a single book' do
           ----
         ASCIIDOC
         c = dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
-        c.asciidoctor
         c.suppress_migration_warnings if suppress
         c.convert(expect_failure: !suppress)
       end
@@ -740,7 +737,6 @@ RSpec.describe 'building a single book' do
         include::missing.asciidoc[]
       ASCIIDOC
       dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
-          .asciidoctor
           .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do
@@ -758,7 +754,6 @@ RSpec.describe 'building a single book' do
         <<missing-ref>>
       ASCIIDOC
       dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
-          .asciidoctor
           .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do

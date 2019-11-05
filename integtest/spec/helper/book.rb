@@ -9,10 +9,6 @@ class Book
   attr_writer :index
 
   ##
-  # Should this book build with asciidoctor (true) or asciidoc (false).
-  attr_accessor :asciidoctor
-
-  ##
   # The list of branches to build
   attr_accessor :branches
 
@@ -37,7 +33,6 @@ class Book
     @title = title
     @prefix = prefix
     @index = 'index.asciidoc'
-    @asciidoctor = true
     @sources = []
     @branches = ['master']
     @current_branch = 'master'
@@ -94,7 +89,6 @@ class Book
       index:      #{@index}
       tags:       test tag
       subject:    Test
-      asciidoctor: #{@asciidoctor}
       lang:       #{@lang}
     YAML
   end

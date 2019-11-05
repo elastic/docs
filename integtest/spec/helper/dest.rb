@@ -187,11 +187,6 @@ class Dest
       @dest = dest
     end
 
-    def asciidoctor
-      @cmd += ['--asciidoctor']
-      self
-    end
-
     def suppress_migration_warnings
       @cmd += ['--suppress_migration_warnings']
       self
