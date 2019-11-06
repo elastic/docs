@@ -139,6 +139,7 @@ sub new {
         lang          => $lang,
         respect_edit_url_overrides => $respect_edit_url_overrides,
         suppress_migration_warnings => $args{suppress_migration_warnings} || 0,
+        direct_html => ( $args{direct_html} || 'false' ) eq 'true',
     }, $class;
 }
 
@@ -157,7 +158,7 @@ sub build {
         $Opts->{procs},
         sub {
             my ( $pid, $error, $branch ) = @_;
-            $self->source->mark_done( $title, $branch, 1 );
+            $self->source->mark_done( $title, $branch, $self->{direct_html} );
         }
     );
 
@@ -241,7 +242,7 @@ sub _build_book {
     my $lang          = $self->lang;
 
     return 0 unless $rebuild ||
-        $source->has_changed( $self->title, $branch, 1 );
+        $source->has_changed( $self->title, $branch, $self->{direct_html} );
 
     my ( $checkout, $edit_urls, $first_path, $alternatives, $roots ) =
         $source->prepare($self->title, $branch);
