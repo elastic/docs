@@ -29,6 +29,10 @@ class Book
   # version? Defaults to false.
   attr_accessor :suppress_migration_warnings
 
+  ##
+  # Should this book built directly to html (true) or to docbook first (false).
+  attr_accessor :direct_html
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
@@ -39,6 +43,7 @@ class Book
     @respect_edit_url_overrides = false
     @lang = 'en'
     @suppress_migration_warnings = false
+    @direct_html = false
   end
 
   ##
@@ -90,6 +95,7 @@ class Book
       tags:       test tag
       subject:    Test
       lang:       #{@lang}
+      direct_html: #{@direct_html}
     YAML
   end
 
