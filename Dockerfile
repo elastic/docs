@@ -80,8 +80,6 @@ RUN install_packages \
     # Used to forward git authentication to the image on OSX
   perl-base \
     # The "glue" of the docs build is written in perl
-  python \
-    # AKA python2. Runs AsciiDoc but *not* Asciidoctor.
   xsltproc \
     # Converts the docbook xml into html
     # Perl libraries used by the docs build
