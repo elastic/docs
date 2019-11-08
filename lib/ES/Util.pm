@@ -54,6 +54,7 @@ sub build_chunked {
     my $branch = $opts{branch};
     my $roots = $opts{roots};
     my $relativize = $opts{relativize};
+    my $direct_html = $opts{direct_html};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -191,6 +192,7 @@ sub build_single {
     my $branch = $opts{branch};
     my $roots = $opts{roots};
     my $relativize = $opts{relativize};
+    my $direct_html = $opts{direct_html};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -206,27 +208,7 @@ sub build_single {
         $raw_dest->mkpath;
     }
 
-    my %xsltopts = (
-            "generate.toc"             => $toc,
-            "toc.section.depth"        => 0,
-            "local.book.version"       => $version,
-            "local.book.multi_version" => $multi,
-            "local.page.header"        => $page_header,
-            "local.book.section.title" => "Learn/Docs/$section",
-            "local.book.subject"       => $subject,
-            "local.noindex"            => $noindex,
-            'navig.graphics'           => 1,
-            'admon.textlabel'          => 0,
-            'admon.graphics'           => 1,
-    );
-    if ( $type eq 'book' ) {
-        $xsltopts{'chunk.section.depth'} = 0;
-    }
-
     my ( $output, $died );
-    my $dest_xml = $index->basename;
-    $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
-    $dest_xml = $raw_dest->file($dest_xml);
 
     # Emulate asciidoc_dir because we use it to find shared asciidoc files
     # but asciidoctor doesn't support it.
@@ -238,7 +220,7 @@ sub build_single {
         $output = run(
             'asciidoctor', '-v', '--trace',
             '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
-            '-b' => 'docbook45',
+            '-b' => $direct_html ? 'html5' : 'docbook45',
             '-d' => $type,
             '-a' => 'showcomments=1',
             '-a' => "lang=$lang",
@@ -259,6 +241,11 @@ sub build_single {
             # '-a' => 'attribute-missing=warn',
             $relativize ? ('-a' => 'relativize-link=https://www.elastic.co/') : (),
             roots_opts( $roots ),
+            $direct_html ? (
+                # Turn off style options because we'll provide our own
+                '-a' => 'stylesheet!',
+                '-a' => 'icons!',
+            ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),
             $index
@@ -267,25 +254,47 @@ sub build_single {
     } or do { $output = $@; $died = 1; };
     _check_build_error( $output, $died, $lenient );
 
-    if ( !$lenient ) {
+    unless ( $direct_html ) {
+        my $dest_xml = $index->basename;
+        $dest_xml =~ s/\.a(scii)?doc$/.xml/;
+        $dest_xml = $raw_dest->file($dest_xml);
+
+        if ( !$lenient ) {
+            eval {
+                $output = _xml_lint($dest_xml);
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        my %xsltopts = (
+                "generate.toc"             => $toc,
+                "toc.section.depth"        => 0,
+                "local.book.version"       => $version,
+                "local.book.multi_version" => $multi,
+                "local.page.header"        => $page_header,
+                "local.book.section.title" => "Learn/Docs/$section",
+                "local.book.subject"       => $subject,
+                "local.noindex"            => $noindex,
+                'navig.graphics'           => 1,
+                'admon.textlabel'          => 0,
+                'admon.graphics'           => 1,
+        );
+        if ( $type eq 'book' ) {
+            $xsltopts{'chunk.section.depth'} = 0;
+        }
         eval {
-            $output = _xml_lint($dest_xml);
+            $output = run(
+                'xsltproc',
+                rawxsltopts(%xsltopts),
+                '--output' => "$raw_dest/index.html",
+                file('resources/website.xsl')->absolute,
+                $dest_xml
+            );
             1;
         } or do { $output = $@; $died = 1; };
         _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
-    eval {
-        $output = run(
-            'xsltproc',
-            rawxsltopts(%xsltopts),
-            '--output' => "$raw_dest/index.html",
-            file('resources/website.xsl')->absolute,
-            $dest_xml
-        );
-        1;
-    } or do { $output = $@; $died = 1; };
-    _check_build_error( $output, $died, $lenient );
-    unlink $dest_xml;
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
@@ -297,9 +306,11 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
-    $contents = _html5ify( $contents );
-    $html_file->spew( iomode => '>:utf8', $contents );
+    unless ( $direct_html ) {
+        my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
+        $contents = _html5ify( $contents );
+        $html_file->spew( iomode => '>:utf8', $contents );
+    }
 
     finish_build( $index->parent, $raw_dest, $dest, $lang, $opts{is_toc} );
 }
