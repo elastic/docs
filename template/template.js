@@ -52,7 +52,6 @@ module.exports = templateSource => {
            * at the end of the chunk in case the marker is on the edge. */
           const slice = Math.max(0, chunk.length - preserve);
           chunk = chunk.slice(slice) + result.value;
-          // TODO check if slice + keeps a copy of internal memory. This implementation assumes it *doesn't*
         } else {
           chunk = result.value;
         }
@@ -108,7 +107,12 @@ module.exports = templateSource => {
         yield* template.gather("<!-- DOCS LANG -->");
         yield `lang="${lang}"`;
         yield* template.gather("<!-- DOCS BODY -->");
-        await raw.dump("<body>");
+        /*
+         * Docbook spits out <body> and asciidoctor spits out <body class=....>
+         * Either way, we just want what comes after the body tag.
+         */
+        await raw.dump("<body");
+        await raw.dump(">");
         yield* raw.gather("</body>");
         yield* template.gather("<!-- DOCS FINAL -->");
         yield `<script type="text/javascript">
@@ -189,7 +193,8 @@ module.exports = templateSource => {
         const out = apply(raw[Symbol.asyncIterator](), lang, initialJsState);
         write.on("close", resolve);
         write.on("error", reject);
-        out.on("error", write.destroy);
+        // out.on("error", write.destroy) doesn't properly forward the error!
+        out.on("error", err => write.destroy(err));
         out.pipe(write);
       }).finally(() => raw.close());
     };

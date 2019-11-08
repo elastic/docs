@@ -125,6 +125,7 @@ sub build_local {
         );
     }
     else {
+        die '--direct_html not yet supported' if $Opts->{direct_html};
         build_chunked( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
@@ -906,6 +907,7 @@ sub command_line_opts {
         # Options only compatible with --doc
         'doc=s',
         'alternatives=s@',
+        'direct_html',
         'chunk=i',
         'lang=s',
         'lenient',
@@ -956,6 +958,8 @@ sub usage {
           --chunk 1         Also chunk sections into separate files
           --alternatives <source_lang>:<alternative_lang>:<dir>
                             Examples in alternative languages.
+          --direct_html     Generate html directly from Asciidoctor without
+                            using docbook.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
@@ -1033,6 +1037,7 @@ sub check_opts {
         die('--alternatives only compatible with --doc') if $Opts->{alternatives};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
+        die('--direct_html only compatible with --doc') if $Opts->{direct_html};
         die('--lenient only compatible with --doc') if $Opts->{lenient};
         die('--out only compatible with --doc') if $Opts->{out};
         die('--pdf only compatible with --doc') if $Opts->{pdf};
