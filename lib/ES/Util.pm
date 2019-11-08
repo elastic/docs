@@ -192,7 +192,7 @@ sub build_single {
     my $branch = $opts{branch};
     my $roots = $opts{roots};
     my $relativize = $opts{relativize};
-    my $direct_html = $opts{direct_html};
+    my $direct_html = $opts{direct_html} || 0;
 
     die "Can't find index [$index]" unless -f $index;
 
