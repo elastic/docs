@@ -28,38 +28,12 @@ module CopyImages
   class Converter < DelegatingConverter
     include LogUtil
 
-    ADMONITION_IMAGE_FOR_REVISION_FLAG = {
-      'added' => 'note',
-      'changed' => 'note',
-      'deleted' => 'warning',
-    }.freeze
-    CALLOUT_RX = /CO\d+-(\d+)/
-
     def initialize(delegate)
       super(delegate)
       @copier = Copier.new
     end
 
     #### "Conversion" methods
-    def convert_admonition(node)
-      if (extension = node.document.attr 'copy-admonition-images')
-        if (image = admonition_image node)
-          path = "images/icons/#{image}.#{extension}"
-          @copier.copy_image node, path
-        end
-      end
-      yield
-    end
-
-    def convert_colist(node)
-      if (extension = node.document.attr 'copy-callout-images')
-        node.items.each do |item|
-          copy_image_for_callout_items extension, item
-        end
-      end
-      yield
-    end
-
     def convert_image(node)
       copy_image node, node.attr('target')
       yield
@@ -78,29 +52,6 @@ module CopyImages
       return if Asciidoctor::Helpers.uriish? uri # Skip external images
 
       @copier.copy_image node, uri
-    end
-
-    def copy_image_for_callout_items(callout_extension, node)
-      coids = node.attr('coids')
-      return unless coids
-
-      coids.scan(CALLOUT_RX) do |(index)|
-        path = "images/icons/callouts/#{index}.#{callout_extension}"
-        @copier.copy_image node, path
-      end
-    end
-
-    def admonition_image(node)
-      if (revisionflag = node.attr 'revisionflag')
-        image = ADMONITION_IMAGE_FOR_REVISION_FLAG[revisionflag]
-        return image if image
-
-        warn block: node, message: "unknown revisionflag #{revisionflag}"
-        return
-      end
-      # The image for a standard admonition comes from the style
-      style = node.attr 'style'
-      style&.downcase
     end
   end
 end
