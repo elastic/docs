@@ -16,7 +16,7 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
     run $Opts
-    build_chunked build_single build_pdf
+    build_chunked build_single
     proc_man
     timestamp
     write_html_redirect
@@ -347,50 +347,6 @@ sub _xml_lint {
             '--valid',
             "$dest_xml"
     );
-}
-
-#===================================
-sub build_pdf {
-#===================================
-    my ( $index, $dest, %opts ) = @_;
-
-    my $version   = $opts{version}   || '';
-    my $lenient   = $opts{lenient}   || '';
-    my $toc_level = $opts{toc_level} || 7;
-    my $lang      = $opts{lang}      || 'en';
-    my $resources = $opts{resource}  || [];
-
-    my $output = run(
-        'a2x', '-v',
-        '-a' => "lang=$lang",
-        '--icons',
-        ( map { ( '--resource' => $_ ) } @$resources ),
-        '-d' => 'book',
-        '-f' => 'pdf',
-        '--fop',
-        '--icons-dir=./resources/asciidoc-8.6.8/images/icons/',
-        '--xsl-file'      => 'resources/fo.xsl',
-        '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-        '--destination-dir=' . $dest,
-        ( $lenient ? '-L' : () ),
-        docinfo($index),
-        xsltopts(
-            "img.src.path"       => $index->parent->absolute . '/',
-            "toc.max.depth"      => $toc_level,
-            "local.book.version" => $version,
-        ),
-        $index
-    );
-
-    my @output = split "\n", $output;
-    my @error = grep {/SEVERE|ERROR/} @output;
-    if ( @error && !$lenient ) {
-        die join "\n", @error;
-    }
-    else {
-        my @warn = grep {/WARNING|SEVERE|ERROR/} @output;
-        warn join "\n", @warn;
-    }
 }
 
 #===================================
