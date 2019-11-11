@@ -28,7 +28,7 @@ use lib 'lib';
 
 use ES::Util qw(
     run $Opts
-    build_chunked build_single build_pdf
+    build_chunked build_single
     proc_man
     timestamp
     write_html_redirect
@@ -84,8 +84,6 @@ sub build_local {
 
     my $index = file($doc)->absolute($Old_Pwd);
     die "File <$doc> doesn't exist" unless -f $index;
-
-    return build_local_pdf($index) if $Opts->{pdf};
 
     say "Building HTML from $doc";
 
@@ -246,26 +244,6 @@ sub _guess_repo_name {
     $remote =~ s/\.git$//;
 
     return $remote;
-}
-
-#===================================
-sub build_local_pdf {
-#===================================
-    my $index = shift;
-    my $dir = dir( $Opts->{out} || './' )->absolute($Old_Pwd);
-
-    build_pdf( $index, $dir, %$Opts );
-    say "Done";
-    my $pdf = $index->basename;
-    $pdf =~ s/\.[^.]+$/.pdf/;
-    $pdf = $dir->file($pdf);
-    if ( $Opts->{open} ) {
-        say "Opening: $pdf";
-        open_browser($pdf);
-    }
-    else {
-        say "See: $pdf";
-    }
 }
 
 #===================================
@@ -912,7 +890,6 @@ sub command_line_opts {
         'lang=s',
         'lenient',
         'out=s',
-        'pdf',
         'resource=s@',
         'respect_edit_url_overrides',
         'single',
@@ -963,7 +940,6 @@ sub usage {
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
-          --pdf             Generate a PDF file instead of HTML
           --resource        Path to image dir - may be repeated
           --respect_edit_url_overrides
                             Respects `:edit_url:` overrides in the book.
@@ -1040,7 +1016,6 @@ sub check_opts {
         die('--direct_html only compatible with --doc') if $Opts->{direct_html};
         die('--lenient only compatible with --doc') if $Opts->{lenient};
         die('--out only compatible with --doc') if $Opts->{out};
-        die('--pdf only compatible with --doc') if $Opts->{pdf};
         die('--resource only compatible with --doc') if $Opts->{resource};
         die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
         die('--single only compatible with --doc') if $Opts->{single};
