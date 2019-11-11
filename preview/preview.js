@@ -28,6 +28,12 @@ const Template = require("../template/template");
 const port = 3000;
 
 const requestHandler = async (core, parsedUrl, response) => {
+  if (parsedUrl.pathname === '/') {
+    response.statusCode = 301;
+    response.setHeader('Location', '/guide/index.html');
+    response.end();
+    return;
+  }
   if (parsedUrl.pathname === '/diff') {
     return new Promise((resolve, reject) => {
       pipeToResponse(core.diff(), response, resolve, reject);

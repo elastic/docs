@@ -106,20 +106,6 @@ sub new {
 
     my $lang = $args{lang} || 'en';
 
-    # be careful about true/false here so there are no surprises.
-    # otherwise someone is bound to set `asciidoctor` to `false`
-    # and perl will evaluate that to true....
-    my $asciidoctor = 0;
-    if (exists $args{asciidoctor}) {
-        $asciidoctor = $args{asciidoctor};
-        if ($asciidoctor eq 'true') {
-            $asciidoctor = 1;
-        } elsif ($asciidoctor eq 'false') {
-            $asciidoctor = 0;
-        } else {
-            die 'asciidoctor must be true or false but was ' . $asciidoctor;
-        }
-    }
     my $respect_edit_url_overrides = 0;
     if (exists $args{respect_edit_url_overrides}) {
         $respect_edit_url_overrides = $args{respect_edit_url_overrides};
@@ -151,9 +137,9 @@ sub new {
         private       => $args{private} || '',
         noindex       => $args{noindex} || '',
         lang          => $lang,
-        asciidoctor   => $asciidoctor,
         respect_edit_url_overrides => $respect_edit_url_overrides,
         suppress_migration_warnings => $args{suppress_migration_warnings} || 0,
+        direct_html => ( $args{direct_html} || 'false' ) eq 'true',
     }, $class;
 }
 
@@ -172,7 +158,7 @@ sub build {
         $Opts->{procs},
         sub {
             my ( $pid, $error, $branch ) = @_;
-            $self->source->mark_done( $title, $branch, $self->asciidoctor );
+            $self->source->mark_done( $title, $branch, $self->{direct_html} );
         }
     );
 
@@ -256,7 +242,7 @@ sub _build_book {
     my $lang          = $self->lang;
 
     return 0 unless $rebuild ||
-        $source->has_changed( $self->title, $branch, $self->asciidoctor );
+        $source->has_changed( $self->title, $branch, $self->{direct_html} );
 
     my ( $checkout, $edit_urls, $first_path, $alternatives, $roots ) =
         $source->prepare($self->title, $branch);
@@ -272,7 +258,6 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                root_dir      => $first_path,
                 private       => $self->private,
                 noindex       => $self->noindex,
                 multi         => $self->is_multi_version,
@@ -281,7 +266,6 @@ sub _build_book {
                 subject       => $subject,
                 toc           => $self->toc,
                 resource      => [$checkout],
-                asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
@@ -298,7 +282,6 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                root_dir      => $first_path,
                 private       => $self->private,
                 noindex       => $self->noindex,
                 chunk         => $self->chunk,
@@ -307,7 +290,6 @@ sub _build_book {
                 section_title => $section_title,
                 subject       => $subject,
                 resource      => [$checkout],
-                asciidoctor   => $self->asciidoctor,
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
                 alternatives  => $alternatives,
@@ -457,7 +439,6 @@ sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
 sub source           { shift->{source} }
 sub lang             { shift->{lang} }
-sub asciidoctor      { shift->{asciidoctor} }
 #===================================
 
 1;

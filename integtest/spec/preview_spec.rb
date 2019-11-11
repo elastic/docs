@@ -117,7 +117,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     end
     context 'the root' do
       it 'redirects to the guide root' do
-        expect(root).to redirect_to(eq("http://#{host}:8000/guide/index.html"))
+        expect(root).to redirect_to(eq('/guide/index.html'))
       end
       it 'logs the access to the docs root' do
         wait_for_access '/'

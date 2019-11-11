@@ -28,7 +28,7 @@ use lib 'lib';
 
 use ES::Util qw(
     run $Opts
-    build_chunked build_single build_pdf
+    build_chunked build_single
     proc_man
     timestamp
     write_html_redirect
@@ -62,6 +62,13 @@ our $Conf = LoadFile(pick_conf());
 # passing this argument.
 die 'build_docs.pl is unsupported. Use build_docs instead' unless $Opts->{in_standard_docker};
 
+if ( $Opts->{asciidoctor} ) {
+    say <<MSG
+The Asciidoctor migration is complete! --asciidoctor will emit this message
+forever in honor of our success but otherwise doesn't do anything.
+MSG
+}
+
 init_env();
 
 $Opts->{doc}           ? build_local()
@@ -78,8 +85,6 @@ sub build_local {
     my $index = file($doc)->absolute($Old_Pwd);
     die "File <$doc> doesn't exist" unless -f $index;
 
-    return build_local_pdf($index) if $Opts->{pdf};
-
     say "Building HTML from $doc";
 
     my $dir = dir( $Opts->{out} || 'html_docs' )->absolute($Old_Pwd);
@@ -93,7 +98,6 @@ sub build_local {
 
     my @alternatives;
     if ( $Opts->{alternatives} ) {
-        die '--alternatives requires --asciidoctor' unless $Opts->{asciidoctor};
         for ( @{ $Opts->{alternatives} } ) {
             my @parts = split /:/;
             unless (scalar @parts == 3) {
@@ -119,6 +123,7 @@ sub build_local {
         );
     }
     else {
+        die '--direct_html not yet supported' if $Opts->{direct_html};
         build_chunked( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
@@ -148,7 +153,6 @@ sub _guess_opts {
     # We couldn't find the top level so lets make a wild guess.
     $toplevel = $index->parent unless $toplevel;
     $Opts->{branch} = $branch;
-    $Opts->{root_dir} = $toplevel;
     $Opts->{roots}{ $repo_name } = $toplevel;
     $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
         $remote || 'unknown', $branch
@@ -240,26 +244,6 @@ sub _guess_repo_name {
     $remote =~ s/\.git$//;
 
     return $remote;
-}
-
-#===================================
-sub build_local_pdf {
-#===================================
-    my $index = shift;
-    my $dir = dir( $Opts->{out} || './' )->absolute($Old_Pwd);
-
-    build_pdf( $index, $dir, %$Opts );
-    say "Done";
-    my $pdf = $index->basename;
-    $pdf =~ s/\.[^.]+$/.pdf/;
-    $pdf = $dir->file($pdf);
-    if ( $Opts->{open} ) {
-        say "Opening: $pdf";
-        open_browser($pdf);
-    }
-    else {
-        say "See: $pdf";
-    }
 }
 
 #===================================
@@ -901,12 +885,11 @@ sub command_line_opts {
         # Options only compatible with --doc
         'doc=s',
         'alternatives=s@',
-        'asciidoctor',
+        'direct_html',
         'chunk=i',
         'lang=s',
         'lenient',
         'out=s',
-        'pdf',
         'resource=s@',
         'respect_edit_url_overrides',
         'single',
@@ -930,6 +913,7 @@ sub command_line_opts {
         'preview',
         'gapped',
         # Options that do *something* for either --doc or --all or --preview
+        'asciidoctor',
         'conf=s',
         'in_standard_docker',
         'open',
@@ -948,14 +932,14 @@ sub usage {
         build_docs --doc path/to/index.asciidoc [opts]
 
         Opts:
-          --asciidoctor     Use asciidoctor instead of asciidoc.
           --chunk 1         Also chunk sections into separate files
           --alternatives <source_lang>:<alternative_lang>:<dir>
                             Examples in alternative languages.
+          --direct_html     Generate html directly from Asciidoctor without
+                            using docbook.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
-          --pdf             Generate a PDF file instead of HTML
           --resource        Path to image dir - may be repeated
           --respect_edit_url_overrides
                             Respects `:edit_url:` overrides in the book.
@@ -992,6 +976,7 @@ sub usage {
           --user            Specify which GitHub user to use, if not your own
 
     General Opts:
+          --asciidoctor     Emit a happy message.
           --conf <ymlfile>  Use your own configuration file, defaults to the
                             bundled conf.yaml
           --in_standard_docker
@@ -1026,12 +1011,11 @@ sub check_opts {
 #===================================
     if ( !$Opts->{doc} ) {
         die('--alternatives only compatible with --doc') if $Opts->{alternatives};
-        die('--asciidoctor only compatible with --doc') if $Opts->{asciidoctor};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
+        die('--direct_html only compatible with --doc') if $Opts->{direct_html};
         die('--lenient only compatible with --doc') if $Opts->{lenient};
         die('--out only compatible with --doc') if $Opts->{out};
-        die('--pdf only compatible with --doc') if $Opts->{pdf};
         die('--resource only compatible with --doc') if $Opts->{resource};
         die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
         die('--single only compatible with --doc') if $Opts->{single};

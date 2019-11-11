@@ -9,10 +9,6 @@ class Book
   attr_writer :index
 
   ##
-  # Should this book build with asciidoctor (true) or asciidoc (false).
-  attr_accessor :asciidoctor
-
-  ##
   # The list of branches to build
   attr_accessor :branches
 
@@ -33,17 +29,21 @@ class Book
   # version? Defaults to false.
   attr_accessor :suppress_migration_warnings
 
+  ##
+  # Should this book built directly to html (true) or to docbook first (false).
+  attr_accessor :direct_html
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
     @index = 'index.asciidoc'
-    @asciidoctor = true
     @sources = []
     @branches = ['master']
     @current_branch = 'master'
     @respect_edit_url_overrides = false
     @lang = 'en'
     @suppress_migration_warnings = false
+    @direct_html = false
   end
 
   ##
@@ -94,8 +94,8 @@ class Book
       index:      #{@index}
       tags:       test tag
       subject:    Test
-      asciidoctor: #{@asciidoctor}
       lang:       #{@lang}
+      direct_html: #{@direct_html}
     YAML
   end
 

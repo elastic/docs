@@ -37,9 +37,7 @@ sub write {
     build_single( $adoc_file, $raw_dir, $dir,
             type        => 'article',
             lang        => $self->lang,
-            asciidoctor => 1,
             is_toc      => 1,
-            root_dir    => '',  # Required but thrown on the floor with asciidoctor
             latest      => 1,   # Run all of our warnings
             private     => 1,   # Don't generate edit me urls
             branch => '', # TOCs don't have a branch but it is a required arg

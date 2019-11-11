@@ -437,24 +437,24 @@ RSpec.describe 'building all books' do
           include_examples 'second build is not a noop'
           include_examples 'second build only changes chapter2'
         end
-        context 'because the book changes from asciidoc to asciidoctor' do
+        context 'because the book changes from docbook to direct_html' do
           build_one_book_out_of_one_repo_twice(
-            before_first_build: lambda do |src, _config|
-              book = src.book 'Test'
-              book.asciidoctor = false
-            end,
             before_second_build: lambda do |src, _config|
               book = src.book 'Test'
-              book.asciidoctor = true
+              book.direct_html = true
             end
           )
           include_examples 'second build is not a noop'
         end
-        context 'because the book changes from asciidoctor to asciidoc' do
+        context 'because the book changes from direct_html to docbook' do
           build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              book = src.book 'Test'
+              book.direct_html = true
+            end,
             before_second_build: lambda do |src, _config|
               book = src.book 'Test'
-              book.asciidoctor = false
+              book.direct_html = false
             end
           )
           include_examples 'second build is not a noop'
