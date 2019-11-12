@@ -249,7 +249,7 @@ sub _guess_repo_name {
 #===================================
 sub build_all {
 #===================================
-    die "--target_repo is required with --all" unless ( $Opts->{target_repo} );
+    $Opts->{target_repo} = 'git@github.com:elastic/built-docs.git' unless ( $Opts->{target_repo} );
 
     my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
 
@@ -640,7 +640,7 @@ sub init_repos {
 #===================================
 sub preview {
 #===================================
-    die "--target_repo is required with --preview" unless $Opts->{target_repo};
+    $Opts->{target_repo} = 'git@github.com:elastic/built-docs.git' unless ( $Opts->{target_repo} );
 
     my $nginx_config = file('/tmp/nginx.conf');
     write_nginx_preview_config( $nginx_config );
@@ -953,7 +953,7 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        build_docs --all --target_repo <target> [opts]
+        build_docs --all [opts]
 
         Opts:
           --keep_hash       Build docs from the same commit hash as last time
