@@ -8,7 +8,7 @@ const rmfr = require('rmfr');
 
 const tmp = `${os.tmpdir()}/preview_cleaner`;
 
-async function prepare_cleaner(extra_branches = []) {
+async function prepareCleaner(extra_branches = []) {
   await fs.mkdir(tmp, {recursive: true});
 
   // Create an empty repo
@@ -24,9 +24,19 @@ async function prepare_cleaner(extra_branches = []) {
   };
   await exec_git(['init'], opts);
   await exec_git(['commit', '--allow-empty', '-m', 'init'], opts);
-  for (let branch of extra_branches) {
-    await exec_git(['branch', branch], opts);
+  for (const branch of extra_branches) {
+    await exec_git(["checkout", "-b", branch.name], opts);
+    let date = Date.now();
+    if (branch.age) {
+      date = date - 1000 * 60 * 60 * 24 * branch.age;
+    }
+    await exec_git(
+      [
+        "commit", "--allow-empty", "-m", "mark time",
+        "--date", new Date(date).toISOString(),
+      ], opts);
   }
+  await exec_git(["checkout", "master"], opts);
 
   // Create the local cache which is required by the cleaner scripit
   const cache_dir = await fs.mkdtemp(`${tmp}/cache`);
@@ -57,7 +67,7 @@ afterAll(() => rmfr(tmp));
 describe('Cleaner.clone', () => {
   let out;
   beforeAll(async () => {
-    const cleaner = await prepare_cleaner();
+    const cleaner = await prepareCleaner();
     await cleaner.clone();
     out = cleaner.local_path;
   });
@@ -111,31 +121,42 @@ describe('Cleaner.is_pr_closed', () => {
     // because that needs to be manually advanced which is complex for this
     // test and not worth it.
     global.setTimeout = jest.fn((callback) => callback());
+    const oldNow = Date.now;
     Date.now = jest.fn(() => new Date(0));
-    mock_github().reply(200, github_result(true), {
-      'x-ratelimit-remaining': 50,
-      'x-ratelimit-reset': 1,
-    });
-    const is_closed = cleaner.is_pr_closed({repo: 'r', number: 1});
-    await expect(is_closed).resolves.toBe(true);
-    expect(setTimeout).toHaveBeenCalledTimes(1);
-    expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), 1000);
+    try {
+      mock_github().reply(200, github_result(true), {
+        'x-ratelimit-remaining': 50,
+        'x-ratelimit-reset': 1,
+      });
+      const is_closed = cleaner.is_pr_closed({repo: 'r', number: 1});
+      await expect(is_closed).resolves.toBe(true);
+      expect(setTimeout).toHaveBeenCalledTimes(1);
+      expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), 1000);
+    } finally {
+      Date.now = oldNow;
+    }
   });
 });
 
 describe('Cleaner.run', () => {
   let repo;
   beforeAll(async () => {
-    const cleaner = await prepare_cleaner(['staging', 'foo', 'r_1', 'r_2']);
-    mock_github(/{"repo":"r","number":1}/).reply(200, github_result(false))
-    mock_github(/{"repo":"r","number":2}/).reply(200, github_result(true))
+    const cleaner = await prepareCleaner([
+      {name: "staging"},
+      {name: "foo"},
+      {name: "r_1"},
+      {name: "r_2"},
+      {name: "r_3", age: 50}]);
+    mock_github(/{"repo":"r","number":1}/).reply(200, github_result(false));
+    mock_github(/{"repo":"r","number":2}/).reply(200, github_result(true));
+    mock_github(/{"repo":"r","number":3}/).reply(200, github_result(true));
     await cleaner.run();
     repo = cleaner.repo;
   });
   function show_branch(branch) {
     return exec_git(
       ['show-ref', '--verify', `refs/heads/${branch}`],
-      {cwd:repo}
+      {cwd: repo}
     );
   }
   test("branches that don't look like PRs are left alone", async () => {
@@ -146,6 +167,9 @@ describe('Cleaner.run', () => {
     await expect(show_branch('r_1')).resolves.toMatch(/r_1/);
   });
   test('branches for closed prs are removed', async () => {
+    await expect(show_branch('r_2')).rejects.toMatch(/not a valid ref/);
+  });
+  test('old branches are removed', async () => {
     await expect(show_branch('r_2')).rejects.toMatch(/not a valid ref/);
   });
 });
