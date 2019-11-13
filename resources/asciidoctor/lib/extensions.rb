@@ -3,6 +3,7 @@
 require_relative 'alternative_language_lookup/extension'
 require_relative 'care_admonition/extension'
 require_relative 'change_admonition/extension'
+require_relative 'chunker/extension'
 require_relative 'copy_images/extension'
 require_relative 'cramped_include/extension'
 require_relative 'docbook45/converter'
@@ -21,6 +22,7 @@ Asciidoctor::Extensions.register do
 end
 Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
+Asciidoctor::Extensions.register Chunker
 Asciidoctor::Extensions.register CopyImages
 Asciidoctor::Extensions.register EditMe
 Asciidoctor::Extensions.register OpenInWidget
