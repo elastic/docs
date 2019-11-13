@@ -8,7 +8,7 @@ unit_test: style asciidoctor_check web_check template_check preview_check
 
 .PHONY: style
 style: build_docs
-	$(DOCKER) pycodestyle build_docs
+	$(DOCKER) py_test pycodestyle build_docs
 
 .PHONY: asciidoctor_check
 asciidoctor_check:

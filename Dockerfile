@@ -11,25 +11,17 @@
 FROM bitnami/minideb:buster AS base
 
 # TODO install_packages calls apt-get update and then nukes the list files after. We should avoid multiple calls to apt-get update.....
+# We could probably fix this by running the update and installs ourself with `RUN --mount type=cache` but that is "experimental"
 
-# Setup the repo for node
 RUN install_packages apt-transport-https gnupg2 ca-certificates
 COPY .docker/apt/keys/nodesource.gpg /
 RUN apt-key add /nodesource.gpg
 COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages \
-  nodejs python3 ruby \
+  nodejs ruby \
     # Used both to install dependencies and at run time
   bash less
     # Just in case you have to shell into the image
-
-
-FROM base as py_deps
-RUN install_packages python3-pip
-RUN pip3 install \
-  beautifulsoup4==4.7.1 \
-  lxml==4.3.1 \
-  pycodestyle==2.5.0
 
 
 FROM base AS ruby_deps
@@ -42,7 +34,7 @@ RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 # --frozen forces us to regenerate Gemfile.lock locally before using it in
 # docker which lets us lock the versions in place.
-RUN bundle install --binstubs --system --frozen
+RUN bundle install --binstubs --system --frozen --without test
 COPY .docker/asciidoctor_2_0_10.patch /
 RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
 
@@ -57,10 +49,12 @@ COPY yarn.lock /
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 # --frozen-lockfile forces us to regenerate yarn.lock locally before using it
 # in docker which lets us lock the versions in place.
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --production
 
 
-FROM base AS final
+# This is the image we use to build the docs. We build on it in other
+# Dockerfiles to make the images to serve previews and air gapped docs.
+FROM base AS build
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
 RUN install_packages \
   git \
@@ -91,13 +85,30 @@ RUN install_packages \
   libyaml-perl
 
 COPY --from=node_deps /node_modules /node_modules
-COPY --from=py_deps /usr/local/lib/python3.7/dist-packages /usr/local/lib/python3.7/dist-packages
-COPY --from=py_deps /usr/local/bin/pycodestyle /usr/local/bin/pycodestyle
 COPY --from=ruby_deps /var/lib/gems /var/lib/gems
 COPY --from=ruby_deps /usr/local/bin/asciidoctor /usr/local/bin/asciidoctor
-COPY --from=ruby_deps /usr/local/bin/rspec /usr/local/bin/rspec
-COPY --from=ruby_deps /usr/local/bin/rubocop /usr/local/bin/rubocop
 
 # We mount these directories with tmpfs so we can write to them so they
 # have to be empty. So we delete them.
 RUN rm -rf /var/log/nginx && rm -rf /run/nginx
+
+
+##### Everything below this run tests
+FROM base AS py_test
+RUN install_packages python3 python3-pip
+RUN pip3 install \
+  beautifulsoup4==4.7.1 \
+  lxml==4.3.1 \
+  pycodestyle==2.5.0
+
+FROM node_deps AS node_test
+RUN yarn install --frozen-lockfile
+
+FROM ruby_deps AS ruby_test
+RUN bundle install --binstubs --system --frozen --with test
+
+FROM build AS integ_test
+COPY --from=node_test /node_modules /node_modules
+COPY --from=ruby_test /var/lib/gems /var/lib/gems
+COPY --from=ruby_test /usr/local/bin/rspec /usr/local/bin/rspec
+COPY --from=ruby_test /usr/local/bin/rubocop /usr/local/bin/rubocop

@@ -5,8 +5,8 @@ check: rspec rubocop
 
 .PHONY: rspec
 rspec:
-	$(DOCKER) rspec
+	$(DOCKER) ruby_test rspec
 
 .PHONY: rubocop
 rubocop:
-	$(DOCKER) rubocop
+	$(DOCKER) ruby_test rubocop

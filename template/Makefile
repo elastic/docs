@@ -5,4 +5,4 @@ check: jest
 
 .PHONY: jest
 jest:
-	$(DOCKER) /node_modules/jest/bin/jest.js ./__test__/**
+	$(DOCKER) node_test /node_modules/jest/bin/jest.js ./__test__/**
