@@ -54,7 +54,7 @@ sub build_chunked {
     my $branch = $opts{branch};
     my $roots = $opts{roots};
     my $relativize = $opts{relativize};
-    my $direct_html = $opts{direct_html};
+    my $direct_html = $opts{direct_html} || 0;
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -63,25 +63,7 @@ sub build_chunked {
     $raw_dest->rmtree;
     $raw_dest->mkpath;
 
-    my %xsltopts = (
-            "toc.max.depth"            => 5,
-            "toc.section.depth"        => $chunk,
-            "chunk.section.depth"      => $chunk,
-            "local.book.version"       => $version,
-            "local.book.multi_version" => $multi,
-            "local.page.header"        => $page_header,
-            "local.book.section.title" => "Learn/Docs/$section",
-            "local.book.subject"       => $subject,
-            "local.noindex"            => $noindex,
-            'navig.graphics'           => 1,
-            'admon.textlabel'          => 0,
-            'admon.graphics'           => 1,
-    );
-
     my ( $output, $died );
-    my $dest_xml = $index->basename;
-    $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
-    $dest_xml = $raw_dest->file($dest_xml);
 
     my $chunks_path = dir("$raw_dest/.chunked");
     $chunks_path->mkpath;
@@ -95,7 +77,7 @@ sub build_chunked {
         $output = run(
             'asciidoctor', '-v', '--trace',
             '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
-            '-b' => 'docbook45',
+            '-b' => $direct_html ? 'html5' : 'docbook45',
             '-d' => 'book',
             '-a' => 'showcomments=1',
             '-a' => "lang=$lang",
@@ -119,6 +101,18 @@ sub build_chunked {
             ) : (),
             $relativize ? ('-a' => 'relativize-link=https://www.elastic.co/') : (),
             roots_opts( $roots ),
+            $direct_html ? (
+                # Turn off style options because we'll provide our own
+                '-a' => 'stylesheet!',
+                '-a' => 'icons!',
+                # Pass chunking down
+                '-a' => 'chunk_level=' . ( $chunk + 1 ),
+                # Lock the destination file name to one we expect
+                '--out-file' => 'index.html',
+                # Asciidoctor doesn't pass the destination directory down to
+                # the converter so we do so here explicitly
+                '-a' => 'outdir=' . $raw_dest,
+            ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),
             $index
@@ -127,25 +121,46 @@ sub build_chunked {
     } or do { $output = $@; $died = 1; };
     _check_build_error( $output, $died, $lenient );
 
-    if ( !$lenient ) {
+    unless ( $direct_html ) {
+        my $dest_xml = $index->basename;
+        $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
+        $dest_xml = $raw_dest->file($dest_xml);
+
+        if ( !$lenient ) {
+            eval {
+                $output = _xml_lint($dest_xml);
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        my %xsltopts = (
+                "toc.max.depth"            => 5,
+                "toc.section.depth"        => $chunk,
+                "chunk.section.depth"      => $chunk,
+                "local.book.version"       => $version,
+                "local.book.multi_version" => $multi,
+                "local.page.header"        => $page_header,
+                "local.book.section.title" => "Learn/Docs/$section",
+                "local.book.subject"       => $subject,
+                "local.noindex"            => $noindex,
+                'navig.graphics'           => 1,
+                'admon.textlabel'          => 0,
+                'admon.graphics'           => 1,
+        );
+
         eval {
-            $output = _xml_lint($dest_xml);
+            $output = run(
+                'xsltproc',
+                rawxsltopts(%xsltopts),
+                '--stringparam', 'base.dir', $chunks_path->absolute . '/',
+                file('resources/website_chunked.xsl')->absolute,
+                $dest_xml
+            );
             1;
         } or do { $output = $@; $died = 1; };
         _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
-    eval {
-        $output = run(
-            'xsltproc',
-            rawxsltopts(%xsltopts),
-            '--stringparam', 'base.dir', $chunks_path->absolute . '/',
-            file('resources/website_chunked.xsl')->absolute,
-            $dest_xml
-        );
-        1;
-    } or do { $output = $@; $died = 1; };
-    _check_build_error( $output, $died, $lenient );
-    unlink $dest_xml;
 
     my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
         or die "Couldn't find chunk dir in <$raw_dest>";
