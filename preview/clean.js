@@ -8,6 +8,8 @@ const path = require('path');
 
 module.exports = { Cleaner, exec_git };
 
+const EXPIRE_DAYS = 31;
+
 function Cleaner(token, repo, cache_dir, tmp_dir) {
   let repo_name = path.basename(repo);
   if (!repo_name.endsWith('.git')) {
@@ -53,22 +55,42 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   }
 
   const cleanup_closed_prs = async prs => {
+    const now = Date.now() / 1000;
     for (let pr of prs) {
       const url = `https://www.github.com/elastic/${pr.repo}/pull/${pr.number}`;
-      if (await is_pr_closed(pr)) {
+      const age = await prAge(pr);
+      const days = (now - age) / 24 / 60 / 60;
+      if (days > EXPIRE_DAYS) {
+        console.log(`Deleting ${pr.branch} for ${days.toFixed(2)} days old pr at ${url}`);
+        deleteBranch(pr);
+      } else if (await is_pr_closed(pr)) {
         console.info(`Deleting ${pr.branch} for closed pr at ${url}`);
-        if (pr.branch === 'master' || pr.branch === 'staging') {
-          // Just for super double ultra paranoia.
-          throw "Can't delete master!";
-        }
-        await exec_git(
-          ['push', 'origin', '--delete', pr.branch],
-          {cwd: local_path}
-        );
+        deleteBranch(pr);
       } else {
         console.info(`Preserving ${pr.branch} for open pr at ${url}`);
       }
     }
+  }
+
+  const prAge = async function(pr) {
+    return parseInt(await exec_git(
+      [
+        "show", "--pretty=%ad", "--no-notes", "--no-patch", "--date=unix",
+        pr.branch
+      ],
+      {cwd: local_path}
+    ));
+  }
+
+  const deleteBranch = async function(pr) {
+    if (pr.branch === 'master' || pr.branch === 'staging') {
+      // Just for super double ultra paranoia.
+      throw "Can't delete master!";
+    }
+    await exec_git(
+      ['push', 'origin', '--delete', pr.branch],
+      {cwd: local_path}
+    );
   }
 
   const is_pr_closed = function(pr) {
