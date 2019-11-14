@@ -196,6 +196,7 @@ sub _prepare_sub_dir {
     delete local $ENV{GIT_DIR};
     my $merge_branch = "${resolved_branch}_${subbed_head}_$path";
     $merge_branch =~ s|/|_|g;
+    $merge_branch =~ s|\*|splat|g;
     $merge_branch =~ s|\.$||g; # Fix funny shaped paths
 
     # Check if we've already merged this path by looking for the merged_branch

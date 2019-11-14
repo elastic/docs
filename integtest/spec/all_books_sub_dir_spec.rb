@@ -163,6 +163,16 @@ RSpec.describe 'building all books' do
         include_examples 'log merge', '.'
         include_examples 'contains the new master and subbed changes'
       end
+      describe 'when the source path has a *' do
+        def self.setup_book(src, repo)
+          book = src.book 'Test'
+          book.index = 'docs/index.adoc'
+          book.source repo, '/*/'
+        end
+        convert_with_sub
+        include_examples 'log merge', '*'
+        include_examples 'contains the new master and subbed changes'
+      end
       describe 'when the subbed dir has already been merged' do
         # This simulates what github will do if you ask it to build the "sha"
         # of the merged PR instead of the "head" of the branch.
