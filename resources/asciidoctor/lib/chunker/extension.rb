@@ -8,7 +8,11 @@ require_relative '../delegating_converter'
 module Chunker
   def self.activate(registry)
     return unless registry.document.attr 'outdir'
-    return unless registry.document.attr 'chunk_level'
+    return unless (chunk_level = registry.document.attr 'chunk_level')
+
+    if chunk_level.is_a? String
+      registry.document.attributes['chunk_level'] = chunk_level.to_i
+    end
 
     DelegatingConverter.setup(registry.document) { |d| Converter.new d }
   end
@@ -33,7 +37,6 @@ module Chunker
       }
       node.document.register :links, target
       link = Asciidoctor::Inline.new node, :anchor, node.title, link_opts
-      # <div class="toc"><ul class="toc">
       %(<li><span class="chapter">#{link.convert}</span></li>)
     end
 

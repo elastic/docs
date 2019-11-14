@@ -123,7 +123,6 @@ sub build_local {
         );
     }
     else {
-        die '--direct_html not yet supported' if $Opts->{direct_html};
         build_chunked( $index, $raw_dir, $dir, %$Opts,
                 latest       => $latest,
                 alternatives => \@alternatives,
