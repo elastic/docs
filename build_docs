@@ -40,7 +40,6 @@ import webbrowser
 
 # The tag we use for our docker image. This should line up with the tags
 # in preview/Dockerfile and publish_docker.sh
-DOCKER_TAG = 'docker.elastic.co/docs/build:latest'
 DOCKER_BUILD_QUIET_TIME = 3  # seconds
 SSH_AGENT_HELP = 'https://help.github.com/en/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#adding-your-ssh-key-to-the-ssh-agent'  # noqa
 
@@ -339,7 +338,7 @@ def run_build_docs(args):
     cmd = []
     cmd.extend(['docker', 'run'])
     cmd.extend(docker_args)
-    cmd.extend([DOCKER_TAG, '/docs_build/build_docs.pl'])
+    cmd.extend([docker_tag('build'), '/docs_build/build_docs.pl'])
     cmd.extend(build_docs_args)
     docker_run = common_popen(cmd)
 
@@ -611,13 +610,16 @@ if __name__ == '__main__':
     from sys import argv, stdout
     try:
         logging.basicConfig(level=logging.INFO)
-        if len(argv) >= 2 and '--docker-run' == argv[1]:
+        if '--docker-run' == argv[1]:
+            if len(argv) < 4:
+                raise ArgError(
+                    'Usage: build_docs --docker-run <image> <args>')
+            image = argv[2]
             cwd = realpath('.')
             if not cwd.startswith(DIR):
                 raise ArgError(
                     '--docker-run must be invoked from within the repo')
             docker_cwd = '/docs_build/' + cwd[len(DIR):]
-            image = argv[2]
             build_docker_image(image)
             cmd = ['docker', 'run']
             cmd.extend(standard_docker_args())
@@ -628,10 +630,16 @@ if __name__ == '__main__':
             cmd.extend(argv[3:])
             returncode = subprocess.call(cmd)
             exit(returncode)
+        if '--docker-build' == argv[1]:
+            if len(argv) != 3:
+                raise ArgError(
+                    'Usage: build_docs --build-image <image>')
+            image = argv[2]
+            build_docker_image(image)
+            exit(0)
 
         build_docker_image("build")
-        if not ['--just-build-image'] == argv[1:]:
-            exit(run_build_docs(argv[1:]))
+        exit(run_build_docs(argv[1:]))
     except ArgError as e:
         print(e)
         exit(1)
