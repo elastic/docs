@@ -33,15 +33,7 @@ const unlink = promisify(fs.unlink);
 const writeFile = promisify(fs.writeFile);
 
 const tmp = "/tmp/git.test";
-const gitOpts = {
-  cwd: tmp,
-  env: {
-    GIT_AUTHOR_NAME: "test",
-    GIT_AUTHOR_EMAIL: "test@example.com",
-    GIT_COMMITTER_NAME: "test",
-    GIT_COMMITTER_EMAIL: "test@example.com",
-  },
-};
+const gitOpts = {cwd: tmp};
 
 const collect = async stream => {
   let all = '';

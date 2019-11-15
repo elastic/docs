@@ -288,21 +288,6 @@ def run_build_docs(args):
             docker_args.extend(['-v', '%s:/out:delegated' % dirname(out_dir)])
             build_docs_args.append('/out/%s' % basename(out_dir))
             saw_out = True
-        elif arg == '--push':
-            author_name = from_env_or_git_config(
-                    'GIT_AUTHOR_NAME', 'user.name')
-            author_email = from_env_or_git_config(
-                    'GIT_AUTHOR_EMAIL', 'user.email')
-            committer_name = from_env_or_git_config(
-                    'GIT_COMMITTER_NAME', 'user.name')
-            committer_email = from_env_or_git_config(
-                    'GIT_COMMITTER_EMAIL', 'user.email')
-            docker_args.extend([
-                    '-e', 'GIT_AUTHOR_NAME=%s' % author_name,
-                    '-e', 'GIT_AUTHOR_EMAIL=%s' % author_email,
-                    '-e', 'GIT_COMMITTER_NAME=%s' % committer_name,
-                    '-e', 'GIT_COMMITTER_EMAIL=%s' % committer_email,
-            ])
         elif arg == '--reference':
             reference_dir = realpath(args.next_arg_or_err())
             if not exists(reference_dir):
@@ -597,6 +582,24 @@ def standard_docker_args():
                         '--tmpfs', '/var/lib/nginx/proxy',
                         '--tmpfs', '/var/lib/nginx/uwsgi',
                         '--tmpfs', '/var/lib/nginx/scgi'])
+    # Set the git author and committer information so we can commit in the
+    # branch. Useful when we `--push` and when we `--keep_hash --sub_dir` and
+    # when we run tests.
+    author_name = from_env_or_git_config(
+            'GIT_AUTHOR_NAME', 'user.name')
+    author_email = from_env_or_git_config(
+            'GIT_AUTHOR_EMAIL', 'user.email')
+    committer_name = from_env_or_git_config(
+            'GIT_COMMITTER_NAME', 'user.name')
+    committer_email = from_env_or_git_config(
+            'GIT_COMMITTER_EMAIL', 'user.email')
+    docker_args.extend([
+            '-e', 'GIT_AUTHOR_NAME=%s' % author_name,
+            '-e', 'GIT_AUTHOR_EMAIL=%s' % author_email,
+            '-e', 'GIT_COMMITTER_NAME=%s' % committer_name,
+            '-e', 'GIT_COMMITTER_EMAIL=%s' % committer_email,
+    ])
+
     return docker_args
 
 
