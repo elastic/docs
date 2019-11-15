@@ -253,20 +253,25 @@ sub _prepare_sub_dir {
 sub _extract_from_dir {
 #===================================
     my ( $self, $source_root, $dest_root, $path ) = @_;
+    local $ENV{GIT_WORK_TREE} = $source_root;
+    local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
 
     # Copies the $path from the subsitution directory. It is tempting to
     # just symlink the substitution directory into the destination and
-    # call it a day and that *almost* works! The trouble is that we often
-    # use relative paths to include asciidoc files from other repositories
-    # and those relative paths don't work at all with symlinks.
-    my $source = $source_root->file( $path );
-    die "Can't find $source" unless -e $source;
-    my $dest = $dest_root->subdir( $path )->parent;
-    $dest->mkpath;
-    eval {
-        run qw(cp -r), $source, $dest;
-        1;
-    } or die "Error copying from $source: $@";
+    # call it a day but that doesn't work for a whole bunch of non-obvious
+    # reasons:
+    # 1. We often use relative paths to include asciidoc files from other
+    #    repositories and those relative paths don't work at all with symlinks.
+    # 2. The paths themselves are actually git pathspecs which can resolve to
+    #    more than one file.
+    my $files = run qw(git ls-files -zcom --), $path;
+    for ( split /\0/, $files ) {
+        my $source = $source_root->file( $_ );
+        die "Can't find $source" unless -e $source;
+        my $dest = $dest_root->file( $_ );
+        $dest->parent->mkpath;
+        $source->copy_to( $dest ) or die "Error copying from $source: $@";
+    }
 }
 
 #===================================
