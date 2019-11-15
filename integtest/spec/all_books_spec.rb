@@ -3,6 +3,7 @@
 require 'net/http'
 
 RSpec.describe 'building all books' do
+  let(:committer) { ENV['GIT_COMMITTER_NAME'] }
   shared_examples 'book basics' do |title, prefix|
     context "for the #{title} book" do
       page_context 'the book index', "html/#{prefix}/index.html" do
@@ -600,7 +601,7 @@ RSpec.describe 'building all books' do
         expect(statuses[0]).to eq(2)
       end
       it 'logs the init' do
-        expect(outputs[0]).to match(/init \(.+\) <Test>/)
+        expect(outputs[0]).to match(/init \(.+\) <#{committer}>/)
       end
       it 'logs the failure from asciidoc' do
         expect(outputs[0]).to match(/
@@ -622,7 +623,7 @@ RSpec.describe 'building all books' do
       end
       include_examples 'error logging'
       it 'logs the utf8 line' do
-        expect(outputs[0]).to match(/utf8: á \(.+\) <Test>/)
+        expect(outputs[0]).to match(/utf8: á \(.+\) <#{committer}>/)
       end
     end
   end
