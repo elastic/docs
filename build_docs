@@ -50,7 +50,11 @@ logger = logging.getLogger('build_docs')
 environ['DOCKER_BUILDKIT'] = '1'
 
 
-def build_docker_image():
+def docker_tag(name):
+    return 'docker.elastic.co/docs/' + name + ':latest'
+
+
+def build_docker_image(name):
     docker_logger = logging.getLogger('docker build')
     # We attempt to spool up the output from docker build so we can hide it
     # if the command is successful *and* runs quickly. If it takes longer
@@ -62,10 +66,11 @@ def build_docker_image():
 
     def handle_line(line):
         if time.time() >= start_logging_at:
-            docker_logger.info(
-                'Building the docker image that will build the docs. Expect ' +
-                'this to take somewhere between a couple seconds and ' +
-                'five minutes.')
+            if acc:
+                docker_logger.info(
+                    'Building the docker image that will build the docs. ' +
+                    'Expect this to take somewhere between a couple seconds ' +
+                    'and five minutes.')
             for line in acc:
                 docker_logger.info(line)
             del acc[:]
@@ -73,7 +78,11 @@ def build_docker_image():
         else:
             acc.append(line)
 
-    cmd = ["docker", "image", "build", "-t", DOCKER_TAG, DIR]
+    cmd = [
+        "docker", "image", "build",
+        "--target", name,
+        "--tag", docker_tag(name),
+        DIR]
     build = common_popen(cmd)
     handle_popen(build, handle_line)
     if build.returncode != 0:
@@ -599,23 +608,26 @@ if __name__ == '__main__':
     from sys import argv, stdout
     try:
         logging.basicConfig(level=logging.INFO)
-        build_docker_image()
         if len(argv) >= 2 and '--docker-run' == argv[1]:
             cwd = realpath('.')
             if not cwd.startswith(DIR):
                 raise ArgError(
-                    '--self-test must be invoked from within the repo')
+                    '--docker-run must be invoked from within the repo')
             docker_cwd = '/docs_build/' + cwd[len(DIR):]
+            image = argv[2]
+            build_docker_image(image)
             cmd = ['docker', 'run']
             cmd.extend(standard_docker_args())
             cmd.extend(['--workdir', docker_cwd])
             if stdout.isatty():
                 cmd.append('-t')
-            cmd.append(DOCKER_TAG)
-            cmd.extend(argv[2:])
+            cmd.append(docker_tag(image))
+            cmd.extend(argv[3:])
             returncode = subprocess.call(cmd)
             exit(returncode)
-        elif not ['--just-build-image'] == argv[1:]:
+
+        build_docker_image("build")
+        if not ['--just-build-image'] == argv[1:]:
             exit(run_build_docs(argv[1:]))
     except ArgError as e:
         print(e)
