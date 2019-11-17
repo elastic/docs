@@ -112,6 +112,10 @@ sub build_chunked {
                 # Asciidoctor doesn't pass the destination directory down to
                 # the converter so we do so here explicitly
                 '-a' => 'outdir=' . $raw_dest,
+                # Add some metadata
+                '-a' => 'dc.type=Learn/Docs/' . $section,
+                '-a' => 'dc.subject=' . $subject,
+                '-a' => 'dc.identifier=' . $version,
             ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),
@@ -260,6 +264,10 @@ sub build_single {
                 # Turn off style options because we'll provide our own
                 '-a' => 'stylesheet!',
                 '-a' => 'icons!',
+                # Add some metadata
+                '-a' => 'dc.type=Learn/Docs/' . $section,
+                '-a' => 'dc.subject=' . $subject,
+                '-a' => 'dc.identifier=' . $version,
             ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),

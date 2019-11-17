@@ -19,18 +19,21 @@ $VERBOSE = true
 
 ##
 # Used by the `convert with logs` and `convert without logs` contexts
-def internal_convert(input, convert_logger, backend, extra_attributes)
+def internal_convert(
+    input, convert_logger, backend, standalone, extra_attributes
+  )
   attributes = { 'docdir' => File.dirname(__FILE__) }
   attributes.merge! extra_attributes
-  args = internal_convert_args convert_logger, backend, attributes
+  args = internal_convert_args convert_logger, backend, standalone, attributes
   Asciidoctor.convert input, args
 end
 
-def internal_convert_args(convert_logger, backend, attributes)
+def internal_convert_args(convert_logger, backend, standalone, attributes)
   {
     safe: :unsafe, # Used to include "funny" files.
     backend: backend,
     logger: convert_logger,
+    standalone: standalone,
     doctype: :book,
     attributes: attributes,
     sourcemap: true, # Required by many of our plugins
@@ -56,7 +59,14 @@ RSpec.shared_context 'convert with logs' do
     # evaluated before `before(:example)` blocks
     extra_attributes = defined?(convert_attributes) ? convert_attributes : {}
     explicit_backend = defined?(backend) ? backend : :docbook45
-    internal_convert input, convert_logger, explicit_backend, extra_attributes
+    explicit_standalone = defined?(standalone) ? standalone : false
+    internal_convert(
+      input,
+      convert_logger,
+      explicit_backend,
+      explicit_standalone,
+      extra_attributes
+    )
   end
   let(:logs) do
     # Evaluate converted because it populates the logger as a side effect.
@@ -84,8 +94,13 @@ RSpec.shared_context 'convert without logs' do
     convert_logger = Asciidoctor::MemoryLogger.new
     extra_attributes = defined?(convert_attributes) ? convert_attributes : {}
     explicit_backend = defined?(backend) ? backend : :docbook45
+    explicit_standalone = defined?(standalone) ? standalone : false
     converted = internal_convert(
-      input, convert_logger, explicit_backend, extra_attributes
+      input,
+      convert_logger,
+      explicit_backend,
+      explicit_standalone,
+      extra_attributes
     )
     if convert_logger.messages.empty? == false
       raise "Expected no logs but got:\n" +

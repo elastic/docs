@@ -18,13 +18,11 @@ module Chunker
   end
 
   ##
-  # A Converter implementation that copies images as it sees them.
+  # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
     def initialize(delegate)
       super(delegate)
     end
-
-    # TODO: tests don't seem to pick up the headers because "embedded". Bad?
 
     def convert_section(node)
       chunk_level = node.document.attr 'chunk_level'
