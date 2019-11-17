@@ -14,6 +14,11 @@ require_relative 'helper/source'
 require 'tmpdir'
 require 'fileutils'
 
+ENV['GIT_AUTHOR_NAME'] = 'Test'
+ENV['GIT_AUTHOR_EMAIL'] = 'test@example.com'
+ENV['GIT_COMMITTER_NAME'] = 'Test'
+ENV['GIT_COMMITTER_EMAIL'] = 'test@example.com'
+
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = '.rspec_status'
