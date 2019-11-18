@@ -13,7 +13,15 @@ async function prepareCleaner(extra_branches = []) {
 
   // Create an empty repo
   const repo = await fs.mkdtemp(`${tmp}/input`);
-  const opts = {cwd: repo};
+  const opts = {
+    cwd: repo,
+    env: {
+      'GIT_AUTHOR_NAME': 'Test',
+      'GIT_AUTHOR_EMAIL': 'test@example.com',
+      'GIT_COMMITTER_NAME': 'Test',
+      'GIT_COMMITTER_EMAIL': 'test@example.com',
+    },
+  };
   await exec_git(['init'], opts);
   await exec_git(['commit', '--allow-empty', '-m', 'init'], opts);
   for (const branch of extra_branches) {
