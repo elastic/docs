@@ -130,6 +130,7 @@ sub new {
         single        => $args{single},
         index         => $index,
         branches      => \@branches,
+        live_branches => $args{live} || \@branches,
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
@@ -259,7 +260,7 @@ sub _build_book {
                 lang          => $lang,
                 edit_urls     => $edit_urls,
                 private       => $self->private,
-                noindex       => $self->noindex,
+                noindex       => $self->noindex($branch),
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -283,7 +284,7 @@ sub _build_book {
                 lang          => $lang,
                 edit_urls     => $edit_urls,
                 private       => $self->private,
-                noindex       => $self->noindex,
+                noindex       => $self->noindex($branch),
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -422,6 +423,16 @@ sub section_title {
 }
 
 #===================================
+sub noindex {
+#===================================
+    my ( $self, $branch ) = @_;
+    return 1 if $self->{noindex};
+    return 0 if grep( /^$branch$/, @{ $self->{live_branches} } );
+    return 1;
+}
+
+
+#===================================
 sub title            { shift->{title} }
 sub dir              { shift->{dir} }
 sub prefix           { shift->{prefix} }
@@ -434,7 +445,6 @@ sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub private          { shift->{private} }
-sub noindex          { shift->{noindex} }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
 sub source           { shift->{source} }
