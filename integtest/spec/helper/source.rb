@@ -96,7 +96,6 @@ class Source
   ##
   # Build the config file that can build all books declared in this source.
   def conf(relative_path: false)
-    puts "ADFADF #{build_conf}"
     path = write 'conf.yaml', build_conf
     return path unless relative_path
 
