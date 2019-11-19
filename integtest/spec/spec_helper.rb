@@ -43,6 +43,10 @@ def files_in(dir)
   end
 end
 
+def indent(str, indentation)
+  str.split("\n").map { |s| indentation + s }.join "\n"
+end
+
 ##
 # Replace symbols in hash keys with their to_s. Building hashes out of symbols
 # is much more "ruby", but those symbols make "funny" keys when you convert the
