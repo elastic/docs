@@ -43,8 +43,18 @@ def files_in(dir)
   end
 end
 
-def indent(str, indentation)
-  str.split("\n").map { |s| indentation + s }.join "\n"
+##
+# Replace symbols in hash keys with their to_s. Building hashes out of symbols
+# is much more "ruby", but those symbols make "funny" keys when you convert the
+# hash into yaml.
+def desymbolize_keys(thing)
+  if thing.is_a? Hash
+    thing.each_with_object({}) { |(k, v), r| r[k.to_s] = desymbolize_keys v }
+  elsif thing.is_a? Array
+    thing.map { |v| desymbolize_keys v }
+  else
+    thing
+  end
 end
 
 ##

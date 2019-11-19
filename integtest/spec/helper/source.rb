@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'pathname'
+require 'yaml'
 
 require_relative 'book'
 require_relative 'repo'
@@ -95,13 +96,8 @@ class Source
   ##
   # Build the config file that can build all books declared in this source.
   def conf(relative_path: false)
-    # We can't use to_yaml here because it emits yaml 1.2 but the docs build
-    # only supports 1.0.....
-    path = write 'conf.yaml', <<~YAML
-      #{common_conf}
-      repos:#{repos_conf}
-      contents:#{books_conf}
-    YAML
+    puts "ADFADF #{build_conf}"
+    path = write 'conf.yaml', build_conf
     return path unless relative_path
 
     Pathname.new(path)
@@ -111,28 +107,13 @@ class Source
 
   private
 
-  def common_conf
-    <<~YAML
-      template:
-        defaults:
-      contents_title: Test
-    YAML
-  end
-
-  def repos_conf
-    repos_yaml = ''
-    @repos.each_value do |repo|
-      repos_yaml += "\n  #{repo.name}: #{repo.root}"
-    end
-    repos_yaml
-  end
-
-  def books_conf
-    books_yaml = ''
-    @books.each_value do |book|
-      books_yaml += "\n  -\n"
-      books_yaml += book.conf
-    end
-    books_yaml
+  def build_conf
+    conf = {
+      contents_title: 'Test',
+      repos: @repos.values.map { |repo| [repo.name, repo.root] }.to_h,
+      contents: @books.values.map(&:conf),
+    }
+    conf = desymbolize_keys conf
+    conf.to_yaml
   end
 end
