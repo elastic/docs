@@ -30,6 +30,14 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
     end
     include_examples 'book basics', 'Test', 'test'
+    file_context 'raw/test/master/index.html' do
+      it "doesn't contain the noindex flag" do
+        expect(contents).not_to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
+      end
+    end
+
     def self.has_license(name, heading)
       it "has license for #{name}" do
         expect(contents).to include(<<~TXT)
@@ -530,6 +538,38 @@ RSpec.describe 'building all books' do
         it 'contains the snippet' do
           expect(contents).to include('CODE HERE')
         end
+      end
+    end
+  end
+  context 'when the book is configured with noindex' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', 'test'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.noindex = true
+    end
+    file_context 'raw/test/master/index.html' do
+      it 'contains the noindex flag' do
+        expect(contents).to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
+      end
+    end
+  end
+  context 'when the branch is not "live"' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', 'test'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.live_branches = []
+    end
+    file_context 'raw/test/master/index.html' do
+      it 'contains the noindex flag' do
+        expect(contents).to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
       end
     end
   end
