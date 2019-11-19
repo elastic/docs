@@ -105,6 +105,8 @@ sub build_chunked {
                 # Turn off style options because we'll provide our own
                 '-a' => 'stylesheet!',
                 '-a' => 'icons!',
+                # Turn off asciidoctor's default footer because we make our own
+                '-a' => 'nofooter',
                 # Pass chunking down
                 '-a' => 'chunk_level=' . ( $chunk + 1 ),
                 # Lock the destination file name to one we expect
@@ -264,6 +266,8 @@ sub build_single {
                 # Turn off style options because we'll provide our own
                 '-a' => 'stylesheet!',
                 '-a' => 'icons!',
+                # Turn off asciidoctor's default footer because we make our own
+                '-a' => 'nofooter',
                 # Add some metadata
                 '-a' => 'dc.type=Learn/Docs/' . $section,
                 '-a' => 'dc.subject=' . $subject,

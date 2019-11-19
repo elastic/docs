@@ -26,6 +26,18 @@ def normalize_html(html):
                 crunched = NavigableString(re.sub(r'\s+', ' ', part))
                 if crunched != part:
                     part.replace_with(crunched)
+    # Asciidoctor adds a "content" wrapper. It doesn't really change the layout
+    # so we're ok with it.
+    for e in soup.select('#content'):
+        e.unwrap()
+    # Asciidoctor adds a "ulist" class to all unordered lists which doesn't
+    # hurt anything so we can ignore it.
+    for e in soup.select('.itemizedlist.ulist'):
+        e['class'].remove('ulist')
+    # Docbook adds type="disc" to ul which is the default and isn't needed.
+    for e in soup.select('ul'):
+        if 'type' in e.attrs and e['type'] == 'disc':
+            del e['type']
     # Format the html with indentation so we can *see* things
     html = soup.prettify()
     # docbook spits out the long-form charset and asciidoctor spits out the

@@ -67,24 +67,45 @@ module EditMe
     end
 
     def convert_section(block)
-      yield.sub '</title>' do
-        "#{link_for block}</title>"
+      if block.document.basebackend? 'html'
+        block.attributes['edit_me_link'] = link_for block
+        yield
+      else
+        yield.sub '</title>' do
+          "#{link_for block}</title>"
+        end
       end
     end
 
     def convert_floating_title(block)
-      yield.sub '</bridgehead>' do
-        "#{link_for block}</bridgehead>"
+      if block.document.basebackend? 'html'
+        block.attributes['edit_me_link'] = link_for block
+        yield
+      else
+        yield.sub '</bridgehead>' do
+          "#{link_for block}</bridgehead>"
+        end
       end
     end
 
     def link_for(block)
       url = edit_url block
-      if url
-        %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
-      else
-        ''
-      end
+      return '' unless url
+      return html_link_for url if block.document.basebackend? 'html'
+
+      docbook_link_for url
+    end
+
+    def html_link_for(url)
+      <<~HTML.strip
+        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{url}">edit</a>
+      HTML
+    end
+
+    def docbook_link_for(url)
+      <<~DOCBOOK.strip
+        <ulink role="edit_me" url="#{url}">Edit me</ulink>
+      DOCBOOK
     end
 
     def edit_url(block)
