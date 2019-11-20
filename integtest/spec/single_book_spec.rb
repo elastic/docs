@@ -116,7 +116,14 @@ RSpec.describe 'building a single book' do
         paragraph here is required.
       ASCIIDOC
     end
-
+    let(:repo) { src.repo 'src' }
+    context 'the logs' do
+      it 'say they are using the first remote intead' do
+        expect(outputs[0]).to include(<<~LOG)
+          Couldn't find an Elastic remote for #{repo.root}. Generating edit links targeting the first remote instead.
+        LOG
+      end
+    end
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
