@@ -15,6 +15,21 @@ RSpec.describe Chunker do
 
   include_context 'convert without logs'
   let(:backend) { :html5 }
+  let(:standalone) { true }
+
+  shared_examples 'healthy head' do
+    context 'the <head>' do
+      it 'contains the charset' do
+        expect(contents).to include(<<~HTML)
+          <meta charset="UTF-8">
+        HTML
+      end
+      it "doesn't contain the builtin asciidoctor stylesheet" do
+        # We turned the stylesheet off
+        expect(contents).not_to include('<style')
+      end
+    end
+  end
 
   context 'when outdir is configured' do
     let(:outdir) { Dir.mktmpdir }
@@ -24,6 +39,8 @@ RSpec.describe Chunker do
         {
           'outdir' => outdir,
           'chunk_level' => 1,
+          # Shrink the output slightly so it is easier to read
+          'stylesheet!' => false,
         }
       end
       context 'there is are two level 1 sections' do
@@ -43,6 +60,8 @@ RSpec.describe Chunker do
           ASCIIDOC
         end
         context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'healthy head'
           it 'contains a link to the first section' do
             expect(converted).to include(<<~HTML.strip)
               <li><span class="chapter"><a href="s1.html">Section 1</a></span></li>
@@ -55,7 +74,8 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the first section', 's1.html' do
-          it 'contains the header' do
+          include_examples 'healthy head'
+          it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">Section 1</h2>')
           end
           it 'contains the contents' do
@@ -63,7 +83,8 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the first section', 's2.html' do
-          it 'contains the header' do
+          include_examples 'healthy head'
+          it 'contains the heading' do
             expect(contents).to include('<h2 id="s2">Section 2</h2>')
           end
           it 'contains the contents' do
