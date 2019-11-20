@@ -52,10 +52,10 @@ alias docbldgls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/gl
 alias docbldgs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
 # Stack Overview
-alias docbldso='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --resource=$GIT_HOME/beats/libbeat/docs/ --chunk 1'
+alias docbldso='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
 
 # Stack Overview versions 6.3-7.2
-alias docbldsoold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/elasticsearch/x-pack/docs --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
+alias docbldsoold=docbldso
 
 # Deploying Azure
 alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
