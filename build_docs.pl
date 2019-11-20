@@ -197,7 +197,7 @@ sub _pick_best_remote {
         # but two books are in elastic but elasticsearch-cn is special.
         return $1;
     }
-    say "Couldn't an Elastic remote for $toplevel";
+    say "Couldn't find an Elastic remote for $toplevel. Generating edit links targeting the first remote instead.";
     if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
         return $1;
     }
