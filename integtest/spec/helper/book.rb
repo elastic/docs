@@ -47,6 +47,10 @@ class Book
   # *all* branches being live.
   attr_accessor :live_branches
 
+  ##
+  # Is the book a single page book?
+  attr_accessor :single
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
@@ -56,7 +60,7 @@ class Book
     @current_branch = 'master'
     @lang = 'en'
     @respect_edit_url_overrides = @suppress_migration_warnings = false
-    @direct_html = @noindex = false
+    @direct_html = @noindex = @single = false
     @live_branches = nil
   end
 

@@ -439,6 +439,11 @@ RSpec.describe 'building all books' do
         end
         context 'because the book changes from docbook to direct_html' do
           build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              book = src.book 'Test'
+              # For now direct_html only works with single page books.
+              book.single = true
+            end,
             before_second_build: lambda do |src, _config|
               book = src.book 'Test'
               book.direct_html = true
@@ -451,6 +456,8 @@ RSpec.describe 'building all books' do
             before_first_build: lambda do |src, _config|
               book = src.book 'Test'
               book.direct_html = true
+              # For now direct_html only works with single page books.
+              book.single = true
             end,
             before_second_build: lambda do |src, _config|
               book = src.book 'Test'

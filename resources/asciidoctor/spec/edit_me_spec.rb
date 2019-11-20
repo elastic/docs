@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 require 'pathname'
+require 'docbook_compat/extension'
 require 'edit_me/extension'
 
 RSpec.describe EditMe do
   before(:each) do
+    Asciidoctor::Extensions.register DocbookCompat
     Asciidoctor::Extensions.register EditMe
   end
 
@@ -46,15 +48,28 @@ RSpec.describe EditMe do
   # define a `shared_examples 'standard document part'` that is appropriate to
   # that context.
   shared_examples 'all standard document parts' do
-    include_examples 'standard document part', 'chapter'
-    include_examples 'standard document part', 'section'
-    include_examples 'standard document part', 'appendix'
-    include_examples 'standard document part', 'glossary'
-    include_examples 'standard document part', 'bibliography'
-    include_examples 'standard document part', 'dedication'
-    include_examples 'standard document part', 'colophon'
-    include_examples 'standard document part', 'float',
-                     %(renderas="sect2">), %(</bridgehead>)
+    context 'when the backend is docbook' do
+      let(:backend) { 'docbook45' }
+      include_examples 'standard document part', 'chapter'
+      include_examples 'standard document part', 'section'
+      include_examples 'standard document part', 'appendix'
+      include_examples 'standard document part', 'glossary'
+      include_examples 'standard document part', 'bibliography'
+      include_examples 'standard document part', 'dedication'
+      include_examples 'standard document part', 'colophon'
+      include_examples 'standard document part', 'float'
+    end
+    context 'when the backend is html5' do
+      let(:backend) { 'html5' }
+      include_examples 'standard document part', 'chapter'
+      include_examples 'standard document part', 'section'
+      include_examples 'standard document part', 'appendix'
+      include_examples 'standard document part', 'glossary'
+      include_examples 'standard document part', 'bibliography'
+      include_examples 'standard document part', 'dedication'
+      include_examples 'standard document part', 'colophon'
+      include_examples 'standard document part', 'float'
+    end
   end
 
   context 'when edit_urls is configured' do
@@ -65,37 +80,53 @@ RSpec.describe EditMe do
       CSV
     end
     let(:convert_attributes) { { 'edit_urls' => edit_urls } }
+    def edit_link(url)
+      if backend == 'docbook45'
+        %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
+      else
+        attrs = 'class="edit_me" rel="nofollow" ' \
+                'title="Edit this page on GitHub" href="' + url + '"'
+        "<a #{attrs}>edit</a>"
+      end
+    end
     let(:stdin_link) do
-      '<ulink role="edit_me" url="www.example.com/stdin">Edit me</ulink>'
+      edit_link 'www.example.com/stdin'
     end
     def spec_dir_link(file)
-      url = "www.example.com/spec_dir/resources/edit_me/#{file}"
-      %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
+      edit_link "www.example.com/spec_dir/resources/edit_me/#{file}"
     end
     include_context 'convert without logs'
 
     context 'for a document with a preface' do
       include_context 'preface'
-      it 'adds a link to the preface' do
-        expect(converted).to include("<title>Preface#{stdin_link}</title>")
+      context 'when the backend is docbook' do
+        let(:backend) { 'docbook45' }
+        it 'adds a link to the preface' do
+          expect(converted).to include("<title>Preface#{stdin_link}</title>")
+        end
       end
+      # TODO: handle the preface
+      # context 'when the backend is html5' do
+      #   let(:backend) { 'html5' }
+      #   it 'adds a link to the preface' do
+      #     expect(converted).to include("<h1>Preface#{stdin_link}</<h1>")
+      #   end
+      # end
     end
 
-    shared_examples 'standard document part' do |type, title_start, title_end|
-      title_start ||= '<title>'
-      title_end ||= '</title>'
+    shared_examples 'standard document part' do |type|
       context "for a document with #{type}s" do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
             expect(converted).to include(
-              "#{title_start}#{type.capitalize} 1#{link}#{title_end}"
+              ">#{type.capitalize} 1#{link}</"
             )
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
             expect(converted).to include(
-              "#{title_start}#{type.capitalize} 2#{link}#{title_end}"
+              ">#{type.capitalize} 2#{link}</"
             )
           end
         end
@@ -127,15 +158,15 @@ RSpec.describe EditMe do
               }
             end
             it "adds a link to #{type} 1" do
-              link = '<ulink role="edit_me" url="foo">Edit me</ulink>'
+              link = edit_link 'foo'
               expect(converted).to include(
-                "#{title_start}#{type.capitalize} 1#{link}#{title_end}"
+                ">#{type.capitalize} 1#{link}</"
               )
             end
             it "adds a link to #{type} 2" do
-              link = '<ulink role="edit_me" url="bar">Edit me</ulink>'
+              link = edit_link 'bar'
               expect(converted).to include(
-                "#{title_start}#{type.capitalize} 2#{link}#{title_end}"
+                ">#{type.capitalize} 2#{link}</"
               )
             end
             context 'when overriding to an empty string' do
@@ -149,12 +180,12 @@ RSpec.describe EditMe do
               end
               it "doesn't add edit links to #{type} 1" do
                 expect(converted).to include(
-                  "#{title_start}#{type.capitalize} 1#{title_end}"
+                  ">#{type.capitalize} 1</"
                 )
               end
               it "doesn't add edit links to #{type} 2" do
                 expect(converted).to include(
-                  "#{title_start}#{type.capitalize} 2#{title_end}"
+                  ">#{type.capitalize} 2</"
                 )
               end
             end
@@ -168,6 +199,7 @@ RSpec.describe EditMe do
     include_examples 'all standard document parts'
 
     context 'when edit_urls has two matches' do
+      let(:backend) { 'docbook45' }
       let(:convert_attributes) do
         edit_urls = <<~CSV
           <stdin>,www.example.com/stdin
@@ -184,8 +216,7 @@ RSpec.describe EditMe do
         ASCIIDOC
       end
       it 'uses the longest match' do
-        url = 'www.example.com/section2'
-        link = %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
+        link = edit_link 'www.example.com/section2'
         expect(converted).to include("<title>Section 2#{link}</title>")
       end
     end
@@ -219,9 +250,7 @@ RSpec.describe EditMe do
       end
     end
 
-    shared_examples 'standard document part' do |type, title_start, title_end|
-      title_start ||= '<title>'
-      title_end ||= '</title>'
+    shared_examples 'standard document part' do |type|
       context "for a document with #{type}s" do
         let(:input) do
           <<~ASCIIDOC
@@ -232,12 +261,12 @@ RSpec.describe EditMe do
         end
         it "doesn't add a link to #{type} 1" do
           expect(converted).to include(
-            "#{title_start}#{type.capitalize} 1#{title_end}"
+            ">#{type.capitalize} 1</"
           )
         end
         it "doesn't add a link to #{type} 2" do
           expect(converted).to include(
-            "#{title_start}#{type.capitalize} 2#{title_end}"
+            ">#{type.capitalize} 2</"
           )
         end
       end

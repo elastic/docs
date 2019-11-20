@@ -21,11 +21,13 @@ Asciidoctor::Extensions.register do
   # for EditMe to get a nice location.
   document.sourcemap = true
 end
+# Adding DocbookCompat first lets it help rendering things like the
+# edit_me links
+Asciidoctor::Extensions.register DocbookCompat
 Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
 Asciidoctor::Extensions.register Chunker
 Asciidoctor::Extensions.register CopyImages
-Asciidoctor::Extensions.register DocbookCompat
 Asciidoctor::Extensions.register EditMe
 Asciidoctor::Extensions.register OpenInWidget
 Asciidoctor::Extensions.register RelativizeLink
