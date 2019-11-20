@@ -19,9 +19,10 @@ RSpec.describe DocbookCompat do
   context 'the header' do
     let(:standalone) { true }
     let(:convert_attributes) do
-      # Shrink the output slightly so it is easier to read
       {
+        # Shrink the output slightly so it is easier to read
         'stylesheet!' => false,
+        # Set some metadata that will be included in the header
         'dc.type' => 'FooType',
         'dc.subject' => 'BarSubject',
         'dc.identifier' => 'BazIdentifier',
