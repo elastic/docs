@@ -141,15 +141,17 @@ sub new {
         respect_edit_url_overrides => $respect_edit_url_overrides,
         suppress_migration_warnings => $args{suppress_migration_warnings} || 0,
         direct_html => ( $args{direct_html} || 'false' ) eq 'true',
+        toc_extra => $args{toc_extra} || '',
     }, $class;
 }
 
 #===================================
 sub build {
 #===================================
-    my ( $self, $rebuild ) = @_;
+    my ( $self, $rebuild, $conf_path ) = @_;
 
-    my $toc = ES::Toc->new( $self->title );
+    my $toc_extra = $self->{toc_extra} ? $conf_path->parent->file( $self->{toc_extra} ) : 0;
+    my $toc = ES::Toc->new( $self->title, $toc_extra );
     my $dir = $self->dir;
     $dir->mkpath;
 

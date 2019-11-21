@@ -56,7 +56,8 @@ use ES::LinkCheck();
 GetOptions($Opts, @{ command_line_opts() }) || exit usage();
 check_opts();
 
-our $Conf = LoadFile(pick_conf());
+our $ConfPath = pick_conf();
+our $Conf = LoadFile($ConfPath);
 # We no longer support running outside of our "standard" docker container.
 # `build_docs` signals to us that it is in the standard docker container by
 # passing this argument.
@@ -264,7 +265,8 @@ sub build_all {
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
 
-    my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
+    my $toc_extra = $Conf->{toc_extra} ? $ConfPath->parent->file( $Conf->{toc_extra} ) : 0;
+    my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide', $toc_extra );
     my $redirects = $target_repo->destination->file( 'redirects.conf' );
 
     if ( $Opts->{linkcheckonly} ){
@@ -402,9 +404,10 @@ sub build_entries {
             my $base_dir = $entry->{base_dir} || '';
             my $raw_sub_build = $raw_build->subdir($base_dir);
             my $sub_build = $build->subdir($base_dir);
+            my $toc_extra = $entry->{toc_extra} ? $ConfPath->parent->file( $entry->{toc_extra} ) : 0;
             my $section_toc = build_entries(
                 $raw_sub_build, $sub_build, $temp_dir,
-                ES::Toc->new( $title, $entry->{lang}, ),
+                ES::Toc->new( $title, $toc_extra, $entry->{lang} ),
                 $tracker, @$sections
             );
             if ($base_dir) {
@@ -426,7 +429,7 @@ sub build_entries {
             temp_dir => $temp_dir,
             %$entry
         );
-        $toc->add_entry( $book->build( $Opts->{rebuild} ) );
+        $toc->add_entry( $book->build( $Opts->{rebuild}, $ConfPath ) );
         $tracker->allowed_book( $book );
     }
 
@@ -821,7 +824,7 @@ sub init_env {
 #===================================
 sub pick_conf {
 #===================================
-    return 'conf.yaml' unless $Opts->{conf};
+    return file( 'conf.yaml' ) unless $Opts->{conf};
 
     my $conf = file($Opts->{conf});
     $conf = dir($Old_Pwd)->file($Opts->{conf}) if $conf->is_relative;

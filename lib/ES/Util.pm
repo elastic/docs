@@ -214,6 +214,7 @@ sub build_single {
     my $roots = $opts{roots};
     my $relativize = $opts{relativize};
     my $direct_html = $opts{direct_html} || 0;
+    my $extra = $opts{extra} || 0;
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -336,6 +337,13 @@ sub build_single {
     unless ( $direct_html ) {
         my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
         $contents = _html5ify( $contents );
+        $html_file->spew( iomode => '>:utf8', $contents );
+    }
+
+    if ( $extra ) {
+        my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
+        $contents =~ s{<div class="(article|book)"}{<div id="extra">\n$extra\n</div>\n<div class="$1"} or
+            die "Couldn't add toc_extra to $contents";
         $html_file->spew( iomode => '>:utf8', $contents );
     }
 
