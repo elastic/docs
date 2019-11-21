@@ -8,11 +8,12 @@ use ES::Util qw(build_single);
 #===================================
 sub new {
 #===================================
-    my ( $class, $title, $lang ) = @_;
+    my ( $class, $title, $extra, $lang ) = @_;
     $lang ||= 'en';
     bless {
-        title   => $title,
-        lang    => $lang,
+        title => $title,
+        extra => $extra,
+        lang => $lang,
         entries => []
     }, $class;
 }
@@ -34,6 +35,7 @@ sub write {
     my $adoc_file = $temp_dir->file( 'index.asciidoc' );
     $adoc_file->spew( iomode => '>:utf8', $adoc );
 
+    my $extra = $self->{extra} ? $self->{extra}->slurp( iomode => "<:encoding(UTF-8)" ) : 0;
     build_single( $adoc_file, $raw_dir, $dir,
             type        => 'article',
             lang        => $self->lang,
@@ -42,6 +44,7 @@ sub write {
             private     => 1,   # Don't generate edit me urls
             branch => '', # TOCs don't have a branch but it is a required arg
             relativize => 1,
+            extra => $extra,
     );
     $adoc_file->remove;
 }

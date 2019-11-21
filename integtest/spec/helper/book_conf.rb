@@ -23,6 +23,7 @@ module BookConf
       lang: @lang,
       tags: 'test tag',
       subject: 'Test',
+      toc_extra: @toc_extra,
     }
   end
 

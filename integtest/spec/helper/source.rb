@@ -11,11 +11,14 @@ require_relative 'repo'
 class Source
   attr_reader :books
 
+  attr_accessor :toc_extra
+
   def initialize(tmp)
     @root = File.expand_path 'src', tmp
     Dir.mkdir @root
     @repos = Hash.new { |hash, name| hash[name] = Repo.new name, path(name) }
     @books = {}
+    @toc_extra = nil
   end
 
   ##
@@ -109,9 +112,10 @@ class Source
   def build_conf
     conf = {
       contents_title: 'Test',
+      toc_extra: @toc_extra,
       repos: @repos.values.map { |repo| [repo.name, repo.root] }.to_h,
       contents: @books.values.map(&:conf),
-    }
+    }.compact
     conf = desymbolize_keys conf
     conf.to_yaml
   end
