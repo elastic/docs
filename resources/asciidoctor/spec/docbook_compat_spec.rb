@@ -32,8 +32,7 @@ RSpec.describe DocbookCompat do
       <<~ASCIIDOC
         = Title
 
-        [[section]]
-        == Section
+        Words.
       ASCIIDOC
     end
     it 'has an empty html tag' do
@@ -88,57 +87,106 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'when there is an id on the title' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[title-id]]
+          = Title
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the header' do
+        it "is wrapped in docbook's funny titlepage" do
+          expect(converted).to include(<<~HTML)
+            <div class="titlepage"><div><div>
+            <h1 class="title"><a id="title-id"></a>Title</h1>
+            </div></div><hr></div>
+          HTML
+        end
+      end
+    end
+    # Next!
+    # context 'when there is a table of contents' do
+    #   let(:convert_attributes) do
+    #     {
+    #       # Shrink the output slightly so it is easier to read
+    #       'stylesheet!' => false,
+    #       # Set some metadata that will be included in the header
+    #       'dc.type' => 'FooType',
+    #       'dc.subject' => 'BarSubject',
+    #       'dc.identifier' => 'BazIdentifier',
+    #       'toc' => '',
+    #     }
+    #   end
+    #   let(:input) do
+    #     <<~ASCIIDOC
+    #       = Title
+
+    #       == Section 1
+
+    #       == Section 2
+    #     ASCIIDOC
+    #   end
+    #   context 'the header' do
+    #     it "is wrapped in docbook's funny titlepage" do
+    #       expect(converted).to include(<<~HTML)
+    #         <div class="titlepage"><div><div>
+    #         <h1 class="title"><a id="title-id"></a>Title</h1>
+    #         </div></div><hr></div>
+    #       HTML
+    #     end
+    #   end
+    # end
   end
 
-  context 'a level 1 section' do
-    let(:input) do
-      <<~ASCIIDOC
-        = Title
-
-        [[section]]
-        == Section
-      ASCIIDOC
-    end
-    context 'the wrapper' do
-      it 'has the "chapter" class' do
-        expect(converted).to include '<div class="chapter">'
+  context 'sections' do
+    shared_examples 'section basics' do |wrapper_class, hlevel, id, title|
+      context 'the wrapper' do
+        it "has the '#{wrapper_class}' class" do
+          expect(converted).to include(<<~HTML.strip)
+            <div class="#{wrapper_class}">
+          HTML
+        end
+      end
+      context 'the header' do
+        it "is wrapped in docbook's funny titlepage" do
+          expect(converted).to include(<<~HTML)
+            <div class="titlepage"><div><div>
+            <h#{hlevel} class="title"><a id="#{id}"></a>#{title}</h#{hlevel}>
+            </div></div></div>
+          HTML
+        end
       end
     end
-    context 'the header' do
-      it "is wrapped in docbook's funny titlepage" do
-        expect(converted).to include(<<~HTML)
-          <div class="titlepage"><div><div>
-          <h1 class="title"><a id="section"></a>Section</h1>
-          </div></div></div>
-        HTML
-      end
-    end
-  end
 
-  context 'a level 2 section' do
-    let(:input) do
-      <<~ASCIIDOC
-        = Title
-
-        == Section 1
-
-        [[section-2]]
-        === Section 2
-      ASCIIDOC
-    end
-    context 'the wrapper' do
-      it 'has the "chapter" class' do
-        expect(converted).to include '<div class="section">'
+    context 'level 1' do
+      let(:input) do
+        <<~ASCIIDOC
+          == Section
+        ASCIIDOC
       end
+      include_examples 'section basics', 'chapter', 1, '_section', 'Section'
     end
-    context 'the header' do
-      it "is wrapped in docbook's funny titlepage" do
-        expect(converted).to include(<<~HTML)
-          <div class="titlepage"><div><div>
-          <h2 class="title"><a id="section-2"></a>Section 2</h2>
-          </div></div></div>
-        HTML
+
+    context 'level 2' do
+      let(:input) do
+        <<~ASCIIDOC
+          === Section 2
+        ASCIIDOC
       end
+      include_examples 'section basics', 'section', 2, '_section_2', 'Section 2'
+    end
+
+    context 'a preface' do
+      let(:input) do
+        <<~ASCIIDOC
+          [preface]
+          == Preface
+          Words.
+        ASCIIDOC
+      end
+      include_examples 'section basics', 'preface', 1, '_preface', 'Preface'
     end
   end
 
@@ -162,10 +210,6 @@ RSpec.describe DocbookCompat do
   context 'a link' do
     let(:input) do
       <<~ASCIIDOC
-        = Title
-
-        == Section
-
         Words #{link}.
       ASCIIDOC
     end
@@ -196,12 +240,47 @@ RSpec.describe DocbookCompat do
     end
   end
 
+  context 'a cross reference' do
+    let(:input) do
+      <<~ASCIIDOC
+        Words <<foo>>.
+
+        [[foo]]
+        == Foo
+      ASCIIDOC
+    end
+    it 'has xref class' do
+      expect(converted).to include('class="xref"')
+    end
+    it 'references the target' do
+      expect(converted).to include('href="#foo"')
+    end
+    it "contains the target's title" do
+      expect(converted).to include('title="Foo"')
+    end
+    it 'wraps the title in <em>' do
+      expect(converted).to include('><em>Foo</em></a>')
+    end
+  end
+
+  context 'a floating title' do
+    let(:input) do
+      <<~ASCIIDOC
+        [float]
+        ==== Foo
+      ASCIIDOC
+    end
+    it 'has the right h level' do
+      expect(converted).to include('<h4>')
+    end
+    it 'has an inline anchor for docbook compatibility' do
+      expect(converted).to include('<a id="_foo"></a>')
+    end
+  end
+
   context 'a listing block' do
     let(:input) do
       <<~ASCIIDOC
-        = Title
-
-        == Section
         [source,sh]
         ----
         cpanm Search::Elasticsearch
@@ -221,9 +300,6 @@ RSpec.describe DocbookCompat do
   context 'an unordered list' do
     let(:input) do
       <<~ASCIIDOC
-        = Title
-
-        == Section
         * Thing
         * Other thing
         * Third thing
@@ -267,14 +343,102 @@ RSpec.describe DocbookCompat do
   context 'backticked code' do
     let(:input) do
       <<~ASCIIDOC
-        = Title
-
-        == Section
         Words `backticked`.
       ASCIIDOC
     end
     it 'is considered a "literal" by default' do
       expect(converted).to include('<code class="literal">backticked</code>')
+    end
+  end
+
+  context 'stronged text' do
+    let(:input) do
+      <<~ASCIIDOC
+        *strong words*
+      ASCIIDOC
+    end
+    it 'is rendered like docbook' do
+      expect(converted).to include(<<~HTML.strip)
+        <span class="strong strong"><strong>strong words</strong></span>
+      HTML
+    end
+  end
+
+  context 'admonitions' do
+    shared_examples 'standard admonition' do |key, admonclass|
+      let(:input) do
+        <<~ASCIIDOC
+          #{key}: words
+        ASCIIDOC
+      end
+      it "renders with Elastic's custom template" do
+        expect(converted).to include(<<~HTML)
+          <div class="#{admonclass} admon">
+          <div class="icon"></div>
+          <div class="admon_content">
+          <p>
+          words
+          </p>
+          </div>
+          </div>
+        HTML
+      end
+    end
+    context 'note' do
+      include_examples 'standard admonition', 'NOTE', 'note'
+    end
+    context 'tip' do
+      include_examples 'standard admonition', 'TIP', 'tip'
+    end
+    context 'important' do
+      include_examples 'standard admonition', 'IMPORTANT', 'important'
+    end
+    context 'caution' do
+      include_examples 'standard admonition', 'CAUTION', 'caution'
+    end
+    context 'warning' do
+      include_examples 'standard admonition', 'WARNING', 'warning'
+    end
+  end
+
+  context 'a literal' do
+    let(:input) do
+      <<~ASCIIDOC
+        Words
+
+            Literal words
+              indented literal words
+
+        Words
+      ASCIIDOC
+    end
+    it 'renders like docbook' do
+      expect(converted).to include(<<~HTML)
+        <pre class="literallayout">Literal words
+          indented literal words</pre>
+      HTML
+    end
+  end
+
+  context 'a sidebar' do
+    let(:input) do
+      <<~ASCIIDOC
+        .Title
+        ****
+        Words
+        ****
+      ASCIIDOC
+    end
+    it 'renders like docbook' do
+      expect(converted).to include(<<~HTML)
+        <div class="sidebar">
+        <div class="titlepage"><div><div>
+        <p class="title"><strong>Title</strong></p>
+        </div></div></div>
+        <p>Words</p>
+
+        </div>
+      HTML
     end
   end
 end
