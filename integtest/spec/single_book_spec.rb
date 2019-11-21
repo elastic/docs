@@ -513,6 +513,52 @@ RSpec.describe 'building a single book' do
     include_examples 'README-like console alternatives', 'raw', '.'
   end
 
+  context 'for a book with en -extra-title-page.html file' do
+    context 'single page' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', <<~ASCIIDOC
+          = Title
+
+          [[section]]
+          == Section
+        ASCIIDOC
+        repo.write 'index-extra-title-page.html', '<p>extra!</p>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').direct_html.single.convert
+      end
+      file_context 'raw/index.html' do
+        it 'should contain the extra title page' do
+          expect(contents).to include("<div>\n<p>extra!</p>\n</div>")
+        end
+      end
+    end
+    context 'multipage' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', <<~ASCIIDOC
+          = Title
+
+          [[section]]
+          == Section
+        ASCIIDOC
+        repo.write 'index-extra-title-page.html', '<p>extra!</p>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').direct_html.convert
+      end
+      file_context 'raw/index.html' do
+        it 'should contain the extra title page' do
+          expect(contents).to include("<div>\n<p>extra!</p>\n</div>")
+        end
+      end
+      file_context 'raw/section.html' do
+        it "shouldn't contain the extra title page" do
+          expect(contents).not_to include("<div>\n<p>extra!</p>\n</div>")
+        end
+      end
+    end
+  end
+
   context 'for a book that uses {source_branch}' do
     INDEX = <<~ASCIIDOC
       = Title
