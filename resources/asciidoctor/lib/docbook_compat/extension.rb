@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 require 'asciidoctor/extensions'
+require_relative '../delegating_converter'
 require_relative 'convert_document'
 require_relative 'convert_links'
-require_relative '../delegating_converter'
+require_relative 'convert_lists'
+require_relative 'convert_outline'
 
 ##
 # HTML5 converter that emulates Elastic's docbook generated html.
@@ -19,18 +21,12 @@ module DocbookCompat
   class Converter < DelegatingConverter
     include ConvertDocument
     include ConvertLinks
+    include ConvertLists
+    include ConvertOutline
 
-    def initialize(delegate)
-      super(delegate)
-    end
-
-    SECTION_WRAPPER_CLASSES = %w[unused chapter section].freeze
     def convert_section(node)
-      wrapper_class = node.attr 'style'
-      wrapper_class ||= SECTION_WRAPPER_CLASSES[node.level]
-      wrapper_class || "sect#{node.level}"
       <<~HTML
-        <div class="#{wrapper_class}#{node.role ? " #{node.role}" : ''}">
+        <div class="#{wrapper_class_for node}#{node.role ? " #{node.role}" : ''}">
         <div class="titlepage"><div><div>
         <h#{node.level} class="title"><a id="#{node.id}"></a>#{node.title}#{node.attr 'edit_me_link', ''}</h#{node.level}>
         </div></div></div>
@@ -41,7 +37,7 @@ module DocbookCompat
 
     def convert_floating_title(node)
       tag_name = %(h#{node.level + 1})
-      # Asciidoctor's standard is to pu the id on the header tag but docbook
+      # Asciidoctor's standard is to put the id on the header tag but docbook
       # puts it in its own anchor tag.
       anchor = node.id ? %(<a id="#{node.id}"></a>) : ''
       classes = [node.role].compact
@@ -64,19 +60,6 @@ module DocbookCompat
         <pre class="programlisting prettyprint lang-#{lang}">#{node.content || ''}</pre>
         </div>
       HTML
-    end
-
-    def convert_ulist(node)
-      node.style ||= 'itemizedlist'
-      node.items.each { |item| item.attributes['role'] ||= 'listitem' }
-      html = yield
-      node.items.each do |item|
-        next unless item.text
-
-        html.sub!("<p>#{item.text}</p>", item.text) ||
-          raise("Couldn't remove <p> for #{item.text} in #{html}")
-      end
-      html
     end
 
     def convert_inline_quoted(node)
@@ -121,6 +104,14 @@ module DocbookCompat
         #{node.content}
         </div>
       HTML
+    end
+
+    SECTION_WRAPPER_CLASSES = %w[unused chapter section].freeze
+    def wrapper_class_for(section)
+      wrapper_class = section.attr 'style'
+      wrapper_class ||= SECTION_WRAPPER_CLASSES[section.level]
+      wrapper_class ||= "sect#{section.level}"
+      wrapper_class
     end
   end
 end
