@@ -63,7 +63,7 @@ module DocbookCompat
 
     def munge_title(doc, html)
       id = doc.id || 'id-1'
-      # Important: we're not replacing he whole header - it still will have a
+      # Important: we're not replacing the whole header - it still will have a
       # closing </div>.
       header_start = <<~HTML
         <div class="titlepage">
