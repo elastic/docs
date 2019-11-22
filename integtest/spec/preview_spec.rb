@@ -129,7 +129,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     context 'the docs root' do
       it 'contains a link to the current index' do
         expect(guide_root).to serve(doc_body(include(<<~HTML.strip)))
-          <a class="ulink" href="test/current/index.html" target="_top">Test</a>
+          <a href="test/current/index.html" class="ulink" target="_top">Test</a>
         HTML
       end
       it 'logs access to the docs root' do
@@ -622,7 +622,7 @@ RSpec.describe 'previewing built docs', order: :defined do
     context 'the docs root' do
       it 'contains a link to the current index' do
         expect(guide_root).to serve(doc_body(include(<<~HTML.strip)))
-          <a class="ulink" href="test/current/index.html" target="_top">Test</a>
+          <a href="test/current/index.html" class="ulink" target="_top">Test</a>
         HTML
       end
       it 'logs access to the docs root' do

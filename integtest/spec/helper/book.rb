@@ -98,6 +98,6 @@ class Book
     if branch == 'current' && @branches.length != 1
       decoration = " [#{@current_branch}]"
     end
-    %(<a class="ulink" href="#{url}" target="_top">#{@title}#{decoration}</a>)
+    %(<a href="#{url}" class="ulink" target="_top">#{@title}#{decoration}</a>)
   end
 end
