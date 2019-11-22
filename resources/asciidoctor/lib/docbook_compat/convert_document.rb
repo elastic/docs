@@ -6,12 +6,17 @@ module DocbookCompat
   # scary but required at this point for docbook compatibility.
   module ConvertDocument
     def convert_document(doc)
+      # We'll manually add the toc ourselves if it was requested.
+      wants_toc = doc.attr?('toc') && doc.attr?('toc-placement', 'auto')
+      doc.attributes.delete 'toc' if wants_toc
+
       html = yield
       html.gsub!(/<html lang="[^"]+">/, '<html>') ||
         raise("Coudn't fix html in #{html}")
       munge_head doc, html
       munge_body doc, html
       munge_title doc, html
+      add_toc doc, html if wants_toc
       html
     end
 
@@ -58,13 +63,26 @@ module DocbookCompat
 
     def munge_title(doc, html)
       id = doc.id || 'id-1'
-      header_start = <<~HTML.strip
-        <div class="titlepage"><div><div>
+      # Important: we're not replacing he whole header - it still will have a
+      # closing </div>.
+      header_start = <<~HTML
+        <div class="titlepage">
+        <div><div>
         <h1 class="title"><a id="#{id}"></a>#{doc.title}</h1>
-        </div></div><hr></div>
+        </div></div>
+        <hr>
       HTML
-      html.gsub!(%r{<div id="header">\n<h1>.+</h1>\n</div>}, header_start) ||
+      html.gsub!(%r{<div id="header">\n<h1>.+</h1>\n}, header_start) ||
         raise("Couldn't wrap header in #{html}")
+    end
+
+    def add_toc(doc, html)
+      html.gsub! '<div id="content">', <<~HTML
+        <div id="content">
+        <div class="#{doc.attr 'toc-class', 'toc'}">
+        #{convert doc, 'outline'}
+        </div>
+      HTML
     end
   end
 end

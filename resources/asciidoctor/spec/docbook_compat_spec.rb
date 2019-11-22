@@ -81,9 +81,12 @@ RSpec.describe DocbookCompat do
     context 'the header' do
       it "is wrapped in docbook's funny titlepage" do
         expect(converted).to include(<<~HTML)
-          <div class="titlepage"><div><div>
+          <div class="titlepage">
+          <div><div>
           <h1 class="title"><a id="id-1"></a>Title</h1>
-          </div></div><hr></div>
+          </div></div>
+          <hr>
+          </div>
         HTML
       end
     end
@@ -99,45 +102,71 @@ RSpec.describe DocbookCompat do
       context 'the header' do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
-            <div class="titlepage"><div><div>
+            <div class="titlepage">
+            <div><div>
             <h1 class="title"><a id="title-id"></a>Title</h1>
-            </div></div><hr></div>
+            </div></div>
+            <hr>
+            </div>
           HTML
         end
       end
     end
-    # Next!
-    # context 'when there is a table of contents' do
-    #   let(:convert_attributes) do
-    #     {
-    #       # Shrink the output slightly so it is easier to read
-    #       'stylesheet!' => false,
-    #       # Set some metadata that will be included in the header
-    #       'dc.type' => 'FooType',
-    #       'dc.subject' => 'BarSubject',
-    #       'dc.identifier' => 'BazIdentifier',
-    #       'toc' => '',
-    #     }
-    #   end
-    #   let(:input) do
-    #     <<~ASCIIDOC
-    #       = Title
+    context 'when there is a table of contents' do
+      let(:convert_attributes) do
+        {
+          # Shrink the output slightly so it is easier to read
+          'stylesheet!' => false,
+          # Set some metadata that will be included in the header
+          'dc.type' => 'FooType',
+          'dc.subject' => 'BarSubject',
+          'dc.identifier' => 'BazIdentifier',
+          'toc' => '',
+        }
+      end
+      let(:input) do
+        <<~ASCIIDOC
+          = Title
 
-    #       == Section 1
+          == Section 1
 
-    #       == Section 2
-    #     ASCIIDOC
-    #   end
-    #   context 'the header' do
-    #     it "is wrapped in docbook's funny titlepage" do
-    #       expect(converted).to include(<<~HTML)
-    #         <div class="titlepage"><div><div>
-    #         <h1 class="title"><a id="title-id"></a>Title</h1>
-    #         </div></div><hr></div>
-    #       HTML
-    #     end
-    #   end
-    # end
+          == Section 2
+        ASCIIDOC
+      end
+      context 'the header' do
+        it "is wrapped in docbook's funny titlepage" do
+          expect(converted).to include(<<~HTML)
+            <div class="titlepage">
+            <div><div>
+            <h1 class="title"><a id="id-1"></a>Title</h1>
+            </div></div>
+            <hr>
+          HTML
+        end
+      end
+      context 'the table of contents' do
+        it 'is outside the titlepage' do
+          expect(converted).to include(<<~HTML)
+            <hr>
+            </div>
+            <div id="content">
+            <div class="toc">
+          HTML
+        end
+        it 'looks like the docbook toc' do
+          expect(converted).to include(<<~HTML)
+            <div class="toc">
+            <ul class="toc">
+            <li><span class="chapter"><a href="#_section_1">Section 1</a></span>
+            </li>
+            <li><span class="chapter"><a href="#_section_2">Section 2</a></span>
+            </li>
+            </ul>
+            </div>
+          HTML
+        end
+      end
+    end
   end
 
   context 'sections' do
