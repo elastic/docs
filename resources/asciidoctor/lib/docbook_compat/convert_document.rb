@@ -2,9 +2,19 @@
 
 module DocbookCompat
   ##
-  # Methods to munge the document at the top level. All of these are a bit
+  # Methods to convert the document at the top level. All of these are a bit
   # scary but required at this point for docbook compatibility.
-  module DocMunging
+  module ConvertDocument
+    def convert_document(doc)
+      html = yield
+      html.gsub!(/<html lang="[^"]+">/, '<html>') ||
+        raise("Coudn't fix html in #{html}")
+      munge_head doc, html
+      munge_body doc, html
+      munge_title doc, html
+      html
+    end
+
     def munge_head(doc, html)
       html.gsub!(%r{<title>(.+)</title>}, '<title>\1 | Elastic</title>') ||
         raise("Couldn't munge <title> in #{html}")
@@ -47,9 +57,10 @@ module DocbookCompat
     end
 
     def munge_title(doc, html)
+      id = doc.id || 'id-1'
       header_start = <<~HTML.strip
         <div class="titlepage"><div><div>
-        <h1 class="title"><a id="id-1"></a>#{doc.title}</h1>
+        <h1 class="title"><a id="#{id}"></a>#{doc.title}</h1>
         </div></div><hr></div>
       HTML
       html.gsub!(%r{<div id="header">\n<h1>.+</h1>\n</div>}, header_start) ||

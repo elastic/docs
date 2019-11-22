@@ -198,7 +198,7 @@ sub build_single {
     my ( $index, $raw_dest, $dest, %opts ) = @_;
 
     my $type = $opts{type} || 'book';
-    my $toc = $opts{toc} ? "$type toc" : '';
+    my $toc = $opts{toc} || '';
     my $lenient   = $opts{lenient}       || '';
     my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
@@ -277,6 +277,8 @@ sub build_single {
                 '-a' => 'dc.type=Learn/Docs/' . $section,
                 '-a' => 'dc.subject=' . $subject,
                 '-a' => 'dc.identifier=' . $version,
+                # Turn on asciidoctor's table of contents generation if we want a TOC
+                $toc ? ('-a' => 'toc') : (),
             ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),
@@ -299,7 +301,7 @@ sub build_single {
             _check_build_error( $output, $died, $lenient );
         }
         my %xsltopts = (
-                "generate.toc"             => $toc,
+                "generate.toc"             => $toc ? "$type toc" : '',
                 "toc.section.depth"        => 0,
                 "local.book.version"       => $version,
                 "local.book.multi_version" => $multi,
