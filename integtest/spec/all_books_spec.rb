@@ -598,19 +598,42 @@ RSpec.describe 'building all books' do
       end
     end
   end
-  context 'when the branch is not "live"' do
+  context 'when the book has "live" branches' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', 'test'
+      repo.switch_to_new_branch 'other'
 
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
-      book.live_branches = []
+      book.branches << 'other'
+      book.live_branches = ['master']
     end
-    file_context 'raw/test/master/index.html' do
+    page_context 'the live branch', 'html/test/master/index.html' do
+      it "doesn't contain the noindex flag" do
+        expect(contents).not_to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
+      end
+      context 'the version drop down' do
+        it 'contains only the live branch' do
+          expect(body).to include(<<~HTML.strip)
+            <select><option value="master" selected>master (current)</option></select>
+          HTML
+        end
+      end
+    end
+    page_context 'the dead branch', 'html/test/other/index.html' do
       it 'contains the noindex flag' do
         expect(contents).to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow" />
         HTML
+      end
+      context 'the version drop down' do
+        it 'contains the deprecated branch' do
+          expect(body).to include(<<~HTML.strip)
+            <select><option value="master">master (current)</option><option value="other" selected>other (out of date)</option></select>
+          HTML
+        end
       end
     end
   end
