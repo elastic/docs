@@ -312,7 +312,7 @@ RSpec.describe 'building all books' do
     page_context 'raw/test/master/chapter.html' do
       it 'contains a relative link to www.elatic.co' do
         expect(body).to include(<<~HTML.strip)
-          <a class="ulink" href="/cloud/" target="_top">link</a>
+          <a href="/cloud/" class="ulink" target="_top">link</a>
         HTML
       end
     end
@@ -471,7 +471,7 @@ RSpec.describe 'building all books' do
     include_examples 'the favicon'
     it 'serves the guide index' do
       expect(guide_index).to serve(doc_body(include(<<~HTML.strip)))
-        <a class="ulink" href="test/current/index.html" target="_top">Test
+        <a href="test/current/index.html" class="ulink" target="_top">Test
       HTML
     end
     it 'serves a legacy redirect' do

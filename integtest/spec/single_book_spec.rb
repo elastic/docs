@@ -290,7 +290,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'contains an absolute link to www.elatic.co' do
         expect(body).to include(<<~HTML.strip)
-          <a class="ulink" href="https://www.elastic.co/cloud/" target="_top">link</a>
+          <a href="https://www.elastic.co/cloud/" class="ulink" target="_top">link</a>
         HTML
       end
     end
