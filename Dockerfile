@@ -112,3 +112,6 @@ COPY --from=node_test /node_modules /node_modules
 COPY --from=ruby_test /var/lib/gems /var/lib/gems
 COPY --from=ruby_test /usr/local/bin/rspec /usr/local/bin/rspec
 COPY --from=ruby_test /usr/local/bin/rubocop /usr/local/bin/rubocop
+
+FROM py_test AS diff_tool
+RUN install_packages git

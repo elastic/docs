@@ -26,31 +26,25 @@ def normalize_html(html):
                 crunched = NavigableString(re.sub(r'\s+', ' ', part))
                 if crunched != part:
                     part.replace_with(crunched)
-    # Remove empty paragraph tags inside of table cells. AsciiDoc fills empty
-    # table cells with these empty tags. Asciidoctor doesn't. Either way
-    # is fine.
-    for e in soup.select('td>p'):
-        if e.contents == []:
-            e.extract()
+    # Asciidoctor adds a "content" wrapper. It doesn't really change the layout
+    # so we're ok with it.
+    for e in soup.select('#content'):
+        e.unwrap()
+    # Asciidoctor adds a "ulist" class to all unordered lists which doesn't
+    # hurt anything so we can ignore it.
+    for e in soup.select('.itemizedlist.ulist'):
+        e['class'].remove('ulist')
+    # Docbook adds type="disc" to ul which is the default and isn't needed.
+    for e in soup.select('ul'):
+        if 'type' in e.attrs and e['type'] == 'disc':
+            del e['type']
     # Format the html with indentation so we can *see* things
     html = soup.prettify()
-    # Remove the zero width space that asciidoctor adds after each horizontal
-    # ellipsis. They don't hurt anything but asciidoc doesn't make them
-    html = html.replace('\u2026\u200b', '\u2026')
-    # Remove the zero width space that asciidoctor adds after each em dash that
-    # is between words. They are actively nice to have but asciidoc doesn't
-    # make them.
-    html = html.replace('\u2014\u200b', '\u2014')
-    # We intentionally changed lang-js to lang-console because in Asciidoctor
-    # because that is more accurate
-    html = html.replace('"programlisting prettyprint lang-js"',
-                        '"programlisting prettyprint lang-console"')
-    html = html.replace('"pre_wrapper lang-js"',
-                        '"pre_wrapper lang-console"')
-    # Asciidoctor relativizes https://www.elatic.co/ into /.
-    html = html.replace('https://www.elastic.co/', '/')
-    # The URL for the console snippets has changed
-    html = re.sub(r'data-snippet="[^"]+"', 'data-snippet="snippet"', html)
+    # docbook spits out the long-form charset and asciidoctor spits out the
+    # short form but they are equivalent
+    html = html.replace(
+        '<meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>',
+        '<meta charset="utf-8"/>')
     return html
 
 

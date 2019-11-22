@@ -130,6 +130,7 @@ sub new {
         single        => $args{single},
         index         => $index,
         branches      => \@branches,
+        live_branches => $args{live} || \@branches,
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
@@ -140,15 +141,17 @@ sub new {
         respect_edit_url_overrides => $respect_edit_url_overrides,
         suppress_migration_warnings => $args{suppress_migration_warnings} || 0,
         direct_html => ( $args{direct_html} || 'false' ) eq 'true',
+        toc_extra => $args{toc_extra} || '',
     }, $class;
 }
 
 #===================================
 sub build {
 #===================================
-    my ( $self, $rebuild ) = @_;
+    my ( $self, $rebuild, $conf_path ) = @_;
 
-    my $toc = ES::Toc->new( $self->title );
+    my $toc_extra = $self->{toc_extra} ? $conf_path->parent->file( $self->{toc_extra} ) : 0;
+    my $toc = ES::Toc->new( $self->title, $toc_extra );
     my $dir = $self->dir;
     $dir->mkpath;
 
@@ -259,7 +262,7 @@ sub _build_book {
                 lang          => $lang,
                 edit_urls     => $edit_urls,
                 private       => $self->private,
-                noindex       => $self->noindex,
+                noindex       => $self->noindex($branch),
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -272,6 +275,7 @@ sub _build_book {
                 branch => $branch,
                 roots => $roots,
                 relativize => 1,
+                direct_html => $self->{direct_html},
             );
         }
         else {
@@ -283,7 +287,7 @@ sub _build_book {
                 lang          => $lang,
                 edit_urls     => $edit_urls,
                 private       => $self->private,
-                noindex       => $self->noindex,
+                noindex       => $self->noindex($branch),
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -296,6 +300,7 @@ sub _build_book {
                 branch => $branch,
                 roots => $roots,
                 relativize => 1,
+                direct_html => $self->{direct_html},
             );
         }
         $checkout->rmtree;
@@ -422,6 +427,16 @@ sub section_title {
 }
 
 #===================================
+sub noindex {
+#===================================
+    my ( $self, $branch ) = @_;
+    return 1 if $self->{noindex};
+    return 0 if grep( /^$branch$/, @{ $self->{live_branches} } );
+    return 1;
+}
+
+
+#===================================
 sub title            { shift->{title} }
 sub dir              { shift->{dir} }
 sub prefix           { shift->{prefix} }
@@ -434,7 +449,6 @@ sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub private          { shift->{private} }
-sub noindex          { shift->{noindex} }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
 sub source           { shift->{source} }

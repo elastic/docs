@@ -116,7 +116,14 @@ RSpec.describe 'building a single book' do
         paragraph here is required.
       ASCIIDOC
     end
-
+    let(:repo) { src.repo 'src' }
+    context 'the logs' do
+      it 'say they are using the first remote intead' do
+        expect(outputs[0]).to include(<<~LOG)
+          Couldn't find an Elastic remote for #{repo.root}. Generating edit links targeting the first remote instead.
+        LOG
+      end
+    end
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
@@ -504,6 +511,52 @@ RSpec.describe 'building a single book' do
           .convert
     end
     include_examples 'README-like console alternatives', 'raw', '.'
+  end
+
+  context 'for a book with en -extra-title-page.html file' do
+    context 'single page' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', <<~ASCIIDOC
+          = Title
+
+          [[section]]
+          == Section
+        ASCIIDOC
+        repo.write 'index-extra-title-page.html', '<p>extra!</p>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').direct_html.single.convert
+      end
+      file_context 'raw/index.html' do
+        it 'should contain the extra title page' do
+          expect(contents).to include("<div>\n<p>extra!</p>\n</div>")
+        end
+      end
+    end
+    context 'multipage' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', <<~ASCIIDOC
+          = Title
+
+          [[section]]
+          == Section
+        ASCIIDOC
+        repo.write 'index-extra-title-page.html', '<p>extra!</p>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').direct_html.convert
+      end
+      file_context 'raw/index.html' do
+        it 'should contain the extra title page' do
+          expect(contents).to include("<div>\n<p>extra!</p>\n</div>")
+        end
+      end
+      file_context 'raw/section.html' do
+        it "shouldn't contain the extra title page" do
+          expect(contents).not_to include("<div>\n<p>extra!</p>\n</div>")
+        end
+      end
+    end
   end
 
   context 'for a book that uses {source_branch}' do

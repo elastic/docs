@@ -107,12 +107,7 @@ module.exports = templateSource => {
         yield* template.gather("<!-- DOCS LANG -->");
         yield `lang="${lang}"`;
         yield* template.gather("<!-- DOCS BODY -->");
-        /*
-         * Docbook spits out <body> and asciidoctor spits out <body class=....>
-         * Either way, we just want what comes after the body tag.
-         */
-        await raw.dump("<body");
-        await raw.dump(">");
+        await raw.dump("<body>");
         yield* raw.gather("</body>");
         yield* template.gather("<!-- DOCS FINAL -->");
         yield `<script type="text/javascript">

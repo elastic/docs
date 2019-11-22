@@ -12,7 +12,7 @@ export HOME=$JENKINS_HOME
 export REPO=git@github.com:elastic/built-docs.git
 export IMAGE=docker.elastic.co/docs/build:latest
 
-./build_docs --just-build-image
+./build_docs --docker-build build
 ssh-agent bash -c '
     ssh-add &&
     docker run --rm \

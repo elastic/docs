@@ -30,6 +30,14 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
     end
     include_examples 'book basics', 'Test', 'test'
+    file_context 'raw/test/master/index.html' do
+      it "doesn't contain the noindex flag" do
+        expect(contents).not_to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
+      end
+    end
+
     def self.has_license(name, heading)
       it "has license for #{name}" do
         expect(contents).to include(<<~TXT)
@@ -493,6 +501,47 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'when the config has toc_extra' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', 'words'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      src.write 'toc_extra.html', '<p>extra html</p>'
+      book.toc_extra = 'toc_extra.html'
+      src.toc_extra = 'toc_extra.html'
+    end
+    file_context 'the toc', 'raw/index.html' do
+      it 'includes the extra html' do
+        expect(contents).to include(<<~HTML)
+          <div id="extra">
+          <p>extra html</p>
+          </div>
+        HTML
+      end
+    end
+  end
+  context 'when a book has toc_extra' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', 'words'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      src.write 'toc_extra.html', '<p>extra html</p>'
+      book.toc_extra = 'toc_extra.html'
+      # Add a second branch to the book so it gets "versions" table of contents
+      repo.switch_to_new_branch 'other'
+      book.branches << 'other'
+    end
+    file_context 'the toc', 'raw/test/index.html' do
+      it 'includes the extra html' do
+        expect(contents).to include(<<~HTML)
+          <div id="extra">
+          <p>extra html</p>
+          </div>
+        HTML
+      end
+    end
+  end
+
   context 'when a book contains migration warnings' do
     shared_context 'convert with migration warnings' do |suppress|
       convert_before do |src, dest|
@@ -530,6 +579,38 @@ RSpec.describe 'building all books' do
         it 'contains the snippet' do
           expect(contents).to include('CODE HERE')
         end
+      end
+    end
+  end
+  context 'when the book is configured with noindex' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', 'test'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.noindex = true
+    end
+    file_context 'raw/test/master/index.html' do
+      it 'contains the noindex flag' do
+        expect(contents).to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
+      end
+    end
+  end
+  context 'when the branch is not "live"' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', 'test'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.live_branches = []
+    end
+    file_context 'raw/test/master/index.html' do
+      it 'contains the noindex flag' do
+        expect(contents).to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
       end
     end
   end

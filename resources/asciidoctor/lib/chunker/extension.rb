@@ -18,34 +18,63 @@ module Chunker
   end
 
   ##
-  # A Converter implementation that copies images as it sees them.
+  # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
     def initialize(delegate)
       super(delegate)
     end
 
-    # TODO: tests don't seem to pick up the headers because "embedded". Bad?
-
     def convert_section(node)
-      chunk_level = node.document.attr 'chunk_level'
+      doc = node.document
+      chunk_level = doc.attr 'chunk_level'
       return yield unless node.level == chunk_level
 
-      target = write node, node.id, yield
-      link_opts = {
-        type: :link,
-        target: target,
-      }
-      node.document.register :links, target
-      link = Asciidoctor::Inline.new node, :anchor, node.title, link_opts
+      html = form_section_into_page doc, yield
+      target = write doc, node.id, html
+      link_opts = { type: :link, target: target }
+      doc.register :links, target
+      link = Asciidoctor::Inline.new node.parent, :anchor, node.title, link_opts
       %(<li><span class="chapter">#{link.convert}</span></li>)
     end
 
-    def write(node, target, output)
-      dir = node.document.attr 'outdir'
+    def form_section_into_page(doc, html)
+      # We don't use asciidoctor's "parent" documents here because they don't
+      # seem to buy us much and they are an "internal" detail.
+      subdoc = Asciidoctor::Document.new [], subdoc_opts(doc)
+      subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
+      subdoc.convert
+    end
+
+    def subdoc_opts(doc)
+      {
+        attributes: subdoc_attrs(doc),
+        safe: doc.safe,
+        backend: doc.backend,
+        sourcemap: doc.sourcemap,
+        base_dir: doc.base_dir,
+        to_dir: doc.options[:to_dir],
+        standalone: true,
+      }
+    end
+
+    def subdoc_attrs(doc)
+      attrs = doc.attributes.dup
+      # Asciidoctor defaults these attribute to empty string if they aren't
+      # specified and setting them to `nil` clears them. Since we want to
+      # preserve the configuration from the parent into the child, we clear
+      # explicitly them if they aren't found in the parent. If we didn't then
+      # they'd default to fale.
+      attrs['stylesheet'] = nil unless attrs['stylesheet']
+      attrs['icons'] = nil unless attrs['icons']
+      attrs
+    end
+
+    def write(doc, target, html)
+      dir = doc.attr 'outdir'
       file = "#{target}.html"
       path = File.join dir, file
       File.open path, 'w:UTF-8' do |f|
-        f.write output
+        f.write html
       end
       file
     end
