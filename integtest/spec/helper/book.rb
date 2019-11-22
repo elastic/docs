@@ -51,6 +51,10 @@ class Book
   # Is the book a single page book?
   attr_accessor :single
 
+  ##
+  # Path to extra html to write into the book's table of contents.
+  attr_accessor :toc_extra
+
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
@@ -61,7 +65,7 @@ class Book
     @lang = 'en'
     @respect_edit_url_overrides = @suppress_migration_warnings = false
     @direct_html = @noindex = @single = false
-    @live_branches = nil
+    @live_branches = @toc_extra = nil
   end
 
   ##

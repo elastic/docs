@@ -2,9 +2,24 @@
 
 module DocbookCompat
   ##
-  # Methods to munge the document at the top level. All of these are a bit
+  # Methods to convert the document at the top level. All of these are a bit
   # scary but required at this point for docbook compatibility.
-  module DocMunging
+  module ConvertDocument
+    def convert_document(doc)
+      # We'll manually add the toc ourselves if it was requested.
+      wants_toc = doc.attr?('toc') && doc.attr?('toc-placement', 'auto')
+      doc.attributes.delete 'toc' if wants_toc
+
+      html = yield
+      html.gsub!(/<html lang="[^"]+">/, '<html>') ||
+        raise("Coudn't fix html in #{html}")
+      munge_head doc, html
+      munge_body doc, html
+      munge_title doc, html
+      add_toc doc, html if wants_toc
+      html
+    end
+
     def munge_head(doc, html)
       html.gsub!(%r{<title>(.+)</title>}, '<title>\1 | Elastic</title>') ||
         raise("Couldn't munge <title> in #{html}")
@@ -47,13 +62,27 @@ module DocbookCompat
     end
 
     def munge_title(doc, html)
-      header_start = <<~HTML.strip
-        <div class="titlepage"><div><div>
-        <h1 class="title"><a id="id-1"></a>#{doc.title}</h1>
-        </div></div><hr></div>
+      id = doc.id || 'id-1'
+      # Important: we're not replacing the whole header - it still will have a
+      # closing </div>.
+      header_start = <<~HTML
+        <div class="titlepage">
+        <div><div>
+        <h1 class="title"><a id="#{id}"></a>#{doc.title}</h1>
+        </div></div>
+        <hr>
       HTML
-      html.gsub!(%r{<div id="header">\n<h1>.+</h1>\n</div>}, header_start) ||
+      html.gsub!(%r{<div id="header">\n<h1>.+</h1>\n}, header_start) ||
         raise("Couldn't wrap header in #{html}")
+    end
+
+    def add_toc(doc, html)
+      html.gsub! '<div id="content">', <<~HTML
+        <div id="content">
+        <div class="#{doc.attr 'toc-class', 'toc'}">
+        #{convert doc, 'outline'}
+        </div>
+      HTML
     end
   end
 end
