@@ -168,24 +168,28 @@ sub build_chunked {
         unlink $dest_xml;
     }
 
-    my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
-        or die "Couldn't find chunk dir in <$raw_dest>";
+    if ( $direct_html ) {
+        _add_extra_title_page( $index, $raw_dest->file('index.html') );
+    } else {
+        my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
+            or die "Couldn't find chunk dir in <$raw_dest>";
 
-    for ( $chunk_dir->children ) {
-        my $child_dest = $raw_dest->file( $_->relative( $chunk_dir ) );
-        if ( $_->basename !~ /\.html$/ ) {
-            rmove( $_, $child_dest );
-            next;
+        for ( $chunk_dir->children ) {
+            my $child_dest = $raw_dest->file( $_->relative( $chunk_dir ) );
+            if ( $_->basename !~ /\.html$/ ) {
+                rmove( $_, $child_dest );
+                next;
+            }
+            # Convert docbook's ceremonial output into html5
+            my $contents = $_->slurp( iomode => '<:encoding(UTF-8)' );
+            $contents = _html5ify( $contents );
+            $child_dest->spew( iomode => '>:utf8', $contents );
+            unlink $_ or die "Coudln't remove $_ $!";
         }
-        # Convert docbook's ceremonial output into html5
-        my $contents = $_->slurp( iomode => '<:encoding(UTF-8)' );
-        $contents = _html5ify( $contents );
-        $child_dest->spew( iomode => '>:utf8', $contents );
-        unlink $_ or die "Coudln't remove $_ $!";
+        $chunk_dir->rmtree;
     }
     extract_toc_from_index( $raw_dest );
     finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
-    $chunk_dir->rmtree;
 }
 
 #===================================
@@ -334,7 +338,9 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    unless ( $direct_html ) {
+    if ( $direct_html ) {
+       _add_extra_title_page( $index, $html_file );
+    } else {
         my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
         $contents = _html5ify( $contents );
         $html_file->spew( iomode => '>:utf8', $contents );
@@ -348,6 +354,27 @@ sub build_single {
     }
 
     finish_build( $index->parent, $raw_dest, $dest, $lang, $opts{is_toc} );
+}
+
+#===================================
+# Emulates how we've been using docbook's -docinfo.xml feature by allowing us
+# to add our own extra html to the title page of books.
+#===================================
+sub _add_extra_title_page {
+#===================================
+    my ( $index, $html_file ) = @_;
+    my $extra_title_page = $index->basename;
+    $extra_title_page =~ s/\.a(scii)?doc$/-extra-title-page.html/ || die;
+    $extra_title_page = $index->parent->file( $extra_title_page );
+    if ( -e $extra_title_page ) {
+        $extra_title_page = $extra_title_page->slurp( iomode => '<:encoding(UTF-8)' );
+        my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
+        # Wrapping the extra in a div is a relic of docbook. But we're trying
+        # to emulate docbook so here we are.
+        $contents =~ s|</h1>\n</div>|</h1>\n</div><div>\n$extra_title_page\n</div>| or
+            die "Couldn't add extra-title-page to $contents";
+        $html_file->spew( iomode => '>:utf8', $contents );
+    }
 }
 
 #===================================

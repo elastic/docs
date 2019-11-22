@@ -197,6 +197,16 @@ class Dest
       self
     end
 
+    def direct_html
+      @cmd += ['--direct_html']
+      self
+    end
+
+    def single
+      @cmd += ['--single']
+      self
+    end
+
     def uses_preview
       true
     end
