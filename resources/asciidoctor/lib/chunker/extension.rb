@@ -24,6 +24,20 @@ module Chunker
       super(delegate)
     end
 
+    def convert_document(doc)
+      def doc.docinfo(location = :head, suffix = nil)
+        info = super
+        return info unless location == :head
+
+        title = doctitle partition: true
+        info += <<~HTML
+          <link rel="home" href="index.html" title="#{title.main}"/>
+        HTML
+        info
+      end
+      yield
+    end
+
     def convert_section(node)
       doc = node.document
       chunk_level = doc.attr 'chunk_level'
