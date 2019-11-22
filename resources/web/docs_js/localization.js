@@ -8,6 +8,12 @@ export const lang_spec = {
   "Configure Kibana URL": {
     "zh_cn": "配置 Kibana URL"
   },
+  "Configure Elastic Cloud URL": {
+    "zh_cn": "配置 Elastic Cloud URL"
+  },
+  "Configure Elastic Cloud Enterprise URL": {
+    "zh_cn": "配置 Elastic Cloud Enerprise URL"
+  },
   "Copy as cURL": {
     "zh_cn": "拷贝为 cURL"
   },
