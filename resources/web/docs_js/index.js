@@ -213,8 +213,8 @@ $(function() {
 
     return mount(div, ConsoleWidget, {
       setting: "ess",
-      url_label: 'Enter the URL of Elastic Cloud',
-      configure_text: 'Configure Elastic Cloud URL',
+      url_label: 'Enter the endpoint URL of the Elasticsearch Service',
+      configure_text: 'Configure the Elasticsearch Service endpoint URL',
       consoleText,
       snippet
     });
@@ -226,8 +226,8 @@ $(function() {
 
     return mount(div, ConsoleWidget, {
       setting: "ece",
-      url_label: 'Enter the URL of Elastic Cloud',
-      configure_text: 'Configure Elastic Cloud URL',
+      url_label: 'Enter the endpoint URL of Elastic Cloud Enterprise',
+      configure_text: 'Configure the Elastic Cloud Enterprise endpoint URL',
       consoleText,
       snippet
     });
