@@ -80,7 +80,7 @@ module DocbookCompat
       html.gsub! '<div id="content">', <<~HTML
         <div id="content">
         <div class="#{doc.attr 'toc-class', 'toc'}">
-        #{convert doc, 'outline'}
+        #{doc.converter.convert doc, 'outline'}
         </div>
       HTML
     end

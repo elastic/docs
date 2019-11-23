@@ -471,7 +471,7 @@ RSpec.describe 'building all books' do
     include_examples 'the favicon'
     it 'serves the guide index' do
       expect(guide_index).to serve(doc_body(include(<<~HTML.strip)))
-        <a class="ulink" href="test/current/index.html" target="_top">Test
+        <a href="test/current/index.html" class="ulink" target="_top">Test
       HTML
     end
     it 'serves a legacy redirect' do
