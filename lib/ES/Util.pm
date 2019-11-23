@@ -109,6 +109,8 @@ sub build_chunked {
                 '-a' => 'nofooter',
                 # Pass chunking down
                 '-a' => 'chunk_level=' . ( $chunk + 1 ),
+                # Render the table of contents
+                '-a' => 'toc',
                 # Lock the destination file name to one we expect
                 '--out-file' => 'index.html',
                 # Asciidoctor doesn't pass the destination directory down to
@@ -373,7 +375,7 @@ sub _add_extra_title_page {
         my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
         # Wrapping the extra in a div is a relic of docbook. But we're trying
         # to emulate docbook so here we are.
-        $contents =~ s|</h1>\n</div>|</h1>\n</div><div>\n$extra_title_page\n</div>| or
+        $contents =~ s|</h1></div>|</h1></div>\n<div>\n$extra_title_page\n</div>| or
             die "Couldn't add extra-title-page to $contents";
         $html_file->spew( iomode => '>:utf8', $contents );
     }

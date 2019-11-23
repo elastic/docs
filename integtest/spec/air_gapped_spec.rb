@@ -39,7 +39,7 @@ RSpec.describe 'air gapped deploy', order: :defined do
   context 'the books index' do
     it 'links to the book' do
       expect(books_index).to serve(doc_body(include(<<~HTML.strip)))
-        <a class="ulink" href="test/current/index.html" target="_top">Test</a>
+        <a href="test/current/index.html" class="ulink" target="_top">Test</a>
       HTML
     end
     it 'logs the access to the docs root' do
@@ -63,7 +63,7 @@ RSpec.describe 'air gapped deploy', order: :defined do
     let(:host) { 'dot.dot.localhost' }
     it 'we can still serve the books index' do
       expect(books_index).to serve(doc_body(include(<<~HTML.strip)))
-        <a class="ulink" href="test/current/index.html" target="_top">Test</a>
+        <a href="test/current/index.html" class="ulink" target="_top">Test</a>
       HTML
     end
     it 'logs the access to the funny host' do
