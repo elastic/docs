@@ -10,11 +10,32 @@ module DocbookCompat
       wants_toc = doc.attr?('toc') && doc.attr?('toc-placement', 'auto')
       doc.attributes.delete 'toc' if wants_toc
 
-      title = doc.doctitle partition: true
+      doc.extend ExtraDocinfo
 
       html = yield
+      munge_html doc, html, wants_toc
+      html
+    end
+
+    ##
+    # Adds extra tags <link> tags to the <head> to emulate docbook.
+    module ExtraDocinfo
+      def docinfo(location = :head, suffix = nil)
+        info = super
+        return info unless location == :head
+
+        info + <<~HTML
+          <meta name="DC.type" content="#{attributes['dc.type']}"/>
+          <meta name="DC.subject" content="#{attributes['dc.subject']}"/>
+          <meta name="DC.identifier" content="#{attributes['dc.identifier']}"/>
+        HTML
+      end
+    end
+
+    def munge_html(doc, html, wants_toc)
+      title = doc.doctitle partition: true
       munge_html_tag html
-      munge_head doc, title, html
+      munge_head title, html
       munge_body doc, html
       munge_title doc, title, html
       add_toc doc, html if wants_toc
@@ -26,12 +47,11 @@ module DocbookCompat
         raise("Coudn't fix html in #{html}")
     end
 
-    def munge_head(doc, title, html)
+    def munge_head(title, html)
       html.gsub!(
         %r{<title>(.+)</title>}, "<title>#{title.main} | Elastic</title>"
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
-      add_dc_meta doc, html
     end
 
     META_VIEWPORT = <<~HTML
@@ -45,16 +65,6 @@ module DocbookCompat
         raise("Couldn't remove viewport in #{html}")
       html.gsub!(/<meta name="generator" content="Asciidoctor [^"]+">\n/, '') ||
         raise("Couldn't remove generator in #{html}")
-    end
-
-    def add_dc_meta(doc, html)
-      meta = <<~HTML.strip
-        <meta name="DC.type" content="#{doc.attr 'dc.type'}"/>
-        <meta name="DC.subject" content="#{doc.attr 'dc.subject'}"/>
-        <meta name="DC.identifier" content="#{doc.attr 'dc.identifier'}"/>
-      HTML
-      html.gsub!('</title>', "</title>\n#{meta}") ||
-        raise("Couldn't add dc meta to #{html}")
     end
 
     def munge_body(doc, html)
