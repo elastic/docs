@@ -7,12 +7,13 @@ require_relative '../delegating_converter'
 # HTML5 converter that chunks like docbook.
 module Chunker
   def self.activate(registry)
-    return unless registry.document.attr 'outdir'
-    return unless (chunk_level = registry.document.attr 'chunk_level')
+    doc = registry.document
+    return unless doc.attr 'outdir'
+    return unless (chunk_level = doc.attr 'chunk_level')
 
-    if chunk_level.is_a? String
-      registry.document.attributes['chunk_level'] = chunk_level.to_i
-    end
+    doc.attributes['chunk_level'] = chunk_level.to_i if chunk_level.is_a? String
+
+    doc.attributes['toclevels'] ||= doc.attributes['chunk_level']
 
     DelegatingConverter.setup(registry.document) { |d| Converter.new d }
   end
@@ -20,28 +21,31 @@ module Chunker
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
-    def initialize(delegate)
-      super(delegate)
-    end
-
     def convert_section(node)
       doc = node.document
       chunk_level = doc.attr 'chunk_level'
-      return yield unless node.level == chunk_level
+      return yield unless node.level <= chunk_level
 
-      html = form_section_into_page doc, yield
-      target = write doc, node.id, html
-      link_opts = { type: :link, target: target }
-      doc.register :links, target
-      link = Asciidoctor::Inline.new node.parent, :anchor, node.title, link_opts
-      %(<li><span class="chapter">#{link.convert}</span></li>)
+      html = form_section_into_page doc, node.title, yield
+      write doc, "#{node.id}.html", html
+      ''
     end
 
-    def form_section_into_page(doc, html)
+    def convert_outline(node, opts = {})
+      # Fix links in the toc
+      toclevels = opts[:toclevels] || node.document.attributes['toclevels'].to_i
+      outline = yield
+      cleanup_outline outline, node, toclevels
+      outline
+    end
+
+    def form_section_into_page(doc, title, html)
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc)
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
+      maintitle = doc.doctitle partition: true
+      subdoc.attributes['title'] = "#{title} | #{maintitle.main}"
       subdoc.convert
     end
 
@@ -69,14 +73,21 @@ module Chunker
       attrs
     end
 
-    def write(doc, target, html)
+    def write(doc, file, html)
       dir = doc.attr 'outdir'
-      file = "#{target}.html"
       path = File.join dir, file
       File.open path, 'w:UTF-8' do |f|
         f.write html
       end
       file
+    end
+
+    def cleanup_outline(outline, node, toclevels)
+      node.sections.each do |section|
+        outline.gsub!(%(href="##{section.id}"), %(href="#{section.id}.html")) ||
+          raise("Couldn't fix section link for #{section.id} in #{outline}")
+        cleanup_outline outline, section, toclevels if section.level < toclevels
+      end
     end
   end
 end

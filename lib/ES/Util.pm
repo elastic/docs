@@ -109,6 +109,8 @@ sub build_chunked {
                 '-a' => 'nofooter',
                 # Pass chunking down
                 '-a' => 'chunk_level=' . ( $chunk + 1 ),
+                # Render the table of contents
+                '-a' => 'toc',
                 # Lock the destination file name to one we expect
                 '--out-file' => 'index.html',
                 # Asciidoctor doesn't pass the destination directory down to
