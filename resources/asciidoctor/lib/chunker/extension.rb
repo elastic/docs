@@ -16,22 +16,27 @@ module Chunker
     doc.attributes['toclevels'] ||= doc.attributes['chunk_level']
 
     DelegatingConverter.setup(registry.document) { |d| Converter.new d }
-
-    def doc.docinfo(location = :head, suffix = nil)
-      info = super
-      return info unless location == :head
-
-      title = doctitle partition: true
-      info += <<~HTML
-        <link rel="home" href="index.html" title="#{title.main}"/>
-      HTML
-      info
-    end
   end
 
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
+    def convert_document(doc)
+      def doc.docinfo(location = :head, suffix = nil)
+        info = super
+        return info unless location == :head
+  
+        info + <<~HTML
+          <link rel="home" href="index.html" title="#{attr 'home'}"/>
+        HTML
+      end
+      unless doc.attr 'home'
+        title = doc.doctitle partition: true
+        doc.attributes['home'] = title.main
+      end
+      yield
+    end
+
     def convert_section(node)
       doc = node.document
       chunk_level = doc.attr 'chunk_level'
