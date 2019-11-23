@@ -77,6 +77,9 @@ RSpec.describe Chunker do
         end
         file_context 'the first section', 's1.html' do
           include_examples 'healthy head'
+          it 'contains the correct title' do
+            expect(contents).to include('<title>Section 1 | Title</title>')
+          end
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">Section 1</h2>')
           end
@@ -86,6 +89,9 @@ RSpec.describe Chunker do
         end
         file_context 'the first section', 's2.html' do
           include_examples 'healthy head'
+          it 'contains the correct title' do
+            expect(contents).to include('<title>Section 2 | Title</title>')
+          end
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s2">Section 2</h2>')
           end
