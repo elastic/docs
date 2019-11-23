@@ -21,6 +21,15 @@ module Chunker
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
+    def convert_document(doc)
+      doc.extend ExtraDocinfo
+      unless doc.attr 'home'
+        title = doc.doctitle partition: true
+        doc.attributes['home'] = title.main
+      end
+      yield
+    end
+
     def convert_section(node)
       doc = node.document
       chunk_level = doc.attr 'chunk_level'
@@ -88,6 +97,19 @@ module Chunker
           raise("Couldn't fix section link for #{section.id} in #{outline}")
         cleanup_outline outline, section, toclevels if section.level < toclevels
       end
+    end
+  end
+
+  ##
+  # Adds extra tags <link> tags to the <head> to emulate docbook.
+  module ExtraDocinfo
+    def docinfo(location = :head, suffix = nil)
+      info = super
+      return info unless location == :head
+
+      info + <<~HTML
+        <link rel="home" href="index.html" title="#{attributes['home']}"/>
+      HTML
     end
   end
 end

@@ -24,6 +24,11 @@ RSpec.describe Chunker do
           <meta charset="UTF-8">
         HTML
       end
+      it 'contains the home link' do
+        expect(contents).to include(<<~HTML)
+          <link rel="home" href="index.html" title="Title"/>
+        HTML
+      end
       it "doesn't contain the builtin asciidoctor stylesheet" do
         # We turned the stylesheet off
         expect(contents).not_to include('<style')
