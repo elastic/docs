@@ -10,19 +10,26 @@ module DocbookCompat
       wants_toc = doc.attr?('toc') && doc.attr?('toc-placement', 'auto')
       doc.attributes.delete 'toc' if wants_toc
 
+      title = doc.doctitle partition: true
+
       html = yield
-      html.gsub!(/<html lang="[^"]+">/, '<html>') ||
-        raise("Coudn't fix html in #{html}")
-      munge_head doc, html
+      munge_html_tag html
+      munge_head doc, title, html
       munge_body doc, html
-      munge_title doc, html
+      munge_title doc, title, html
       add_toc doc, html if wants_toc
       html
     end
 
-    def munge_head(doc, html)
-      html.gsub!(%r{<title>(.+)</title>}, '<title>\1 | Elastic</title>') ||
-        raise("Couldn't munge <title> in #{html}")
+    def munge_html_tag(html)
+      html.gsub!(/<html lang="[^"]+">/, '<html>') ||
+        raise("Coudn't fix html in #{html}")
+    end
+
+    def munge_head(doc, title, html)
+      html.gsub!(
+        %r{<title>(.+)</title>}, "<title>#{title.main} | Elastic</title>"
+      ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
       add_dc_meta doc, html
     end
@@ -61,19 +68,30 @@ module DocbookCompat
         raise("Couldn't wrap body in #{html}")
     end
 
-    def munge_title(doc, html)
-      id = doc.id || 'id-1'
+    def munge_title(doc, title, html)
       # Important: we're not replacing the whole header - it still will have a
       # closing </div>.
       header_start = <<~HTML
         <div class="titlepage">
-        <div><div>
-        <h1 class="title"><a id="#{id}"></a>#{doc.title}</h1>
-        </div></div>
-        <hr>
+        #{docbook_style_title doc, title}
       HTML
       html.gsub!(%r{<div id="header">\n<h1>.+</h1>\n}, header_start) ||
         raise("Couldn't wrap header in #{html}")
+    end
+
+    def docbook_style_title(doc, title)
+      id = doc.id || 'id-1'
+      result = <<~HTML
+        <div>
+        <div><h1 class="title"><a id="#{id}"></a>#{title.main}</h1></div>
+      HTML
+      result += <<~HTML if title.subtitle?
+        <div><h2 class="subtitle">#{title.subtitle}</h2></div>
+      HTML
+      result + <<~HTML.strip
+        </div>
+        <hr>
+      HTML
     end
 
     def add_toc(doc, html)
