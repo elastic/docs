@@ -19,7 +19,8 @@ module Chunker
     end
 
     ##
-    # Find the page that comes before the page at `parent.blocks[index + 1]`.
+    # Find the page that comes before the page at `parent.blocks[index + 1]` in
+    # "table of contents order".
     def find_prev_in(parent, index)
       while index >= 0
         c = parent.blocks[index]
@@ -45,7 +46,8 @@ module Chunker
     end
 
     ##
-    # Find the page that comes after the page at `parent.blocks[index - 1]`
+    # Find the page that comes after the page at `parent.blocks[index - 1]` in
+    # "table of contents order".
     def find_next_in(parent, index)
       loop do
         while (c = parent.blocks[index])
