@@ -7,7 +7,7 @@ import {openModal} from "../actions/modal";
 import {saveSettings} from "../actions/settings";
 import AlternativePicker from "./alternative_picker";
 
-const copyAsCurl = ({setting, consoleText, isKibana}) => (_, getState) => {
+const copyAsCurl = ({setting, consoleText, isKibana, addPretty}) => (_, getState) => {
   const state       = getState();
   const langStrings = state.settings.langStrings;
 
@@ -17,7 +17,7 @@ const copyAsCurl = ({setting, consoleText, isKibana}) => (_, getState) => {
     curl_password: prop(setting + "_curl_password", state.settings)
   };
 
-  const curlText = utils.getCurlText(merge(curlVals, {consoleText, isKibana, langStrings}))
+  const curlText = utils.getCurlText(merge(curlVals, {consoleText, isKibana, addPretty}))
   return utils.copyText(curlText, langStrings);
 }
 
@@ -77,7 +77,12 @@ export const ConsoleWidget = props => {
     <AlternativePicker />
     <div className="u-space-between">
       <a className="sense_widget copy_as_curl"
-        onClick={e => props.copyAsCurl({isKibana: props.isKibana, consoleText: props.consoleText, setting: props.setting})}>
+        onClick={e => props.copyAsCurl({
+          isKibana: props.isKibana,
+          consoleText: props.consoleText,
+          setting: props.setting,
+          addPretty: props.addPretty
+        })}>
         {props.langStrings('Copy as cURL')}
       </a>
       {props.view_in_text &&

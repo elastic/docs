@@ -306,7 +306,7 @@
       <xsl:apply-imports />
     </div>
     <!-- Asciidoctor's CONSOLE widget -->
-    <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana'">
+    <xsl:if test="@language = 'console' or @language = 'sense' or @language = 'kibana' or @language = 'ess' or @language = 'ece'">
       <xsl:variable name="widget_class">
         <xsl:value-of select="@language"/>_widget
         <xsl:value-of select="substring-after(@role, 'default')"/>
