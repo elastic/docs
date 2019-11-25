@@ -2,6 +2,8 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative 'extra_docinfo'
+require_relative 'find_related'
 
 ##
 # HTML5 converter that chunks like docbook.
@@ -11,33 +13,33 @@ module Chunker
     return unless doc.attr 'outdir'
     return unless (chunk_level = doc.attr 'chunk_level')
 
-    doc.attributes['chunk_level'] = chunk_level.to_i if chunk_level.is_a? String
+    doc.extend Chunker::ExtraDocinfo
+    return if doc.attr 'subdoc'
 
     doc.attributes['toclevels'] ||= doc.attributes['chunk_level']
 
-    DelegatingConverter.setup(registry.document) { |d| Converter.new d }
+    DelegatingConverter.setup(registry.document) do |d|
+      Converter.new d, chunk_level.to_i
+    end
   end
 
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
-    def convert_document(doc)
-      doc.extend ExtraDocinfo
-      unless doc.attr 'home'
-        title = doc.doctitle partition: true
-        doc.attributes['home'] = title.main
-      end
-      yield
+    include Chunker::FindRelated
+
+    def initialize(delegate, chunk_level)
+      super(delegate)
+      @chunk_level = chunk_level
     end
 
-    def convert_section(node)
-      doc = node.document
-      chunk_level = doc.attr 'chunk_level'
-      return yield unless node.level <= chunk_level
-
-      html = form_section_into_page doc, node.title, yield
-      write doc, "#{node.id}.html", html
-      ''
+    def convert_document(doc)
+      unless doc.attr 'home'
+        title = doc.doctitle partition: true
+        doc.attributes['home'] = title.main.strip
+      end
+      doc.attributes['next_section'] = find_next_in doc, 0
+      yield
     end
 
     def convert_outline(node, opts = {})
@@ -48,13 +50,23 @@ module Chunker
       outline
     end
 
-    def form_section_into_page(doc, title, html)
+    def convert_section(section)
+      doc = section.document
+      return yield unless section.level <= @chunk_level
+
+      html = form_section_into_page doc, section, yield
+      write doc, "#{section.id}.html", html
+      ''
+    end
+
+    def form_section_into_page(doc, section, html)
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc)
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
       maintitle = doc.doctitle partition: true
-      subdoc.attributes['title'] = "#{title} | #{maintitle.main}"
+      subdoc.attributes['title'] = "#{section.title} | #{maintitle.main}"
+      subdoc.attributes.merge! find_related(section)
       subdoc.convert
     end
 
@@ -79,6 +91,7 @@ module Chunker
       # they'd default to fale.
       attrs['stylesheet'] = nil unless attrs['stylesheet']
       attrs['icons'] = nil unless attrs['icons']
+      attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
       attrs
     end
 
@@ -97,19 +110,6 @@ module Chunker
           raise("Couldn't fix section link for #{section.id} in #{outline}")
         cleanup_outline outline, section, toclevels if section.level < toclevels
       end
-    end
-  end
-
-  ##
-  # Adds extra tags <link> tags to the <head> to emulate docbook.
-  module ExtraDocinfo
-    def docinfo(location = :head, suffix = nil)
-      info = super
-      return info unless location == :head
-
-      info + <<~HTML
-        <link rel="home" href="index.html" title="#{attributes['home']}"/>
-      HTML
     end
   end
 end

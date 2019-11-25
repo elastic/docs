@@ -17,7 +17,8 @@ RSpec.describe Chunker do
   let(:backend) { :html5 }
   let(:standalone) { true }
 
-  shared_examples 'healthy head' do
+  shared_examples 'healthy head' \
+    do |prev_page, prev_title, next_page, next_title|
     context 'the <head>' do
       it 'contains the charset' do
         expect(contents).to include(<<~HTML)
@@ -28,6 +29,28 @@ RSpec.describe Chunker do
         expect(contents).to include(<<~HTML)
           <link rel="home" href="index.html" title="Title"/>
         HTML
+      end
+      if prev_page
+        it 'contains the prev link' do
+          expect(contents).to include(<<~HTML)
+            <link rel="prev" href="#{prev_page}.html" title="#{prev_title}"/>
+          HTML
+        end
+      else
+        it "doesn't contain the prev link" do
+          expect(contents).not_to include('rel="prev"')
+        end
+      end
+      if next_page
+        it 'contains the next link' do
+          expect(contents).to include(<<~HTML)
+            <link rel="next" href="#{next_page}.html" title="#{next_title}"/>
+          HTML
+        end
+      else
+        it "doesn't contain the next link" do
+          expect(contents).not_to include('rel="next"')
+        end
       end
       it "doesn't contain the builtin asciidoctor stylesheet" do
         # We turned the stylesheet off
@@ -68,7 +91,7 @@ RSpec.describe Chunker do
         end
         context 'the main output' do
           let(:contents) { converted }
-          include_examples 'healthy head'
+          include_examples 'healthy head', nil, nil, 's1', 'Section 1'
           it 'contains a link to the first section' do
             expect(converted).to include(<<~HTML.strip)
               <li><a href="s1.html">Section 1</a></li>
@@ -81,7 +104,7 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the first section', 's1.html' do
-          include_examples 'healthy head'
+          include_examples 'healthy head', 'index', 'Title', 's2', 'Section 2'
           it 'contains the correct title' do
             expect(contents).to include('<title>Section 1 | Title</title>')
           end
@@ -92,8 +115,8 @@ RSpec.describe Chunker do
             expect(contents).to include '<p>Words words.</p>'
           end
         end
-        file_context 'the first section', 's2.html' do
-          include_examples 'healthy head'
+        file_context 'the second section', 's2.html' do
+          include_examples 'healthy head', 's1', 'Section 1', nil, nil
           it 'contains the correct title' do
             expect(contents).to include('<title>Section 2 | Title</title>')
           end
@@ -122,6 +145,8 @@ RSpec.describe Chunker do
           ASCIIDOC
         end
         context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'healthy head', nil, nil, 'l1', 'Level 1'
           it 'contains a link to the level 1 section' do
             expect(converted).to include(<<~HTML.strip)
               <li><a href="l1.html">Level 1</a></li>
@@ -134,6 +159,7 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the level one section', 'l1.html' do
+          include_examples 'healthy head', 'index', 'Title', nil, nil
           it 'contains the header of the level 1 section' do
             expect(contents).to include('<h2 id="l1">Level 1</h2>')
           end
@@ -168,7 +194,7 @@ RSpec.describe Chunker do
           'toc' => '',
         }
       end
-      context 'there is are two level 1 sections' do
+      context 'there is are a few sections' do
         let(:input) do
           <<~ASCIIDOC
             = Title
@@ -194,7 +220,7 @@ RSpec.describe Chunker do
         end
         context 'the main output' do
           let(:contents) { converted }
-          include_examples 'healthy head'
+          include_examples 'healthy head', nil, nil, 's1', 'S1'
           it 'contains a link to the level 1 sections' do
             expect(converted).to include(<<~HTML.strip)
               <li><a href="s1.html">S1</a>
@@ -219,25 +245,25 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the first level 1 section', 's1.html' do
-          include_examples 'healthy head'
+          include_examples 'healthy head', 'index', 'Title', 's1_1', 'S1_1'
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">S1</h2>')
           end
         end
         file_context 'the first level 2 section', 's1_1.html' do
-          include_examples 'healthy head'
+          include_examples 'healthy head', 's1', 'S1', 's2', 'S2'
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s1_1">S1_1</h3>')
           end
         end
         file_context 'the second level 1 section', 's2.html' do
-          include_examples 'healthy head'
+          include_examples 'healthy head', 's1_1', 'S1_1', 's2_1', 'S2_1'
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s2">S2</h2>')
           end
         end
         file_context 'the second level 2 section', 's2_1.html' do
-          include_examples 'healthy head'
+          include_examples 'healthy head', 's2', 'S2', 's2_2', 'S2_2'
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s2_1">S2_1</h3>')
           end
@@ -246,7 +272,7 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the last level 2 section', 's2_2.html' do
-          include_examples 'healthy head'
+          include_examples 'healthy head', 's2_1', 'S2_1', nil, nil
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s2_2">S2_2</h3>')
           end
