@@ -79,6 +79,8 @@ module DocbookCompat
     end
 
     def munge_title(doc, title, html)
+      return if doc.attr 'noheader'
+
       # Important: we're not replacing the whole header - it still will have a
       # closing </div>.
       header_start = <<~HTML
