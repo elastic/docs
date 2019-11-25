@@ -150,11 +150,13 @@ RSpec.describe DocbookCompat do
             <hr>
             </div>
             <div id="content">
+            <!--START_TOC-->
             <div class="toc">
           HTML
         end
         it 'looks like the docbook toc' do
           expect(converted).to include(<<~HTML)
+            <!--START_TOC-->
             <div class="toc">
             <ul class="toc">
             <li><span class="chapter"><a href="#_section_1">Section 1</a></span>
@@ -163,6 +165,7 @@ RSpec.describe DocbookCompat do
             </li>
             </ul>
             </div>
+            <!--END_TOC-->
           HTML
         end
       end
