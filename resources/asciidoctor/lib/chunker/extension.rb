@@ -62,14 +62,14 @@ module Chunker
     def form_section_into_page(doc, section, html)
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
-      subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, title)
+      subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
       subdoc.convert
     end
 
-    def subdoc_opts(doc, title)
+    def subdoc_opts(doc, section)
       {
-        attributes: subdoc_attrs(doc, title),
+        attributes: subdoc_attrs(doc, section),
         safe: doc.safe,
         backend: doc.backend,
         sourcemap: doc.sourcemap,
@@ -79,10 +79,10 @@ module Chunker
       }
     end
 
-    def subdoc_attrs(doc, title)
+    def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['title'] = "#{title} | #{maintitle.main}"
+      attrs['title'] = "#{section.title} | #{maintitle.main}"
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear
