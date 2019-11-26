@@ -68,12 +68,17 @@ module Chunker
       refid = node.attributes['refid']
       return unless (ref = node.document.catalog[:refs][refid])
 
-      page = ref
-      while page.context != :section || page.level > @chunk_level
-        page = ref.parent
-      end
+      page = page_containing ref
       node.target = "#{page.id}.html"
       node.target += "##{ref.id}" unless page == ref
+    end
+
+    def page_containing(node)
+      page = node
+      while page.context != :section || page.level > @chunk_level
+        page = page.parent
+      end
+      page
     end
 
     def form_section_into_page(doc, section, html)
