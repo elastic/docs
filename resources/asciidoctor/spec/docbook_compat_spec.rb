@@ -395,6 +395,48 @@ RSpec.describe DocbookCompat do
       end
     end
   end
+  context 'an ordered list' do
+    let(:input) do
+      <<~ASCIIDOC
+        . Thing
+        . Other thing
+        . Third thing
+      ASCIIDOC
+    end
+    it 'is wrapped an orderedlist div' do
+      expect(converted).to include('<div class="olist orderedlist">')
+    end
+    it 'has the itemizedlist class' do
+      expect(converted).to include('<ol class="orderedlist"')
+    end
+    context 'the first item' do
+      it 'has the listitem class' do
+        expect(converted).to include(<<~HTML)
+          <li class="listitem">
+          Thing
+          </li>
+        HTML
+      end
+    end
+    context 'the second item' do
+      it 'has the listitem class' do
+        expect(converted).to include(<<~HTML)
+          <li class="listitem">
+          Other thing
+          </li>
+        HTML
+      end
+    end
+    context 'the third item' do
+      it 'has the listitem class' do
+        expect(converted).to include(<<~HTML)
+          <li class="listitem">
+          Third thing
+          </li>
+        HTML
+      end
+    end
+  end
 
   context 'backticked code' do
     let(:input) do
