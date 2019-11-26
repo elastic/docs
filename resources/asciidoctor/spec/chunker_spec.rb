@@ -36,6 +36,12 @@ RSpec.describe Chunker do
     end
   end
 
+  shared_examples 'subpage' do
+    it "doesn't contain the main title" do
+      expect(contents).not_to include('<h1>Title</h1>')
+    end
+  end
+
   context 'when outdir is configured' do
     let(:outdir) { Dir.mktmpdir }
     after(:example) { FileUtils.remove_entry outdir }
@@ -82,6 +88,7 @@ RSpec.describe Chunker do
         end
         file_context 'the first section', 's1.html' do
           include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the correct title' do
             expect(contents).to include('<title>Section 1 | Title</title>')
           end
@@ -94,6 +101,7 @@ RSpec.describe Chunker do
         end
         file_context 'the first section', 's2.html' do
           include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the correct title' do
             expect(contents).to include('<title>Section 2 | Title</title>')
           end
@@ -134,6 +142,8 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the level one section', 'l1.html' do
+          include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the header of the level 1 section' do
             expect(contents).to include('<h2 id="l1">Level 1</h2>')
           end
@@ -220,24 +230,28 @@ RSpec.describe Chunker do
         end
         file_context 'the first level 1 section', 's1.html' do
           include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">S1</h2>')
           end
         end
         file_context 'the first level 2 section', 's1_1.html' do
           include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s1_1">S1_1</h3>')
           end
         end
         file_context 'the second level 1 section', 's2.html' do
           include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s2">S2</h2>')
           end
         end
         file_context 'the second level 2 section', 's2_1.html' do
           include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s2_1">S2_1</h3>')
           end
@@ -247,6 +261,7 @@ RSpec.describe Chunker do
         end
         file_context 'the last level 2 section', 's2_2.html' do
           include_examples 'healthy head'
+          include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s2_2">S2_2</h3>')
           end
