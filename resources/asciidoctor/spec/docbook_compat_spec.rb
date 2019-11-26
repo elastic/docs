@@ -150,11 +150,13 @@ RSpec.describe DocbookCompat do
             <hr>
             </div>
             <div id="content">
+            <!--START_TOC-->
             <div class="toc">
           HTML
         end
         it 'looks like the docbook toc' do
           expect(converted).to include(<<~HTML)
+            <!--START_TOC-->
             <div class="toc">
             <ul class="toc">
             <li><span class="chapter"><a href="#_section_1">Section 1</a></span>
@@ -163,6 +165,7 @@ RSpec.describe DocbookCompat do
             </li>
             </ul>
             </div>
+            <!--END_TOC-->
           HTML
         end
       end
@@ -190,6 +193,32 @@ RSpec.describe DocbookCompat do
               <hr>
               </div>
             HTML
+          end
+        end
+      end
+      context 'when the head is disabled' do
+        let(:convert_attributes) do
+          {
+            # Shrink the output slightly so it is easier to read
+            'stylesheet!' => false,
+            # Set some metadata that will be included in the header
+            'dc.type' => 'FooType',
+            'dc.subject' => 'BarSubject',
+            'dc.identifier' => 'BazIdentifier',
+            # Disable the head
+            'noheader' => true,
+          }
+        end
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the header' do
+          it "doesn't contain the title h1" do
+            expect(converted).not_to include('Title</h1>')
           end
         end
       end
@@ -366,6 +395,48 @@ RSpec.describe DocbookCompat do
     end
     it 'has the itemizedlist class' do
       expect(converted).to include('<ul class="itemizedlist"')
+    end
+    context 'the first item' do
+      it 'has the listitem class' do
+        expect(converted).to include(<<~HTML)
+          <li class="listitem">
+          Thing
+          </li>
+        HTML
+      end
+    end
+    context 'the second item' do
+      it 'has the listitem class' do
+        expect(converted).to include(<<~HTML)
+          <li class="listitem">
+          Other thing
+          </li>
+        HTML
+      end
+    end
+    context 'the third item' do
+      it 'has the listitem class' do
+        expect(converted).to include(<<~HTML)
+          <li class="listitem">
+          Third thing
+          </li>
+        HTML
+      end
+    end
+  end
+  context 'an ordered list' do
+    let(:input) do
+      <<~ASCIIDOC
+        . Thing
+        . Other thing
+        . Third thing
+      ASCIIDOC
+    end
+    it 'is wrapped an orderedlist div' do
+      expect(converted).to include('<div class="olist orderedlist">')
+    end
+    it 'has the itemizedlist class' do
+      expect(converted).to include('<ol class="orderedlist"')
     end
     context 'the first item' do
       it 'has the listitem class' do

@@ -79,6 +79,8 @@ module DocbookCompat
     end
 
     def munge_title(doc, title, html)
+      return if doc.attr 'noheader'
+
       # Important: we're not replacing the whole header - it still will have a
       # closing </div>.
       header_start = <<~HTML
@@ -107,9 +109,11 @@ module DocbookCompat
     def add_toc(doc, html)
       html.gsub! '<div id="content">', <<~HTML
         <div id="content">
+        <!--START_TOC-->
         <div class="#{doc.attr 'toc-class', 'toc'}">
         #{doc.converter.convert doc, 'outline'}
         </div>
+        <!--END_TOC-->
       HTML
     end
   end

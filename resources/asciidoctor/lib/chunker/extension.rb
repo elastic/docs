@@ -62,17 +62,14 @@ module Chunker
     def form_section_into_page(doc, section, html)
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
-      subdoc = Asciidoctor::Document.new [], subdoc_opts(doc)
+      subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, title)
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
-      maintitle = doc.doctitle partition: true
-      subdoc.attributes['title'] = "#{section.title} | #{maintitle.main}"
-      subdoc.attributes.merge! find_related(section)
       subdoc.convert
     end
 
-    def subdoc_opts(doc)
+    def subdoc_opts(doc, title)
       {
-        attributes: subdoc_attrs(doc),
+        attributes: subdoc_attrs(doc, title),
         safe: doc.safe,
         backend: doc.backend,
         sourcemap: doc.sourcemap,
@@ -82,8 +79,10 @@ module Chunker
       }
     end
 
-    def subdoc_attrs(doc)
+    def subdoc_attrs(doc, title)
       attrs = doc.attributes.dup
+      maintitle = doc.doctitle partition: true
+      attrs['title'] = "#{title} | #{maintitle.main}"
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear
@@ -92,6 +91,8 @@ module Chunker
       attrs['stylesheet'] = nil unless attrs['stylesheet']
       attrs['icons'] = nil unless attrs['icons']
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
+      attrs['noheader'] = true
+      attrs.merge! find_related(section)
       attrs
     end
 
