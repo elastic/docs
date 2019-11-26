@@ -4,6 +4,7 @@ require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
+require_relative 'nav'
 
 ##
 # HTML5 converter that chunks like docbook.
@@ -39,6 +40,9 @@ module Chunker
         doc.attributes['home'] = title.main.strip
       end
       doc.attributes['next_section'] = find_next_in doc, 0
+      nav = Nav.new doc
+      doc.blocks.insert 0, nav.header
+      doc.blocks.append nav.footer
       yield
     end
 
@@ -63,7 +67,10 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
+      nav = Nav.new subdoc
+      subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
+      subdoc << nav.footer
       subdoc.convert
     end
 
