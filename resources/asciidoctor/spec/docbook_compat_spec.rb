@@ -221,6 +221,16 @@ RSpec.describe DocbookCompat do
             expect(converted).not_to include('Title</h1>')
           end
         end
+        context 'the body' do
+          it "doesn't have attributes" do
+            expect(converted).to include('<body>')
+          end
+          it "doesn't include the 'book' wrapper" do
+            expect(converted).not_to include(<<~HTML)
+              <div class="book" lang="en">
+            HTML
+          end
+        end
       end
     end
   end

@@ -68,14 +68,21 @@ module DocbookCompat
     end
 
     def munge_body(doc, html)
-      wrapped_body = <<~HTML.strip
-        <body>
-        <div class="#{doc.doctype}" lang="#{doc.attr 'lang', 'en'}">
-      HTML
-      html.gsub!(/<body[^>]+>/, wrapped_body) ||
+      html.gsub!(/<body[^>]+>/, wrapped_body(doc)) ||
         raise("Couldn't wrap body in #{html}")
       html.gsub!('</body>', '</div></body>') ||
         raise("Couldn't wrap body in #{html}")
+    end
+
+    def wrapped_body(doc)
+      if doc.attr 'noheader'
+        '<body>'
+      else
+        <<~HTML.strip
+          <body>
+          <div class="#{doc.doctype}" lang="#{doc.attr 'lang', 'en'}">
+        HTML
+      end
     end
 
     def munge_title(doc, title, html)
