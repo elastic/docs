@@ -323,6 +323,21 @@ RSpec.describe DocbookCompat do
         expect(converted).to include('target="_blank"')
       end
     end
+    context 'when the link is to an inline anchor' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[target]]`target`:: foo
+
+          <<target>>
+        ASCIIDOC
+      end
+      it 'references the url' do
+        expect(converted).to include('href="#target"')
+      end
+      it 'has the right title' do
+        expect(converted).to include('><code class="literal">target</code></a>')
+      end
+    end
   end
 
   context 'a cross reference' do
