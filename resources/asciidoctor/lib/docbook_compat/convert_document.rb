@@ -14,7 +14,7 @@ module DocbookCompat
 
       html = yield
       munge_html doc, html, wants_toc
-      html
+      html + "\n"
     end
 
     ##
@@ -39,7 +39,6 @@ module DocbookCompat
       munge_body doc, html
       munge_title doc, title, html
       add_toc doc, html if wants_toc
-      html
     end
 
     def munge_html_tag(html)
@@ -49,7 +48,7 @@ module DocbookCompat
 
     def munge_head(title, html)
       html.gsub!(
-        %r{<title>(.+)</title>}, "<title>#{title.main} | Elastic</title>"
+        %r{<title>.+</title>}, "<title>#{title.main} | Elastic</title>"
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
     end

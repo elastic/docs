@@ -35,6 +35,10 @@ RSpec.describe DocbookCompat do
         Words.
       ASCIIDOC
     end
+    it 'ends in a single newline' do
+      expect(converted).to end_with("\n")
+      expect(converted).not_to end_with("\n\n")
+    end
     it 'has an empty html tag' do
       expect(converted).to include('<html>')
     end
