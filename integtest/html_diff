@@ -30,6 +30,10 @@ def normalize_html(html):
     # so we're ok with it.
     for e in soup.select('#content'):
         e.unwrap()
+    # Docbook adds <span class="emphasis"> around <em> tags. We don't need them
+    # and it isn't worth making Asciidoctor make them.
+    for e in soup.select('.emphasis'):
+        e.unwrap()
     # Asciidoctor adds a "ulist" class to all unordered lists which doesn't
     # hurt anything so we can ignore it.
     for e in soup.select('.itemizedlist.ulist'):
@@ -51,6 +55,12 @@ def normalize_html(html):
     for e in soup.select('.inlinemediaobject'):
         e['class'].remove('inlinemediaobject')
         e['class'].append('image')
+    # Docbook links with `<a class="link"` when linking from one page of a book
+    # to another. Asciidoctor emits `<a class="link"`. Both look fine.
+    for e in soup.select('a.xref'):
+        if '.html#' in e['href']:
+            e['class'].remove('xref')
+            e['class'].append('link')
     # Format the html with indentation so we can *see* things
     html = soup.prettify()
     # docbook spits out the long-form charset and asciidoctor spits out the

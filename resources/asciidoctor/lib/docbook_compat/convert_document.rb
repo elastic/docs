@@ -14,7 +14,7 @@ module DocbookCompat
 
       html = yield
       munge_html doc, html, wants_toc
-      html
+      html + "\n"
     end
 
     ##
@@ -39,7 +39,6 @@ module DocbookCompat
       munge_body doc, html
       munge_title doc, title, html
       add_toc doc, html if wants_toc
-      html
     end
 
     def munge_html_tag(html)
@@ -49,7 +48,7 @@ module DocbookCompat
 
     def munge_head(title, html)
       html.gsub!(
-        %r{<title>(.+)</title>}, "<title>#{title.main} | Elastic</title>"
+        %r{<title>.+</title>}, "<title>#{title.main} | Elastic</title>"
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
     end
@@ -68,21 +67,33 @@ module DocbookCompat
     end
 
     def munge_body(doc, html)
-      html.gsub!(/<body[^>]+>/, wrapped_body(doc)) ||
-        raise("Couldn't wrap body in #{html}")
-      html.gsub!('</body>', '</div></body>') ||
+      if doc.attr 'noheader'
+        html.gsub!(/<body[^>]+>/, '<body>')
+      else
+        munge_body_and_header_open doc, html
+        munge_body_and_header_close html
+      end
+    end
+
+    def munge_body_and_header_open(doc, html)
+      # Note nav header and footer should be *outside* the div wrapping the body
+      wrapped = [
+        %(<body>),
+        html.slice!(%r{<div class="navheader">.+?<\/div>\n}m)&.strip,
+        %(<div class="#{doc.doctype}" lang="#{doc.attr 'lang', 'en'}">),
+      ].compact.join "\n"
+      html.gsub!(/<body[^>]+>/, wrapped) ||
         raise("Couldn't wrap body in #{html}")
     end
 
-    def wrapped_body(doc)
-      if doc.attr 'noheader'
-        '<body>'
-      else
-        <<~HTML.strip
-          <body>
-          <div class="#{doc.doctype}" lang="#{doc.attr 'lang', 'en'}">
-        HTML
-      end
+    def munge_body_and_header_close(html)
+      wrapped = [
+        '</div>',
+        html.slice!(%r{<div class="navfooter">.+?<\/div>\n}m),
+        '</body>',
+      ].compact.join
+      html.gsub!('</body>', wrapped) ||
+        raise("Couldn't wrap body in #{html}")
     end
 
     def munge_title(doc, title, html)

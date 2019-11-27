@@ -35,6 +35,10 @@ RSpec.describe DocbookCompat do
         Words.
       ASCIIDOC
     end
+    it 'ends in a single newline' do
+      expect(converted).to end_with("\n")
+      expect(converted).not_to end_with("\n\n")
+    end
     it 'has an empty html tag' do
       expect(converted).to include('<html>')
     end
@@ -192,6 +196,60 @@ RSpec.describe DocbookCompat do
               </div>
               <hr>
               </div>
+            HTML
+          end
+        end
+      end
+      context 'contains a navheader' do
+        # Emulates the chunker without trying to include it.
+        let(:input) do
+          <<~ASCIIDOC
+            = Title: Subtitle
+
+            [pass]
+            --
+            <div class="navheader">
+            nav nav nav
+            </div>
+            --
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the navheader' do
+          it 'is moved above the "book" wrapper' do
+            expect(converted).to include(<<~HTML)
+              <div class="navheader">
+              nav nav nav
+              </div>
+              <div class="book" lang="en">
+            HTML
+          end
+        end
+      end
+      context 'contains a navfooer' do
+        # Emulates the chunker without trying to include it.
+        let(:input) do
+          <<~ASCIIDOC
+            = Title: Subtitle
+
+            [pass]
+            --
+            <div class="navfooter">
+            nav nav nav
+            </div>
+            --
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the navfooter' do
+          it 'is moved below the "book" wrapper' do
+            expect(converted).to include(<<~HTML)
+              <div class="navfooter">
+              nav nav nav
+              </div>
+              </body>
             HTML
           end
         end
@@ -404,6 +462,43 @@ RSpec.describe DocbookCompat do
         <pre class="programlisting prettyprint lang-sh">cpanm Search::Elasticsearch</pre>
         </div>
       HTML
+    end
+
+    context 'paired with a callout list' do
+      let(:input) do
+        <<~ASCIIDOC
+          [source,sh]
+          ----
+          cpanm Search::Elasticsearch <1>
+          ----
+          <1> Foo
+        ASCIIDOC
+      end
+      context 'the listing' do
+        it 'includes the callout' do
+          expect(converted).to include <<~HTML.strip
+            cpanm Search::Elasticsearch <a id="CO1-1"></a><i class="conum" data-value="1"></i>
+          HTML
+        end
+      end
+      context 'the callout list' do
+        it 'is rendered like a docbook callout list' do
+          expect(converted).to include <<~HTML
+            <div class="calloutlist">
+            <table border="0" summary="Callout list">
+            <tr>
+            <td align="left" valign="top" width="5%">
+            <p><a href="#CO1-1"><i class="conum" data-value="1"></i></a></p>
+            </td>
+            <td align="left" valign="top">
+            <p>Foo</p>
+            </td>
+            </tr>
+            </table>
+            </div>
+          HTML
+        end
+      end
     end
   end
 
