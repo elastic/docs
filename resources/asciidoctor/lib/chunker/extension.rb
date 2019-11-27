@@ -2,8 +2,10 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative 'breadcrumbs'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
+require_relative 'nav'
 
 ##
 # HTML5 converter that chunks like docbook.
@@ -13,7 +15,7 @@ module Chunker
     return unless doc.attr 'outdir'
     return unless (chunk_level = doc.attr 'chunk_level')
 
-    doc.extend Chunker::ExtraDocinfo
+    doc.extend ExtraDocinfo
     return if doc.attr 'subdoc'
 
     doc.attributes['toclevels'] ||= doc.attributes['chunk_level']
@@ -26,7 +28,8 @@ module Chunker
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
-    include Chunker::FindRelated
+    include Breadcrumbs
+    include FindRelated
 
     def initialize(delegate, chunk_level)
       super(delegate)
@@ -39,6 +42,9 @@ module Chunker
         doc.attributes['home'] = title.main.strip
       end
       doc.attributes['next_section'] = find_next_in doc, 0
+      nav = Nav.new doc
+      doc.blocks.insert 0, nav.header
+      doc.blocks.append nav.footer
       yield
     end
 
@@ -59,11 +65,37 @@ module Chunker
       ''
     end
 
+    def convert_inline_anchor(node)
+      correct_xref node if node.type == :xref
+      yield
+    end
+
+    def correct_xref(node)
+      refid = node.attributes['refid']
+      return unless (ref = node.document.catalog[:refs][refid])
+
+      page = page_containing ref
+      node.target = "#{page.id}.html"
+      node.target += "##{ref.id}" unless page == ref
+    end
+
+    def page_containing(node)
+      page = node
+      while page.context != :section || page.level > @chunk_level
+        page = page.parent
+      end
+      page
+    end
+
     def form_section_into_page(doc, section, html)
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
+      subdoc << generate_breadcrumbs(doc, section)
+      nav = Nav.new subdoc
+      subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
+      subdoc << nav.footer
       subdoc.convert
     end
 
@@ -82,7 +114,7 @@ module Chunker
     def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['title'] = "#{section.title} | #{maintitle.main}"
+      attrs['doctitle'] = "#{section.title} | #{maintitle.main}"
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear

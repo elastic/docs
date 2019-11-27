@@ -35,6 +35,10 @@ RSpec.describe DocbookCompat do
         Words.
       ASCIIDOC
     end
+    it 'ends in a single newline' do
+      expect(converted).to end_with("\n")
+      expect(converted).not_to end_with("\n\n")
+    end
     it 'has an empty html tag' do
       expect(converted).to include('<html>')
     end
@@ -122,6 +126,7 @@ RSpec.describe DocbookCompat do
           'dc.subject' => 'BarSubject',
           'dc.identifier' => 'BazIdentifier',
           'toc' => '',
+          'toclevels' => 1,
         }
       end
       let(:input) do
@@ -169,67 +174,154 @@ RSpec.describe DocbookCompat do
           HTML
         end
       end
-      context 'when there is a subtitle' do
-        let(:input) do
-          <<~ASCIIDOC
-            = Title: Subtitle
-
-            Words.
-          ASCIIDOC
-        end
-        context 'the title' do
-          it "doesn't include the subtitle" do
-            expect(converted).to include('<title>Title | Elastic</title>')
-          end
-        end
-        context 'the header' do
-          it 'includes the title and subtitle' do
-            expect(converted).to include(<<~HTML)
-              <div class="titlepage">
-              <div>
-              <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
-              <div><h2 class="subtitle">Subtitle</h2></div>
-              </div>
-              <hr>
-              </div>
-            HTML
-          end
-        end
-      end
-      context 'when the head is disabled' do
-        let(:convert_attributes) do
-          {
-            # Shrink the output slightly so it is easier to read
-            'stylesheet!' => false,
-            # Set some metadata that will be included in the header
-            'dc.type' => 'FooType',
-            'dc.subject' => 'BarSubject',
-            'dc.identifier' => 'BazIdentifier',
-            # Disable the head
-            'noheader' => true,
-          }
-        end
+      context 'when there is a level 0 section' do
         let(:input) do
           <<~ASCIIDOC
             = Title
 
-            Words.
+            = Part 1
+
+            == Section 1
+
+            == Section 2
           ASCIIDOC
         end
-        context 'the header' do
-          it "doesn't contain the title h1" do
-            expect(converted).not_to include('Title</h1>')
-          end
-        end
-        context 'the body' do
-          it "doesn't have attributes" do
-            expect(converted).to include('<body>')
-          end
-          it "doesn't include the 'book' wrapper" do
-            expect(converted).not_to include(<<~HTML)
-              <div class="book" lang="en">
+        context 'the table of contents' do
+          it 'looks like the docbook toc' do
+            expect(converted).to include(<<~HTML)
+              <!--START_TOC-->
+              <div class="toc">
+              <ul class="toc">
+              <li><span class="part"><a href="#_part_1">Part 1</a></span>
+              <ul>
+              <li><span class="chapter"><a href="#_section_1">Section 1</a></span>
+              </li>
+              <li><span class="chapter"><a href="#_section_2">Section 2</a></span>
+              </li>
+              </ul>
+              </li>
+              </ul>
+              </div>
+              <!--END_TOC-->
             HTML
           end
+        end
+      end
+    end
+    context 'when there is a subtitle' do
+      let(:input) do
+        <<~ASCIIDOC
+          = Title: Subtitle
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the title' do
+        it "doesn't include the subtitle" do
+          expect(converted).to include('<title>Title | Elastic</title>')
+        end
+      end
+      context 'the header' do
+        it 'includes the title and subtitle' do
+          expect(converted).to include(<<~HTML)
+            <div class="titlepage">
+            <div>
+            <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
+            <div><h2 class="subtitle">Subtitle</h2></div>
+            </div>
+            <hr>
+            </div>
+          HTML
+        end
+      end
+    end
+    context 'contains a navheader' do
+      # Emulates the chunker without trying to include it.
+      let(:input) do
+        <<~ASCIIDOC
+          = Title: Subtitle
+
+          [pass]
+          --
+          <div class="navheader">
+          nav nav nav
+          </div>
+          --
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the navheader' do
+        it 'is moved above the "book" wrapper' do
+          expect(converted).to include(<<~HTML)
+            <div class="navheader">
+            nav nav nav
+            </div>
+            <div class="book" lang="en">
+          HTML
+        end
+      end
+    end
+    context 'contains a navfooer' do
+      # Emulates the chunker without trying to include it.
+      let(:input) do
+        <<~ASCIIDOC
+          = Title: Subtitle
+
+          [pass]
+          --
+          <div class="navfooter">
+          nav nav nav
+          </div>
+          --
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the navfooter' do
+        it 'is moved below the "book" wrapper' do
+          expect(converted).to include(<<~HTML)
+            <div class="navfooter">
+            nav nav nav
+            </div>
+            </body>
+          HTML
+        end
+      end
+    end
+    context 'when the head is disabled' do
+      let(:convert_attributes) do
+        {
+          # Shrink the output slightly so it is easier to read
+          'stylesheet!' => false,
+          # Set some metadata that will be included in the header
+          'dc.type' => 'FooType',
+          'dc.subject' => 'BarSubject',
+          'dc.identifier' => 'BazIdentifier',
+          # Disable the head
+          'noheader' => true,
+        }
+      end
+      let(:input) do
+        <<~ASCIIDOC
+          = Title
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the header' do
+        it "doesn't contain the title h1" do
+          expect(converted).not_to include('Title</h1>')
+        end
+      end
+      context 'the body' do
+        it "doesn't have attributes" do
+          expect(converted).to include('<body>')
+        end
+        it "doesn't include the 'book' wrapper" do
+          expect(converted).not_to include(<<~HTML)
+            <div class="book" lang="en">
+          HTML
         end
       end
     end
@@ -333,21 +425,6 @@ RSpec.describe DocbookCompat do
         expect(converted).to include('target="_blank"')
       end
     end
-    context 'when the link is to an inline anchor' do
-      let(:input) do
-        <<~ASCIIDOC
-          [[target]]`target`:: foo
-
-          <<target>>
-        ASCIIDOC
-      end
-      it 'references the url' do
-        expect(converted).to include('href="#target"')
-      end
-      it 'has the right title' do
-        expect(converted).to include('><code class="literal">target</code></a>')
-      end
-    end
   end
 
   context 'a cross reference' do
@@ -370,6 +447,34 @@ RSpec.describe DocbookCompat do
     end
     it 'wraps the title in <em>' do
       expect(converted).to include('><em>Foo</em></a>')
+    end
+    context 'when the link text is overridden' do
+      let(:input) do
+        <<~ASCIIDOC
+          Words <<foo,override text>>.
+
+          [[foo]]
+          == Foo
+        ASCIIDOC
+      end
+      it 'contains the overridden text' do
+        expect(converted).to include('>override text</a>')
+      end
+    end
+    context 'when the cross reference is to an inline anchor' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[target]]`target`:: foo
+
+          <<target>>
+        ASCIIDOC
+      end
+      it 'references the url' do
+        expect(converted).to include('href="#target"')
+      end
+      it 'has the right title' do
+        expect(converted).to include('><code class="literal">target</code></a>')
+      end
     end
   end
 
@@ -404,6 +509,43 @@ RSpec.describe DocbookCompat do
         <pre class="programlisting prettyprint lang-sh">cpanm Search::Elasticsearch</pre>
         </div>
       HTML
+    end
+
+    context 'paired with a callout list' do
+      let(:input) do
+        <<~ASCIIDOC
+          [source,sh]
+          ----
+          cpanm Search::Elasticsearch <1>
+          ----
+          <1> Foo
+        ASCIIDOC
+      end
+      context 'the listing' do
+        it 'includes the callout' do
+          expect(converted).to include <<~HTML.strip
+            cpanm Search::Elasticsearch <a id="CO1-1"></a><i class="conum" data-value="1"></i>
+          HTML
+        end
+      end
+      context 'the callout list' do
+        it 'is rendered like a docbook callout list' do
+          expect(converted).to include <<~HTML
+            <div class="calloutlist">
+            <table border="0" summary="Callout list">
+            <tr>
+            <td align="left" valign="top" width="5%">
+            <p><a href="#CO1-1"><i class="conum" data-value="1"></i></a></p>
+            </td>
+            <td align="left" valign="top">
+            <p>Foo</p>
+            </td>
+            </tr>
+            </table>
+            </div>
+          HTML
+        end
+      end
     end
   end
 
