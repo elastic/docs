@@ -646,7 +646,7 @@ RSpec.describe DocbookCompat do
       it 'wraps the text in a <p>' do
         expect(converted).to include(<<~HTML)
           <li class="listitem">
-          <p class="simpara">Foo</p>
+          <p>Foo</p>
         HTML
       end
       it 'include the complex content' do
