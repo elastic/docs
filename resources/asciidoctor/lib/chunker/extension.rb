@@ -2,6 +2,7 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative 'breadcrumbs'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
 require_relative 'nav'
@@ -14,7 +15,7 @@ module Chunker
     return unless doc.attr 'outdir'
     return unless (chunk_level = doc.attr 'chunk_level')
 
-    doc.extend Chunker::ExtraDocinfo
+    doc.extend ExtraDocinfo
     return if doc.attr 'subdoc'
 
     doc.attributes['toclevels'] ||= doc.attributes['chunk_level']
@@ -27,7 +28,8 @@ module Chunker
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
-    include Chunker::FindRelated
+    include Breadcrumbs
+    include FindRelated
 
     def initialize(delegate, chunk_level)
       super(delegate)
@@ -89,6 +91,7 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
+      subdoc << generate_breadcrumbs(doc, section)
       nav = Nav.new subdoc
       subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
