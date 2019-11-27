@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require 'asciidoctor/extensions'
-require_relative '../delegating_converter'
-
 module Chunker
   ##
   # Looks for "related" pages to satisfy docbook's `next`, `prev`,

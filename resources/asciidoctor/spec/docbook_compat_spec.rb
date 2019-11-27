@@ -196,6 +196,60 @@ RSpec.describe DocbookCompat do
           end
         end
       end
+      context 'contains a navheader' do
+        # Emulates the chunker without trying to include it.
+        let(:input) do
+          <<~ASCIIDOC
+            = Title: Subtitle
+
+            [pass]
+            --
+            <div class="navheader">
+            nav nav nav
+            </div>
+            --
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the navheader' do
+          it 'is moved above the "book" wrapper' do
+            expect(converted).to include(<<~HTML)
+              <div class="navheader">
+              nav nav nav
+              </div>
+              <div class="book" lang="en">
+            HTML
+          end
+        end
+      end
+      context 'contains a navfooer' do
+        # Emulates the chunker without trying to include it.
+        let(:input) do
+          <<~ASCIIDOC
+            = Title: Subtitle
+
+            [pass]
+            --
+            <div class="navfooter">
+            nav nav nav
+            </div>
+            --
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the navfooter' do
+          it 'is moved below the "book" wrapper' do
+            expect(converted).to include(<<~HTML)
+              <div class="navfooter">
+              nav nav nav
+              </div>
+              </body>
+            HTML
+          end
+        end
+      end
       context 'when the head is disabled' do
         let(:convert_attributes) do
           {

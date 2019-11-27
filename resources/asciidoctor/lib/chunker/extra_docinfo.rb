@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
+require_relative 'link'
+
 module Chunker
   ##
   # Adds extra tags <link> tags to the <head> to emulate docbook.
   module ExtraDocinfo
+    include Link
+
     def docinfo(location = :head, suffix = nil)
       info = super
       info += extra_head if location == :head
@@ -22,31 +26,7 @@ module Chunker
     def link_rel(rel, related)
       return unless related
 
-      id = rel_id related
-      title = rel_title related
-      %(<link rel="#{rel}" href="#{id}.html" title="#{title}"/>)
-    end
-
-    def rel_id(related)
-      case related.context
-      when :section
-        related.id
-      when :document
-        'index'
-      else
-        raise "Can't link to #{related}"
-      end
-    end
-
-    def rel_title(related)
-      case related.context
-      when :section
-        related.title
-      when :document
-        related.doctitle(partition: true).main.strip
-      else
-        raise "Can't link to #{related}"
-      end
+      %(<link rel="#{rel}" #{link_href related} #{link_title related}/>)
     end
   end
 end
