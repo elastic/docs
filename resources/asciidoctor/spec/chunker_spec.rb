@@ -64,7 +64,7 @@ RSpec.describe Chunker do
       it 'contains the navfooter' do
         expect(contents).to include('<div class="navfooter">')
       end
-      if prev_page
+      if prev_page && prev_page != 'index'
         it 'contains the prev nav' do
           expect(contents).to include(<<~HTML)
             <span class="prev">
