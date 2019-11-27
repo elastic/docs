@@ -171,7 +171,7 @@ alias docbldx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/x-pack/docs/en/index.as
 alias docbldecs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
 
 # GKE
-alias docbldgke='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
+alias docbldgke='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
 
 # Build all
 alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git'
