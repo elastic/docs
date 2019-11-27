@@ -71,17 +71,16 @@ module DocbookCompat
     end
 
     def convert_admonition(node)
-      name = node.attr 'name'
-      <<~HTML
-        <div class="#{name} admon">
-        <div class="icon"></div>
-        <div class="admon_content">
-        <p>
-        #{node.content}
-        </p>
-        </div>
-        </div>
-      HTML
+      [
+        %(<div class="#{node.attr 'name'} admon">),
+        %(<div class="icon"></div>),
+        %(<div class="admon_content">),
+        node.blocks.empty? ? '<p>' : nil,
+        node.content,
+        node.blocks.empty? ? '</p>' : nil,
+        '</div>',
+        '</div>',
+      ].compact.join "\n"
     end
 
     def convert_literal(node)
