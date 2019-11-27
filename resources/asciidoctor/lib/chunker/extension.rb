@@ -63,6 +63,28 @@ module Chunker
       ''
     end
 
+    def convert_inline_anchor(node)
+      correct_xref node if node.type == :xref
+      yield
+    end
+
+    def correct_xref(node)
+      refid = node.attributes['refid']
+      return unless (ref = node.document.catalog[:refs][refid])
+
+      page = page_containing ref
+      node.target = "#{page.id}.html"
+      node.target += "##{ref.id}" unless page == ref
+    end
+
+    def page_containing(node)
+      page = node
+      while page.context != :section || page.level > @chunk_level
+        page = page.parent
+      end
+      page
+    end
+
     def form_section_into_page(doc, section, html)
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.

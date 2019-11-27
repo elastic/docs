@@ -127,12 +127,17 @@ RSpec.describe Chunker do
             [[s1]]
             == Section 1
 
+            [[linkme]]
             Words words.
+
+            <<s2>>
 
             [[s2]]
             == Section 2
 
             Words again.
+
+            <<linkme>>
           ASCIIDOC
         end
         context 'the main output' do
@@ -161,6 +166,9 @@ RSpec.describe Chunker do
           it 'contains the contents' do
             expect(contents).to include '<p>Words words.</p>'
           end
+          it 'contains a link to the second section' do
+            expect(contents).to include('<a href="s2.html">Section 2</a>')
+          end
         end
         file_context 'the second section', 's2.html' do
           include_examples 'standard page', 's1', 'Section 1', nil, nil
@@ -173,6 +181,9 @@ RSpec.describe Chunker do
           end
           it 'contains the contents' do
             expect(contents).to include '<p>Words again.</p>'
+          end
+          it 'contains a link to an element in the first section' do
+            expect(contents).to include('<a href="s1.html#linkme">[linkme]</a>')
           end
         end
       end
@@ -251,6 +262,8 @@ RSpec.describe Chunker do
             [[s1]]
             == S1
 
+            <<S2_1_1>>
+
             [[s1_1]]
             === S1_1
 
@@ -298,6 +311,9 @@ RSpec.describe Chunker do
           include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">S1</h2>')
+          end
+          it 'contains a link to the level 3 section' do
+            expect(contents).to include('<a href="s2_1.html#s2_1_1">S2_1_1</a>')
           end
         end
         file_context 'the first level 2 section', 's1_1.html' do
