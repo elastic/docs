@@ -111,7 +111,7 @@ module Chunker
     def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['title'] = "#{section.title} | #{maintitle.main}"
+      attrs['doctitle'] = "#{section.title} | #{maintitle.main}"
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear

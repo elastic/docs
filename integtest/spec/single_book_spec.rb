@@ -17,8 +17,8 @@ RSpec.describe 'building a single book' do
   let(:zero_width_space) { "\u200b" }
 
   context 'for a minimal book' do
-    shared_context 'expected' do |file_name|
-      convert_single_before_context do |src|
+    shared_context 'expected' do |file_name, direct_html|
+      convert_single_before_context(direct_html: direct_html) do |src|
         src.write file_name, <<~ASCIIDOC
           #{HEADER}
           This is a minimal viable asciidoc file for use with build_docs. The
@@ -77,6 +77,9 @@ RSpec.describe 'building a single book' do
         it 'has a trailing newline' do
           expect(contents).to end_with("\n")
         end
+        it 'has the right title in head' do
+          expect(head_title).to match(/Title\s+\|\s+Elastic/m)
+        end
         it 'has the right title' do
           expect(title).to eq('Title')
         end
@@ -86,11 +89,17 @@ RSpec.describe 'building a single book' do
         end
       end
       page_context 'chapter.html' do
+        it 'has the right title in head' do
+          expect(head_title).to match(/Chapter\s+\|\s+Title\s+\|\s+Elastic/m)
+        end
         it 'has the right title' do
           expect(title).to eq('Chapter')
         end
       end
       page_context 'raw/chapter.html' do
+        it 'has the right title in head' do
+          expect(head_title).to match(/Chapter\s+\|\s+Title\s+\|\s+Elastic/m)
+        end
         it 'has the right title' do
           expect(title).to eq('Chapter')
         end
@@ -98,11 +107,15 @@ RSpec.describe 'building a single book' do
     end
 
     context 'when the file ends in .asciidoc' do
-      include_context 'expected', 'minimal.asciidoc'
+      include_context 'expected', 'minimal.asciidoc', false
     end
 
     context 'when the file ends in .adoc' do
-      include_context 'expected', 'minimal.adoc'
+      include_context 'expected', 'minimal.adoc', false
+    end
+
+    context 'when the we use direct_html' do
+      include_context 'expected', 'minimal.asciidoc', true
     end
   end
 
