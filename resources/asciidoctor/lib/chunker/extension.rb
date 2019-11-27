@@ -2,6 +2,7 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative 'breadcrumbs'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
 
@@ -26,6 +27,7 @@ module Chunker
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
+    include Chunker::Breadcrumbs
     include Chunker::FindRelated
 
     def initialize(delegate, chunk_level)
@@ -63,6 +65,7 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
+      subdoc << generate_breadcrumbs(doc, section)
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
       subdoc.convert
     end

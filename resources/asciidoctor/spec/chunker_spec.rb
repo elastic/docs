@@ -108,6 +108,9 @@ RSpec.describe Chunker do
               <li><a href="s2.html">Section 2</a></li>
             HTML
           end
+          it "doesn't contain breadcrumbs" do
+            expect(converted).not_to include('<div class="breadcrumbs">')
+          end
         end
         file_context 'the first section', 's1.html' do
           include_examples 'healthy head', 'index', 'Title', 's2', 'Section 2'
@@ -121,6 +124,15 @@ RSpec.describe Chunker do
           it 'contains the contents' do
             expect(contents).to include '<p>Words words.</p>'
           end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">Section 1</span>
+              </div>
+            HTML
+          end
         end
         file_context 'the second section', 's2.html' do
           include_examples 'healthy head', 's1', 'Section 1', nil, nil
@@ -133,6 +145,15 @@ RSpec.describe Chunker do
           end
           it 'contains the contents' do
             expect(contents).to include '<p>Words again.</p>'
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">Section 2</span>
+              </div>
+            HTML
           end
         end
       end
@@ -259,6 +280,15 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">S1</h2>')
           end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">S1</span>
+              </div>
+            HTML
+          end
         end
         file_context 'the first level 2 section', 's1_1.html' do
           include_examples 'healthy head', 's1', 'S1', 's2', 'S2'
@@ -266,12 +296,32 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s1_1">S1_1</h3>')
           end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-link"><a href="s1.html">S1</a></span>
+              »
+              <span class="breadcrumb-node">S1_1</span>
+              </div>
+            HTML
+          end
         end
         file_context 'the second level 1 section', 's2.html' do
           include_examples 'healthy head', 's1_1', 'S1_1', 's2_1', 'S2_1'
           include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s2">S2</h2>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">S2</span>
+              </div>
+            HTML
           end
         end
         file_context 'the second level 2 section', 's2_1.html' do
@@ -283,12 +333,34 @@ RSpec.describe Chunker do
           it 'contains the level 3 section' do
             expect(contents).to include('<h4 id="s2_1_1">S2_1_1</h4>')
           end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-link"><a href="s2.html">S2</a></span>
+              »
+              <span class="breadcrumb-node">S2_1</span>
+              </div>
+            HTML
+          end
         end
         file_context 'the last level 2 section', 's2_2.html' do
           include_examples 'healthy head', 's2_1', 'S2_1', nil, nil
           include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s2_2">S2_2</h3>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-link"><a href="s2.html">S2</a></span>
+              »
+              <span class="breadcrumb-node">S2_2</span>
+              </div>
+            HTML
           end
         end
       end
