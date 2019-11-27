@@ -18,14 +18,35 @@ module DocbookCompat
     end
 
     def convert_xref(node)
+      xref = %(<a class="xref" href="#{node.target}")
       refid = node.attributes['refid']
-      if (ref = node.document.catalog[:refs][refid])
-        title = ref.title
-        text = ref.xreftext node.attr('xrefstyle', 'short', true)
-        %(<a class="xref" href="#{node.target}" title="#{title}">#{text}</a>)
-      else
-        %(<a class="xref" href="#{node.target}">#{refid}</a>)
+      ref = node.document.catalog[:refs][refid]
+      return "#{xref}>#{refid}</a>" unless ref
+
+      text = ref_text_for ref, node
+      title = ref.respond_to?(:title) ? ref.title : nil
+      <<~HTML.strip
+        #{xref}#{title ? %(title="#{title}") : ''}>#{text}</a>
+      HTML
+    end
+
+    def ref_text_for(ref, node)
+      if ref.node_name == 'inline_link'
+        special = ref_text_for_inline_link ref
+        return special if special
       end
+
+      ref.xreftext node.attr('xrefstyle', 'short', true)
+    end
+
+    ##
+    # Inline title's have *boring* text so we instead use the text of the
+    # next element. This is also what docbook does. Because it is better.
+    def ref_text_for_inline_link(ref)
+      return unless (parent = ref.parent)
+      return unless (index = parent.blocks.find_index ref)
+
+      parent[index + 1]&.convert
     end
   end
 end

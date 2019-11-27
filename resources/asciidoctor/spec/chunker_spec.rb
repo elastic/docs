@@ -17,17 +17,91 @@ RSpec.describe Chunker do
   let(:backend) { :html5 }
   let(:standalone) { true }
 
-  shared_examples 'healthy head' do
+  shared_examples 'standard page' \
+    do |prev_page, prev_title, next_page, next_title|
     context 'the <head>' do
       it 'contains the charset' do
         expect(contents).to include(<<~HTML)
           <meta charset="UTF-8">
         HTML
       end
+      it 'contains the home link' do
+        expect(contents).to include(<<~HTML)
+          <link rel="home" href="index.html" title="Title"/>
+        HTML
+      end
+      if prev_page
+        it 'contains the prev link' do
+          expect(contents).to include(<<~HTML)
+            <link rel="prev" href="#{prev_page}.html" title="#{prev_title}"/>
+          HTML
+        end
+      else
+        it "doesn't contain the prev link" do
+          expect(contents).not_to include('rel="prev"')
+        end
+      end
+      if next_page
+        it 'contains the next link' do
+          expect(contents).to include(<<~HTML)
+            <link rel="next" href="#{next_page}.html" title="#{next_title}"/>
+          HTML
+        end
+      else
+        it "doesn't contain the next link" do
+          expect(contents).not_to include('rel="next"')
+        end
+      end
       it "doesn't contain the builtin asciidoctor stylesheet" do
         # We turned the stylesheet off
         expect(contents).not_to include('<style')
       end
+    end
+    context 'the <body>' do
+      it 'contains the navheader' do
+        expect(contents).to include('<div class="navheader">')
+      end
+      it 'contains the navfooter' do
+        expect(contents).to include('<div class="navfooter">')
+      end
+      if prev_page
+        it 'contains the prev nav' do
+          expect(contents).to include(<<~HTML)
+            <span class="prev">
+            <a href="#{prev_page}.html">« #{prev_title}</a>
+            </span>
+          HTML
+        end
+      else
+        it 'contains an empty prev nav' do
+          expect(contents).to include(<<~HTML)
+            <span class="prev">
+            </span>
+          HTML
+        end
+      end
+      if next_page
+        it 'contains the next nav' do
+          expect(contents).to include(<<~HTML)
+            <span class="next">
+            <a href="#{next_page}.html">#{next_title} »</a>
+            </span>
+          HTML
+        end
+      else
+        it 'contains an empty next nav' do
+          expect(contents).to include(<<~HTML)
+            <span class="next">
+            </span>
+          HTML
+        end
+      end
+    end
+  end
+
+  shared_examples 'subpage' do
+    it "doesn't contain the main title" do
+      expect(contents).not_to include('<h1>Title</h1>')
     end
   end
 
@@ -41,6 +115,8 @@ RSpec.describe Chunker do
           'chunk_level' => 1,
           # Shrink the output slightly so it is easier to read
           'stylesheet!' => false,
+          # We always enable the toc for multi-page books
+          'toc' => '',
         }
       end
       context 'there is are two level 1 sections' do
@@ -51,44 +127,63 @@ RSpec.describe Chunker do
             [[s1]]
             == Section 1
 
+            [[linkme]]
             Words words.
+
+            <<s2>>
 
             [[s2]]
             == Section 2
 
             Words again.
+
+            <<linkme>>
           ASCIIDOC
         end
         context 'the main output' do
           let(:contents) { converted }
-          include_examples 'healthy head'
+          include_examples 'standard page', nil, nil, 's1', 'Section 1'
           it 'contains a link to the first section' do
             expect(converted).to include(<<~HTML.strip)
-              <li><span class="chapter"><a href="s1.html">Section 1</a></span></li>
+              <li><a href="s1.html">Section 1</a></li>
             HTML
           end
           it 'contains a link to the second section' do
             expect(converted).to include(<<~HTML.strip)
-              <li><span class="chapter"><a href="s1.html">Section 1</a></span></li>
+              <li><a href="s2.html">Section 2</a></li>
             HTML
           end
         end
         file_context 'the first section', 's1.html' do
-          include_examples 'healthy head'
+          include_examples 'standard page', 'index', 'Title', 's2', 'Section 2'
+          include_examples 'subpage'
+          it 'contains the correct title' do
+            expect(contents).to include('<title>Section 1 | Title</title>')
+          end
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">Section 1</h2>')
           end
           it 'contains the contents' do
             expect(contents).to include '<p>Words words.</p>'
           end
+          it 'contains a link to the second section' do
+            expect(contents).to include('<a href="s2.html">Section 2</a>')
+          end
         end
-        file_context 'the first section', 's2.html' do
-          include_examples 'healthy head'
+        file_context 'the second section', 's2.html' do
+          include_examples 'standard page', 's1', 'Section 1', nil, nil
+          include_examples 'subpage'
+          it 'contains the correct title' do
+            expect(contents).to include('<title>Section 2 | Title</title>')
+          end
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s2">Section 2</h2>')
           end
           it 'contains the contents' do
             expect(contents).to include '<p>Words again.</p>'
+          end
+          it 'contains a link to an element in the first section' do
+            expect(contents).to include('<a href="s1.html#linkme">[linkme]</a>')
           end
         end
       end
@@ -109,9 +204,11 @@ RSpec.describe Chunker do
           ASCIIDOC
         end
         context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 'l1', 'Level 1'
           it 'contains a link to the level 1 section' do
             expect(converted).to include(<<~HTML.strip)
-              <li><span class="chapter"><a href="l1.html">Level 1</a></span></li>
+              <li><a href="l1.html">Level 1</a></li>
             HTML
           end
           it "doesn't contain a link to the level 2 section" do
@@ -121,6 +218,8 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the level one section', 'l1.html' do
+          include_examples 'standard page', 'index', 'Title', nil, nil
+          include_examples 'subpage'
           it 'contains the header of the level 1 section' do
             expect(contents).to include('<h2 id="l1">Level 1</h2>')
           end
@@ -144,9 +243,136 @@ RSpec.describe Chunker do
         end
       end
     end
+    context 'when chunk level is 2' do
+      let(:convert_attributes) do
+        {
+          'outdir' => outdir,
+          'chunk_level' => 2,
+          # Shrink the output slightly so it is easier to read
+          'stylesheet!' => false,
+          # We always enable the toc for multi-page books
+          'toc' => '',
+        }
+      end
+      context 'there is are a few sections' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s1]]
+            == S1
+
+            <<S2_1_1>>
+
+            [[s1_1]]
+            === S1_1
+
+            [[s2]]
+            == S2
+
+            [[s2_1]]
+            === S2_1
+
+            [[s2_1_1]]
+            ==== S2_1_1
+
+            [[s2_2]]
+            === S2_2
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 's1', 'S1'
+          it 'contains a link to the level 1 sections' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s1.html">S1</a>
+            HTML
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s2.html">S2</a>
+            HTML
+          end
+          it 'contains a link to the level 2 sections' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s1_1.html">S1_1</a></li>
+            HTML
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s2_1.html">S2_1</a></li>
+            HTML
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s2_2.html">S2_2</a></li>
+            HTML
+          end
+          it "doesn't contain a link to the level 3 section" do
+            expect(converted).not_to include('S2_1_1')
+          end
+        end
+        file_context 'the first level 1 section', 's1.html' do
+          include_examples 'standard page', 'index', 'Title', 's1_1', 'S1_1'
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h2 id="s1">S1</h2>')
+          end
+          it 'contains a link to the level 3 section' do
+            expect(contents).to include('<a href="s2_1.html#s2_1_1">S2_1_1</a>')
+          end
+        end
+        file_context 'the first level 2 section', 's1_1.html' do
+          include_examples 'standard page', 's1', 'S1', 's2', 'S2'
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h3 id="s1_1">S1_1</h3>')
+          end
+        end
+        file_context 'the second level 1 section', 's2.html' do
+          include_examples 'standard page', 's1_1', 'S1_1', 's2_1', 'S2_1'
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h2 id="s2">S2</h2>')
+          end
+        end
+        file_context 'the second level 2 section', 's2_1.html' do
+          include_examples 'standard page', 's2', 'S2', 's2_2', 'S2_2'
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h3 id="s2_1">S2_1</h3>')
+          end
+          it 'contains the level 3 section' do
+            expect(contents).to include('<h4 id="s2_1_1">S2_1_1</h4>')
+          end
+        end
+        file_context 'the last level 2 section', 's2_2.html' do
+          include_examples 'standard page', 's2_1', 'S2_1', nil, nil
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h3 id="s2_2">S2_2</h3>')
+          end
+        end
+      end
+    end
   end
   context "when outdir isn't configured" do
     context 'the plugin does nothing' do
+      let(:input) do
+        <<~ASCIIDOC
+          = Title
+
+          [[s1]]
+          == Section 1
+
+          Words words.
+
+          [[s2]]
+          == Section 2
+
+          Words again.
+        ASCIIDOC
+      end
+      context 'the main output' do
+        it 'contains all the headings' do
+          expect(converted).to include('<h2 id="s1">Section 1</h2>')
+          expect(converted).to include('<h2 id="s2">Section 2</h2>')
+        end
+      end
     end
   end
 end

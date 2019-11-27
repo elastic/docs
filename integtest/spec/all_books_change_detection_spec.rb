@@ -236,6 +236,12 @@ RSpec.describe 'building all books' do
         page_context 'toc.html', "html/test/#{branch}/toc.html" do
           include_examples 'correct'
         end
+        page_context 'index.html', "raw/test/#{branch}/index.html" do
+          include_examples 'correct'
+        end
+        page_context 'toc.html', "raw/test/#{branch}/toc.html" do
+          include_examples 'correct'
+        end
       end
       context 'the master branch' do
         let(:master_selected) { ' selected' }
