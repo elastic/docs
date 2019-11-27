@@ -4,7 +4,9 @@ require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
 require_relative 'convert_document'
 require_relative 'convert_links'
+require_relative 'convert_listing'
 require_relative 'convert_lists'
+require_relative 'convert_open'
 require_relative 'convert_outline'
 
 ##
@@ -21,7 +23,9 @@ module DocbookCompat
   class Converter < DelegatingConverter
     include ConvertDocument
     include ConvertLinks
+    include ConvertListing
     include ConvertLists
+    include ConvertOpen
     include ConvertOutline
 
     def convert_section(node)
@@ -50,15 +54,6 @@ module DocbookCompat
     def convert_paragraph(node)
       <<~HTML
         <p>#{node.content}</p>
-      HTML
-    end
-
-    def convert_listing(node)
-      lang = node.attr 'language'
-      <<~HTML
-        <div class="pre_wrapper lang-#{lang}">
-        <pre class="programlisting prettyprint lang-#{lang}">#{node.content || ''}</pre>
-        </div>
       HTML
     end
 
@@ -106,7 +101,7 @@ module DocbookCompat
       HTML
     end
 
-    SECTION_WRAPPER_CLASSES = %w[unused chapter section].freeze
+    SECTION_WRAPPER_CLASSES = %w[part chapter section].freeze
     def wrapper_class_for(section)
       wrapper_class = section.attr 'style'
       wrapper_class ||= SECTION_WRAPPER_CLASSES[section.level]
