@@ -23,7 +23,7 @@ module DocbookCompat
       ref = node.document.catalog[:refs][refid]
       return "#{xref}>#{refid}</a>" unless ref
 
-      text = ref_text_for ref, node
+      text = node.text || ref_text_for(ref, node)
       title = ref.respond_to?(:title) ? ref.title : nil
       <<~HTML.strip
         #{xref}#{title ? %(title="#{title}") : ''}>#{text}</a>

@@ -99,7 +99,7 @@ module DocbookCompat
       HTML
     end
 
-    SECTION_WRAPPER_CLASSES = %w[unused chapter section].freeze
+    SECTION_WRAPPER_CLASSES = %w[part chapter section].freeze
     def wrapper_class_for(section)
       wrapper_class = section.attr 'style'
       wrapper_class ||= SECTION_WRAPPER_CLASSES[section.level]
