@@ -350,7 +350,7 @@ sub _update_title_and_version_drop_downs {
         next unless -e $file;
 
         my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
-        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?<li>/<ul class="toc">${title}<li>/);
+        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?\n?<li>/<ul class="toc">${title}<li>/);
         die "couldn't update version" unless $success;
         $file->spew( iomode => '>:utf8', $html );
     }
