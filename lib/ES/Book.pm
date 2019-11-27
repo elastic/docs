@@ -330,11 +330,15 @@ sub _update_title_and_version_drop_downs {
     my ( $self, $branch_dir, $branch ) = @_;
 
     my $title = '<li id="book_title"><span>' . $self->title . ': <select>';
-    for ( @{ $self->branches } ) {
-        $title .= '<option value="' . $_ . '"';
-        $title .= ' selected'  if $branch eq $_;
-        $title .= '>' . $self->branch_title($_);
-        $title .= ' (current)' if $self->current eq $_;
+    for my $b ( @{ $self->branches } ) {
+        my $live = grep( /^$b$/, @{ $self->{live_branches} } );
+        next unless $live || $branch eq $b;
+
+        $title .= '<option value="' . $b . '"';
+        $title .= ' selected'  if $branch eq $b;
+        $title .= '>' . $self->branch_title($b);
+        $title .= ' (current)' if $self->current eq $b;
+        $title .= ' (out of date)' unless $live;
         $title .= '</option>';
     }
     $title .= '</select></span></li>';
@@ -346,7 +350,7 @@ sub _update_title_and_version_drop_downs {
         next unless -e $file;
 
         my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
-        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?<li>/<ul class="toc">${title}<li>/);
+        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?\n?<li>/<ul class="toc">${title}<li>/);
         die "couldn't update version" unless $success;
         $file->spew( iomode => '>:utf8', $html );
     }

@@ -318,35 +318,44 @@ RSpec.describe 'building all books' do
     end
   end
 
-  context 'for a book that uses {source_branch}' do
-    convert_all_before_context do |src|
-      repo = src.repo_with_index 'repo', <<~ASCIIDOC
-        The branch is {source_branch}.
-      ASCIIDOC
-      repo.switch_to_new_branch 'foo'
-      repo.switch_to_new_branch '7.x'
-      repo.switch_to_new_branch '1.2'
+  context 'for a book with many branches' do
+    shared_examples 'many branches' do |direct_html|
+      convert_all_before_context do |src|
+        repo = src.repo_with_index 'repo', <<~ASCIIDOC
+          The branch is {source_branch}.
+        ASCIIDOC
+        repo.switch_to_new_branch 'foo'
+        repo.switch_to_new_branch '7.x'
+        repo.switch_to_new_branch '1.2'
 
-      book = src.book 'Test'
-      book.source repo, 'index.asciidoc'
-      book.branches.push 'foo', '7.x', '1.2'
-    end
-    shared_examples 'contains branch' do |branch|
-      it 'contains the branch name' do
-        expect(body).to include("The branch is #{branch}.")
+        book = src.book 'Test'
+        book.source repo, 'index.asciidoc'
+        book.direct_html = true if direct_html
+        book.branches.push 'foo', '7.x', '1.2'
+      end
+      shared_examples 'contains branch' do |branch|
+        it 'uses {source_branch} to resolve the branch name' do
+          expect(body).to include("The branch is #{branch}.")
+        end
+      end
+      page_context 'html/test/master/chapter.html' do
+        include_examples 'contains branch', 'master'
+      end
+      page_context 'html/test/foo/chapter.html' do
+        include_examples 'contains branch', 'foo'
+      end
+      page_context 'html/test/7.x/chapter.html' do
+        include_examples 'contains branch', '7.x'
+      end
+      page_context 'html/test/1.2/chapter.html' do
+        include_examples 'contains branch', '1.2'
       end
     end
-    page_context 'html/test/master/chapter.html' do
-      include_examples 'contains branch', 'master'
+    context 'when built with docbook' do
+      include_examples 'many branches', false
     end
-    page_context 'html/test/foo/chapter.html' do
-      include_examples 'contains branch', 'foo'
-    end
-    page_context 'html/test/7.x/chapter.html' do
-      include_examples 'contains branch', '7.x'
-    end
-    page_context 'html/test/1.2/chapter.html' do
-      include_examples 'contains branch', '1.2'
+    context 'when built with direct_html' do
+      include_examples 'many branches', true
     end
   end
 
@@ -598,19 +607,42 @@ RSpec.describe 'building all books' do
       end
     end
   end
-  context 'when the branch is not "live"' do
+  context 'when the book has "live" branches' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', 'test'
+      repo.switch_to_new_branch 'other'
 
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
-      book.live_branches = []
+      book.branches << 'other'
+      book.live_branches = ['master']
     end
-    file_context 'raw/test/master/index.html' do
+    page_context 'the live branch', 'html/test/master/index.html' do
+      it "doesn't contain the noindex flag" do
+        expect(contents).not_to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow" />
+        HTML
+      end
+      context 'the version drop down' do
+        it 'contains only the live branch' do
+          expect(body).to include(<<~HTML.strip)
+            <select><option value="master" selected>master (current)</option></select>
+          HTML
+        end
+      end
+    end
+    page_context 'the dead branch', 'html/test/other/index.html' do
       it 'contains the noindex flag' do
         expect(contents).to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow" />
         HTML
+      end
+      context 'the version drop down' do
+        it 'contains the deprecated branch' do
+          expect(body).to include(<<~HTML.strip)
+            <select><option value="master">master (current)</option><option value="other" selected>other (out of date)</option></select>
+          HTML
+        end
       end
     end
   end
