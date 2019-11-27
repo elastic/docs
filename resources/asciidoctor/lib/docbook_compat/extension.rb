@@ -6,6 +6,7 @@ require_relative 'convert_document'
 require_relative 'convert_links'
 require_relative 'convert_listing'
 require_relative 'convert_lists'
+require_relative 'convert_open'
 require_relative 'convert_outline'
 
 ##
@@ -24,6 +25,7 @@ module DocbookCompat
     include ConvertLinks
     include ConvertListing
     include ConvertLists
+    include ConvertOpen
     include ConvertOutline
 
     def convert_section(node)

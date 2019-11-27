@@ -20,8 +20,10 @@ module DocbookCompat
       node.items.each do |item|
         next unless item.text
 
-        html.sub!("<p>#{item.text}</p>", item.text) ||
-          raise("Couldn't remove <p> for #{item.text} in #{html}")
+        result = item.text
+        result = %(<p class="simpara">#{result}</p>) if item.blocks?
+        html.sub!("<p>#{item.text}</p>", result) ||
+          raise("Couldn't correct <p> for #{item.text} in #{html}")
       end
       html
     end
