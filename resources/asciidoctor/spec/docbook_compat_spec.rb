@@ -632,6 +632,31 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+
+    context 'with complex contents' do
+      let(:input) do
+        <<~ASCIIDOC
+          . Foo
+          +
+          --
+          Complex
+          --
+        ASCIIDOC
+      end
+      it 'wraps the text in a <p>' do
+        expect(converted).to include(<<~HTML)
+          <li class="listitem">
+          <p class="simpara">Foo</p>
+        HTML
+      end
+      it 'include the complex content' do
+        expect(converted).to include(<<~HTML)
+          <p>Complex</p>
+
+          </li>
+        HTML
+      end
+    end
   end
 
   context 'backticked code' do
@@ -733,6 +758,28 @@ RSpec.describe DocbookCompat do
 
         </div>
       HTML
+    end
+  end
+
+  context 'an open block' do
+    context 'that is empty' do
+      let(:input) do
+        <<~ASCIIDOC
+          --
+          Words.
+          --
+        ASCIIDOC
+      end
+      it 'just renders its contents' do
+        expect(converted).to eq <<~HTML.strip
+          <div id="preamble">
+          <div class="sectionbody">
+          <p>Words.</p>
+
+          </div>
+          </div>
+        HTML
+      end
     end
   end
 end
