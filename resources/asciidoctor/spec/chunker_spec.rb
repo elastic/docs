@@ -263,6 +263,57 @@ RSpec.describe Chunker do
           expect(File.join(outdir, 'l2.html')).not_to file_exist
         end
       end
+      context 'there is a level 0 section' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[l0]]
+            = L0
+
+            Words words.
+
+            [[l1]]
+            == L1
+
+            Words again.
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 'l0', 'L0'
+          it 'contains a link to the level 0 section' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="l0.html">L0</a>
+            HTML
+          end
+          it 'contains a link to the level 1 section' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="l1.html">L1</a></li>
+            HTML
+          end
+        end
+        file_context 'the level 0 section', 'l0.html' do
+          include_examples 'standard page', 'index', 'Title', 'l1', 'L1'
+          include_examples 'subpage'
+          it 'contains the header of the level 0 section' do
+            expect(contents).to include('<h1 id="l0" class="sect0">L0</h1>')
+          end
+          it 'contains the contents' do
+            expect(contents).to include('Words words.')
+          end
+        end
+        file_context 'the level 1 section', 'l1.html' do
+          include_examples 'standard page', 'l0', 'L0', nil, nil
+          include_examples 'subpage'
+          it 'contains the header of the level 1 section' do
+            expect(contents).to include('<h2 id="l1">L1</h2>')
+          end
+          it 'contains contents' do
+            expect(contents).to include('<p>Words again.</p>')
+          end
+        end
+      end
     end
     context 'when chunk level is 2' do
       let(:convert_attributes) do
