@@ -10,15 +10,35 @@ module DocbookCompat
       wants_toc = doc.attr?('toc') && doc.attr?('toc-placement', 'auto')
       doc.attributes.delete 'toc' if wants_toc
 
-      title = doc.doctitle partition: true
+      doc.extend ExtraDocinfo
 
       html = yield
+      munge_html doc, html, wants_toc
+      html + "\n"
+    end
+
+    ##
+    # Adds extra tags <link> tags to the <head> to emulate docbook.
+    module ExtraDocinfo
+      def docinfo(location = :head, suffix = nil)
+        info = super
+        return info unless location == :head
+
+        info + <<~HTML
+          <meta name="DC.type" content="#{attributes['dc.type']}"/>
+          <meta name="DC.subject" content="#{attributes['dc.subject']}"/>
+          <meta name="DC.identifier" content="#{attributes['dc.identifier']}"/>
+        HTML
+      end
+    end
+
+    def munge_html(doc, html, wants_toc)
+      title = doc.doctitle partition: true
       munge_html_tag html
-      munge_head doc, title, html
+      munge_head title, html
       munge_body doc, html
       munge_title doc, title, html
       add_toc doc, html if wants_toc
-      html
     end
 
     def munge_html_tag(html)
@@ -26,12 +46,11 @@ module DocbookCompat
         raise("Coudn't fix html in #{html}")
     end
 
-    def munge_head(doc, title, html)
+    def munge_head(title, html)
       html.gsub!(
-        %r{<title>(.+)</title>}, "<title>#{title.main} | Elastic</title>"
+        %r{<title>.+</title>}, "<title>#{title.main} | Elastic</title>"
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
-      add_dc_meta doc, html
     end
 
     META_VIEWPORT = <<~HTML
@@ -47,28 +66,39 @@ module DocbookCompat
         raise("Couldn't remove generator in #{html}")
     end
 
-    def add_dc_meta(doc, html)
-      meta = <<~HTML.strip
-        <meta name="DC.type" content="#{doc.attr 'dc.type'}"/>
-        <meta name="DC.subject" content="#{doc.attr 'dc.subject'}"/>
-        <meta name="DC.identifier" content="#{doc.attr 'dc.identifier'}"/>
-      HTML
-      html.gsub!('</title>', "</title>\n#{meta}") ||
-        raise("Couldn't add dc meta to #{html}")
+    def munge_body(doc, html)
+      if doc.attr 'noheader'
+        html.gsub!(/<body[^>]+>/, '<body>')
+      else
+        munge_body_and_header_open doc, html
+        munge_body_and_header_close html
+      end
     end
 
-    def munge_body(doc, html)
-      wrapped_body = <<~HTML.strip
-        <body>
-        <div class="#{doc.doctype}" lang="#{doc.attr 'lang', 'en'}">
-      HTML
-      html.gsub!(/<body[^>]+>/, wrapped_body) ||
+    def munge_body_and_header_open(doc, html)
+      # Note nav header and footer should be *outside* the div wrapping the body
+      wrapped = [
+        %(<body>),
+        html.slice!(%r{<div class="navheader">.+?<\/div>\n}m)&.strip,
+        %(<div class="#{doc.doctype}" lang="#{doc.attr 'lang', 'en'}">),
+      ].compact.join "\n"
+      html.gsub!(/<body[^>]+>/, wrapped) ||
         raise("Couldn't wrap body in #{html}")
-      html.gsub!('</body>', '</div></body>') ||
+    end
+
+    def munge_body_and_header_close(html)
+      wrapped = [
+        '</div>',
+        html.slice!(%r{<div class="navfooter">.+?<\/div>\n}m),
+        '</body>',
+      ].compact.join
+      html.gsub!('</body>', wrapped) ||
         raise("Couldn't wrap body in #{html}")
     end
 
     def munge_title(doc, title, html)
+      return if doc.attr 'noheader'
+
       # Important: we're not replacing the whole header - it still will have a
       # closing </div>.
       header_start = <<~HTML
@@ -97,9 +127,11 @@ module DocbookCompat
     def add_toc(doc, html)
       html.gsub! '<div id="content">', <<~HTML
         <div id="content">
+        <!--START_TOC-->
         <div class="#{doc.attr 'toc-class', 'toc'}">
         #{doc.converter.convert doc, 'outline'}
         </div>
+        <!--END_TOC-->
       HTML
     end
   end

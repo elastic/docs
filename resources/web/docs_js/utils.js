@@ -54,7 +54,7 @@ export const getCurlText = ({consoleText,
                              curl_user,
                              curl_password,
                              isKibana,
-                             langStrings}) => {
+                             addPretty}) => {
   var regex    = console_regex(),
       curlText = '',
       match;
@@ -78,7 +78,7 @@ export const getCurlText = ({consoleText,
         curlText += `-u ${curl_user}:${curl_password} `;
       }
 
-      if (!isKibana) {
+      if (addPretty) {
         path += path.includes('?') ? '&pretty' : '?pretty';
       }
 
