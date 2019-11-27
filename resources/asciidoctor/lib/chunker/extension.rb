@@ -15,7 +15,7 @@ module Chunker
     return unless doc.attr 'outdir'
     return unless (chunk_level = doc.attr 'chunk_level')
 
-    doc.extend Chunker::ExtraDocinfo
+    doc.extend ExtraDocinfo
     return if doc.attr 'subdoc'
 
     doc.attributes['toclevels'] ||= doc.attributes['chunk_level']
@@ -28,8 +28,8 @@ module Chunker
   ##
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
-    include Chunker::Breadcrumbs
-    include Chunker::FindRelated
+    include Breadcrumbs
+    include FindRelated
 
     def initialize(delegate, chunk_level)
       super(delegate)
