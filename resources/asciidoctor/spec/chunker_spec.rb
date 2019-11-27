@@ -137,7 +137,9 @@ RSpec.describe Chunker do
 
             Words again.
 
-            <<linkme>>
+            <<linkme,override text>>
+
+            <<s1,override text>>
           ASCIIDOC
         end
         context 'the main output' do
@@ -204,7 +206,12 @@ RSpec.describe Chunker do
             HTML
           end
           it 'contains a link to an element in the first section' do
-            expect(contents).to include('<a href="s1.html#linkme">[linkme]</a>')
+            expect(contents).to include(
+              '<a href="s1.html#linkme">override text</a>'
+            )
+          end
+          it 'contains a link to the first section with override text' do
+            expect(contents).to include('<a href="s1.html">override text</a>')
           end
         end
       end

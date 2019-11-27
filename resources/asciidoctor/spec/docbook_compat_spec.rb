@@ -425,21 +425,6 @@ RSpec.describe DocbookCompat do
         expect(converted).to include('target="_blank"')
       end
     end
-    context 'when the link is to an inline anchor' do
-      let(:input) do
-        <<~ASCIIDOC
-          [[target]]`target`:: foo
-
-          <<target>>
-        ASCIIDOC
-      end
-      it 'references the url' do
-        expect(converted).to include('href="#target"')
-      end
-      it 'has the right title' do
-        expect(converted).to include('><code class="literal">target</code></a>')
-      end
-    end
   end
 
   context 'a cross reference' do
@@ -462,6 +447,34 @@ RSpec.describe DocbookCompat do
     end
     it 'wraps the title in <em>' do
       expect(converted).to include('><em>Foo</em></a>')
+    end
+    context 'when the link text is overridden' do
+      let(:input) do
+        <<~ASCIIDOC
+          Words <<foo,override text>>.
+
+          [[foo]]
+          == Foo
+        ASCIIDOC
+      end
+      it 'contains the overridden text' do
+        expect(converted).to include('>override text</a>')
+      end
+    end
+    context 'when the cross reference is to an inline anchor' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[target]]`target`:: foo
+
+          <<target>>
+        ASCIIDOC
+      end
+      it 'references the url' do
+        expect(converted).to include('href="#target"')
+      end
+      it 'has the right title' do
+        expect(converted).to include('><code class="literal">target</code></a>')
+      end
     end
   end
 
