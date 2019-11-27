@@ -40,6 +40,8 @@ module Chunker
 
     def nav_link(section, lmarker, rmarker)
       return unless section
+      # section could be the document itself which shouldn't render.
+      return unless section.context == :section
 
       %(<a #{link_href section}>#{lmarker}#{section.title}#{rmarker}</a>)
     end
