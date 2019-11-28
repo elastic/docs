@@ -829,6 +829,14 @@ RSpec.describe DocbookCompat do
           <table border="1" cellpadding="4px">
         HTML
       end
+      it 'contains the colgroups' do
+        expect(converted).to include <<~HTML
+          <colgroup>
+          <col class="col_1"/>
+          <col class="col_2"/>
+          </colgroup>
+        HTML
+      end
       it 'contains the head' do
         expect(converted).to include <<~HTML
           <thead>
