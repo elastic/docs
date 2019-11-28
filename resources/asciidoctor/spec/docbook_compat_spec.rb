@@ -685,22 +685,50 @@ RSpec.describe DocbookCompat do
 
   context 'admonitions' do
     shared_examples 'standard admonition' do |key, admonclass|
-      let(:input) do
-        <<~ASCIIDOC
-          #{key}: words
-        ASCIIDOC
+      context 'with text' do
+        let(:input) do
+          <<~ASCIIDOC
+            #{key}: words
+          ASCIIDOC
+        end
+        it "renders with Elastic's custom template" do
+          expect(converted).to include(<<~HTML)
+            <div class="#{admonclass} admon">
+            <div class="icon"></div>
+            <div class="admon_content">
+            <p>
+            words
+            </p>
+            </div>
+            </div>
+          HTML
+        end
       end
-      it "renders with Elastic's custom template" do
-        expect(converted).to include(<<~HTML)
-          <div class="#{admonclass} admon">
-          <div class="icon"></div>
-          <div class="admon_content">
-          <p>
-          words
-          </p>
-          </div>
-          </div>
-        HTML
+      context 'with complex content' do
+        let(:input) do
+          <<~ASCIIDOC
+            [#{key}]
+            --
+            . words
+            --
+          ASCIIDOC
+        end
+        it "renders with Elastic's custom template" do
+          expect(converted).to include(<<~HTML)
+            <div class="#{admonclass} admon">
+            <div class="icon"></div>
+            <div class="admon_content">
+            <div class="olist orderedlist">
+            <ol class="orderedlist">
+            <li class="listitem">
+            words
+            </li>
+            </ol>
+            </div>
+            </div>
+            </div>
+          HTML
+        end
       end
     end
     context 'note' do
