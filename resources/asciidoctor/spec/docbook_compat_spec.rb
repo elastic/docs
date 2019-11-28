@@ -810,4 +810,49 @@ RSpec.describe DocbookCompat do
       end
     end
   end
+
+  context 'tables' do
+    context 'basic' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          |Col 1 | Col 2
+
+          |Foo   | Bar
+          |Baz   | Bort
+          |===
+        ASCIIDOC
+      end
+      it 'is wrapped in informaltable' do
+        expect(converted).to include <<~HTML
+          <div class="informaltable">
+          <table border="1" cellpadding="4px">
+        HTML
+      end
+      it 'contains the head' do
+        expect(converted).to include <<~HTML
+          <thead>
+          <tr>
+          <th align="left" valign="top">Col 1</th>
+          <th align="left" valign="top">Col 2</th>
+          </tr>
+          </thead>
+        HTML
+      end
+      it 'contains the body' do
+        expect(converted).to include <<~HTML
+          <tbody>
+          <tr>
+          <td align="left" valign="top"><p>Foo</p></td>
+          <td align="left" valign="top"><p>Bar</p></td>
+          </tr>
+          <tr>
+          <td align="left" valign="top"><p>Baz</p></td>
+          <td align="left" valign="top"><p>Bort</p></td>
+          </tr>
+          </tbody>
+        HTML
+      end
+    end
+  end
 end
