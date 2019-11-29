@@ -8,6 +8,7 @@ require_relative 'convert_listing'
 require_relative 'convert_lists'
 require_relative 'convert_open'
 require_relative 'convert_outline'
+require_relative 'convert_table'
 
 ##
 # HTML5 converter that emulates Elastic's docbook generated html.
@@ -27,6 +28,7 @@ module DocbookCompat
     include ConvertLists
     include ConvertOpen
     include ConvertOutline
+    include ConvertTable
 
     def convert_section(node)
       <<~HTML
