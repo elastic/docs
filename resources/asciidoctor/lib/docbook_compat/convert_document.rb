@@ -35,7 +35,7 @@ module DocbookCompat
     def munge_html(doc, html, wants_toc)
       title = doc.doctitle partition: true
       munge_html_tag html
-      munge_head title, html
+      munge_head doc.attr('title-extra'), title, html
       munge_body doc, html
       munge_title doc, title, html
       add_toc doc, html if wants_toc
@@ -46,9 +46,10 @@ module DocbookCompat
         raise("Coudn't fix html in #{html}")
     end
 
-    def munge_head(title, html)
+    def munge_head(title_extra, title, html)
       html.gsub!(
-        %r{<title>.+</title>}, "<title>#{title.main} | Elastic</title>"
+        %r{<title>.+</title>},
+        "<title>#{title.main}#{title_extra} | Elastic</title>"
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
     end

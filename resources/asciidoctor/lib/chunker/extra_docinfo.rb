@@ -26,7 +26,9 @@ module Chunker
     def link_rel(rel, related)
       return unless related
 
-      %(<link rel="#{rel}" #{link_href related} #{link_title related}/>)
+      extra = related.context == :document ? related.attr('title-extra') : ''
+      title = %(title="#{link_text related}#{extra}")
+      %(<link rel="#{rel}" #{link_href related} #{title}/>)
     end
   end
 end

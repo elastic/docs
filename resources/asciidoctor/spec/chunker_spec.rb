@@ -27,7 +27,7 @@ RSpec.describe Chunker do
       end
       it 'contains the home link' do
         expect(contents).to include(<<~HTML)
-          <link rel="home" href="index.html" title="Title"/>
+          <link rel="home" href="index.html" title="Title#{convert_attributes['title-extra']}"/>
         HTML
       end
       if prev_page
@@ -318,6 +318,47 @@ RSpec.describe Chunker do
           end
           it 'contains contents' do
             expect(contents).to include('<p>Words again.</p>')
+          end
+        end
+      end
+      context 'when there is title-extra' do
+        let(:convert_attributes) do
+          {
+            'outdir' => outdir,
+            'chunk_level' => 1,
+            # Shrink the output slightly so it is easier to read
+            'stylesheet!' => false,
+            # We always enable the toc for multi-page books
+            'toc' => '',
+            'title-extra' => ' [fooo]',
+          }
+        end
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s1]]
+            == Section 1
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 's1', 'Section 1'
+          it 'contains the correct title' do
+            expect(contents).to include('<title>Title</title>')
+          end
+        end
+        file_context 'the section', 's1.html' do
+          include_examples 'standard page', 'index', 'Title [fooo]', nil, nil
+          include_examples 'subpage'
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title [fooo]</a></span>
+              »
+              <span class="breadcrumb-node">Section 1</span>
+              </div>
+            HTML
           end
         end
       end

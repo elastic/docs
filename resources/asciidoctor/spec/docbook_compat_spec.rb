@@ -325,6 +325,35 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'when there is title-extra' do
+      let(:convert_attributes) do
+        {
+          # Shrink the output slightly so it is easier to read
+          'stylesheet!' => false,
+          # Set some metadata that will be included in the header
+          'dc.type' => 'FooType',
+          'dc.subject' => 'BarSubject',
+          'dc.identifier' => 'BazIdentifier',
+          'toc' => '',
+          'toclevels' => 1,
+          'title-extra' => ' [fooo]',
+        }
+      end
+      let(:input) do
+        <<~ASCIIDOC
+          = Title
+
+          == Section 1
+
+          == Section 2
+        ASCIIDOC
+      end
+      context 'the title' do
+        it 'includes Elastic' do
+          expect(converted).to include('<title>Title [fooo] | Elastic</title>')
+        end
+      end
+    end
   end
 
   context 'sections' do
