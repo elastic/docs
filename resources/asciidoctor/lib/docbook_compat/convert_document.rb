@@ -22,13 +22,20 @@ module DocbookCompat
     module ExtraDocinfo
       def docinfo(location = :head, suffix = nil)
         info = super
-        return info unless location == :head
+        info += head_extra if location == :head
+        info
+      end
 
-        info + <<~HTML
+      def head_extra
+        info = <<~HTML
           <meta name="DC.type" content="#{attributes['dc.type']}"/>
           <meta name="DC.subject" content="#{attributes['dc.subject']}"/>
           <meta name="DC.identifier" content="#{attributes['dc.identifier']}"/>
         HTML
+        info += <<~HTML if attributes['noindex']
+          <meta content="noindex,nofollow" name="robots"/>
+        HTML
+        info
       end
     end
 
