@@ -61,6 +61,10 @@ def normalize_html(html):
     for e in soup.select('.informalfigure'):
         e['class'].remove('informalfigure')
         e['class'].append('imageblock')
+    # Same for mediaobject and content
+    for e in soup.select('.content'):
+        e['class'].remove('content')
+        e['class'].append('mediaobject')
     # Docbook links with `<a class="link"` when linking from one page of a book
     # to another. Asciidoctor emits `<a class="link"`. Both look fine.
     for e in soup.select('a.xref'):
@@ -71,8 +75,14 @@ def normalize_html(html):
     # sure why. But we don't need it anyway.
     for e in soup.select('.simpara'):
         e['class'].remove('simpara')
-        if not e['class']:
-            del e['class']
+
+    # Remove empty "class" attributes and sort the listed classes.
+    for e in soup.select('*'):
+        if 'class' in e.attrs:
+            if e['class']:
+                e['class'] = sorted(e['class'])
+            else:
+                del e['class']
     # Format the html with indentation so we can *see* things
     html = soup.prettify()
     # docbook spits out the long-form charset and asciidoctor spits out the
