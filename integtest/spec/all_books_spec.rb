@@ -610,11 +610,11 @@ RSpec.describe 'building all books' do
   context 'when the book has "live" branches' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', 'test'
-      repo.switch_to_new_branch 'other'
+      repo.switch_to_new_branch 'nonlive'
 
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
-      book.branches << 'other'
+      book.branches << 'nonlive'
       book.live_branches = ['master']
     end
     page_context 'the live branch', 'html/test/master/index.html' do
@@ -626,12 +626,12 @@ RSpec.describe 'building all books' do
       context 'the version drop down' do
         it 'contains only the live branch' do
           expect(body).to include(<<~HTML.strip)
-            <select><option value="master" selected>master (current)</option></select>
+            <select><option value="master" selected>master (current)</option><option value="other">other versions</option></select>
           HTML
         end
       end
     end
-    page_context 'the dead branch', 'html/test/other/index.html' do
+    page_context 'the dead branch', 'html/test/nonlive/index.html' do
       it 'contains the noindex flag' do
         expect(contents).to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow" />
@@ -640,7 +640,7 @@ RSpec.describe 'building all books' do
       context 'the version drop down' do
         it 'contains the deprecated branch' do
           expect(body).to include(<<~HTML.strip)
-            <select><option value="master">master (current)</option><option value="other" selected>other (out of date)</option></select>
+            <select><option value="master">master (current)</option><option value="nonlive" selected>nonlive (out of date)</option></select>
           HTML
         end
       end

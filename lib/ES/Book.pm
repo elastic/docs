@@ -330,9 +330,13 @@ sub _update_title_and_version_drop_downs {
     my ( $self, $branch_dir, $branch ) = @_;
 
     my $title = '<li id="book_title"><span>' . $self->title . ': <select>';
+    my $removed_any = 0;
     for my $b ( @{ $self->branches } ) {
         my $live = grep( /^$b$/, @{ $self->{live_branches} } );
-        next unless $live || $branch eq $b;
+        unless ( $live || $branch eq $b ) {
+            $removed_any = 1;
+            next;
+        }
 
         $title .= '<option value="' . $b . '"';
         $title .= ' selected'  if $branch eq $b;
@@ -341,6 +345,7 @@ sub _update_title_and_version_drop_downs {
         $title .= ' (out of date)' unless $live;
         $title .= '</option>';
     }
+    $title .= '<option value="other">other versions</option>' if $removed_any;
     $title .= '</select></span></li>';
     for ( 'toc.html', 'index.html' ) {
         my $file = $branch_dir->file($_);
