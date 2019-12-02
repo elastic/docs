@@ -54,7 +54,7 @@ module DocbookCompat
     end
 
     def convert_paragraph(node)
-      <<~HTML
+      <<~HTML.strip
         <p>#{node.content}</p>
       HTML
     end

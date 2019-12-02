@@ -637,6 +637,7 @@ RSpec.describe DocbookCompat do
       end
     end
   end
+
   context 'an ordered list' do
     let(:input) do
       <<~ASCIIDOC
@@ -679,6 +680,29 @@ RSpec.describe DocbookCompat do
       end
     end
 
+    context 'when the list if defined with 1.' do
+      let(:input) do
+        <<~ASCIIDOC
+          1. Thing
+        ASCIIDOC
+      end
+      it 'is wrapped an orderedlist div' do
+        expect(converted).to include('<div class="olist orderedlist">')
+      end
+      it 'has the itemizedlist class' do
+        expect(converted).to include('<ol class="orderedlist"')
+      end
+      context 'the item' do
+        it 'has the listitem class' do
+          expect(converted).to include(<<~HTML)
+            <li class="listitem">
+            Thing
+            </li>
+          HTML
+        end
+      end
+    end
+
     context 'with complex contents' do
       let(:input) do
         <<~ASCIIDOC
@@ -695,11 +719,109 @@ RSpec.describe DocbookCompat do
           <p>Foo</p>
         HTML
       end
-      it 'include the complex content' do
+      it 'includes the complex content' do
         expect(converted).to include(<<~HTML)
           <p>Complex</p>
-
           </li>
+        HTML
+      end
+    end
+  end
+
+  context 'a description list' do
+    context 'basic' do
+      let(:input) do
+        <<~ASCIIDOC
+          Foo:: The foo.
+          [[bar]] Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'is wrapped like docbook' do
+        expect(converted).to include <<~HTML
+          <div class="variablelist">
+          <dl class="variablelist">
+        HTML
+        expect(converted).to include <<~HTML
+          </dl>
+          </div>
+        HTML
+      end
+      it 'contains the first item' do
+        expect(converted).to include <<~HTML
+          <dt>
+          <span class="term">
+          Foo
+          </span>
+          </dt>
+          <dd>
+          The foo.
+          </dd>
+        HTML
+      end
+      it 'contains the second item' do
+        expect(converted).to include <<~HTML
+          <dt>
+          <span class="term">
+          <a id="bar"></a> Bar
+          </span>
+          </dt>
+          <dd>
+          The bar.
+          </dd>
+        HTML
+      end
+    end
+
+    context 'without a descrition' do
+      let(:input) do
+        <<~ASCIIDOC
+          Foo::
+        ASCIIDOC
+      end
+      it "doesn't have a dd" do
+        expect(converted).not_to include '<dd>'
+      end
+    end
+
+    context 'with complex content' do
+      let(:input) do
+        <<~ASCIIDOC
+          Foo::
+          +
+          --
+          Lots of content.
+
+          In many paragraphs.
+          --
+        ASCIIDOC
+      end
+      it 'contains complex content' do
+        expect(converted).to include <<~HTML
+          <dt>
+          <span class="term">
+          Foo
+          </span>
+          </dt>
+          <dd>
+          <p>Lots of content.</p>
+          <p>In many paragraphs.</p>
+          </dd>
+        HTML
+      end
+    end
+
+    context 'when the anchor is on the previous line' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[bar]]
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'the id preceeds dl' do
+        expect(converted).to include <<~HTML
+          <div class="variablelist">
+          <a id="bar"></a>
+          <dl class="variablelist">
         HTML
       end
     end
@@ -829,7 +951,6 @@ RSpec.describe DocbookCompat do
         <p class="title"><strong>Title</strong></p>
         </div></div></div>
         <p>Words</p>
-
         </div>
       HTML
     end
@@ -849,7 +970,6 @@ RSpec.describe DocbookCompat do
           <div id="preamble">
           <div class="sectionbody">
           <p>Words.</p>
-
           </div>
           </div>
         HTML
