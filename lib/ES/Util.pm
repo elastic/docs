@@ -121,6 +121,7 @@ sub build_chunked {
                 '-a' => 'dc.subject=' . $subject,
                 '-a' => 'dc.identifier=' . $version,
                 $noindex ? ('-a' => 'noindex') : (),
+                $page_header ? ('-a' => "page-header=$page_header") : (),
             ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),
@@ -281,6 +282,7 @@ sub build_single {
                 '-a' => 'dc.subject=' . $subject,
                 '-a' => 'dc.identifier=' . $version,
                 $noindex ? ('-a' => 'noindex') : (),
+                $page_header ? ('-a' => "page-header=$page_header") : (),
                 # Turn on asciidoctor's table of contents generation if we want a TOC
                 $toc ? ('-a' => 'toc') : (),
             ) : (),

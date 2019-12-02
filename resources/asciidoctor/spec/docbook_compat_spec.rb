@@ -289,15 +289,35 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'when there is a page-header' do
+      let(:convert_attributes) do
+        {
+          # Shrink the output slightly so it is easier to read
+          'stylesheet!' => false,
+          'page-header' => '<div class="foo" />',
+        }
+      end
+      let(:input) do
+        <<~ASCIIDOC
+          = Title
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the header' do
+        it 'contains the page-header right after the body tag' do
+          expect(converted).not_to include <<~HTML
+            <body>
+            <div class="foo" />
+          HTML
+        end
+      end
+    end
     context 'when the head is disabled' do
       let(:convert_attributes) do
         {
           # Shrink the output slightly so it is easier to read
           'stylesheet!' => false,
-          # Set some metadata that will be included in the header
-          'dc.type' => 'FooType',
-          'dc.subject' => 'BarSubject',
-          'dc.identifier' => 'BazIdentifier',
           # Disable the head
           'noheader' => true,
         }
@@ -324,6 +344,32 @@ RSpec.describe DocbookCompat do
           HTML
         end
       end
+
+      context 'when there is a page-header' do
+        let(:convert_attributes) do
+          {
+            # Shrink the output slightly so it is easier to read
+            'stylesheet!' => false,
+            'noheader' => true,
+            'page-header' => '<div class="foo" />',
+          }
+        end
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the header' do
+          it 'contains the page-header right after the body tag' do
+            expect(converted).not_to include <<~HTML
+              <body>
+              <div class="foo" />
+            HTML
+          end
+        end
+      end
     end
     context 'when the head is disabled' do
       let(:convert_attributes) do
@@ -348,7 +394,7 @@ RSpec.describe DocbookCompat do
       context 'the head' do
         it 'contains a directive to not follow or index the page' do
           expect(converted).to include(
-            '<meta content="noindex,nofollow" name="robots"/>'
+            '<meta name="robots" content="noindex,nofollow"/>'
           )
         end
       end
