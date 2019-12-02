@@ -18,7 +18,7 @@ export function init_headers(right_col, lang_strings) {
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
 
-  $('#guide a[id]').each(
+  $('#guide a[id]:not([href])').each(
     function() {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
