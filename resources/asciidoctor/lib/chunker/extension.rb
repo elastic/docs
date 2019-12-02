@@ -37,14 +37,10 @@ module Chunker
     end
 
     def convert_document(doc)
-      unless doc.attr 'home'
-        title = doc.doctitle partition: true
-        doc.attributes['home'] = title.main.strip
-      end
+      title = doc.doctitle partition: true
+      doc.attributes['home'] = title.main.strip + doc.attr('title-extra', '')
       doc.attributes['next_section'] = find_next_in doc, 0
-      nav = Nav.new doc
-      doc.blocks.insert 0, nav.header
-      doc.blocks.append nav.footer
+      add_nav doc
       yield
     end
 
@@ -68,6 +64,12 @@ module Chunker
     def convert_inline_anchor(node)
       correct_xref node if node.type == :xref
       yield
+    end
+
+    def add_nav(doc)
+      nav = Nav.new doc
+      doc.blocks.insert 0, nav.header
+      doc.blocks.append nav.footer
     end
 
     def correct_xref(node)

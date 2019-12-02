@@ -10,11 +10,13 @@ module Chunker
 
     def docinfo(location = :head, suffix = nil)
       info = super
-      info += extra_head if location == :head
+      info += extra_chunker_head if location == :head
       info
     end
 
-    def extra_head
+    private
+
+    def extra_chunker_head
       [
         %(<link rel="home" href="index.html" title="#{attributes['home']}"/>),
         link_rel('up', attributes['up_section']),
@@ -26,7 +28,9 @@ module Chunker
     def link_rel(rel, related)
       return unless related
 
-      %(<link rel="#{rel}" #{link_href related} #{link_title related}/>)
+      extra = related.context == :document ? related.attr('title-extra') : ''
+      title = %(title="#{link_text related}#{extra}")
+      %(<link rel="#{rel}" #{link_href related} #{title}/>)
     end
   end
 end
