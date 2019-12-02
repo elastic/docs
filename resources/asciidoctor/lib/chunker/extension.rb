@@ -5,6 +5,7 @@ require_relative '../delegating_converter'
 require_relative 'breadcrumbs'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
+require_relative 'footnotes'
 require_relative 'nav'
 
 ##
@@ -30,6 +31,7 @@ module Chunker
   class Converter < DelegatingConverter
     include Breadcrumbs
     include FindRelated
+    include Footnotes
 
     def initialize(delegate, chunk_level)
       super(delegate)
@@ -93,12 +95,17 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
+      add_subdoc_sections doc, subdoc, section, html
+      subdoc.convert
+    end
+
+    def add_subdoc_sections(doc, subdoc, section, html)
       subdoc << generate_breadcrumbs(doc, section)
       nav = Nav.new subdoc
       subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
+      subdoc << footnotes(doc, subdoc) if doc.footnotes?
       subdoc << nav.footer
-      subdoc.convert
     end
 
     def subdoc_opts(doc, section)
