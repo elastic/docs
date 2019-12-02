@@ -15,10 +15,6 @@ module Chunker
       end
     end
 
-    def link_title(target)
-      %(title="#{link_text target}")
-    end
-
     def link_text(target)
       case target.context
       when :section
