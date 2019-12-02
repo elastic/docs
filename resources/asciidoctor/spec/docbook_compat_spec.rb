@@ -66,6 +66,11 @@ RSpec.describe DocbookCompat do
         <meta name="DC.identifier" content="BazIdentifier"/>
       HTML
     end
+    it "doesn't contain a directive to not follow or index the page" do
+      expect(converted).not_to include(
+        '<meta name="robots" content="noindex,nofollow"/>'
+      )
+    end
     context 'the title' do
       it 'includes Elastic' do
         expect(converted).to include('<title>Title | Elastic</title>')
