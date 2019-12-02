@@ -473,6 +473,15 @@ RSpec.describe DocbookCompat do
       include_examples 'section basics', 'section', 2, '_section_2', 'Section 2'
     end
 
+    context 'level 3' do
+      let(:input) do
+        <<~ASCIIDOC
+          ==== Section 3
+        ASCIIDOC
+      end
+      include_examples 'section basics', 'section', 3, '_section_3', 'Section 3'
+    end
+
     context 'a preface' do
       let(:input) do
         <<~ASCIIDOC
