@@ -371,6 +371,34 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'when the head is disabled' do
+      let(:convert_attributes) do
+        {
+          # Shrink the output slightly so it is easier to read
+          'stylesheet!' => false,
+          # Set some metadata that will be included in the header
+          'dc.type' => 'FooType',
+          'dc.subject' => 'BarSubject',
+          'dc.identifier' => 'BazIdentifier',
+          # Turn off indexing
+          'noindex' => true,
+        }
+      end
+      let(:input) do
+        <<~ASCIIDOC
+          = Title
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the head' do
+        it 'contains a directive to not follow or index the page' do
+          expect(converted).to include(
+            '<meta name="robots" content="noindex,nofollow"/>'
+          )
+        end
+      end
+    end
   end
 
   context 'sections' do

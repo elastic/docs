@@ -16,11 +16,18 @@ module DocbookCompat
     private
 
     def extra_docbook_compat_head
-      <<~HTML
-        <meta name="DC.type" content="#{attributes['dc.type']}"/>
-        <meta name="DC.subject" content="#{attributes['dc.subject']}"/>
-        <meta name="DC.identifier" content="#{attributes['dc.identifier']}"/>
-      HTML
+      [
+        docbook_compat_meta('DC.type', attributes['dc.type']),
+        docbook_compat_meta('DC.subject', attributes['dc.subject']),
+        docbook_compat_meta('DC.identifier', attributes['dc.identifier']),
+        docbook_compat_meta('robots', 'noindex,nofollow'),
+      ].compact.join "\n"
+    end
+
+    def docbook_compat_meta(name, content)
+      return unless content
+
+      %(<meta name="#{name}" content="#{content}"/>)
     end
   end
 end
