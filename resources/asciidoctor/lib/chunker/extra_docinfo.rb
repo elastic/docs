@@ -10,11 +10,13 @@ module Chunker
 
     def docinfo(location = :head, suffix = nil)
       info = super
-      info += extra_head if location == :head
+      info += extra_chunker_head if location == :head
       info
     end
 
-    def extra_head
+    private
+
+    def extra_chunker_head
       [
         %(<link rel="home" href="index.html" title="#{attributes['home']}"/>),
         link_rel('up', attributes['up_section']),
