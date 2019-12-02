@@ -54,9 +54,8 @@ module DocbookCompat
     end
 
     def convert_paragraph(node)
-      <<~HTML.strip
-        <p>#{node.content}</p>
-      HTML
+      # Asciidoctor adds a \n at the end of the paragraph so we don't.
+      %(<p>#{node.content}</p>)
     end
 
     def convert_inline_quoted(node)
