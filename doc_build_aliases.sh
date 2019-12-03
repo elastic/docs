@@ -49,7 +49,7 @@ alias docbldstkold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en
 alias docbldgls='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs'
 
 # Getting started
-alias docbldgs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
+alias docbldgs='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
 # Stack Overview
 alias docbldso='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
