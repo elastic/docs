@@ -790,7 +790,6 @@ RSpec.describe DocbookCompat do
         end
       end
     end
-
     context 'with complex contents' do
       let(:input) do
         <<~ASCIIDOC
@@ -811,6 +810,29 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(<<~HTML)
           <p>Complex</p>
           </li>
+        HTML
+      end
+    end
+    context 'second level' do
+      let(:input) do
+        <<~ASCIIDOC
+          . L1
+          .. L2
+          .. Thing 2
+        ASCIIDOC
+      end
+      it 'the outer list is wrapped an orderedlist div' do
+        expect(converted).to include <<~HTML
+          <div class="sectionbody">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+        HTML
+      end
+      it 'the inner list is wrapped an orderedlist div' do
+        expect(converted).to include <<~HTML
+          <p>L1</p>
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
         HTML
       end
     end

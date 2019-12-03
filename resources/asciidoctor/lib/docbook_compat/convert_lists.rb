@@ -10,8 +10,9 @@ module DocbookCompat
     end
 
     def convert_olist(node, &block)
-      # Note: the style can be a symbol or the a string.....
-      override_style = node.style.nil? || node.style.to_s == 'arabic'
+      override_style = node.style.nil?
+      # The style can be a symbol or the a string.....
+      override_style ||= %w[arabic loweralpha].include? node.style.to_s
       node.style = 'orderedlist' if override_style
       convert_list node, &block
     end
