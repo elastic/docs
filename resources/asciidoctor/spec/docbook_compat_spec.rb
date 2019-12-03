@@ -870,7 +870,6 @@ RSpec.describe DocbookCompat do
         expect(converted).not_to include '<dd>'
       end
     end
-
     context 'with complex content' do
       let(:input) do
         <<~ASCIIDOC
@@ -897,7 +896,6 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
-
     context 'when the anchor is on the previous line' do
       let(:input) do
         <<~ASCIIDOC
@@ -910,6 +908,63 @@ RSpec.describe DocbookCompat do
           <div class="variablelist">
           <a id="bar"></a>
           <dl class="variablelist">
+        HTML
+      end
+    end
+    context 'horizontally styled' do
+      let(:input) do
+        <<~ASCIIDOC
+          [horizontal]
+          Foo:: The foo.
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'is rendered like a table' do
+        expect(converted).to include <<~HTML
+          <div class="informaltable">
+          <table border="0" cellpadding="4px">
+          <colgroup>
+          <col/>
+          <col/>
+          </colgroup>
+          <tbody valign="top">
+        HTML
+        expect(converted).to include <<~HTML
+          </tbody>
+          </table>
+          </div>
+        HTML
+      end
+      it 'contains a row for the first entry' do
+        expect(converted).to include <<~HTML
+          <tr>
+          <td valign="top">
+          <p>
+          Foo
+          </p>
+          </td>
+          <td valign="top">
+          <p>
+          The foo.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+      it 'contains a row for the second entry' do
+        expect(converted).to include <<~HTML
+          <tr>
+          <td valign="top">
+          <p>
+          Bar
+          </p>
+          </td>
+          <td valign="top">
+          <p>
+          The bar.
+          </p>
+          </td>
+          </tr>
         HTML
       end
     end
