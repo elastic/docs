@@ -664,6 +664,23 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          [source,sh]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "the title is before in docbook's funny wrapper" do
+        expect(converted).to include(<<~HTML)
+          <p><strong>Title</strong></p>
+          <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
   end
 
   context 'an unordered list' do
