@@ -473,6 +473,15 @@ RSpec.describe DocbookCompat do
       include_examples 'section basics', 'section', 2, '_section_2', 'Section 2'
     end
 
+    context 'level 3' do
+      let(:input) do
+        <<~ASCIIDOC
+          ==== Section 3
+        ASCIIDOC
+      end
+      include_examples 'section basics', 'section', 3, '_section_3', 'Section 3'
+    end
+
     context 'a preface' do
       let(:input) do
         <<~ASCIIDOC
@@ -1087,6 +1096,31 @@ RSpec.describe DocbookCompat do
           <td align="left" valign="top"><p>Bort</p></td>
           </tr>
           </tbody>
+        HTML
+      end
+    end
+    context 'with asciidoc content' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          |Col 1
+
+          a|
+          . Foo
+          |===
+        ASCIIDOC
+      end
+      it 'contains the asciidoc content' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+          <li class="listitem">
+          Foo
+          </li>
+          </ol>
+          </div>
+          </td>
         HTML
       end
     end
