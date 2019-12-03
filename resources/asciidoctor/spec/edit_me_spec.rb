@@ -163,7 +163,7 @@ RSpec.describe EditMe do
               # Overrides "bleed" up into the enclosing chapter in docbook
               # for sections and floats. But in html5 it doesn't!
               unless backend == 'docbook45' &&
-                  ['section', 'float'].include?(type)
+                     %w[section float].include?(type)
                 expect(converted).to include(">Chapter#{stdin_link}</")
               end
             end
