@@ -6,10 +6,22 @@ module DocbookCompat
   module ConvertListing
     def convert_listing(node)
       lang = node.attr 'language'
-      <<~HTML
+      title = convert_listing_title node
+      body = <<~HTML
         <div class="pre_wrapper lang-#{lang}">
         <pre class="programlisting prettyprint lang-#{lang}">#{node.content || ''}</pre>
         </div>
+      HTML
+      return body unless title
+
+      title + body
+    end
+
+    def convert_listing_title(node)
+      return unless node.title
+
+      <<~HTML
+        <p><strong>#{node.title}</strong></p>
       HTML
     end
 
