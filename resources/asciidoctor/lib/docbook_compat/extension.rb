@@ -3,6 +3,7 @@
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
 require_relative 'convert_document'
+require_relative 'convert_dlist'
 require_relative 'convert_links'
 require_relative 'convert_listing'
 require_relative 'convert_lists'
@@ -23,6 +24,7 @@ module DocbookCompat
   # A Converter implementation that emulates Elastic's docbook generated html.
   class Converter < DelegatingConverter
     include ConvertDocument
+    include ConvertDList
     include ConvertLinks
     include ConvertListing
     include ConvertLists

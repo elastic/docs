@@ -664,6 +664,23 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          [source,sh]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "the title is before in docbook's funny wrapper" do
+        expect(converted).to include(<<~HTML)
+          <p><strong>Title</strong></p>
+          <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
   end
 
   context 'an unordered list' do
@@ -853,7 +870,6 @@ RSpec.describe DocbookCompat do
         expect(converted).not_to include '<dd>'
       end
     end
-
     context 'with complex content' do
       let(:input) do
         <<~ASCIIDOC
@@ -880,7 +896,6 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
-
     context 'when the anchor is on the previous line' do
       let(:input) do
         <<~ASCIIDOC
@@ -893,6 +908,63 @@ RSpec.describe DocbookCompat do
           <div class="variablelist">
           <a id="bar"></a>
           <dl class="variablelist">
+        HTML
+      end
+    end
+    context 'horizontally styled' do
+      let(:input) do
+        <<~ASCIIDOC
+          [horizontal]
+          Foo:: The foo.
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'is rendered like a table' do
+        expect(converted).to include <<~HTML
+          <div class="informaltable">
+          <table border="0" cellpadding="4px">
+          <colgroup>
+          <col/>
+          <col/>
+          </colgroup>
+          <tbody valign="top">
+        HTML
+        expect(converted).to include <<~HTML
+          </tbody>
+          </table>
+          </div>
+        HTML
+      end
+      it 'contains a row for the first entry' do
+        expect(converted).to include <<~HTML
+          <tr>
+          <td valign="top">
+          <p>
+          Foo
+          </p>
+          </td>
+          <td valign="top">
+          <p>
+          The foo.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+      it 'contains a row for the second entry' do
+        expect(converted).to include <<~HTML
+          <tr>
+          <td valign="top">
+          <p>
+          Bar
+          </p>
+          </td>
+          <td valign="top">
+          <p>
+          The bar.
+          </p>
+          </td>
+          </tr>
         HTML
       end
     end
@@ -1096,6 +1168,31 @@ RSpec.describe DocbookCompat do
           <td align="left" valign="top"><p>Bort</p></td>
           </tr>
           </tbody>
+        HTML
+      end
+    end
+    context 'with asciidoc content' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          |Col 1
+
+          a|
+          . Foo
+          |===
+        ASCIIDOC
+      end
+      it 'contains the asciidoc content' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+          <li class="listitem">
+          Foo
+          </li>
+          </ol>
+          </div>
+          </td>
         HTML
       end
     end
