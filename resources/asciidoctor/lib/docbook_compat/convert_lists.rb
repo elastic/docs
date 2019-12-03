@@ -16,17 +16,6 @@ module DocbookCompat
       convert_list node, &block
     end
 
-    def convert_dlist(node)
-      [
-        '<div class="variablelist">',
-        node.id ? %(<a id="#{node.id}"></a>) : nil,
-        '<dl class="variablelist">',
-        node.items.map { |terms, dd| convert_dlist_item terms, dd },
-        '</dl>',
-        '</div>',
-      ].flatten.compact.join "\n"
-    end
-
     def convert_list_item(item)
       return item.text unless item.blocks?
       return item.content unless item.text
@@ -52,29 +41,6 @@ module DocbookCompat
           raise("Couldn't remove <p> for #{item.text} in #{html}")
       end
       html
-    end
-
-    def convert_dlist_item(terms, definition)
-      [
-        terms.map { |term| convert_dlist_term term },
-        convert_dlist_definition(definition),
-      ].flatten
-    end
-
-    def convert_dlist_term(term)
-      [
-        '<dt>',
-        '<span class="term">',
-        term.convert,
-        '</span>',
-        '</dt>',
-      ]
-    end
-
-    def convert_dlist_definition(definition)
-      return unless definition
-
-      ['<dd>', definition.convert, '</dd>']
     end
   end
 end
