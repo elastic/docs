@@ -1099,5 +1099,30 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'with asciidoc content' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          |Col 1
+
+          a|
+          . Foo
+          |===
+        ASCIIDOC
+      end
+      it 'contains the asciidoc content' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+          <li class="listitem">
+          Foo
+          </li>
+          </ol>
+          </div>
+          </td>
+        HTML
+      end
+    end
   end
 end
