@@ -664,6 +664,23 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          [source,sh]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "the title is before in docbook's funny wrapper" do
+        expect(converted).to include(<<~HTML)
+          <p><strong>Title</strong></p>
+          <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
   end
 
   context 'an unordered list' do
@@ -1096,6 +1113,31 @@ RSpec.describe DocbookCompat do
           <td align="left" valign="top"><p>Bort</p></td>
           </tr>
           </tbody>
+        HTML
+      end
+    end
+    context 'with asciidoc content' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          |Col 1
+
+          a|
+          . Foo
+          |===
+        ASCIIDOC
+      end
+      it 'contains the asciidoc content' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+          <li class="listitem">
+          Foo
+          </li>
+          </ol>
+          </div>
+          </td>
         HTML
       end
     end
