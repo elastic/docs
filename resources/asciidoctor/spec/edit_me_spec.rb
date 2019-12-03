@@ -143,6 +143,8 @@ RSpec.describe EditMe do
         context 'that overrides edit_url' do
           let(:input) do
             <<~ASCIIDOC
+              == Chapter
+
               :edit_url: foo
               include::resources/edit_me/#{type}1.adoc[]
 
@@ -156,6 +158,14 @@ RSpec.describe EditMe do
                 'edit_urls' => edit_urls,
                 'respect_edit_url_overrides' => 'true',
               }
+            end
+            it 'adds a link to the enclosing chapter' do
+              # Overrides "bleed" up into the enclosing chapter in docbook
+              # for sections and floats. But in html5 it doesn't!
+              unless backend == 'docbook45' &&
+                     %w[section float].include?(type)
+                expect(converted).to include(">Chapter#{stdin_link}</")
+              end
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
