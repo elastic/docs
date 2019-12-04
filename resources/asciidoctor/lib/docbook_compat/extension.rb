@@ -10,6 +10,7 @@ require_relative 'convert_lists'
 require_relative 'convert_open'
 require_relative 'convert_outline'
 require_relative 'convert_table'
+require_relative 'titleabbrev_handler'
 
 ##
 # HTML5 converter that emulates Elastic's docbook generated html.
@@ -17,6 +18,7 @@ module DocbookCompat
   def self.activate(registry)
     return unless registry.document.basebackend? 'html'
 
+    registry.treeprocessor TitleabbrevHandler
     DelegatingConverter.setup(registry.document) { |d| Converter.new d }
   end
 
