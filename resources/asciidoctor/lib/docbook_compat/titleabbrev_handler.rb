@@ -5,7 +5,7 @@ require_relative '../scaffold'
 module DocbookCompat
   ##
   # Looks for pass blocks with `<titleabbrev>` and adds an attributes to their
-  # parent section that is an abbreviated title usesd when rendering the
+  # parent section. This attribute is an abbreviated title used when rendering the
   # when rendering the table of contents. This exists entirely for backwards
   # compatibility with docbook. It is simpler and recommended to set the
   # `titleabbrev` attribute directly on the section when the document is built
