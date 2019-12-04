@@ -471,10 +471,17 @@ RSpec.describe DocbookCompat do
         end
       end
       context 'the header' do
+        let(:xpack_tag) do
+          if input.include? '.xpack'
+            '<a class="xpack_tag" href="/subscriptions"></a>'
+          else
+            ''
+          end
+        end
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage"><div><div>
-            <h#{hlevel} class="title"><a id="#{id}"></a>#{title}</h#{hlevel}>
+            <h#{hlevel} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{hlevel}>
             </div></div></div>
           HTML
         end
@@ -488,6 +495,15 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       include_examples 'section basics', 'chapter', 1, '_section', 'Section'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [.xpack]
+            == S1
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'chapter xpack', 1, '_s1', 'S1'
+      end
     end
 
     context 'level 2' do
@@ -497,6 +513,15 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       include_examples 'section basics', 'section', 2, '_section_2', 'Section 2'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [.xpack]
+            === S2
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'section xpack', 2, '_s2', 'S2'
+      end
     end
 
     context 'level 3' do
@@ -506,6 +531,15 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       include_examples 'section basics', 'section', 3, '_section_3', 'Section 3'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [.xpack]
+            ==== S3
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'section xpack', 3, '_s3', 'S3'
+      end
     end
 
     context 'a preface' do
@@ -517,6 +551,15 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       include_examples 'section basics', 'preface', 1, '_preface', 'Preface'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [preface.xpack]
+            == P
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'preface xpack', 1, '_p', 'P'
+      end
     end
   end
 
@@ -633,6 +676,19 @@ RSpec.describe DocbookCompat do
     end
     it 'has an inline anchor for docbook compatibility' do
       expect(converted).to include('<a id="_foo"></a>')
+    end
+    context 'with the xpack role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [float.xpack]
+          ==== Foo
+        ASCIIDOC
+      end
+      it 'has the xpack tag' do
+        expect(converted).to include(
+          '<a class="xpack_tag" href="/subscriptions"></a></h4>'
+        )
+      end
     end
   end
 
