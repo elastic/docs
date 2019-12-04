@@ -212,6 +212,32 @@ RSpec.describe DocbookCompat do
           end
         end
       end
+      context 'when a section has role=exclude' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            == Section 1
+
+            [.exclude]
+            == Section 2
+          ASCIIDOC
+        end
+        context 'the table of contents' do
+          it "doesn't include the excluded section" do
+            expect(converted).to include(<<~HTML)
+              <!--START_TOC-->
+              <div class="toc">
+              <ul class="toc">
+              <li><span class="chapter"><a href="#_section_1">Section 1</a></span>
+              </li>
+              </ul>
+              </div>
+              <!--END_TOC-->
+            HTML
+          end
+        end
+      end
     end
     context 'when there is a subtitle' do
       let(:input) do
@@ -445,10 +471,17 @@ RSpec.describe DocbookCompat do
         end
       end
       context 'the header' do
+        let(:xpack_tag) do
+          if input.include? '.xpack'
+            '<a class="xpack_tag" href="/subscriptions"></a>'
+          else
+            ''
+          end
+        end
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage"><div><div>
-            <h#{hlevel} class="title"><a id="#{id}"></a>#{title}</h#{hlevel}>
+            <h#{hlevel} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{hlevel}>
             </div></div></div>
           HTML
         end
@@ -462,6 +495,15 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       include_examples 'section basics', 'chapter', 1, '_section', 'Section'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [.xpack]
+            == S1
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'chapter xpack', 1, '_s1', 'S1'
+      end
     end
 
     context 'level 2' do
@@ -471,6 +513,33 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       include_examples 'section basics', 'section', 2, '_section_2', 'Section 2'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [.xpack]
+            === S2
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'section xpack', 2, '_s2', 'S2'
+      end
+    end
+
+    context 'level 3' do
+      let(:input) do
+        <<~ASCIIDOC
+          ==== Section 3
+        ASCIIDOC
+      end
+      include_examples 'section basics', 'section', 3, '_section_3', 'Section 3'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [.xpack]
+            ==== S3
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'section xpack', 3, '_s3', 'S3'
+      end
     end
 
     context 'a preface' do
@@ -482,6 +551,15 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       include_examples 'section basics', 'preface', 1, '_preface', 'Preface'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [preface.xpack]
+            == P
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'preface xpack', 1, '_p', 'P'
+      end
     end
   end
 
@@ -599,6 +677,19 @@ RSpec.describe DocbookCompat do
     it 'has an inline anchor for docbook compatibility' do
       expect(converted).to include('<a id="_foo"></a>')
     end
+    context 'with the xpack role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [float.xpack]
+          ==== Foo
+        ASCIIDOC
+      end
+      it 'has the xpack tag' do
+        expect(converted).to include(
+          '<a class="xpack_tag" href="/subscriptions"></a></h4>'
+        )
+      end
+    end
   end
 
   context 'a listing block' do
@@ -615,6 +706,13 @@ RSpec.describe DocbookCompat do
       expect(converted).to include(<<~HTML)
         <div class="pre_wrapper lang-sh">
         <pre class="programlisting prettyprint lang-sh">cpanm Search::Elasticsearch</pre>
+        </div>
+      HTML
+    end
+    it "isn't followed by an extra blank line" do
+      expect(converted).to include(<<~HTML)
+        </pre>
+        </div>
         </div>
       HTML
     end
@@ -651,6 +749,60 @@ RSpec.describe DocbookCompat do
             </tr>
             </table>
             </div>
+          HTML
+        end
+      end
+    end
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          [source,sh]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "the title is before in docbook's funny wrapper" do
+        expect(converted).to include(<<~HTML)
+          <p><strong>Title</strong></p>
+          <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
+    context "when the listing doesn't have a language" do
+      let(:input) do
+        <<~ASCIIDOC
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "is wrapped in docbook's funny wrapper" do
+        # It is important that there isn't any extra space around the <pre> tags
+        expect(converted).to include(<<~HTML)
+          <pre class="screen">cpanm Search::Elasticsearch</pre>
+        HTML
+      end
+      it "isn't followed by an extra blank line" do
+        expect(converted).to include(<<~HTML)
+          </pre>
+          </div>
+        HTML
+      end
+      context 'with a title' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title
+            ----
+            cpanm Search::Elasticsearch
+            ----
+          ASCIIDOC
+        end
+        it "the title is before in docbook's funny wrapper" do
+          expect(converted).to include(<<~HTML)
+            <p><strong>Title</strong></p>
+            <pre class="screen">cpanm Search::Elasticsearch</pre>
           HTML
         end
       end
@@ -764,7 +916,6 @@ RSpec.describe DocbookCompat do
         end
       end
     end
-
     context 'with complex contents' do
       let(:input) do
         <<~ASCIIDOC
@@ -785,6 +936,29 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(<<~HTML)
           <p>Complex</p>
           </li>
+        HTML
+      end
+    end
+    context 'second level' do
+      let(:input) do
+        <<~ASCIIDOC
+          . L1
+          .. L2
+          .. Thing 2
+        ASCIIDOC
+      end
+      it 'the outer list is wrapped an orderedlist div' do
+        expect(converted).to include <<~HTML
+          <div class="sectionbody">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+        HTML
+      end
+      it 'the inner list is wrapped an orderedlist div' do
+        expect(converted).to include <<~HTML
+          <p>L1</p>
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
         HTML
       end
     end
@@ -844,7 +1018,6 @@ RSpec.describe DocbookCompat do
         expect(converted).not_to include '<dd>'
       end
     end
-
     context 'with complex content' do
       let(:input) do
         <<~ASCIIDOC
@@ -871,7 +1044,6 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
-
     context 'when the anchor is on the previous line' do
       let(:input) do
         <<~ASCIIDOC
@@ -885,6 +1057,149 @@ RSpec.describe DocbookCompat do
           <a id="bar"></a>
           <dl class="variablelist">
         HTML
+      end
+    end
+    context 'horizontally styled' do
+      let(:input) do
+        <<~ASCIIDOC
+          [horizontal]
+          Foo:: The foo.
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'is rendered like a table' do
+        expect(converted).to include <<~HTML
+          <div class="informaltable">
+          <table border="0" cellpadding="4px">
+          <colgroup>
+          <col/>
+          <col/>
+          </colgroup>
+          <tbody valign="top">
+        HTML
+        expect(converted).to include <<~HTML
+          </tbody>
+          </table>
+          </div>
+        HTML
+      end
+      it 'contains a row for the first entry' do
+        expect(converted).to include <<~HTML
+          <tr>
+          <td valign="top">
+          <p>
+          Foo
+          </p>
+          </td>
+          <td valign="top">
+          <p>
+          The foo.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+      it 'contains a row for the second entry' do
+        expect(converted).to include <<~HTML
+          <tr>
+          <td valign="top">
+          <p>
+          Bar
+          </p>
+          </td>
+          <td valign="top">
+          <p>
+          The bar.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+    end
+    context 'question and anwer styled' do
+      let(:input) do
+        <<~ASCIIDOC
+          [qanda]
+          What is foo?:: You don't want to know.
+          Who is Baz?:: Baz is Baz.
+        ASCIIDOC
+      end
+      it 'is rendered like a table' do
+        expect(converted).to include <<~HTML
+          <div class="qandaset">
+          <table border="0">
+          <colgroup>
+          <col align="left" width="1%"/>
+          <col/>
+          </colgroup>
+          <tbody>
+        HTML
+        expect(converted).to include <<~HTML
+          </tbody>
+          </table>
+          </div>
+        HTML
+      end
+      it 'contains a row for the first entry' do
+        expect(converted).to include <<~HTML
+          <tr class="question">
+          <td align="left" valign="top">
+          <p><strong>1.</strong></p>
+          </td>
+          <td align="left" valign="top">
+          <p>
+          What is foo?
+          </p>
+          </td>
+          </tr>
+          <tr class="answer">
+          <td align="left" valign="top">
+          </td>
+          <td align="left" valign="top">
+          <p>
+          You don&#8217;t want to know.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+      it 'contains a row for the second entry' do
+        expect(converted).to include <<~HTML
+          <tr class="question">
+          <td align="left" valign="top">
+          <p><strong>2.</strong></p>
+          </td>
+          <td align="left" valign="top">
+          <p>
+          Who is Baz?
+          </p>
+          </td>
+          </tr>
+          <tr class="answer">
+          <td align="left" valign="top">
+          </td>
+          <td align="left" valign="top">
+          <p>
+          Baz is Baz.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+    end
+    context 'an unimplemented dlist style' do
+      include_context 'convert with logs'
+      let(:input) do
+        <<~ASCIIDOC
+          [not_implemented]
+          Foo:: The foo.
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'logs an warning' do
+        expect(logs).to eq <<~LOG.strip
+          WARN: <stdin>: line 2: Can't convert unknown description list style [not_implemented].
+        LOG
       end
     end
   end
@@ -926,9 +1241,7 @@ RSpec.describe DocbookCompat do
             <div class="#{admonclass} admon">
             <div class="icon"></div>
             <div class="admon_content">
-            <p>
-            words
-            </p>
+            <p>words</p>
             </div>
             </div>
           HTML
@@ -955,6 +1268,28 @@ RSpec.describe DocbookCompat do
             </li>
             </ol>
             </div>
+            </div>
+            </div>
+          HTML
+        end
+      end
+      context 'with a title' do
+        let(:input) do
+          <<~ASCIIDOC
+            [#{key}]
+            .Title
+            --
+            words
+            --
+          ASCIIDOC
+        end
+        it "renders with Elastic's custom template" do
+          expect(converted).to include(<<~HTML)
+            <div class="#{admonclass} admon">
+            <div class="icon"></div>
+            <div class="admon_content">
+            <h3>Title</h3>
+            <p>words</p>
             </div>
             </div>
           HTML
@@ -1087,6 +1422,31 @@ RSpec.describe DocbookCompat do
           <td align="left" valign="top"><p>Bort</p></td>
           </tr>
           </tbody>
+        HTML
+      end
+    end
+    context 'with asciidoc content' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          |Col 1
+
+          a|
+          . Foo
+          |===
+        ASCIIDOC
+      end
+      it 'contains the asciidoc content' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+          <li class="listitem">
+          Foo
+          </li>
+          </ol>
+          </div>
+          </td>
         HTML
       end
     end

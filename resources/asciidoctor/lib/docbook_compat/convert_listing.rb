@@ -5,11 +5,31 @@ module DocbookCompat
   # Methods code listings and their paired callout lists.
   module ConvertListing
     def convert_listing(node)
-      lang = node.attr 'language'
+      title = convert_listing_title node
+      body = convert_listing_body node
+      return body unless title
+
+      title + body
+    end
+
+    def convert_listing_body(node)
+      if (lang = node.attr 'language')
+        pre_classes = "programlisting prettyprint lang-#{lang}"
+        [
+          %(<div class="pre_wrapper lang-#{lang}">),
+          %(<pre class="#{pre_classes}">#{node.content || ''}</pre>),
+          %(</div>),
+        ].join "\n"
+      else
+        %(<pre class="screen">#{node.content || ''}</pre>)
+      end
+    end
+
+    def convert_listing_title(node)
+      return unless node.title
+
       <<~HTML
-        <div class="pre_wrapper lang-#{lang}">
-        <pre class="programlisting prettyprint lang-#{lang}">#{node.content || ''}</pre>
-        </div>
+        <p><strong>#{node.title}</strong></p>
       HTML
     end
 

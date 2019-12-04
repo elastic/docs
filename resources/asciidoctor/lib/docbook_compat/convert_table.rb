@@ -67,23 +67,25 @@ module DocbookCompat
       ].flatten
     end
 
-    def convert_row(row, data_tag, wrap_bare_data)
+    def convert_row(row, data_tag, wrap_text)
       [
         '<tr>',
-        row.map { |cell| convert_cell cell, data_tag, wrap_bare_data },
+        row.map { |cell| convert_cell cell, data_tag, wrap_text },
         '</tr>',
       ].flatten
     end
 
-    def convert_cell(cell, data_tag, wrap_bare_data)
-      should_wrap = wrap_bare_data && !cell.blocks?
-      [
-        '<', data_tag, ' align="left" valign="top">',
-        should_wrap ? '<p>' : nil,
-        cell.content.join(''),
-        should_wrap ? '</p>' : nil,
-        '</', data_tag, '>'
-      ].compact.join
+    def convert_cell(cell, data_tag, wrap_text)
+      result = ['<', data_tag, ' align="left" valign="top">']
+      if cell.inner_document
+        result << "\n" << cell.content << "\n"
+      else
+        result << '<p>' if wrap_text
+        result << cell.text
+        result << '</p>' if wrap_text
+      end
+      result << '</' << data_tag << '>'
+      result.join
     end
   end
 end

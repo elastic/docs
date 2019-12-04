@@ -128,7 +128,7 @@ RSpec.describe Chunker do
             == Section 1
 
             [[linkme]]
-            Words words.
+            Words words.footnote:[foo]
 
             <<s2>>
 
@@ -140,6 +140,8 @@ RSpec.describe Chunker do
             <<linkme,override text>>
 
             <<s1,override text>>
+
+            footnote:[bar]
           ASCIIDOC
         end
         context 'the main output' do
@@ -158,6 +160,9 @@ RSpec.describe Chunker do
           it "doesn't contain breadcrumbs" do
             expect(converted).not_to include('<div class="breadcrumbs">')
           end
+          it "doesn't contain any footnotes" do
+            expect(converted).not_to include('<div id="footnotes">')
+          end
         end
         file_context 'the first section', 's1.html' do
           include_examples 'standard page', 'index', 'Title', 's2', 'Section 2'
@@ -169,7 +174,9 @@ RSpec.describe Chunker do
             expect(contents).to include('<h2 id="s1">Section 1</h2>')
           end
           it 'contains the contents' do
-            expect(contents).to include '<p>Words words.</p>'
+            expect(contents).to include <<~HTML
+              <p>Words words.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
+            HTML
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
@@ -182,6 +189,15 @@ RSpec.describe Chunker do
           end
           it 'contains a link to the second section' do
             expect(contents).to include('<a href="s2.html">Section 2</a>')
+          end
+          it 'contains the footnote' do
+            expect(contents).to include <<~HTML
+              <div id="footnotes">
+              <div class="footnote" id="_footnotedef_1">
+              <sup>[<a href="#_footnoteref_1">1</a>]</sup> foo
+              </div>
+              </div>
+            HTML
           end
         end
         file_context 'the second section', 's2.html' do
@@ -212,6 +228,15 @@ RSpec.describe Chunker do
           end
           it 'contains a link to the first section with override text' do
             expect(contents).to include('<a href="s1.html">override text</a>')
+          end
+          it 'contains the footnote' do
+            expect(contents).to include <<~HTML
+              <div id="footnotes">
+              <div class="footnote" id="_footnotedef_2">
+              <sup>[<a href="#_footnoteref_2">2</a>]</sup> bar
+              </div>
+              </div>
+            HTML
           end
         end
       end

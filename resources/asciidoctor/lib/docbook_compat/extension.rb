@@ -3,6 +3,7 @@
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
 require_relative 'convert_document'
+require_relative 'convert_dlist'
 require_relative 'convert_links'
 require_relative 'convert_listing'
 require_relative 'convert_lists'
@@ -23,6 +24,7 @@ module DocbookCompat
   # A Converter implementation that emulates Elastic's docbook generated html.
   class Converter < DelegatingConverter
     include ConvertDocument
+    include ConvertDList
     include ConvertLinks
     include ConvertListing
     include ConvertLists
@@ -34,7 +36,7 @@ module DocbookCompat
       <<~HTML
         <div class="#{wrapper_class_for node}#{node.role ? " #{node.role}" : ''}">
         <div class="titlepage"><div><div>
-        <h#{node.level} class="title"><a id="#{node.id}"></a>#{node.title}#{node.attr 'edit_me_link', ''}</h#{node.level}>
+        <h#{node.level} class="title"><a id="#{node.id}"></a>#{node.title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h#{node.level}>
         </div></div></div>
         #{node.content}
         </div>
@@ -49,7 +51,7 @@ module DocbookCompat
       classes = [node.role].compact
       classes_html = classes.empty? ? '' : " class=#{classes.join ' '}"
       <<~HTML
-        <#{tag_name}#{classes_html}>#{anchor}#{node.title}#{node.attr 'edit_me_link', ''}</#{tag_name}>
+        <#{tag_name}#{classes_html}>#{anchor}#{node.title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</#{tag_name}>
       HTML
     end
 
@@ -76,9 +78,8 @@ module DocbookCompat
         %(<div class="#{node.attr 'name'} admon">),
         %(<div class="icon"></div>),
         %(<div class="admon_content">),
-        node.blocks.empty? ? '<p>' : nil,
-        node.content,
-        node.blocks.empty? ? '</p>' : nil,
+        node.title? ? "<h3>#{node.title}</h3>" : nil,
+        node.blocks.empty? ? "<p>#{node.content}</p>" : node.content,
         '</div>',
         '</div>',
       ].compact.join "\n"
@@ -101,11 +102,17 @@ module DocbookCompat
       HTML
     end
 
-    SECTION_WRAPPER_CLASSES = %w[part chapter section].freeze
+    def xpack_tag(node)
+      return unless node.roles.include? 'xpack'
+
+      '<a class="xpack_tag" href="/subscriptions"></a>'
+    end
+
+    SECTION_WRAPPER_CLASSES = %w[part chapter].freeze
     def wrapper_class_for(section)
       wrapper_class = section.attr 'style'
       wrapper_class ||= SECTION_WRAPPER_CLASSES[section.level]
-      wrapper_class ||= "sect#{section.level}"
+      wrapper_class ||= 'section'
       wrapper_class
     end
   end

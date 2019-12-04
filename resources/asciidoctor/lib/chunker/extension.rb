@@ -3,8 +3,10 @@
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
 require_relative 'breadcrumbs'
+require_relative 'convert_outline'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
+require_relative 'footnotes'
 require_relative 'nav'
 
 ##
@@ -29,7 +31,9 @@ module Chunker
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
     include Breadcrumbs
+    include ConvertOutline
     include FindRelated
+    include Footnotes
 
     def initialize(delegate, chunk_level)
       super(delegate)
@@ -42,14 +46,6 @@ module Chunker
       doc.attributes['next_section'] = find_next_in doc, 0
       add_nav doc
       yield
-    end
-
-    def convert_outline(node, opts = {})
-      # Fix links in the toc
-      toclevels = opts[:toclevels] || node.document.attributes['toclevels'].to_i
-      outline = yield
-      cleanup_outline outline, node, toclevels
-      outline
     end
 
     def convert_section(section)
@@ -93,12 +89,17 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
+      add_subdoc_sections doc, subdoc, section, html
+      subdoc.convert
+    end
+
+    def add_subdoc_sections(doc, subdoc, section, html)
       subdoc << generate_breadcrumbs(doc, section)
       nav = Nav.new subdoc
       subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
+      subdoc << footnotes(doc, subdoc) if doc.footnotes?
       subdoc << nav.footer
-      subdoc.convert
     end
 
     def subdoc_opts(doc, section)
@@ -137,14 +138,6 @@ module Chunker
         f.write html
       end
       file
-    end
-
-    def cleanup_outline(outline, node, toclevels)
-      node.sections.each do |section|
-        outline.gsub!(%(href="##{section.id}"), %(href="#{section.id}.html")) ||
-          raise("Couldn't fix section link for #{section.id} in #{outline}")
-        cleanup_outline outline, section, toclevels if section.level < toclevels
-      end
     end
   end
 end

@@ -11,7 +11,7 @@ export const lang_spec = {
   "Configure the Elasticsearch Service endpoint URL": {
     "zh_cn": "配置 Elastic Cloud endpoint URL"
   },
-  "Configure the Elastic Cloud Enterprise endpoint URL'": {
+  "Configure the Elastic Cloud Enterprise endpoint URL": {
     "zh_cn": "配置 Elastic Cloud Enterprise endpoint URL"
   },
   "Copy as cURL": {

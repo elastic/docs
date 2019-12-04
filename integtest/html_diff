@@ -38,17 +38,17 @@ def normalize_html(html):
     # hurt anything so we can ignore it.
     for e in soup.select('.itemizedlist.ulist'):
         e['class'].remove('ulist')
-    # Docbook adds type="disc" to ul which is the default and isn't needed.
+    # Docbook adds type which we override in css.
     for e in soup.select('ul'):
-        if 'type' in e.attrs and e['type'] == 'disc':
+        if 'type' in e.attrs:
             del e['type']
     # Asciidoctor adds a "olist" class to all ordered lists which doesn't
     # hurt anything so we can ignore it.
     for e in soup.select('.orderedlist.olist'):
         e['class'].remove('olist')
-    # Docbook adds type="1" to ol which is the default and isn't needed.
+    # Docbook adds type="1" to ol which we override with css.
     for e in soup.select('ol'):
-        if 'type' in e.attrs and e['type'] == '1':
+        if 'type' in e.attrs:
             del e['type']
     # Docbook emits images with the 'inlinemediaobject' class and Asciidoctor
     # has the 'image' class. We've updated our styles to make both work.
@@ -96,9 +96,8 @@ def normalize_html(html):
     # Docbook links with `<a class="link"` when linking from one page of a book
     # to another. Asciidoctor emits `<a class="link"`. Both look fine.
     for e in soup.select('a.xref'):
-        if '.html#' in e['href']:
-            e['class'].remove('xref')
-            e['class'].append('link')
+        e['class'].remove('xref')
+        e['class'].append('link')
     # Docbook sprinkles `class="simpara"` all over the place and I'm not 100%
     # sure why. But we don't need it anyway.
     for e in soup.select('.simpara'):
@@ -107,6 +106,20 @@ def normalize_html(html):
     # Asciidoctor *can* do that if the description is formed in a very
     # particular way. Visually, it all looks the same.
     for e in soup.select('dd > p:only-child'):
+        e.unwrap()
+    # Docbook adds ids to every "question and answer" style dlist. Asciidoctor
+    # doesn't and we have no chance of emulating docbook's generated ids. Since
+    # we don't *think* anyone does anything with the ids we ignore them.
+    for e in soup.select('.qandaset a[id]'):
+        if e['id'].startswith('id-'):
+            e.extract()
+    # Docbook would sometimes spit out empty <p> tags. We're fine with
+    # dropping those.
+    for e in soup.select('p:empty'):
+        e.extract()
+    # Docbook makes `<code class="literal"><code class="literal">` sometimes.
+    # Just one `<code>` is fine though.
+    for e in soup.select("code.literal > code.literal"):
         e.unwrap()
 
     # Remove empty "class" attributes and sort the listed classes.
