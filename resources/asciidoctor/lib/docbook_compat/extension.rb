@@ -36,7 +36,7 @@ module DocbookCompat
       <<~HTML
         <div class="#{wrapper_class_for node}#{node.role ? " #{node.role}" : ''}">
         <div class="titlepage"><div><div>
-        <h#{node.level} class="title"><a id="#{node.id}"></a>#{node.title}#{node.attr 'edit_me_link', ''}</h#{node.level}>
+        <h#{node.level} class="title"><a id="#{node.id}"></a>#{node.title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h#{node.level}>
         </div></div></div>
         #{node.content}
         </div>
@@ -51,7 +51,7 @@ module DocbookCompat
       classes = [node.role].compact
       classes_html = classes.empty? ? '' : " class=#{classes.join ' '}"
       <<~HTML
-        <#{tag_name}#{classes_html}>#{anchor}#{node.title}#{node.attr 'edit_me_link', ''}</#{tag_name}>
+        <#{tag_name}#{classes_html}>#{anchor}#{node.title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</#{tag_name}>
       HTML
     end
 
@@ -100,6 +100,12 @@ module DocbookCompat
         #{node.content}
         </div>
       HTML
+    end
+
+    def xpack_tag(node)
+      return unless node.roles.include? 'xpack'
+
+      '<a class="xpack_tag" href="/subscriptions"></a>'
     end
 
     SECTION_WRAPPER_CLASSES = %w[part chapter].freeze
