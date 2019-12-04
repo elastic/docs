@@ -627,6 +627,13 @@ RSpec.describe DocbookCompat do
         </div>
       HTML
     end
+    it "isn't followed by an extra blank line" do
+      expect(converted).to include(<<~HTML)
+        </pre>
+        </div>
+        </div>
+      HTML
+    end
 
     context 'paired with a callout list' do
       let(:input) do
@@ -679,6 +686,43 @@ RSpec.describe DocbookCompat do
           <p><strong>Title</strong></p>
           <div class="pre_wrapper lang-sh">
         HTML
+      end
+    end
+    context "when the listing doesn't have a language" do
+      let(:input) do
+        <<~ASCIIDOC
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "is wrapped in docbook's funny wrapper" do
+        # It is important that there isn't any extra space around the <pre> tags
+        expect(converted).to include(<<~HTML)
+          <pre class="screen">cpanm Search::Elasticsearch</pre>
+        HTML
+      end
+      it "isn't followed by an extra blank line" do
+        expect(converted).to include(<<~HTML)
+          </pre>
+          </div>
+        HTML
+      end
+      context 'with a title' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title
+            ----
+            cpanm Search::Elasticsearch
+            ----
+          ASCIIDOC
+        end
+        it "the title is before in docbook's funny wrapper" do
+          expect(converted).to include(<<~HTML)
+            <p><strong>Title</strong></p>
+            <pre class="screen">cpanm Search::Elasticsearch</pre>
+          HTML
+        end
       end
     end
   end
