@@ -790,7 +790,6 @@ RSpec.describe DocbookCompat do
         end
       end
     end
-
     context 'with complex contents' do
       let(:input) do
         <<~ASCIIDOC
@@ -811,6 +810,29 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(<<~HTML)
           <p>Complex</p>
           </li>
+        HTML
+      end
+    end
+    context 'second level' do
+      let(:input) do
+        <<~ASCIIDOC
+          . L1
+          .. L2
+          .. Thing 2
+        ASCIIDOC
+      end
+      it 'the outer list is wrapped an orderedlist div' do
+        expect(converted).to include <<~HTML
+          <div class="sectionbody">
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
+        HTML
+      end
+      it 'the inner list is wrapped an orderedlist div' do
+        expect(converted).to include <<~HTML
+          <p>L1</p>
+          <div class="olist orderedlist">
+          <ol class="orderedlist">
         HTML
       end
     end
@@ -968,6 +990,92 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'question and anwer styled' do
+      let(:input) do
+        <<~ASCIIDOC
+          [qanda]
+          What is foo?:: You don't want to know.
+          Who is Baz?:: Baz is Baz.
+        ASCIIDOC
+      end
+      it 'is rendered like a table' do
+        expect(converted).to include <<~HTML
+          <div class="qandaset">
+          <table border="0">
+          <colgroup>
+          <col align="left" width="1%"/>
+          <col/>
+          </colgroup>
+          <tbody>
+        HTML
+        expect(converted).to include <<~HTML
+          </tbody>
+          </table>
+          </div>
+        HTML
+      end
+      it 'contains a row for the first entry' do
+        expect(converted).to include <<~HTML
+          <tr class="question">
+          <td align="left" valign="top">
+          <p><strong>1.</strong></p>
+          </td>
+          <td align="left" valign="top">
+          <p>
+          What is foo?
+          </p>
+          </td>
+          </tr>
+          <tr class="answer">
+          <td align="left" valign="top">
+          </td>
+          <td align="left" valign="top">
+          <p>
+          You don&#8217;t want to know.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+      it 'contains a row for the second entry' do
+        expect(converted).to include <<~HTML
+          <tr class="question">
+          <td align="left" valign="top">
+          <p><strong>2.</strong></p>
+          </td>
+          <td align="left" valign="top">
+          <p>
+          Who is Baz?
+          </p>
+          </td>
+          </tr>
+          <tr class="answer">
+          <td align="left" valign="top">
+          </td>
+          <td align="left" valign="top">
+          <p>
+          Baz is Baz.
+          </p>
+          </td>
+          </tr>
+        HTML
+      end
+    end
+    context 'an unimplemented dlist style' do
+      include_context 'convert with logs'
+      let(:input) do
+        <<~ASCIIDOC
+          [not_implemented]
+          Foo:: The foo.
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'logs an warning' do
+        expect(logs).to eq <<~LOG.strip
+          WARN: <stdin>: line 2: Can't convert unknown description list style [not_implemented].
+        LOG
+      end
+    end
   end
 
   context 'backticked code' do
@@ -1007,9 +1115,7 @@ RSpec.describe DocbookCompat do
             <div class="#{admonclass} admon">
             <div class="icon"></div>
             <div class="admon_content">
-            <p>
-            words
-            </p>
+            <p>words</p>
             </div>
             </div>
           HTML
@@ -1036,6 +1142,28 @@ RSpec.describe DocbookCompat do
             </li>
             </ol>
             </div>
+            </div>
+            </div>
+          HTML
+        end
+      end
+      context 'with a title' do
+        let(:input) do
+          <<~ASCIIDOC
+            [#{key}]
+            .Title
+            --
+            words
+            --
+          ASCIIDOC
+        end
+        it "renders with Elastic's custom template" do
+          expect(converted).to include(<<~HTML)
+            <div class="#{admonclass} admon">
+            <div class="icon"></div>
+            <div class="admon_content">
+            <h3>Title</h3>
+            <p>words</p>
             </div>
             </div>
           HTML
