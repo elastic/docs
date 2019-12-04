@@ -5,11 +5,12 @@ module DocbookCompat
   # Methods code listings and their paired callout lists.
   module ConvertListing
     def convert_listing(node)
-      title = convert_listing_title node
-      body = convert_listing_body node
-      return body unless title
-
-      title + body
+      [
+        node.title ? '<p>' : nil,
+        node.id ? %(<a id="#{node.id}"></a>) : nil,
+        node.title ? %(<strong>#{node.title}.</strong></p>\n) : nil,
+        convert_listing_body(node),
+      ].compact.join
     end
 
     def convert_listing_body(node)
@@ -23,14 +24,6 @@ module DocbookCompat
       else
         %(<pre class="screen">#{node.content || ''}</pre>)
       end
-    end
-
-    def convert_listing_title(node)
-      return unless node.title
-
-      <<~HTML
-        <p><strong>#{node.title}</strong></p>
-      HTML
     end
 
     def convert_inline_callout(node)

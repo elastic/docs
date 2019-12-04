@@ -776,7 +776,39 @@ RSpec.describe DocbookCompat do
       end
       it "the title is before in docbook's funny wrapper" do
         expect(converted).to include(<<~HTML)
-          <p><strong>Title</strong></p>
+          <p><strong>Title.</strong></p>
+          <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
+    context 'with an id' do
+      let(:input) do
+        <<~ASCIIDOC
+          [source,sh,id=foo]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "the title is before in docbook's funny wrapper" do
+        expect(converted).to include(<<~HTML)
+          <a id="foo"></a><div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
+    context 'with an id and a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          [source,sh,id=foo]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it "the title is before in docbook's funny wrapper" do
+        expect(converted).to include(<<~HTML)
+          <p><a id="foo"></a><strong>Title.</strong></p>
           <div class="pre_wrapper lang-sh">
         HTML
       end
@@ -812,7 +844,7 @@ RSpec.describe DocbookCompat do
         end
         it "the title is before in docbook's funny wrapper" do
           expect(converted).to include(<<~HTML)
-            <p><strong>Title</strong></p>
+            <p><strong>Title.</strong></p>
             <pre class="screen">cpanm Search::Elasticsearch</pre>
           HTML
         end
