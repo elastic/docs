@@ -212,6 +212,32 @@ RSpec.describe DocbookCompat do
           end
         end
       end
+      context 'when a section has role=exclude' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            == Section 1
+
+            [.exclude]
+            == Section 2
+          ASCIIDOC
+        end
+        context 'the table of contents' do
+          it "doesn't include the excluded section" do
+            expect(converted).to include(<<~HTML)
+              <!--START_TOC-->
+              <div class="toc">
+              <ul class="toc">
+              <li><span class="chapter"><a href="#_section_1">Section 1</a></span>
+              </li>
+              </ul>
+              </div>
+              <!--END_TOC-->
+            HTML
+          end
+        end
+      end
     end
     context 'when there is a subtitle' do
       let(:input) do
