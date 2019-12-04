@@ -53,17 +53,28 @@ module OpenInWidget
 
     CALLOUT_SCAN_RX = / ?#{Asciidoctor::CalloutScanRx}/
 
-    def convert_listing(block)
-      return yield unless block.style == 'source'
+    def convert_listing(node)
+      return yield unless node.style == 'source'
 
-      lang = block.attr 'language'
-      return yield unless %w[console sense kibana].include? lang
+      lang = node.attr 'language'
+      return yield unless %w[console sense kibana ess ece].include? lang
 
-      snippet_path = snippet_path block, lang, block.attr('snippet')
-      yield.gsub(
-        '</programlisting>',
-        "<ulink type=\"snippet\" url=\"#{snippet_path}\"/></programlisting>"
-      )
+      snippet_path = snippet_path node, lang, node.attr('snippet')
+      convert_listing_with_widget node, lang, snippet_path, yield
+    end
+
+    def convert_listing_with_widget(node, lang, snippet_path, original)
+      if node.document.basebackend? 'html'
+        <<~HTML.strip
+          #{original}
+          <div class="#{lang}_widget" data-snippet="#{snippet_path}"></div>
+        HTML
+      else
+        original.gsub(
+          '</programlisting>',
+          "<ulink type=\"snippet\" url=\"#{snippet_path}\"/></programlisting>"
+        )
+      end
     end
 
     def snippet_path(block, lang, snippet)
