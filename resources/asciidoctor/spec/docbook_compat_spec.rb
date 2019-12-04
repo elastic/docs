@@ -578,6 +578,17 @@ RSpec.describe DocbookCompat do
     it 'contains the words' do
       expect(converted).to include('<p>Words words words.</p>')
     end
+    context 'has an id' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[foo]]
+          Words.
+        ASCIIDOC
+      end
+      it 'contains a paragraph for each anchor' do
+        expect(converted).to include '<p><a id="foo"></a>Words.</p>'
+      end
+    end
   end
 
   context 'a link' do

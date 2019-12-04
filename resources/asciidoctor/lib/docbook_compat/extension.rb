@@ -57,7 +57,13 @@ module DocbookCompat
 
     def convert_paragraph(node)
       # Asciidoctor adds a \n at the end of the paragraph so we don't.
-      %(<p>#{node.content}</p>)
+      %(<p>#{paragraph_id_part node}#{node.content}</p>)
+    end
+
+    def paragraph_id_part(node)
+      return if node.id.nil? || node.id.empty?
+
+      %(<a id="#{node.id}"></a>)
     end
 
     def convert_inline_quoted(node)
