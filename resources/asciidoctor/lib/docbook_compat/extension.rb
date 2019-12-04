@@ -78,9 +78,8 @@ module DocbookCompat
         %(<div class="#{node.attr 'name'} admon">),
         %(<div class="icon"></div>),
         %(<div class="admon_content">),
-        node.blocks.empty? ? '<p>' : nil,
-        node.content,
-        node.blocks.empty? ? '</p>' : nil,
+        node.title? ? "<h3>#{node.title}</h3>" : nil,
+        node.blocks.empty? ? "<p>#{node.content}</p>" : node.content,
         '</div>',
         '</div>',
       ].compact.join "\n"
