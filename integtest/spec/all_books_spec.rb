@@ -654,7 +654,8 @@ RSpec.describe 'building all books' do
         end
       end
     end
-    page_context "the dead branch's chapter", 'html/test/nonlive/chapter.html' do
+    page_context "the dead branch's chapter",
+                 'html/test/nonlive/chapter.html' do
       let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
       it "doesn't contain an edit_me link" do
         expect(body).not_to include('class="edit_me"')
