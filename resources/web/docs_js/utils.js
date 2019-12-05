@@ -5,9 +5,13 @@ export function get_base_url(href) {
              .replace(/^http:/, 'https:');
 }
 
+const VERSION_REGEX = /[^\/]+\/+([^\/]+\.html)/;
 export function get_current_page_in_version(version) {
-  var url = location.href;
-  var url = location.href.replace(/[^\/]+\/+([^\/]+\.html)/, version + "/$1");
+  if (version === "other") {
+    location.href = location.href.replace(VERSION_REGEX, "index.html");
+    return;
+  }
+  var url = location.href.replace(VERSION_REGEX, version + "/$1");
   return $.get(url).done(function() {
     location.href = url
   });
@@ -54,7 +58,7 @@ export const getCurlText = ({consoleText,
                              curl_user,
                              curl_password,
                              isKibana,
-                             langStrings}) => {
+                             addPretty}) => {
   var regex    = console_regex(),
       curlText = '',
       match;
@@ -78,7 +82,7 @@ export const getCurlText = ({consoleText,
         curlText += `-u ${curl_user}:${curl_password} `;
       }
 
-      if (!isKibana) {
+      if (addPretty) {
         path += path.includes('?') ? '&pretty' : '?pretty';
       }
 

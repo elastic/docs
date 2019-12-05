@@ -196,6 +196,30 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
     def postprocess(line)
       return unless line
 
+      # We can't modify frozen strings anyway *and* they never contain any
+      # of the markers that we care about.
+      return if line.frozen?
+
+      fix_subs line
+      fix_code_block_delimiters line
+
+      # First convert the "block" version of these macros. We convert them
+      # to block macros because they are alone on a line
+      line.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
+      # Then convert the "inline" version of these macros. We convert them
+      # to inline macros because they are *not* at the start of the line....
+      line.gsub!(LEGACY_INLINE_MACRO_RX, '\1:[\2]')
+
+      # Transform Elastic's traditional comment based marking for
+      # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
+      # up during tree processing to turn the snippet into a marked up
+      # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
+      # thing but we have thousands of them and it'll take us some time to
+      # stop doing it.
+      line.gsub!(SNIPPET_RX, 'lang_override::[\1]')
+    end
+
+    def fix_subs(line)
       SOURCE_WITH_SUBS_RX.match(line) do |m|
         # AsciiDoc would automatically add `subs` to every source block but
         # Asciidoctor does not and we have thousands of blocks that rely on
@@ -204,33 +228,22 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
         line.sub! "subs=\"#{old_subs}\"", "subs=\"#{old_subs},callouts\"" \
           unless old_subs.include? 'callouts'
       end
-      if CODE_BLOCK_RX =~ line
-        if @code_block_start
-          if line != @code_block_start
-            line.replace(@code_block_start)
-            migration_warn @document, cursor, 'delimiter-mismatch',
-                           "code block end doesn't match start"
-          end
-          @code_block_start = nil
-        else
-          @code_block_start = line
-        end
+    end
+
+    def fix_code_block_delimiters(line)
+      return unless CODE_BLOCK_RX =~ line
+
+      unless @code_block_start
+        @code_block_start = line
+        return
       end
 
-      # First convert the "block" version of these macros. We convert them
-      # to block macros because they are alone on a line
-      line&.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
-      # Then convert the "inline" version of these macros. We convert them
-      # to inline macros because they are *not* at the start of the line....
-      line&.gsub!(LEGACY_INLINE_MACRO_RX, '\1:[\2]')
-
-      # Transform Elastic's traditional comment based marking for
-      # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
-      # up during tree processing to turn the snippet into a marked up
-      # CONSOLE snippet. Asciidoctor really doesn't recommend this sort of
-      # thing but we have thousands of them and it'll take us some time to
-      # stop doing it.
-      line&.gsub!(SNIPPET_RX, 'lang_override::[\1]')
+      if line != @code_block_start
+        line.replace @code_block_start
+        migration_warn @document, cursor, 'delimiter-mismatch',
+                       "code block end doesn't match start"
+      end
+      @code_block_start = nil
     end
   end
 end

@@ -130,6 +130,7 @@ sub new {
         single        => $args{single},
         index         => $index,
         branches      => \@branches,
+        live_branches => $args{live} || \@branches,
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
@@ -139,15 +140,18 @@ sub new {
         lang          => $lang,
         respect_edit_url_overrides => $respect_edit_url_overrides,
         suppress_migration_warnings => $args{suppress_migration_warnings} || 0,
+        direct_html => ( $args{direct_html} || 'false' ) eq 'true',
+        toc_extra => $args{toc_extra} || '',
     }, $class;
 }
 
 #===================================
 sub build {
 #===================================
-    my ( $self, $rebuild ) = @_;
+    my ( $self, $rebuild, $conf_path ) = @_;
 
-    my $toc = ES::Toc->new( $self->title );
+    my $toc_extra = $self->{toc_extra} ? $conf_path->parent->file( $self->{toc_extra} ) : 0;
+    my $toc = ES::Toc->new( $self->title, $toc_extra );
     my $dir = $self->dir;
     $dir->mkpath;
 
@@ -157,7 +161,7 @@ sub build {
         $Opts->{procs},
         sub {
             my ( $pid, $error, $branch ) = @_;
-            $self->source->mark_done( $title, $branch, 1 );
+            $self->source->mark_done( $title, $branch, $self->{direct_html} );
         }
     );
 
@@ -199,6 +203,10 @@ sub build {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $_ ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
+            for ( @{ $self->branches } ) {
+                $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( $_ ), $_ );
+            }
+            $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( 'current' ) , $self->current );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -241,7 +249,7 @@ sub _build_book {
     my $lang          = $self->lang;
 
     return 0 unless $rebuild ||
-        $source->has_changed( $self->title, $branch, 1 );
+        $source->has_changed( $self->title, $branch, $self->{direct_html} );
 
     my ( $checkout, $edit_urls, $first_path, $alternatives, $roots ) =
         $source->prepare($self->title, $branch);
@@ -257,9 +265,8 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                root_dir      => $first_path,
                 private       => $self->private,
-                noindex       => $self->noindex,
+                noindex       => $self->noindex($branch),
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -272,6 +279,7 @@ sub _build_book {
                 branch => $branch,
                 roots => $roots,
                 relativize => 1,
+                direct_html => $self->{direct_html},
             );
         }
         else {
@@ -282,9 +290,8 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                root_dir      => $first_path,
                 private       => $self->private,
-                noindex       => $self->noindex,
+                noindex       => $self->noindex($branch),
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -297,6 +304,7 @@ sub _build_book {
                 branch => $branch,
                 roots => $roots,
                 relativize => 1,
+                direct_html => $self->{direct_html},
             );
         }
         $checkout->rmtree;
@@ -322,13 +330,22 @@ sub _update_title_and_version_drop_downs {
     my ( $self, $branch_dir, $branch ) = @_;
 
     my $title = '<li id="book_title"><span>' . $self->title . ': <select>';
-    for ( @{ $self->branches } ) {
-        $title .= '<option value="' . $_ . '"';
-        $title .= ' selected'  if $branch eq $_;
-        $title .= '>' . $self->branch_title($_);
-        $title .= ' (current)' if $self->current eq $_;
+    my $removed_any = 0;
+    for my $b ( @{ $self->branches } ) {
+        my $live = grep( /^$b$/, @{ $self->{live_branches} } );
+        unless ( $live || $branch eq $b ) {
+            $removed_any = 1;
+            next;
+        }
+
+        $title .= '<option value="' . $b . '"';
+        $title .= ' selected'  if $branch eq $b;
+        $title .= '>' . $self->branch_title($b);
+        $title .= ' (current)' if $self->current eq $b;
+        $title .= ' (out of date)' unless $live;
         $title .= '</option>';
     }
+    $title .= '<option value="other">other versions</option>' if $removed_any;
     $title .= '</select></span></li>';
     for ( 'toc.html', 'index.html' ) {
         my $file = $branch_dir->file($_);
@@ -338,7 +355,7 @@ sub _update_title_and_version_drop_downs {
         next unless -e $file;
 
         my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
-        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?<li>/<ul class="toc">${title}<li>/);
+        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?\n?<li>/<ul class="toc">${title}<li>/);
         die "couldn't update version" unless $success;
         $file->spew( iomode => '>:utf8', $html );
     }
@@ -423,6 +440,16 @@ sub section_title {
 }
 
 #===================================
+sub noindex {
+#===================================
+    my ( $self, $branch ) = @_;
+    return 1 if $self->{noindex};
+    return 0 if grep( /^$branch$/, @{ $self->{live_branches} } );
+    return 1;
+}
+
+
+#===================================
 sub title            { shift->{title} }
 sub dir              { shift->{dir} }
 sub prefix           { shift->{prefix} }
@@ -435,7 +462,6 @@ sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub private          { shift->{private} }
-sub noindex          { shift->{noindex} }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
 sub source           { shift->{source} }

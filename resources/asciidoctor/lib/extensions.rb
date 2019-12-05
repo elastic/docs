@@ -3,8 +3,10 @@
 require_relative 'alternative_language_lookup/extension'
 require_relative 'care_admonition/extension'
 require_relative 'change_admonition/extension'
+require_relative 'chunker/extension'
 require_relative 'copy_images/extension'
 require_relative 'cramped_include/extension'
+require_relative 'docbook_compat/extension'
 require_relative 'docbook45/converter'
 require_relative 'edit_me/extension'
 require_relative 'elastic_compat_tree_processor/extension'
@@ -19,8 +21,12 @@ Asciidoctor::Extensions.register do
   # for EditMe to get a nice location.
   document.sourcemap = true
 end
+# Adding DocbookCompat first lets it help rendering things like the
+# edit_me links
+Asciidoctor::Extensions.register DocbookCompat
 Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
+Asciidoctor::Extensions.register Chunker
 Asciidoctor::Extensions.register CopyImages
 Asciidoctor::Extensions.register EditMe
 Asciidoctor::Extensions.register OpenInWidget

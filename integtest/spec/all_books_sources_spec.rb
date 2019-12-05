@@ -71,7 +71,7 @@ RSpec.describe 'building all books' do
           extra_branches.each { |b| repo.switch_to_new_branch b }
           docs_repo = init_docs_repo src
           book = src.book 'Test'
-          book.branches << extra_branches
+          book.branches += extra_branches
           book.source repo, 'index.asciidoc'
           book.source docs_repo, 'shared/versions/stack/{branch}.asciidoc'
         end

@@ -3,15 +3,6 @@
 include::{docs-root}/shared/versions/stack/current.asciidoc[]
 include::{docs-root}/shared/attributes.asciidoc[]
 
-////
-This file contains the sequence `&#x5f;` to escape from around Elastic's
-Asciidoctor plugin that provides Asciidoc compatibility. It automatically
-translates things like `beta[]` into their Asciidoctor compatible form
-which looks like `beta::[]`. We use `beta&#x5f;]` inside of asciidoc
-examples so we can output `beta[]`. Once we no longer support Asciidoc
-we can drop these sequences.
-////
-
 == Conditions of use
 
 This documentation build process is provided to the public purely for the
@@ -156,12 +147,10 @@ users to specify their preferred language or client. You can do this by passing
 [source,bash]
 ----------------------------
 cd docs/
-./build_docs --doc README.asciidoc --open --asciidoctor \
+./build_docs --doc README.asciidoc --open \
     --alternatives console:js:integtest/readme_examples/js \
     --alternatives console:csharp:integtest/readme_examples/csharp
 ----------------------------
-
-NOTE: This is only supported by Asciidoctor, not AsciiDoc.
 
 == Correcting errors
 
@@ -230,6 +219,7 @@ To check links before you merge your changes:
   with the `--sub_dir` option. For example, if you are working on changes that will be merged
   into the master branch of the `elasticsearch` repo, run:
 +
+[source,bash]
 ----------------------------
 ./docs/build_docs --all --target_repo git@github.com:elastic/built-docs.git \
                   --open --keep_hash --sub_dir elasticsearch:master:./elasticsearch
@@ -244,6 +234,7 @@ NOTE: If there are no outstanding changes in the `../elasticsearch` directory
 To run a full build to mimic the website build, omit the `--sub_dir` and
 `--keep_hash` options:
 
+[source,bash]
 ----------------------------
 ./build_docs --all --target_repo git@github.com:elastic/built-docs.git --open
 ----------------------------
@@ -293,9 +284,8 @@ it generates valid DocBook output.
 
 Below I include most of the Asciidoc syntax that you will
 need.  For more, you can take a look at the
-http://powerman.name/doc/asciidoc[Asciidoc Cheat Sheet],
-http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoctor Quick Syntax]
-or the official http://www.methods.co.nz/asciidoc/userguide.html[Asciidoc User Guide].
+https://asciidoctor.org/docs/user-manual/[Asciidoctor User Manual], or the
+http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc Syntax Quick Reference].
 --
 
 [[structure]]
@@ -348,17 +338,38 @@ book.  See <<linking>>.
 
 By default, the link text used in the generated TOC is
 based on the title of each file. You can provide an
-abbreviated title by using the DocBook `<titleabbrev>`
-tag. For example:
+abbreviated title using a `titleabbrev` in
+one of two ways:
 
+. If the doc is built with `--direct_html` you *should*
+add a `titleabbrev` attribute to the section:
++
+--
 [source,asciidoc]
-----------------------------------
+----
+[id=intro_to_xyz,titleabbrev=" XYZ Intro"]
 == Intro to XYZ
 
+Words.
+----
+--
+
+. If the doc is built with DocBook then you *must* use
+a pass block with `<titleabbrev>`. If the doc is built
+with `--direct_html` then you *may* use the pass block
+but it isn't recommended:
++
+--
+[source,asciidoc]
+----
+== Intro to XYZ
 ++++
-<titleabbrev>Intro</titleabbrev>
+<titleabbrev>XYZ Intro</titleabbrev>
 ++++
-----------------------------------
+
+Words.
+----
+--
 
 [[multi-part]]
 == Multi-part books
@@ -401,7 +412,7 @@ A paragraph introducing this Part
 ----------------------------------
 
 Longer `partintro` blocks should be wrapped in an
-http://www.methods.co.nz/asciidoc/userguide.html#X29[_open block_]
+https://asciidoctor.org/docs/user-manual/#open-blocks[_open block_]
 which starts and ends with two dashes: `--`:
 
 ["source","asciidoc",subs="attributes,callouts,macros"]
@@ -469,8 +480,7 @@ and
 <1> Any headers in the appendix or in the preface start
     out-of-sequence at `level 2`, not at `level 1`.
 
-ifdef::asciidoctor[[section]]
-ifndef::asciidoctor[[sect3]]
+[[section]]
 === Glossary
 
 [source,asciidoc]
@@ -1048,9 +1058,7 @@ footnote to a particular line of code:
     "query": "foo bar" \<1>
 }
 ----------------------------------
-
-ifdef::asciidoctor[<1> Here's the explanation]
-ifndef::asciidoctor[\<1> Here's the explanation]
+<1> Here's the explanation
 --
 
 [source,js]
@@ -1063,18 +1071,23 @@ ifndef::asciidoctor[\<1> Here's the explanation]
 <1> Here's the explanation
 ==================================
 
-[[console-snippets]]
-=== View in Console
+[[copy-as-curl]]
+=== Copy as cURL/View in Console
 
-Code blocks can be followed by a "View in Console" link which, when clicked,
-will open the code snippet in Console. There are two ways to do this, the
-"AsciiDoc" way and the "Asciidoctor" way. The "AsciiDoc" way is preferred in
-the Elaticsearch repository because it can recognize it to make tests. The
-"Asciidoctor" way is preferred in other books, but only if they are built with
-"Asciidoctor". Try it first and if it works then use it. Otherwise, use the
-"AsciiDoc" way.
+Code blocks can be followed by a "Copy as cURL" link which will convert the
+snippet into a sequence of calls to the ubiquitous
+https://curl.haxx.se/[cURL] tool that work in the bash shell and copy it to
+the clipboard. Similarly, if the target of the snippet is Elasticsearch we also
+add a "View in Console" link will open the code snippet in Console.
 
-.Code block with CONSOLE link (AsciiDoc way)
+You enable the it by setting the "language" of the snippet to a supported
+language. The options are "console" for Elasticsearch, "kibana" for Kibana,
+"ess" for Elasticsearch Service (Elastic's official SaaS offering), and "ece"
+for Elastic Cloud Enterprise.
+
+For Elasticsearch do this:
+
+.Code block with "Copy as cURL" and "View in Console" link for Elasticsearch
 ==================================
 [source,asciidoc]
 --
@@ -1085,57 +1098,84 @@ GET /_search
     "query": "foo bar" \<1>
 }
 ----------------------------------
-// CONSOLE <1>
-
-ifdef::asciidoctor[<1> Here's the explanation]
-ifndef::asciidoctor[\<1> Here's the explanation]
+<1> Here's the explanation
 --
 ==================================
-<1> The `// CONSOLE` line must follow immediately after the code block, before any callouts.
 
-.Code block with CONSOLE link (Asciidoctor way)
-==================================
-[source,asciidoc]
---
+Which renders as:
+
 [source,console]
-----------------------------------
-GET /_search
-{
-    "query": "foo bar" \<1>
-}
-----------------------------------
-
-ifdef::asciidoctor[<1> Here's the explanation]
-ifndef::asciidoctor[\<1> Here's the explanation]
---
-==================================
-
-Both render as:
-
-[source,js]
 ----------------------------------
 GET /_search
 {
     "query": "foo bar" <1>
 }
 ----------------------------------
-// CONSOLE
-
 <1> Here's the explanation
 
-[NOTE]
-================================
-The "View in Console" links will only work if the docs are viewed in web-browser mode, as follows:
+NOTE: In older branches you'll see `// CONSOLE` after the snippet to trigger
+      this behavior. That is deprecated.
 
-[source,sh]
----------------
-build_docs -d my_doc.asciidoc --open <1>
----------------
-<1> The `--open` option usually opens the docs in the web browser, served directly from the file system.
+For Kibana do this:
 
-The local web browser can be stopped with `Ctrl-C`.
+.Code block with "Copy as cURL" link for Kibana
+==================================
+[source,asciidoc]
+--
+[source,kibana]
+----------------------------------
+GET /
+----------------------------------
+<1> Here's the explanation
+--
+==================================
 
-================================
+Which renders as:
+
+[source,kibana]
+----------------------------------
+GET /
+----------------------------------
+
+For Elasticsearch Service do this:
+
+.Code block with "Copy as cURL" link for Elasticsearch Service
+==================================
+[source,asciidoc]
+--
+[source,ess]
+----------------------------------
+GET /
+----------------------------------
+--
+==================================
+
+Which renders as:
+
+[source,ess]
+----------------------------------
+GET /
+----------------------------------
+
+For Elastic Cloud Enterprise do this:
+
+.Code block with "Copy as cURL" link for Elastic Cloud Enterprise
+==================================
+[source,asciidoc]
+--
+[source,ece]
+----------------------------------
+GET /
+----------------------------------
+--
+==================================
+
+Which renders as:
+
+[source,ece]
+----------------------------------
+GET /
+----------------------------------
 
 ==== Responses
 
@@ -1343,15 +1383,15 @@ the addition or deprecation of individual parameters.
 [source,asciidoc]
 ----------------------------------
 [horizontal]
-`foo.bar`::   Does XYZ. added&#x5f;0.90.4]
-`foo.bar`::   Does XYZ. coming&#x5f;0.90.4]
-`foo.baz`::   Does XYZ. deprecated&#x5f;0.90.4]
+`foo.bar`::   Does XYZ. added:[0.90.4]
+`foo.bar`::   Does XYZ. coming:[0.90.4]
+`foo.baz`::   Does XYZ. deprecated:[0.90.4]
 ----------------------------------
 
 [horizontal]
-`foo.bar`::   Does XYZ. added[0.90.4]
-`foo.bar`::   Does XYZ. coming[0.90.4]
-`foo.baz`::   Does XYZ. deprecated[0.90.4]
+`foo.bar`::   Does XYZ. added:[0.90.4]
+`foo.bar`::   Does XYZ. coming:[0.90.4]
+`foo.baz`::   Does XYZ. deprecated:[0.90.4]
 
 You can also include details about additional
 notes in the notifications which show up when the
@@ -1360,15 +1400,15 @@ user hovers over it:
 [source,asciidoc]
 ----------------------------------
 [horizontal]
-`foo.bar`::   Does XYZ. added&#x5f;0.90.4,Replaces `foo.baz`]
-`foo.bar`::   Does XYZ. coming&#x5f;0.90.4,Replaces `foo.baz`]
-`foo.baz`::   Does XYZ. deprecated&#x5f;0.90.4,Replaced by `foo.bar`]
+`foo.bar`::   Does XYZ. added:[0.90.4,Replaces `foo.baz`]
+`foo.bar`::   Does XYZ. coming:[0.90.4,Replaces `foo.baz`]
+`foo.baz`::   Does XYZ. deprecated:[0.90.4,Replaced by `foo.bar`]
 ----------------------------------
 
 [horizontal]
-`foo.bar`::   Does XYZ. added[0.90.4,Replaces `foo.baz`]
-`foo.bar`::   Does XYZ. coming[0.90.4,Replaces `foo.baz`]
-`foo.baz`::   Does XYZ. deprecated[0.90.4,Replaced by `foo.bar`]
+`foo.bar`::   Does XYZ. added:[0.90.4,Replaces `foo.baz`]
+`foo.bar`::   Does XYZ. coming:[0.90.4,Replaces `foo.baz`]
+`foo.baz`::   Does XYZ. deprecated:[0.90.4,Replaced by `foo.bar`]
 
 === Section notifications
 
@@ -1380,38 +1420,38 @@ to the version in which the change was made:
 ----------------------------------
 ==== New section
 
-added&#x5f;0.90.4]
+added::[0.90.4]
 
 Text about new functionality...
 
 ==== New section not yet released
 
-coming&#x5f;0.90.9]
+coming::[0.90.9]
 
 Text about new functionality...
 
 ==== Old section
 
-deprecated&#x5f;0.90.4]
+deprecated::[0.90.4]
 
 Text about old functionality...
 ----------------------------------
 
 ==== New section
 
-added[0.90.4]
+added::[0.90.4]
 
 Text about new functionality...
 
 ==== New section not yet released
 
-coming[0.90.9]
+coming::[0.90.9]
 
 Text about new functionality...
 
 ==== Old section
 
-deprecated[0.90.4]
+deprecated::[0.90.4]
 
 Text about old functionality...
 
@@ -1426,21 +1466,21 @@ Asciidoc markup:
 [[new-section]]
 ==== New section
 
-added&#x5f;0.90.4,Replaces `foo.bar`. See <<old-section>>]
+added::[0.90.4,Replaces `foo.bar`. See <<old-section>>]
 
 Text about new functionality...
 
 [[coming-section]]
 ==== New section not yet released
 
-coming&#x5f;0.90.9,Replaces `foo.bar`. See <<old-section>>]
+coming::[0.90.9,Replaces `foo.bar`. See <<old-section>>]
 
 Text about new functionality...
 
 [[old-section]]
 ==== Old section
 
-deprecated&#x5f;0.90.4,Replace by `foo.baz`. See <<new-section>>]
+deprecated::[0.90.4,Replace by `foo.baz`. See <<new-section>>]
 
 Text about old functionality...
 ----------------------------------
@@ -1448,14 +1488,14 @@ Text about old functionality...
 [[new-section]]
 ==== New section
 
-added[0.90.4,Replaces `foo.bar`. See <<old-section>>]
+added::[0.90.4,Replaces `foo.bar`. See <<old-section>>]
 
 Text about new functionality...
 
 [[old-section]]
 ==== Old section
 
-deprecated[0.90.4,Replace by `foo.baz`. See <<new-section>>]
+deprecated::[0.90.4,Replace by `foo.baz`. See <<new-section>>]
 
 Text about old functionality...
 
@@ -1470,9 +1510,9 @@ markup similar to that used in <<changes>>.  For instance:
 [[new-feature]]
 === New experimental feature
 
-experimental&#x5f;]
+experimental::[]
 
-experimental&#x5f;Custom text goes here]
+experimental::[Custom text goes here]
 
 Text about new feature...
 
@@ -1484,17 +1524,17 @@ a new experimental parameter:
 
 [horizontal]
 `established_param`::  This param has been around for ages and won't change.
-`experimental_param`:: experimental&#x5f;] This param is experimental and may change in the future.
-`experimental_param`:: experimental&#x5f;Custom text goes here] This param is experimental and may change in the future.
+`experimental_param`:: experimental:[] This param is experimental and may change in the future.
+`experimental_param`:: experimental:[Custom text goes here] This param is experimental and may change in the future.
 
 ----------------------------------
 
 [[new-feature]]
 === New experimental feature
 
-experimental[]
+experimental::[]
 
-experimental[Custom text goes here]
+experimental::[Custom text goes here]
 
 Text about new feature...
 
@@ -1506,17 +1546,17 @@ a new experimental parameter:
 
 [horizontal]
 `established_param`::  This param has been around for ages and won't change.
-`experimental_param`:: experimental[] This param is experimental and may change in the future.
-`experimental_param`:: experimental[Custom text goes here] This param is experimental and may change in the future.
+`experimental_param`:: experimental:[] This param is experimental and may change in the future.
+`experimental_param`:: experimental:[Custom text goes here] This param is experimental and may change in the future.
 
 [source,asciidoc]
 ----------------------------------
 [[new-beta-feature]]
 === New beta feature
 
-beta&#x5f;]
+beta::[]
 
-beta&#x5f;Custom text goes here]
+beta::[Custom text goes here]
 
 Text about new feature...
 
@@ -1528,17 +1568,17 @@ a new beta parameter:
 
 [horizontal]
 `established_param`::  This param has been around for ages and won't change.
-`beta_param`:: beta&#x5f;] This param is beta and may change in the future.
-`beta_param`:: beta&#x5f;Custom text goes here] This param is beta and may change in the future.
+`beta_param`:: beta:[] This param is beta and may change in the future.
+`beta_param`:: beta:[Custom text goes here] This param is beta and may change in the future.
 
 ----------------------------------
 
 [[new-beta-feature]]
 === New beta feature
 
-beta[]
+beta::[]
 
-beta[Custom text goes here]
+beta::[Custom text goes here]
 
 Text about new feature...
 
@@ -1550,8 +1590,8 @@ a new beta parameter:
 
 [horizontal]
 `established_param`::  This param has been around for ages and won't change.
-`beta_param`:: beta[] This param is experimental and may change in the future.
-`beta_param`:: beta[Custom text goes here] This param is beta and may change in the future.
+`beta_param`:: beta:[] This param is experimental and may change in the future.
+`beta_param`:: beta:[Custom text goes here] This param is beta and may change in the future.
 
 [[images]]
 == Images
@@ -1643,14 +1683,14 @@ ePub, etc.
 
 It's almost always better to use <<horizonta-defn-list>>
 instead, but if you really want to use tables, you
-can read about them http://www.methods.co.nz/asciidoc/userguide.html#_tables[here].
+can read about them https://asciidoctor.org/docs/user-manual/#tables[here].
 
 [[edit_me]]
 == Edit links
 
 We automatically generate `edit` links for most sections to make it easier for
 folks to contribute simple fixes and to help folks find the asciidoc file that
-generated a particular section. It should appear next to ever title-like thing.
+generated a particular section. It should appear next to every title-like thing.
 
 Books built with AsciiDoc will automatically pick the correct url for files
 from the "root" repository. It guesses the wrong url for files from other

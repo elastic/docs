@@ -18,7 +18,7 @@ export function init_headers(right_col, lang_strings) {
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
 
-  $('#guide a[id]').each(
+  $('#guide a[id]:not([href])').each(
     function() {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
@@ -50,6 +50,7 @@ export function init_console_widgets() {
                                       url_label: 'Enter the URL of the Console editor',
                                       view_in_text: 'View in Console',
                                       configure_text: 'Configure Console URL',
+                                      addPretty: true,
                                       consoleText,
                                       snippet});
   });
@@ -65,6 +66,7 @@ export function init_sense_widgets() {
                                       url_label: 'Enter the URL of the Sense editor',
                                       view_in_text: 'View in Sense',
                                       configure_text: 'Configure Sense URL',
+                                      addPretty: true,
                                       consoleText,
                                       snippet});
   });
@@ -143,6 +145,8 @@ $(function() {
   const default_kibana_url  = 'http://localhost:5601',
         default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
         default_sense_url   = default_kibana_url + '/app/sense/',
+        default_ess_url     = 'http://localhost:5601', // localhost is wrong, but we'll enhance this later
+        default_ece_url     = 'http://localhost:5601',
         base_url            = utils.get_base_url(window.location.href),
         LangStrings         = lang_strings(lang);
 
@@ -164,6 +168,14 @@ $(function() {
       sense_curl_host: Cookies.get("sense_curl_host") || "localhost:9200",
       sense_curl_user: Cookies.get("sense_curl_user"),
       sense_curl_password: "$ESPASS",
+      ess_url: Cookies.get("ess_url") || default_ess_url,
+      ess_curl_host: Cookies.get("ess_curl_host") || "localhost:5601",
+      ess_curl_user: Cookies.get("ess_curl_user"),
+      ess_curl_password: "$CLOUD_PASS",
+      ece_url: Cookies.get("ece_url") || default_ece_url,
+      ece_curl_host: Cookies.get("ece_curl_host") || "localhost:5601",
+      ece_curl_user: Cookies.get("ece_curl_user"),
+      ece_curl_password: "$ECE_PASS",
       consoleAlternative: Cookies.get('consoleAlternative') || "console",
     },
     /*
@@ -194,6 +206,32 @@ $(function() {
   init_sense_widgets();
   init_console_widgets();
   init_kibana_widgets();
+  $("div.ess_widget").each(function() {
+    const div         = $(this),
+          snippet     = div.attr('data-snippet'),
+          consoleText = div.prev().text() + '\n';
+
+    return mount(div, ConsoleWidget, {
+      setting: "ess",
+      url_label: 'Enter the endpoint URL of the Elasticsearch Service',
+      configure_text: 'Configure the Elasticsearch Service endpoint URL',
+      consoleText,
+      snippet
+    });
+  });
+  $("div.ece_widget").each(function() {
+    const div         = $(this),
+          snippet     = div.attr('data-snippet'),
+          consoleText = div.prev().text() + '\n';
+
+    return mount(div, ConsoleWidget, {
+      setting: "ece",
+      url_label: 'Enter the endpoint URL of Elastic Cloud Enterprise',
+      configure_text: 'Configure the Elastic Cloud Enterprise endpoint URL',
+      consoleText,
+      snippet
+    });
+  });
 
   var div = $('div.toc');
 

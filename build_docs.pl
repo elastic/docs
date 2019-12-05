@@ -28,7 +28,7 @@ use lib 'lib';
 
 use ES::Util qw(
     run $Opts
-    build_chunked build_single build_pdf
+    build_chunked build_single
     proc_man
     timestamp
     write_html_redirect
@@ -56,7 +56,8 @@ use ES::LinkCheck();
 GetOptions($Opts, @{ command_line_opts() }) || exit usage();
 check_opts();
 
-our $Conf = LoadFile(pick_conf());
+our $ConfPath = pick_conf();
+our $Conf = LoadFile($ConfPath);
 # We no longer support running outside of our "standard" docker container.
 # `build_docs` signals to us that it is in the standard docker container by
 # passing this argument.
@@ -84,8 +85,6 @@ sub build_local {
 
     my $index = file($doc)->absolute($Old_Pwd);
     die "File <$doc> doesn't exist" unless -f $index;
-
-    return build_local_pdf($index) if $Opts->{pdf};
 
     say "Building HTML from $doc";
 
@@ -154,7 +153,6 @@ sub _guess_opts {
     # We couldn't find the top level so lets make a wild guess.
     $toplevel = $index->parent unless $toplevel;
     $Opts->{branch} = $branch;
-    $Opts->{root_dir} = $toplevel;
     $Opts->{roots}{ $repo_name } = $toplevel;
     $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
         $remote || 'unknown', $branch
@@ -200,7 +198,7 @@ sub _pick_best_remote {
         # but two books are in elastic but elasticsearch-cn is special.
         return $1;
     }
-    say "Couldn't an Elastic remote for $toplevel";
+    say "Couldn't find an Elastic remote for $toplevel. Generating edit links targeting the first remote instead.";
     if ($remotes =~ m|\s+(\S+[/:]\S+/\S+)|) {
         return $1;
     }
@@ -249,29 +247,9 @@ sub _guess_repo_name {
 }
 
 #===================================
-sub build_local_pdf {
-#===================================
-    my $index = shift;
-    my $dir = dir( $Opts->{out} || './' )->absolute($Old_Pwd);
-
-    build_pdf( $index, $dir, %$Opts );
-    say "Done";
-    my $pdf = $index->basename;
-    $pdf =~ s/\.[^.]+$/.pdf/;
-    $pdf = $dir->file($pdf);
-    if ( $Opts->{open} ) {
-        say "Opening: $pdf";
-        open_browser($pdf);
-    }
-    else {
-        say "See: $pdf";
-    }
-}
-
-#===================================
 sub build_all {
 #===================================
-    die "--target_repo is required with --all" unless ( $Opts->{target_repo} );
+    $Opts->{target_repo} = 'git@github.com:elastic/built-docs.git' unless ( $Opts->{target_repo} );
 
     my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
 
@@ -287,7 +265,8 @@ sub build_all {
     my $contents = $Conf->{contents}
         or die "Missing <contents> configuration section";
 
-    my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide' );
+    my $toc_extra = $Conf->{toc_extra} ? $ConfPath->parent->file( $Conf->{toc_extra} ) : 0;
+    my $toc = ES::Toc->new( $Conf->{contents_title} || 'Guide', $toc_extra );
     my $redirects = $target_repo->destination->file( 'redirects.conf' );
 
     if ( $Opts->{linkcheckonly} ){
@@ -425,9 +404,10 @@ sub build_entries {
             my $base_dir = $entry->{base_dir} || '';
             my $raw_sub_build = $raw_build->subdir($base_dir);
             my $sub_build = $build->subdir($base_dir);
+            my $toc_extra = $entry->{toc_extra} ? $ConfPath->parent->file( $entry->{toc_extra} ) : 0;
             my $section_toc = build_entries(
                 $raw_sub_build, $sub_build, $temp_dir,
-                ES::Toc->new( $title, $entry->{lang}, ),
+                ES::Toc->new( $title, $toc_extra, $entry->{lang} ),
                 $tracker, @$sections
             );
             if ($base_dir) {
@@ -449,7 +429,7 @@ sub build_entries {
             temp_dir => $temp_dir,
             %$entry
         );
-        $toc->add_entry( $book->build( $Opts->{rebuild} ) );
+        $toc->add_entry( $book->build( $Opts->{rebuild}, $ConfPath ) );
         $tracker->allowed_book( $book );
     }
 
@@ -662,7 +642,7 @@ sub init_repos {
 #===================================
 sub preview {
 #===================================
-    die "--target_repo is required with --preview" unless $Opts->{target_repo};
+    $Opts->{target_repo} = 'git@github.com:elastic/built-docs.git' unless ( $Opts->{target_repo} );
 
     my $nginx_config = file('/tmp/nginx.conf');
     write_nginx_preview_config( $nginx_config );
@@ -844,7 +824,7 @@ sub init_env {
 #===================================
 sub pick_conf {
 #===================================
-    return 'conf.yaml' unless $Opts->{conf};
+    return file( 'conf.yaml' ) unless $Opts->{conf};
 
     my $conf = file($Opts->{conf});
     $conf = dir($Old_Pwd)->file($Opts->{conf}) if $conf->is_relative;
@@ -907,11 +887,11 @@ sub command_line_opts {
         # Options only compatible with --doc
         'doc=s',
         'alternatives=s@',
+        'direct_html',
         'chunk=i',
         'lang=s',
         'lenient',
         'out=s',
-        'pdf',
         'resource=s@',
         'respect_edit_url_overrides',
         'single',
@@ -957,10 +937,11 @@ sub usage {
           --chunk 1         Also chunk sections into separate files
           --alternatives <source_lang>:<alternative_lang>:<dir>
                             Examples in alternative languages.
+          --direct_html     Generate html directly from Asciidoctor without
+                            using docbook.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
-          --pdf             Generate a PDF file instead of HTML
           --resource        Path to image dir - may be repeated
           --respect_edit_url_overrides
                             Respects `:edit_url:` overrides in the book.
@@ -974,7 +955,7 @@ sub usage {
 
     Build docs from all repos in conf.yaml:
 
-        build_docs --all --target_repo <target> [opts]
+        build_docs --all [opts]
 
         Opts:
           --keep_hash       Build docs from the same commit hash as last time
@@ -1034,9 +1015,9 @@ sub check_opts {
         die('--alternatives only compatible with --doc') if $Opts->{alternatives};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
+        die('--direct_html only compatible with --doc') if $Opts->{direct_html};
         die('--lenient only compatible with --doc') if $Opts->{lenient};
         die('--out only compatible with --doc') if $Opts->{out};
-        die('--pdf only compatible with --doc') if $Opts->{pdf};
         die('--resource only compatible with --doc') if $Opts->{resource};
         die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
         die('--single only compatible with --doc') if $Opts->{single};

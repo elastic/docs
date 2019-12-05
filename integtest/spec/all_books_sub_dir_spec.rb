@@ -30,43 +30,47 @@ RSpec.describe 'building all books' do
         dest.prepare_convert_all(src.conf).convert if build_with_init
         modify_master_after_build repo
         setup_sub repo, commit_sub, cause_merge_conflict, premerge
-        convert src, repo, dest, keep_hash
+        second_convert src, repo, dest, keep_hash
       end
+    end
+
+    def self.prefix
+      'docs/'
     end
 
     def self.setup_repo(src)
       repo = src.repo 'repo'
-      repo.write 'docs/index.adoc', index
-      repo.write 'docs/from_master.adoc', 'original master'
-      repo.write 'docs/from_subbed.adoc', 'unsubbed'
+      repo.write "#{prefix}index.adoc", index
+      repo.write "#{prefix}from_master.adoc", 'original master'
+      repo.write "#{prefix}from_subbed.adoc", 'unsubbed'
       repo.commit 'original master'
-      repo.write 'docs/from_master.adoc', 'new master'
-      repo.write 'docs/conflict', 'from master'
+      repo.write "#{prefix}from_master.adoc", 'new master'
+      repo.write "#{prefix}conflict", 'from master'
       repo.commit 'new master'
       repo
     end
 
     def self.setup_book(src, repo)
       book = src.book 'Test'
-      book.index = 'docs/index.adoc'
+      book.index = "#{prefix}index.adoc"
       book.source repo, 'docs'
     end
 
     def self.modify_master_after_build(repo)
-      repo.write 'docs/from_master.adoc', 'too new master'
+      repo.write "#{prefix}from_master.adoc", 'too new master'
       repo.commit 'too new master'
     end
 
     def self.setup_sub(repo, commit_sub, cause_merge_conflict, premerge)
       repo.switch_to_branch 'HEAD~2'
       repo.switch_to_new_branch 'sub_me'
-      repo.write 'docs/from_subbed.adoc', 'now subbed'
-      repo.write 'docs/conflict', 'from subbed' if cause_merge_conflict
+      repo.write "#{prefix}from_subbed.adoc", 'now subbed'
+      repo.write "#{prefix}conflict", 'from subbed' if cause_merge_conflict
       repo.commit 'subbed' if commit_sub
       repo.merge 'master' if premerge
     end
 
-    def self.convert(src, repo, dest, keep_hash)
+    def self.second_convert(src, repo, dest, keep_hash)
       builder = dest.prepare_convert_all src.conf
       builder.sub_dir repo, 'master'
       builder.keep_hash if keep_hash
@@ -162,6 +166,62 @@ RSpec.describe 'building all books' do
         convert_with_sub
         include_examples 'log merge', '.'
         include_examples 'contains the new master and subbed changes'
+      end
+      describe 'when the source path has a *' do
+        def self.setup_book(src, repo)
+          book = src.book 'Test'
+          book.index = 'docs/index.adoc'
+          book.source repo, '/*/'
+        end
+        convert_with_sub
+        include_examples 'log merge', '*'
+        include_examples 'contains the new master and subbed changes'
+      end
+      describe 'when the source path has a deep *' do
+        describe 'when the config was used for the first book' do
+          def self.prefix
+            'foo/bar/docs/foo/'
+          end
+
+          def self.setup_book(src, repo)
+            book = src.book 'Test'
+            book.index = 'foo/bar/docs/foo/index.adoc'
+            book.source repo, '/foo/*/docs/*'
+          end
+
+          convert_with_sub
+          include_examples 'log merge', 'foo/*/docs/*'
+          include_examples 'contains the new master and subbed changes'
+        end
+        describe 'when the config is new' do
+          # TODO: remove these parameters by overriding this sub in more places.
+          def self.setup_sub(
+              repo, _commit_sub, _cause_merge_conflict, _premerge
+            )
+            repo.switch_to_branch 'HEAD~2'
+            repo.switch_to_new_branch 'sub_me'
+            repo.write "#{prefix}from_subbed.adoc", <<~ASCIIDOC
+              include::../foo/bar/docs/baz/foo.adoc[]
+            ASCIIDOC
+            repo.write 'foo/bar/docs/baz/foo.adoc', 'now subbed'
+            repo.commit 'subbed'
+          end
+
+          def self.second_convert(src, repo, dest, keep_hash)
+            book = src.book 'Test'
+            book.source repo, '/foo/*/docs/*'
+            super
+          end
+
+          convert_with_sub
+          include_examples 'log merge', 'docs'
+          it "log that it won't merge because the source is new" do
+            expect(logs).to include(<<~LOGS)
+              Test: Not merging the subbed dir for [repo][master][foo/*/docs/*] because it is new.
+            LOGS
+          end
+          include_examples 'contains the new master and subbed changes'
+        end
       end
       describe 'when the subbed dir has already been merged' do
         # This simulates what github will do if you ask it to build the "sha"

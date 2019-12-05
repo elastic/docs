@@ -19,13 +19,11 @@ describe("getCurlText", () => {
   test("it adds curl user and password only when both are present", () => {
     const result1 = utils.getCurlText({consoleText: snippetGen(),
                                        curl_host: "http://localhost:9200",
-                                       curl_user: "elastic",
-                                       langStrings});
+                                       curl_user: "elastic"});
     const result2 = utils.getCurlText({consoleText: snippetGen(),
                                        curl_host: "http://localhost:9200",
-                                       curl_pw: "elastic",
-                                       langStrings});
-    const expected = `curl -X GET "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
+                                       curl_pw: "elastic"});
+    const expected = `curl -X GET "http://localhost:9200/_search" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -40,9 +38,8 @@ describe("getCurlText", () => {
     const result = utils.getCurlText({consoleText: snippetGen(),
                                       curl_host: "http://localhost:9200",
                                       curl_user: "elastic",
-                                      curl_password: "abcde",
-                                      langStrings});
-    const expected = `curl -X GET -u elastic:abcde "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
+                                      curl_password: "abcde"});
+    const expected = `curl -X GET -u elastic:abcde "http://localhost:9200/_search" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -57,9 +54,24 @@ describe("getCurlText", () => {
                                       isKibana: true,
                                       curl_user: "elastic",
                                       curl_password: "abcde",
-                                      curl_host: "http://localhost:9200",
-                                      langStrings});
+                                      curl_host: "http://localhost:9200"});
     const expected = `curl -X GET -u elastic:abcde "http://localhost:9200/_search" -H 'kbn-xsrf: true' -H 'Content-Type: application/json' -d'
+{
+    "query": "foo bar" 
+}
+'
+`;
+
+    expect(result).toBe(expected);
+  });
+
+  test("it adds the pretty parameter when addKibana is true", () => {
+    const result = utils.getCurlText({consoleText: snippetGen(),
+                                      addPretty: true,
+                                      curl_user: "elastic",
+                                      curl_password: "abcde",
+                                      curl_host: "http://localhost:9200"});
+    const expected = `curl -X GET -u elastic:abcde "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -71,9 +83,8 @@ describe("getCurlText", () => {
 
   test("it appends 'pretty' to existing query string", () => {
     const result = utils.getCurlText({consoleText: snippetGen({path: "/_search?q=dev"}),
-                                      curl_host: "http://localhost:9200",
-                                      langStrings});
-    const expected = `curl -X GET "http://localhost:9200/_search?q=dev&pretty" -H 'Content-Type: application/json' -d'
+                                      curl_host: "http://localhost:9200"});
+    const expected = `curl -X GET "http://localhost:9200/_search?q=dev" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -86,9 +97,8 @@ describe("getCurlText", () => {
 
   test("it creates the '?pretty' query string when none is present", () => {
     const result = utils.getCurlText({consoleText: snippetGen({path: "/_search"}),
-                                      curl_host: "http://localhost:9200",
-                                      langStrings});
-    const expected = `curl -X GET "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
+                                      curl_host: "http://localhost:9200"});
+    const expected = `curl -X GET "http://localhost:9200/_search" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -100,9 +110,8 @@ describe("getCurlText", () => {
 
   test("it adds '-I' when the method is 'HEAD'", () => {
     const result = utils.getCurlText({consoleText: snippetGen({method: "HEAD"}),
-                                      curl_host: "http://localhost:9200",
-                                      langStrings});
-    const expected = `curl -I "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
+                                      curl_host: "http://localhost:9200"});
+    const expected = `curl -I "http://localhost:9200/_search" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -114,9 +123,8 @@ describe("getCurlText", () => {
 
   test("it adds '-X <method>' when the method is not 'HEAD'", () => {
     const result = utils.getCurlText({consoleText: snippetGen({method: "PUT"}),
-                                      curl_host: "http://localhost:9200",
-                                      langStrings});
-    const expected = `curl -X PUT "http://localhost:9200/_search?pretty" -H 'Content-Type: application/json' -d'
+                                      curl_host: "http://localhost:9200"});
+    const expected = `curl -X PUT "http://localhost:9200/_search" -H 'Content-Type: application/json' -d'
 {
     "query": "foo bar" 
 }
@@ -129,9 +137,8 @@ describe("getCurlText", () => {
 
   test("it handles no body", () => {
     const result = utils.getCurlText({consoleText: 'GET /_search?q=dev\n',
-                                      curl_host: "http://localhost:9200",
-                                      langStrings});
-    const expected = 'curl -X GET "http://localhost:9200/_search?q=dev&pretty"\n';
+                                      curl_host: "http://localhost:9200"});
+    const expected = 'curl -X GET "http://localhost:9200/_search?q=dev"\n';
     expect(result).toBe(expected);
   });
 });

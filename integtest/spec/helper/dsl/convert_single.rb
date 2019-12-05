@@ -9,12 +9,14 @@ module Dsl
     # into html and adds some basic assertions about the conversion process.
     # Pass a block that takes a `Repo` object and uses it to build and return
     # an index file to convert.
-    def convert_single_before_context
+    def convert_single_before_context(direct_html: false)
       convert_before do |src, dest|
         repo = src.repo 'src'
         from = yield repo
         repo.commit 'commit outstanding'
-        dest.prepare_convert_single(from, '.').convert
+        convert = dest.prepare_convert_single(from, '.')
+        convert.direct_html if direct_html
+        convert.convert
       end
       include_examples 'convert single'
     end

@@ -16,7 +16,7 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
     run $Opts
-    build_chunked build_single build_pdf
+    build_chunked build_single
     proc_man
     timestamp
     write_html_redirect
@@ -41,7 +41,6 @@ sub build_chunked {
     my $lenient   = $opts{lenient}       || '';
     my $lang      = $opts{lang}          || 'en';
     my $edit_urls = $opts{edit_urls};
-    my $root_dir  = $opts{root_dir};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
@@ -55,6 +54,7 @@ sub build_chunked {
     my $branch = $opts{branch};
     my $roots = $opts{roots};
     my $relativize = $opts{relativize};
+    my $direct_html = $opts{direct_html} || 0;
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -63,28 +63,8 @@ sub build_chunked {
     $raw_dest->rmtree;
     $raw_dest->mkpath;
 
-    my %xsltopts = (
-            "toc.max.depth"            => 5,
-            "toc.section.depth"        => $chunk,
-            "chunk.section.depth"      => $chunk,
-            "local.book.version"       => $version,
-            "local.book.multi_version" => $multi,
-            "local.page.header"        => $page_header,
-            "local.book.section.title" => "Learn/Docs/$section",
-            "local.book.subject"       => $subject,
-            "local.noindex"            => $noindex,
-    );
-
     my ( $output, $died );
-    my $dest_xml = $index->basename;
-    $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
-    $dest_xml = $raw_dest->file($dest_xml);
 
-    %xsltopts = (%xsltopts,
-            'navig.graphics'   => 1,
-            'admon.textlabel'  => 0,
-            'admon.graphics'   => 1,
-    );
     my $chunks_path = dir("$raw_dest/.chunked");
     $chunks_path->mkpath;
     # Emulate asciidoc_dir because we use it to find shared asciidoc files
@@ -97,7 +77,7 @@ sub build_chunked {
         $output = run(
             'asciidoctor', '-v', '--trace',
             '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
-            '-b' => 'docbook45',
+            '-b' => $direct_html ? 'html5' : 'docbook45',
             '-d' => 'book',
             '-a' => 'showcomments=1',
             '-a' => "lang=$lang",
@@ -121,6 +101,29 @@ sub build_chunked {
             ) : (),
             $relativize ? ('-a' => 'relativize-link=https://www.elastic.co/') : (),
             roots_opts( $roots ),
+            $direct_html ? (
+                # Turn off style options because we'll provide our own
+                '-a' => 'stylesheet!',
+                '-a' => 'icons!',
+                # Turn off asciidoctor's default footer because we make our own
+                '-a' => 'nofooter',
+                # Pass chunking down
+                '-a' => 'chunk_level=' . ( $chunk + 1 ),
+                # Render the table of contents
+                '-a' => 'toc',
+                # Lock the destination file name to one we expect
+                '--out-file' => 'index.html',
+                # Asciidoctor doesn't pass the destination directory down to
+                # the converter so we do so here explicitly
+                '-a' => 'outdir=' . $raw_dest,
+                # Add some metadata
+                '-a' => 'dc.type=Learn/Docs/' . $section,
+                '-a' => 'dc.subject=' . $subject,
+                '-a' => 'dc.identifier=' . $version,
+                $multi ? ( '-a' => "title-extra= [$version]" ) : (),
+                $noindex ? ('-a' => 'noindex') : (),
+                $page_header ? ('-a' => "page-header=$page_header") : (),
+            ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),
             $index
@@ -129,44 +132,69 @@ sub build_chunked {
     } or do { $output = $@; $died = 1; };
     _check_build_error( $output, $died, $lenient );
 
-    if ( !$lenient ) {
+    unless ( $direct_html ) {
+        my $dest_xml = $index->basename;
+        $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
+        $dest_xml = $raw_dest->file($dest_xml);
+
+        if ( !$lenient ) {
+            eval {
+                $output = _xml_lint($dest_xml);
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        my %xsltopts = (
+                "toc.max.depth"            => 5,
+                "toc.section.depth"        => $chunk,
+                "chunk.section.depth"      => $chunk,
+                "local.book.version"       => $version,
+                "local.book.multi_version" => $multi,
+                "local.page.header"        => $page_header,
+                "local.book.section.title" => "Learn/Docs/$section",
+                "local.book.subject"       => $subject,
+                "local.noindex"            => $noindex,
+                'navig.graphics'           => 1,
+                'admon.textlabel'          => 0,
+                'admon.graphics'           => 1,
+        );
+
         eval {
-            $output = _xml_lint($dest_xml);
+            $output = run(
+                'xsltproc',
+                rawxsltopts(%xsltopts),
+                '--stringparam', 'base.dir', $chunks_path->absolute . '/',
+                file('resources/website_chunked.xsl')->absolute,
+                $dest_xml
+            );
             1;
         } or do { $output = $@; $died = 1; };
         _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
-    eval {
-        $output = run(
-            'xsltproc',
-            rawxsltopts(%xsltopts),
-            '--stringparam', 'base.dir', $chunks_path->absolute . '/',
-            file('resources/website_chunked.xsl')->absolute,
-            $dest_xml
-        );
-        1;
-    } or do { $output = $@; $died = 1; };
-    _check_build_error( $output, $died, $lenient );
-    unlink $dest_xml;
 
-    my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
-        or die "Couldn't find chunk dir in <$raw_dest>";
+    if ( $direct_html ) {
+        _add_extra_title_page( $index, $raw_dest->file('index.html') );
+    } else {
+        my ($chunk_dir) = grep { -d and /\.chunked$/ } $raw_dest->children
+            or die "Couldn't find chunk dir in <$raw_dest>";
 
-    for ( $chunk_dir->children ) {
-        my $child_dest = $raw_dest->file( $_->relative( $chunk_dir ) );
-        if ( $_->basename !~ /\.html$/ ) {
-            rmove( $_, $child_dest );
-            next;
+        for ( $chunk_dir->children ) {
+            my $child_dest = $raw_dest->file( $_->relative( $chunk_dir ) );
+            if ( $_->basename !~ /\.html$/ ) {
+                rmove( $_, $child_dest );
+                next;
+            }
+            # Convert docbook's ceremonial output into html5
+            my $contents = $_->slurp( iomode => '<:encoding(UTF-8)' );
+            $contents = _html5ify( $contents );
+            $child_dest->spew( iomode => '>:utf8', $contents );
+            unlink $_ or die "Coudln't remove $_ $!";
         }
-        # Convert docbook's ceremonial output into html5
-        my $contents = $_->slurp( iomode => '<:encoding(UTF-8)' );
-        $contents = _html5ify( $contents );
-        $child_dest->spew( iomode => '>:utf8', $contents );
-        unlink $_ or die "Coudln't remove $_ $!";
+        $chunk_dir->rmtree;
     }
     extract_toc_from_index( $raw_dest );
     finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
-    $chunk_dir->rmtree;
 }
 
 #===================================
@@ -175,13 +203,12 @@ sub build_single {
     my ( $index, $raw_dest, $dest, %opts ) = @_;
 
     my $type = $opts{type} || 'book';
-    my $toc = $opts{toc} ? "$type toc" : '';
+    my $toc = $opts{toc} || '';
     my $lenient   = $opts{lenient}       || '';
     my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lang      = $opts{lang}          || 'en';
     my $edit_urls = $opts{edit_urls};
-    my $root_dir  = $opts{root_dir};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
     my $private   = $opts{private}       || '';
@@ -195,6 +222,8 @@ sub build_single {
     my $branch = $opts{branch};
     my $roots = $opts{roots};
     my $relativize = $opts{relativize};
+    my $direct_html = $opts{direct_html} || 0;
+    my $extra = $opts{extra} || 0;
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -210,30 +239,8 @@ sub build_single {
         $raw_dest->mkpath;
     }
 
-    my %xsltopts = (
-            "generate.toc"             => $toc,
-            "toc.section.depth"        => 0,
-            "local.book.version"       => $version,
-            "local.book.multi_version" => $multi,
-            "local.page.header"        => $page_header,
-            "local.book.section.title" => "Learn/Docs/$section",
-            "local.book.subject"       => $subject,
-            "local.noindex"            => $noindex,
-    );
-
     my ( $output, $died );
-    my $dest_xml = $index->basename;
-    $dest_xml =~ s/\.a(scii)?doc$/\.xml/;
-    $dest_xml = $raw_dest->file($dest_xml);
 
-    %xsltopts = (%xsltopts,
-            'navig.graphics'   => 1,
-            'admon.textlabel'  => 0,
-            'admon.graphics'   => 1,
-    );
-    if ( $type eq 'book' ) {
-        $xsltopts{'chunk.section.depth'} = 0;
-    }
     # Emulate asciidoc_dir because we use it to find shared asciidoc files
     # but asciidoctor doesn't support it.
     my $asciidoc_dir = dir('resources/asciidoc-8.6.8/')->absolute;
@@ -244,7 +251,7 @@ sub build_single {
         $output = run(
             'asciidoctor', '-v', '--trace',
             '-r' => dir('resources/asciidoctor/lib/extensions.rb')->absolute,
-            '-b' => 'docbook45',
+            '-b' => $direct_html ? 'html5' : 'docbook45',
             '-d' => $type,
             '-a' => 'showcomments=1',
             '-a' => "lang=$lang",
@@ -265,6 +272,22 @@ sub build_single {
             # '-a' => 'attribute-missing=warn',
             $relativize ? ('-a' => 'relativize-link=https://www.elastic.co/') : (),
             roots_opts( $roots ),
+            $direct_html ? (
+                # Turn off style options because we'll provide our own
+                '-a' => 'stylesheet!',
+                '-a' => 'icons!',
+                # Turn off asciidoctor's default footer because we make our own
+                '-a' => 'nofooter',
+                # Add some metadata
+                '-a' => 'dc.type=Learn/Docs/' . $section,
+                '-a' => 'dc.subject=' . $subject,
+                '-a' => 'dc.identifier=' . $version,
+                $multi ? ( '-a' => "title-extra= [$version]" ) : (),
+                $noindex ? ('-a' => 'noindex') : (),
+                $page_header ? ('-a' => "page-header=$page_header") : (),
+                # Turn on asciidoctor's table of contents generation if we want a TOC
+                $toc ? ('-a' => 'toc') : (),
+            ) : (),
             '--destination-dir=' . $raw_dest,
             docinfo($index),
             $index
@@ -273,25 +296,47 @@ sub build_single {
     } or do { $output = $@; $died = 1; };
     _check_build_error( $output, $died, $lenient );
 
-    if ( !$lenient ) {
+    unless ( $direct_html ) {
+        my $dest_xml = $index->basename;
+        $dest_xml =~ s/\.a(scii)?doc$/.xml/;
+        $dest_xml = $raw_dest->file($dest_xml);
+
+        if ( !$lenient ) {
+            eval {
+                $output = _xml_lint($dest_xml);
+                1;
+            } or do { $output = $@; $died = 1; };
+            _check_build_error( $output, $died, $lenient );
+        }
+        my %xsltopts = (
+                "generate.toc"             => $toc ? "$type toc" : '',
+                "toc.section.depth"        => 0,
+                "local.book.version"       => $version,
+                "local.book.multi_version" => $multi,
+                "local.page.header"        => $page_header,
+                "local.book.section.title" => "Learn/Docs/$section",
+                "local.book.subject"       => $subject,
+                "local.noindex"            => $noindex,
+                'navig.graphics'           => 1,
+                'admon.textlabel'          => 0,
+                'admon.graphics'           => 1,
+        );
+        if ( $type eq 'book' ) {
+            $xsltopts{'chunk.section.depth'} = 0;
+        }
         eval {
-            $output = _xml_lint($dest_xml);
+            $output = run(
+                'xsltproc',
+                rawxsltopts(%xsltopts),
+                '--output' => "$raw_dest/index.html",
+                file('resources/website.xsl')->absolute,
+                $dest_xml
+            );
             1;
         } or do { $output = $@; $died = 1; };
         _check_build_error( $output, $died, $lenient );
+        unlink $dest_xml;
     }
-    eval {
-        $output = run(
-            'xsltproc',
-            rawxsltopts(%xsltopts),
-            '--output' => "$raw_dest/index.html",
-            file('resources/website.xsl')->absolute,
-            $dest_xml
-        );
-        1;
-    } or do { $output = $@; $died = 1; };
-    _check_build_error( $output, $died, $lenient );
-    unlink $dest_xml;
 
     my $base_name = $index->basename;
     $base_name =~ s/\.[^.]+$/.html/;
@@ -303,11 +348,43 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
-    $contents = _html5ify( $contents );
-    $html_file->spew( iomode => '>:utf8', $contents );
+    if ( $direct_html ) {
+       _add_extra_title_page( $index, $html_file );
+    } else {
+        my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
+        $contents = _html5ify( $contents );
+        $html_file->spew( iomode => '>:utf8', $contents );
+    }
+
+    if ( $extra ) {
+        my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
+        $contents =~ s{<div class="(article|book)"}{<div id="extra">\n$extra\n</div>\n<div class="$1"} or
+            die "Couldn't add toc_extra to $contents";
+        $html_file->spew( iomode => '>:utf8', $contents );
+    }
 
     finish_build( $index->parent, $raw_dest, $dest, $lang, $opts{is_toc} );
+}
+
+#===================================
+# Emulates how we've been using docbook's -docinfo.xml feature by allowing us
+# to add our own extra html to the title page of books.
+#===================================
+sub _add_extra_title_page {
+#===================================
+    my ( $index, $html_file ) = @_;
+    my $extra_title_page = $index->basename;
+    $extra_title_page =~ s/\.a(scii)?doc$/-extra-title-page.html/ || die;
+    $extra_title_page = $index->parent->file( $extra_title_page );
+    if ( -e $extra_title_page ) {
+        $extra_title_page = $extra_title_page->slurp( iomode => '<:encoding(UTF-8)' );
+        my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
+        # Wrapping the extra in a div is a relic of docbook. But we're trying
+        # to emulate docbook so here we are.
+        $contents =~ s|</h1></div>|</h1></div>\n<div>\n$extra_title_page\n</div>| or
+            die "Couldn't add extra-title-page to $contents";
+        $html_file->spew( iomode => '>:utf8', $contents );
+    }
 }
 
 #===================================
@@ -345,50 +422,6 @@ sub _xml_lint {
 }
 
 #===================================
-sub build_pdf {
-#===================================
-    my ( $index, $dest, %opts ) = @_;
-
-    my $version   = $opts{version}   || '';
-    my $lenient   = $opts{lenient}   || '';
-    my $toc_level = $opts{toc_level} || 7;
-    my $lang      = $opts{lang}      || 'en';
-    my $resources = $opts{resource}  || [];
-
-    my $output = run(
-        'a2x', '-v',
-        '-a' => "lang=$lang",
-        '--icons',
-        ( map { ( '--resource' => $_ ) } @$resources ),
-        '-d' => 'book',
-        '-f' => 'pdf',
-        '--fop',
-        '--icons-dir=./resources/asciidoc-8.6.8/images/icons/',
-        '--xsl-file'      => 'resources/fo.xsl',
-        '--asciidoc-opts' => '-fresources/es-asciidoc.conf',
-        '--destination-dir=' . $dest,
-        ( $lenient ? '-L' : () ),
-        docinfo($index),
-        xsltopts(
-            "img.src.path"       => $index->parent->absolute . '/',
-            "toc.max.depth"      => $toc_level,
-            "local.book.version" => $version,
-        ),
-        $index
-    );
-
-    my @output = split "\n", $output;
-    my @error = grep {/SEVERE|ERROR/} @output;
-    if ( @error && !$lenient ) {
-        die join "\n", @error;
-    }
-    else {
-        my @warn = grep {/WARNING|SEVERE|ERROR/} @output;
-        warn join "\n", @warn;
-    }
-}
-
-#===================================
 sub run (@) {
 #===================================
     my @args = @_;
@@ -422,7 +455,6 @@ sub finish_build {
     # templating can apply it now *and* on the fly later
     $raw_dest->file('lang')->spew( iomode => '>:utf8', "$lang\n" );
 
-
     # Apply template to HTML files
     run 'node', 'template/cli.js', '--template', 'resources/web/template.html',
         '--source', $raw_dest, '--dest', $dest,
@@ -430,20 +462,6 @@ sub finish_build {
 
     my $snippets_dest = $dest->subdir('snippets');
     my $snippets_src;
-
-    # If lenient, look for snippets in parent directories
-    my $levels = $Opts->{lenient} ? 5 : 1;
-    while ( $levels-- ) {
-        $snippets_src = $source->subdir('snippets');
-        last if -e $snippets_src;
-        $source = $source->parent;
-    }
-
-    # Copy custom sense snippets to dest
-    if ( -e $snippets_src ) {
-        rcopy( $snippets_src, $snippets_dest )
-            or die "Couldn't copy <$snippets_src> to <$snippets_dest>: $!";
-    }
 }
 
 #===================================

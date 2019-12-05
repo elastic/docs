@@ -1,5 +1,4 @@
-SHELL = /bin/bash -eux -o pipefail
-MAKEFLAGS += --silent
+include ../common.mk
 
 .PHONY: check
 check: rspec style
@@ -9,12 +8,12 @@ style: pycodestyle rubocop
 
 .PHONY: pycodestyle
 pycodestyle: html_diff
-	pycodestyle html_diff
+	$(DOCKER) py_test pycodestyle html_diff
 
 .PHONY: rubocop
 rubocop:
-	rubocop
+	$(DOCKER) ruby_test rubocop
 
 .PHONY: rspec
 rspec:
-	rspec
+	$(DOCKER) integ_test rspec

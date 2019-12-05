@@ -40,7 +40,6 @@ import webbrowser
 
 # The tag we use for our docker image. This should line up with the tags
 # in preview/Dockerfile and publish_docker.sh
-DOCKER_TAG = 'docker.elastic.co/docs/build:latest'
 DOCKER_BUILD_QUIET_TIME = 3  # seconds
 SSH_AGENT_HELP = 'https://help.github.com/en/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#adding-your-ssh-key-to-the-ssh-agent'  # noqa
 
@@ -50,11 +49,12 @@ logger = logging.getLogger('build_docs')
 environ['DOCKER_BUILDKIT'] = '1'
 
 
-def build_docker_image():
+def docker_tag(name):
+    return 'docker.elastic.co/docs/' + name + ':latest'
+
+
+def build_docker_image(name):
     docker_logger = logging.getLogger('docker build')
-    docker_logger.info('Building the docker image that will build the docs. ' +
-                       'Expect this to take somewhere between a hundred ' +
-                       'milliseconds and five minutes.')
     # We attempt to spool up the output from docker build so we can hide it
     # if the command is successful *and* runs quickly. If it takes longer
     # than the DOCKER_BUILD_QUIET_TIME then we log all of the output. I
@@ -65,6 +65,11 @@ def build_docker_image():
 
     def handle_line(line):
         if time.time() >= start_logging_at:
+            if acc:
+                docker_logger.info(
+                    'Building the docker image that will build the docs. ' +
+                    'Expect this to take somewhere between a couple seconds ' +
+                    'and five minutes.')
             for line in acc:
                 docker_logger.info(line)
             del acc[:]
@@ -72,7 +77,11 @@ def build_docker_image():
         else:
             acc.append(line)
 
-    cmd = ["docker", "image", "build", "-t", DOCKER_TAG, DIR]
+    cmd = [
+        "docker", "image", "build",
+        "--target", name,
+        "--tag", docker_tag(name),
+        DIR]
     build = common_popen(cmd)
     handle_popen(build, handle_line)
     if build.returncode != 0:
@@ -344,7 +353,7 @@ def run_build_docs(args):
     cmd = []
     cmd.extend(['docker', 'run'])
     cmd.extend(docker_args)
-    cmd.extend([DOCKER_TAG, '/docs_build/build_docs.pl'])
+    cmd.extend([docker_tag('build'), '/docs_build/build_docs.pl'])
     cmd.extend(build_docs_args)
     docker_run = common_popen(cmd)
 
@@ -598,25 +607,36 @@ if __name__ == '__main__':
     from sys import argv, stdout
     try:
         logging.basicConfig(level=logging.INFO)
-        build_docker_image()
-        if len(argv) >= 2 and '--self-test' == argv[1]:
+        if '--docker-run' == argv[1]:
+            if len(argv) < 4:
+                raise ArgError(
+                    'Usage: build_docs --docker-run <image> <args>')
+            image = argv[2]
             cwd = realpath('.')
             if not cwd.startswith(DIR):
                 raise ArgError(
-                    '--self-test must be invoked from within the repo')
+                    '--docker-run must be invoked from within the repo')
             docker_cwd = '/docs_build/' + cwd[len(DIR):]
+            build_docker_image(image)
             cmd = ['docker', 'run']
             cmd.extend(standard_docker_args())
             cmd.extend(['--workdir', docker_cwd])
             if stdout.isatty():
                 cmd.append('-t')
-            cmd.extend([DOCKER_TAG, 'make'])
-            cmd.extend(['--no-builtin-rules'])
-            cmd.extend(argv[2:])
+            cmd.append(docker_tag(image))
+            cmd.extend(argv[3:])
             returncode = subprocess.call(cmd)
             exit(returncode)
-        elif not ['--just-build-image'] == argv[1:]:
-            exit(run_build_docs(argv[1:]))
+        if '--docker-build' == argv[1]:
+            if len(argv) != 3:
+                raise ArgError(
+                    'Usage: build_docs --build-image <image>')
+            image = argv[2]
+            build_docker_image(image)
+            exit(0)
+
+        build_docker_image("build")
+        exit(run_build_docs(argv[1:]))
     except ArgError as e:
         print(e)
         exit(1)

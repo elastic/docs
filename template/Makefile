@@ -1,12 +1,8 @@
-# We expect this to be run in the a docker container managed by
-#   build_docs --self-test
-
-SHELL = /bin/bash -eux -o pipefail
-MAKEFLAGS += --silent
+include ../common.mk
 
 .PHONY: check
 check: jest
 
 .PHONY: jest
 jest:
-	/node_modules/jest/bin/jest.js ./__test__/**
+	$(DOCKER) node_test /node_modules/jest/bin/jest.js ./__test__/**

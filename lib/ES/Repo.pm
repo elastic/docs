@@ -51,7 +51,7 @@ sub add_sub_dir {
 sub has_changed {
 #===================================
     my $self = shift;
-    my ( $title, $branch, $path, $asciidoctor ) = @_;
+    my ( $title, $branch, $path, $direct_html ) = @_;
 
     $path = $self->normalize_path( $path, $branch );
     $branch = $self->normalize_branch( $branch );
@@ -83,7 +83,7 @@ sub has_changed {
                 . $self->name);
     }
     my $new_info = $new;
-    $new_info .= '|asciidoctor' if $asciidoctor;
+    $new_info .= '|direct_html' if $direct_html;
 
     # We check sub_dirs *after* the checks above so we can handle sub_dir for
     # new sources specially.
@@ -93,11 +93,11 @@ sub has_changed {
         return $old_info ne $new_info ? 'changed' : 'not_changed';
     }
     return 'not_changed' if $old_info eq $new_info;
-    # If the asciidoctor-ness of the previous build doesn't match this one then
+    # If the direct_html-ness of the previous build doesn't match this one then
     # we've changed. It'd be nice if build-info were a class but we'll be
-    # dropping asciidoctor as soon as we've migrated all of the books and this
+    # dropping direct_html as soon as we've migrated all of the books and this
     # is sort of a local minima of effort.
-    return 'changed' unless ($old_info =~ /\|asciidoctor$/) == $asciidoctor;
+    return 'changed' unless ($old_info =~ /\|direct_html$/) == $direct_html;
 
     my $changed;
     eval {
@@ -115,7 +115,7 @@ sub has_changed {
 sub mark_done {
 #===================================
     my $self = shift;
-    my ( $title, $branch, $path, $asciidoctor ) = @_;
+    my ( $title, $branch, $path, $direct_html ) = @_;
 
     my $new;
     if ( exists $self->{sub_dirs}->{$branch} ) {
@@ -126,7 +126,7 @@ sub mark_done {
     } else {
         $new = $self->sha_for_branch( $branch );
     }
-    $new .= '|asciidoctor' if $asciidoctor;
+    $new .= '|direct_html' if $direct_html;
 
     $self->tracker->set_sha_for_branch( $self->name,
         $self->_tracker_branch(@_), $new );
@@ -196,6 +196,7 @@ sub _prepare_sub_dir {
     delete local $ENV{GIT_DIR};
     my $merge_branch = "${resolved_branch}_${subbed_head}_$path";
     $merge_branch =~ s|/|_|g;
+    $merge_branch =~ s|\*|splat|g;
     $merge_branch =~ s|\.$||g; # Fix funny shaped paths
 
     # Check if we've already merged this path by looking for the merged_branch
@@ -252,20 +253,25 @@ sub _prepare_sub_dir {
 sub _extract_from_dir {
 #===================================
     my ( $self, $source_root, $dest_root, $path ) = @_;
+    local $ENV{GIT_WORK_TREE} = $source_root;
+    local $ENV{GIT_DIR} = $ENV{GIT_WORK_TREE} . '/.git';
 
     # Copies the $path from the subsitution directory. It is tempting to
     # just symlink the substitution directory into the destination and
-    # call it a day and that *almost* works! The trouble is that we often
-    # use relative paths to include asciidoc files from other repositories
-    # and those relative paths don't work at all with symlinks.
-    my $source = $source_root->file( $path );
-    die "Can't find $source" unless -e $source;
-    my $dest = $dest_root->subdir( $path )->parent;
-    $dest->mkpath;
-    eval {
-        run qw(cp -r), $source, $dest;
-        1;
-    } or die "Error copying from $source: $@";
+    # call it a day but that doesn't work for a whole bunch of non-obvious
+    # reasons:
+    # 1. We often use relative paths to include asciidoc files from other
+    #    repositories and those relative paths don't work at all with symlinks.
+    # 2. The paths themselves are actually git pathspecs which can resolve to
+    #    more than one file.
+    my $files = run qw(git ls-files -zcom --), $path;
+    for ( split /\0/, $files ) {
+        my $source = $source_root->file( $_ );
+        die "Can't find $source" unless -e $source;
+        my $dest = $dest_root->file( $_ );
+        $dest->parent->mkpath;
+        $source->copy_to( $dest ) or die "Error copying from $source: $@";
+    }
 }
 
 #===================================
@@ -371,18 +377,18 @@ sub show_file {
 }
 
 #===================================
-# Information about the last commit, *not* including flags like `asciidoctor.`
+# Information about the last commit, *not* including flags like `direct_html.`
 #===================================
 sub _last_commit {
 #===================================
     my $self = shift;
     my $sha = $self->_last_commit_info(@_);
-    $sha =~ s/\|.+$//;  # Strip |asciidoctor if it is in the hash
+    $sha =~ s/\|.+$//;  # Strip |direct_html if it is in the hash
     return $sha;
 }
 
 #===================================
-# Information about the last commit, including flags like `asciidoctor.`
+# Information about the last commit, including flags like `direct_html.`
 #===================================
 sub _last_commit_info {
 #===================================

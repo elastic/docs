@@ -236,6 +236,12 @@ RSpec.describe 'building all books' do
         page_context 'toc.html', "html/test/#{branch}/toc.html" do
           include_examples 'correct'
         end
+        page_context 'index.html', "raw/test/#{branch}/index.html" do
+          include_examples 'correct'
+        end
+        page_context 'toc.html', "raw/test/#{branch}/toc.html" do
+          include_examples 'correct'
+        end
       end
       context 'the master branch' do
         let(:master_selected) { ' selected' }
@@ -436,6 +442,35 @@ RSpec.describe 'building all books' do
           )
           include_examples 'second build is not a noop'
           include_examples 'second build only changes chapter2'
+        end
+        context 'because the book changes from docbook to direct_html' do
+          build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              book = src.book 'Test'
+              # For now direct_html only works with single page books.
+              book.single = true
+            end,
+            before_second_build: lambda do |src, _config|
+              book = src.book 'Test'
+              book.direct_html = true
+            end
+          )
+          include_examples 'second build is not a noop'
+        end
+        context 'because the book changes from direct_html to docbook' do
+          build_one_book_out_of_one_repo_twice(
+            before_first_build: lambda do |src, _config|
+              book = src.book 'Test'
+              book.direct_html = true
+              # For now direct_html only works with single page books.
+              book.single = true
+            end,
+            before_second_build: lambda do |src, _config|
+              book = src.book 'Test'
+              book.direct_html = false
+            end
+          )
+          include_examples 'second build is not a noop'
         end
         context 'because there is a target_branch and we have changes' do
           # We always fork the target_branch from master so if the target

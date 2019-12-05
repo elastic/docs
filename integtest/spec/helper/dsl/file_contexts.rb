@@ -51,7 +51,13 @@ module Dsl
       let(:head) do
         return unless contents
 
-        contents.sub(/.+<head>/, '').sub(%r{</head>.+}, '')
+        contents.sub(/.+<head>/m, '').sub(%r{</head>.+}m, '')
+      end
+      let(:head_title) do
+        m = head&.match %r{<title>(.+?)</title>}m
+        raise "can't find title in #{head}" unless m
+
+        m[1]
       end
       let(:body) do
         return unless contents

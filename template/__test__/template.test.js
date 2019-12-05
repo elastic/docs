@@ -154,13 +154,13 @@ describe(Template, () => {
     });
     describe("when it gets a document without a body", () => {
       test("throws an exception", () => {
-        expect(template.applyToString(`<html><head><script>foo</script></head></html>`))
+        return expect(template.applyToString(`<html><head><script>foo</script></head></html>`))
           .rejects.toThrow(/Couldn't find <body> in raw/);
       });
     });
     describe("when it gets a document with an unclosed body", () => {
       test("throws an exception", () => {
-        expect(template.applyToString(`<html><head><script>foo</script></head><body></html>`))
+        return expect(template.applyToString(`<html><head><script>foo</script></head><body></html>`))
           .rejects.toThrow(/Couldn't find <\/body> in raw/);
       });
     });
