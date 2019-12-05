@@ -1695,5 +1695,23 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          |===
+          |Col 1 | Col 2
+          |===
+        ASCIIDOC
+      end
+      it 'is wrapped in table' do
+        expect(converted).to include <<~HTML
+          <div class="table">
+          <p class="title"><strong>Table 1. Title</strong></p>
+          <div class="table-contents">
+          <table border="1" cellpadding="4px" summary="Title">
+        HTML
+      end
+    end
   end
 end
