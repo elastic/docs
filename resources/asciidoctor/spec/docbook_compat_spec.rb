@@ -625,6 +625,28 @@ RSpec.describe DocbookCompat do
         include_examples 'section basics', 'preface xpack', 1, '_p', 'P'
       end
     end
+
+    context 'an appendix' do
+      let(:input) do
+        <<~ASCIIDOC
+          [appendix]
+          == Foo
+          Words.
+        ASCIIDOC
+      end
+      include_examples 'section basics', 'appendix', 1, '_foo',
+                       'Appendix A: Foo'
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [appendix.xpack]
+            == Foo
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'appendix xpack', 1, '_foo',
+                         'Appendix A: Foo'
+      end
+    end
   end
 
   context 'a paragraph' do

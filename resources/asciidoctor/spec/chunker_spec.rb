@@ -544,6 +544,103 @@ RSpec.describe Chunker do
           end
         end
       end
+      context 'there is an appendix' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s1]]
+            == S1
+
+            [appendix,id=app]
+            == Foo
+
+            [[app_1]]
+            === Foo 1
+
+            [[app_2]]
+            === Foo 2
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 's1', 'S1'
+          it 'contains a link to the level 1 sections' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s1.html">S1</a>
+            HTML
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="app.html">Appendix A: Foo</a>
+            HTML
+          end
+          it 'contains a link to the level 2 sections' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="app_1.html">Foo 1</a></li>
+            HTML
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="app_2.html">Foo 2</a></li>
+            HTML
+          end
+        end
+        file_context 'the section', 's1.html' do
+          include_examples 'standard page', 'index', 'Title',
+                           'app', 'Appendix A: Foo'
+          include_examples 'subpage'
+        end
+        file_context 'the appendix', 'app.html' do
+          include_examples 'standard page', 's1', 'S1', 'app_1', 'Foo 1'
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h2 id="app">Appendix A: Foo</h2>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">Foo</span>
+              </div>
+            HTML
+          end
+        end
+        file_context 'the first page in the appendix', 'app_1.html' do
+          include_examples 'standard page', 'app', 'Appendix A: Foo',
+                           'app_2', 'Foo 2'
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h3 id="app_1">Foo 1</h3>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-link"><a href="app.html">Foo</a></span>
+              »
+              <span class="breadcrumb-node">Foo 1</span>
+              </div>
+            HTML
+          end
+        end
+        file_context 'the first page in the appendix', 'app_2.html' do
+          include_examples 'standard page', 'app_1', 'Foo 1', nil, nil
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h3 id="app_2">Foo 2</h3>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-link"><a href="app.html">Foo</a></span>
+              »
+              <span class="breadcrumb-node">Foo 2</span>
+              </div>
+            HTML
+          end
+        end
+      end
     end
   end
   context "when outdir isn't configured" do
