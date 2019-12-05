@@ -2,6 +2,7 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative 'convert_admonition'
 require_relative 'convert_document'
 require_relative 'convert_dlist'
 require_relative 'convert_links'
@@ -25,6 +26,7 @@ module DocbookCompat
   ##
   # A Converter implementation that emulates Elastic's docbook generated html.
   class Converter < DelegatingConverter
+    include ConvertAdmonition
     include ConvertDocument
     include ConvertDList
     include ConvertLinks
@@ -79,18 +81,6 @@ module DocbookCompat
       else
         yield
       end
-    end
-
-    def convert_admonition(node)
-      [
-        %(<div class="#{node.attr 'name'} admon">),
-        %(<div class="icon"></div>),
-        %(<div class="admon_content">),
-        node.title? ? "<h3>#{node.title}</h3>" : nil,
-        node.blocks.empty? ? "<p>#{node.content}</p>" : node.content,
-        '</div>',
-        '</div>',
-      ].compact.join "\n"
     end
 
     def convert_literal(node)
