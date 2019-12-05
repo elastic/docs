@@ -265,8 +265,8 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                private       => $self->private,
-                noindex       => $self->noindex($branch),
+                private       => $self->private( $branch ),
+                noindex       => $self->noindex( $branch ),
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -290,8 +290,8 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                private       => $self->private,
-                noindex       => $self->noindex($branch),
+                private       => $self->private( $branch ),
+                noindex       => $self->noindex( $branch ),
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -448,6 +448,15 @@ sub noindex {
     return 1;
 }
 
+#===================================
+sub private {
+#===================================
+    my ( $self, $branch ) = @_;
+    return 1 if $self->{private};
+    return 0 if grep( /^$branch$/, @{ $self->{live_branches} } );
+    return 1;
+}
+
 
 #===================================
 sub title            { shift->{title} }
@@ -461,7 +470,6 @@ sub branches         { shift->{branches} }
 sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
-sub private          { shift->{private} }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
 sub source           { shift->{source} }
