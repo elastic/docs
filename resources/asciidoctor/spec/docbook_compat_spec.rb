@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
+require 'care_admonition/extension'
 require 'docbook_compat/extension'
 require 'fileutils'
 require 'tmpdir'
 
 RSpec.describe DocbookCompat do
   before(:each) do
+    Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register DocbookCompat
   end
 
@@ -1358,87 +1360,149 @@ RSpec.describe DocbookCompat do
   end
 
   context 'admonitions' do
-    shared_examples 'standard admonition' do |key, admonclass|
-      context 'with text' do
-        let(:input) do
-          <<~ASCIIDOC
-            #{key}: words
-          ASCIIDOC
+    def expect_admonition(body)
+      expect(converted).to include <<~HTML
+        <div class="#{admon_class} admon">
+        <div class="icon"></div>
+        <div class="admon_content">
+        #{body}
+        </div>
+        </div>
+      HTML
+    end
+    context 'built in admonitions' do
+      shared_examples 'standard admonition' do
+        context 'with text' do
+          let(:input) do
+            <<~ASCIIDOC
+              #{key}: words
+            ASCIIDOC
+          end
+          it "renders with Elastic's custom template" do
+            expect_admonition '<p>words</p>'
+          end
         end
-        it "renders with Elastic's custom template" do
-          expect(converted).to include(<<~HTML)
-            <div class="#{admonclass} admon">
-            <div class="icon"></div>
-            <div class="admon_content">
-            <p>words</p>
-            </div>
-            </div>
-          HTML
+        context 'with complex content' do
+          let(:input) do
+            <<~ASCIIDOC
+              [#{key}]
+              --
+              . words
+              --
+            ASCIIDOC
+          end
+          it 'contains the complex content' do
+            expect_admonition <<~HTML.strip
+              <div class="olist orderedlist">
+              <ol class="orderedlist">
+              <li class="listitem">
+              words
+              </li>
+              </ol>
+              </div>
+            HTML
+          end
+        end
+        context 'without content' do
+          let(:input) do
+            <<~ASCIIDOC
+              [#{key}]
+              --
+              --
+            ASCIIDOC
+          end
+          it "doesn't have default text" do
+            expect_admonition '<p></p>'
+          end
+        end
+        context 'with a title' do
+          let(:input) do
+            <<~ASCIIDOC
+              [#{key}]
+              .Title
+              --
+              words
+              --
+            ASCIIDOC
+          end
+          it "renders the title in Elastic's custom template" do
+            expect(converted).to include(<<~HTML)
+              <div class="#{admon_class} admon">
+              <div class="icon"></div>
+              <div class="admon_content">
+              <h3>Title</h3>
+              <p>words</p>
+              </div>
+              </div>
+            HTML
+          end
         end
       end
-      context 'with complex content' do
-        let(:input) do
-          <<~ASCIIDOC
-            [#{key}]
-            --
-            . words
-            --
-          ASCIIDOC
-        end
-        it "renders with Elastic's custom template" do
-          expect(converted).to include(<<~HTML)
-            <div class="#{admonclass} admon">
-            <div class="icon"></div>
-            <div class="admon_content">
-            <div class="olist orderedlist">
-            <ol class="orderedlist">
-            <li class="listitem">
-            words
-            </li>
-            </ol>
-            </div>
-            </div>
-            </div>
-          HTML
-        end
+      let(:admon_class) { key.downcase }
+      context 'note' do
+        let(:key) { 'NOTE' }
+        include_examples 'standard admonition'
       end
-      context 'with a title' do
-        let(:input) do
-          <<~ASCIIDOC
-            [#{key}]
-            .Title
-            --
-            words
-            --
-          ASCIIDOC
-        end
-        it "renders with Elastic's custom template" do
-          expect(converted).to include(<<~HTML)
-            <div class="#{admonclass} admon">
-            <div class="icon"></div>
-            <div class="admon_content">
-            <h3>Title</h3>
-            <p>words</p>
-            </div>
-            </div>
-          HTML
-        end
+      context 'tip' do
+        let(:key) { 'TIP' }
+        include_examples 'standard admonition'
+      end
+      context 'important' do
+        let(:key) { 'IMPORTANT' }
+        include_examples 'standard admonition'
+      end
+      context 'caution' do
+        let(:key) { 'CAUTION' }
+        include_examples 'standard admonition'
+      end
+      context 'warning' do
+        let(:key) { 'WARNING' }
+        include_examples 'standard admonition'
       end
     end
-    context 'note' do
-      include_examples 'standard admonition', 'NOTE', 'note'
-    end
-    context 'tip' do
-      include_examples 'standard admonition', 'TIP', 'tip'
-    end
-    context 'important' do
-      include_examples 'standard admonition', 'IMPORTANT', 'important'
-    end
-    context 'caution' do
-      include_examples 'standard admonition', 'CAUTION', 'caution'
-    end
-    context 'warning' do
-      include_examples 'standard admonition', 'WARNING', 'warning'
+    context 'elastic custom admonitions' do
+      shared_examples 'custom admonition' do
+        context 'with text' do
+          let(:input) do
+            <<~ASCIIDOC
+              #{key}::[words]
+            ASCIIDOC
+          end
+          it "renders with Elastic's custom template" do
+            expect_admonition '<p>words</p>'
+          end
+        end
+        context 'without content' do
+          let(:input) do
+            <<~ASCIIDOC
+              #{key}::[]
+            ASCIIDOC
+          end
+          it 'has default text' do
+            expect_admonition "<p>#{default_text}</p>"
+          end
+        end
+      end
+      context 'beta' do
+        let(:key) { 'beta' }
+        let(:admon_class) { 'warning' }
+        let(:default_text) do
+          <<~TEXT.strip
+            This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+          TEXT
+        end
+        include_examples 'custom admonition'
+      end
+      context 'experimental' do
+        let(:key) { 'experimental' }
+        let(:admon_class) { 'warning' }
+        let(:default_text) do
+          <<~TEXT.strip
+            This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+          TEXT
+        end
+        include_examples 'custom admonition'
+      end
     end
   end
 
