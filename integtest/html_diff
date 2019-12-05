@@ -125,6 +125,16 @@ def normalize_html(html):
     # links. It doesn't seem like we need that.
     for e in soup.select('link[title]'):
         e['title'] = e['title'].replace('\xa0', ' ')
+    # Docbook renders partintro's slightly differently but the difference isn't
+    # visually distinct so we can ignore it.
+    for e in soup.select('.partintro:not(.openblock) > div:empty'):
+        e.extract()
+    for e in soup.select('.partintro:not(.openblock)'):
+        e['class'].remove('partintro')
+        e['class'].append('mediaobject')
+        wrapper = soup.new_tag("div")
+        wrapper['class'] = ['openblock', 'partintro']
+        e.wrap(wrapper)
 
     # Remove empty "class" attributes and sort the listed classes.
     for e in soup.select('*'):
