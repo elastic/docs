@@ -606,6 +606,41 @@ RSpec.describe DocbookCompat do
       end
     end
 
+    context 'level 0' do
+      let(:input) do
+        <<~ASCIIDOC
+          = Title
+
+          = Section
+
+          == L1
+
+          === L2
+        ASCIIDOC
+      end
+      include_examples 'section basics', 'part', 1, '_section', 'Section'
+      it "bumps the h tag of it's children" do
+        expect(converted).to include 'L1</h2>'
+      end
+      it "doesn't bump the h tag of it's children's children" do
+        # Docbook doesn't seem to do this
+        expect(converted).to include 'L2</h2>'
+      end
+      context 'with the xpack role' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [.xpack]
+            = S1
+
+            == Chapter
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'part xpack', 1, '_s1', 'S1'
+      end
+    end
+
     context 'a preface' do
       let(:input) do
         <<~ASCIIDOC
@@ -645,6 +680,23 @@ RSpec.describe DocbookCompat do
         end
         include_examples 'section basics', 'appendix xpack', 1, '_foo',
                          'Appendix A: Foo'
+      end
+      context 'with level 0' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [appendix]
+            = Foo
+
+            == Bar
+          ASCIIDOC
+        end
+        include_examples 'section basics', 'appendix', 1, '_foo',
+                         'Appendix A: Foo'
+        it "doesn't bump the h tags of sections within it" do
+          expect(converted).to include 'Bar</h1>'
+        end
       end
     end
   end
