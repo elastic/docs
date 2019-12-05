@@ -238,6 +238,70 @@ RSpec.describe DocbookCompat do
           end
         end
       end
+      context 'when a section has a titleabbrev' do
+        let(:convert_attributes) do
+          {
+            # Shrink the output slightly so it is easier to read
+            'stylesheet!' => false,
+            # Set some metadata that will be included in the header
+            'dc.type' => 'FooType',
+            'dc.subject' => 'BarSubject',
+            'dc.identifier' => 'BazIdentifier',
+            'toc' => '',
+            'toclevels' => 2,
+          }
+        end
+        shared_examples 'titleabbrev' do
+          context 'the table of contents' do
+            it 'includes the abbreviated title' do
+              expect(converted).to include <<~HTML
+                <li><span class="chapter"><a href="#_section_1">S1</a></span>
+              HTML
+            end
+            it 'includes the correct title for a subsection' do
+              expect(converted).to include <<~HTML
+                <li><span class="section"><a href="#_section_2">Section 2</a></span>
+              HTML
+            end
+          end
+          context 'the body' do
+            it "doesn't include the titleabbrev tag" do
+              expect(converted).not_to include '<titleabbrev>'
+            end
+            it 'includes the unabbreviated title' do
+              expect(converted).to include 'Section 1</h1>'
+            end
+          end
+        end
+        context 'using a pass block' do
+          let(:input) do
+            <<~ASCIIDOC
+              = Title
+
+              == Section 1
+              ++++
+              <titleabbrev>S1</titleabbrev>
+              ++++
+
+              === Section 2
+            ASCIIDOC
+          end
+          include_examples 'titleabbrev'
+        end
+        context 'using an attribute' do
+          let(:input) do
+            <<~ASCIIDOC
+              = Title
+
+              [titleabbrev=S1]
+              == Section 1
+
+              === Section 2
+            ASCIIDOC
+          end
+          include_examples 'titleabbrev'
+        end
+      end
     end
     context 'when there is a subtitle' do
       let(:input) do

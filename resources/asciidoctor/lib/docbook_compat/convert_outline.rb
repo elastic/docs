@@ -20,7 +20,9 @@ module DocbookCompat
     def convert_outline_section(section, toclevels)
       return if section.roles.include? 'exclude'
 
-      link = %(<a href="##{section.id}">#{section.title}</a>)
+      title = section.attr 'titleabbrev'
+      title ||= section.title
+      link = %(<a href="##{section.id}">#{title}</a>)
       link = %(<span class="#{wrapper_class_for section}">#{link}</span>)
       [
         %(<li>#{link}),
