@@ -6,16 +6,41 @@ module DocbookCompat
   module ConvertTable
     def convert_table(node)
       [
-        '<div class="informaltable">',
-        '<table border="1" cellpadding="4px">',
+        convert_table_intro(node),
+        convert_table_tag(node),
         convert_colgroups(node),
         convert_parts(node),
         '</table>',
-        '</div>',
+        convert_table_outro(node),
       ].flatten.join "\n"
     end
 
     private
+
+    def convert_table_intro(node)
+      return '<div class="informaltable">' unless node.title
+
+      [
+        '<div class="table">',
+        %(<p class="title"><strong>#{node.captioned_title}</strong></p>),
+        '<div class="table-contents">',
+      ]
+    end
+
+    def convert_table_outro(node)
+      return '</div>' unless node.title
+
+      ['</div>', '</div>']
+    end
+
+    def convert_table_tag(node)
+      [
+        '<table',
+        ' border="1" cellpadding="4px"',
+        node.title ? %( summary="#{node.title}") : nil,
+        '>',
+      ].compact.join
+    end
 
     def convert_colgroups(node)
       [
