@@ -240,7 +240,7 @@ RSpec.describe DocbookCompat do
           end
         end
       end
-      context 'when a section has a titleabbrev' do
+      context 'when a section has reftext' do
         let(:convert_attributes) do
           {
             # Shrink the output slightly so it is easier to read
@@ -253,11 +253,11 @@ RSpec.describe DocbookCompat do
             'toclevels' => 2,
           }
         end
-        shared_examples 'titleabbrev' do
+        shared_examples 'reftext' do
           context 'the table of contents' do
             it 'includes the abbreviated title' do
               expect(converted).to include <<~HTML
-                <li><span class="chapter"><a href="#_section_1">S1</a></span>
+                <li><span class="chapter"><a href="#s1">S1</a></span>
               HTML
             end
             it 'includes the correct title for a subsection' do
@@ -273,35 +273,45 @@ RSpec.describe DocbookCompat do
             it 'includes the unabbreviated title' do
               expect(converted).to include 'Section 1</h1>'
             end
+            it 'includes a link to the abbreviated section' do
+              expect(converted).to include <<~HTML.strip
+                <a class="xref" href="#s1"title="Section 1"><em>S1</em></a>
+              HTML
+            end
           end
         end
-        context 'using a pass block' do
+        context 'using a pass block containing titleabbrev' do
           let(:input) do
             <<~ASCIIDOC
               = Title
 
+              [[s1]]
               == Section 1
               ++++
               <titleabbrev>S1</titleabbrev>
               ++++
 
               === Section 2
+
+              <<s1>>
             ASCIIDOC
           end
-          include_examples 'titleabbrev'
+          include_examples 'reftext'
         end
         context 'using an attribute' do
           let(:input) do
             <<~ASCIIDOC
               = Title
 
-              [titleabbrev=S1]
+              [id=s1,reftext=_S1_]
               == Section 1
 
               === Section 2
+
+              <<s1>>
             ASCIIDOC
           end
-          include_examples 'titleabbrev'
+          include_examples 'reftext'
         end
       end
     end
