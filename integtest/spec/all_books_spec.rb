@@ -617,6 +617,7 @@ RSpec.describe 'building all books' do
       book.branches << 'nonlive'
       book.live_branches = ['master']
     end
+    let(:repo) { @src.repo 'repo' }
     page_context 'the live branch', 'html/test/master/index.html' do
       it "doesn't contain the noindex flag" do
         expect(contents).not_to include(<<~HTML.strip)
@@ -631,7 +632,15 @@ RSpec.describe 'building all books' do
         end
       end
     end
-    page_context 'the dead branch', 'html/test/nonlive/index.html' do
+    page_context "the live branch's chapter", 'html/test/master/chapter.html' do
+      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      it 'contains an edit_me link' do
+        expect(body).to include <<~HTML.strip
+          <a href="#{edit_url}" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
+        HTML
+      end
+    end
+    page_context "the dead branch's index", 'html/test/nonlive/index.html' do
       it 'contains the noindex flag' do
         expect(contents).to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow" />
@@ -643,6 +652,13 @@ RSpec.describe 'building all books' do
             <select><option value="master">master (current)</option><option value="nonlive" selected>nonlive (out of date)</option></select>
           HTML
         end
+      end
+    end
+    page_context "the dead branch's chapter",
+                 'html/test/nonlive/chapter.html' do
+      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      it "doesn't contain an edit_me link" do
+        expect(body).not_to include('class="edit_me"')
       end
     end
   end
