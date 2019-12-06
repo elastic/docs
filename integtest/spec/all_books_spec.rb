@@ -624,10 +624,17 @@ RSpec.describe 'building all books' do
           <meta name="robots" content="noindex,nofollow" />
         HTML
       end
-      context 'the version drop down' do
+      context 'the live versions drop down' do
         it 'contains only the live branch' do
           expect(body).to include(<<~HTML.strip)
-            <select><option value="master" selected>master (current)</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="master" selected>master (current)</option><option value="other">other versions</option></select>
+          HTML
+        end
+      end
+      context 'the other versions drop down' do
+        it 'contains all branches' do
+          expect(body).to include(<<~HTML.strip)
+            <span id="other_versions">other versions: <select><option value="master" selected>master (current)</option><option value="nonlive">nonlive</option></select>
           HTML
         end
       end
@@ -646,12 +653,16 @@ RSpec.describe 'building all books' do
           <meta name="robots" content="noindex,nofollow" />
         HTML
       end
-      context 'the version drop down' do
+      context 'the live versions drop down' do
         it 'contains the deprecated branch' do
           expect(body).to include(<<~HTML.strip)
-            <select><option value="master">master (current)</option><option value="nonlive" selected>nonlive (out of date)</option></select>
+            <select id="live_versions"><option value="master">master (current)</option><option value="nonlive" selected>nonlive (out of date)</option></select>
           HTML
         end
+      end
+      it "it doesn't contain the other versions drop down" do
+        # *because* there aren't any versions filtered from the list
+        expect(body).not_to include 'id="other_versions"'
       end
     end
     page_context "the dead branch's chapter",
