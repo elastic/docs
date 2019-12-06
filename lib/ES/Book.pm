@@ -329,7 +329,8 @@ sub _update_title_and_version_drop_downs {
 #===================================
     my ( $self, $branch_dir, $branch ) = @_;
 
-    my $title = '<li id="book_title"><span>' . $self->title . ': <select>';
+    my $title = '<li id="book_title"><span>' . $self->title . ': ';
+    $title .= '<select id="live_versions">';
     my $removed_any = 0;
     for my $b ( @{ $self->branches } ) {
         my $live = grep( /^$b$/, @{ $self->{live_branches} } );
@@ -346,7 +347,19 @@ sub _update_title_and_version_drop_downs {
         $title .= '</option>';
     }
     $title .= '<option value="other">other versions</option>' if $removed_any;
-    $title .= '</select></span></li>';
+    $title .= '</select>';
+    if ( $removed_any ) {
+        $title .= '<span id="other_versions">other versions: <select>';
+        for my $b ( @{ $self->branches } ) {
+            $title .= '<option value="' . $b . '"';
+            $title .= ' selected'  if $branch eq $b;
+            $title .= '>' . $self->branch_title($b);
+            $title .= ' (current)' if $self->current eq $b;
+            $title .= '</option>';
+        }
+        $title .= '</select>';
+    }
+    $title .= '</span></li>';
     for ( 'toc.html', 'index.html' ) {
         my $file = $branch_dir->file($_);
         # Ignore missing files because the books haven't been built yet. This
