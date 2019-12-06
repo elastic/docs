@@ -38,6 +38,7 @@ module DocbookCompat
         '<table',
         ' border="1" cellpadding="4px"',
         node.title ? %( summary="#{node.title}") : nil,
+        (width = node.attr 'width') ? %( width="#{width}") : nil,
         '>',
       ].compact.join
     end
