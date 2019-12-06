@@ -1713,5 +1713,20 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'with width' do
+      let(:input) do
+        <<~ASCIIDOC
+          [width=50%]
+          |===
+          |Col 1 | Col 2
+          |===
+        ASCIIDOC
+      end
+      it 'has the width' do
+        expect(converted).to include <<~HTML
+          <table border="1" cellpadding="4px" width="50%">
+        HTML
+      end
+    end
   end
 end
