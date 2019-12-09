@@ -838,8 +838,28 @@ RSpec.describe DocbookCompat do
       it 'references the url' do
         expect(converted).to include('href="#target"')
       end
-      it 'has the right title' do
+      it 'has the right text' do
         expect(converted).to include('><code class="literal">target</code></a>')
+      end
+
+      context 'when that inline anchor has empty text' do
+        let(:input) do
+          <<~ASCIIDOC
+            == Section heading
+
+            Words.
+            [[target]]
+            more words.
+
+            <<target>>
+          ASCIIDOC
+        end
+        it 'references the url' do
+          expect(converted).to include('href="#target"')
+        end
+        it 'has the right text' do
+          expect(converted).to include('>Section heading</a>')
+        end
       end
     end
   end
