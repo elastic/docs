@@ -90,14 +90,16 @@ module DocbookCompat
     end
 
     def convert_sidebar(node)
-      <<~HTML
-        <div class="sidebar#{node.role ? " #{node.role}" : ''}">
-        <div class="titlepage"><div><div>
-        <p class="title"><strong>#{node.title}</strong></p>
-        </div></div></div>
-        #{node.content}
-        </div>
-      HTML
+      result = [%(<div class="sidebar#{node.role ? " #{node.role}" : ''}">)]
+      if node.title
+        result << '<div class="titlepage"><div><div>'
+        result << %(<p class="title"><strong>#{node.title}</strong></p>)
+        result << %(</div></div></div>)
+      else
+        result << '<div class="titlepage"></div>'
+      end
+      result += [node.content, '</div>']
+      result.join "\n"
     end
 
     def xpack_tag(node)
