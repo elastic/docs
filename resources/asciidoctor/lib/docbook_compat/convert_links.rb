@@ -24,11 +24,13 @@ module DocbookCompat
       return "#{xref}>#{refid}</a>" unless ref
 
       text = node.text || ref_text_for(ref, node)
-      title = ref.respond_to?(:title) ? ref.title : nil
+      title = ref_title_for ref
       <<~HTML.strip
         #{xref}#{title ? %(title="#{title}") : ''}>#{text}</a>
       HTML
     end
+
+    private
 
     def ref_text_for(ref, node)
       if ref.node_name == 'inline_link'
@@ -47,6 +49,17 @@ module DocbookCompat
       return unless (index = parent.blocks.find_index ref)
 
       parent[index + 1]&.convert
+    end
+
+    def ref_title_for(ref)
+      # References to inline text don't have a title.
+      return unless ref.respond_to?(:title)
+
+      # Strip the html if there is any becaue this is inside a tag. It'd be
+      # nice if there was a cleaner way to do this but there really isn't.
+      # Luckily this html all comes from asciidoctor so we at least know it is
+      # valid.
+      ref.title.gsub %r{</?[^>]*>}, ''
     end
   end
 end

@@ -808,6 +808,19 @@ RSpec.describe DocbookCompat do
         expect(converted).to include('>override text</a>')
       end
     end
+    context 'when the section title has markup' do
+      let(:input) do
+        <<~ASCIIDOC
+          Words <<foo>>.
+
+          [[foo]]
+          == `foo`
+        ASCIIDOC
+      end
+      it "contains the target's title without the markup" do
+        expect(converted).to include('title="foo"')
+      end
+    end
     context 'when the cross reference is to an inline anchor' do
       let(:input) do
         <<~ASCIIDOC
