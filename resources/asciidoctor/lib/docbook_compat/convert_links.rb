@@ -33,22 +33,16 @@ module DocbookCompat
     private
 
     def ref_text_for(ref, node)
-      if ref.node_name == 'inline_link'
-        special = ref_text_for_inline_link ref
-        return special if special
-      end
+      text = ref.xreftext node.attr('xrefstyle', 'short', true)
+      return text if text
 
-      ref.xreftext node.attr('xrefstyle', 'short', true)
-    end
+      # The text is empty! Let's grab the parent section's heading.
+      section = ref.parent
+      section = section.parent until section.context == :section
 
-    ##
-    # Inline title's have *boring* text so we instead use the text of the
-    # next element. This is also what docbook does. Because it is better.
-    def ref_text_for_inline_link(ref)
-      return unless (parent = ref.parent)
-      return unless (index = parent.blocks.find_index ref)
-
-      parent[index + 1]&.convert
+      # Docbook doesn't use 'short' as the default here, strangely. So neither
+      # do we.
+      section.xreftext nil
     end
 
     def ref_title_for(ref)
