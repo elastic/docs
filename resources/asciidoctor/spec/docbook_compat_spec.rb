@@ -1422,7 +1422,7 @@ RSpec.describe DocbookCompat do
   end
 
   context 'admonitions' do
-    def expect_admonition(body)
+    def expect_block_admonition(body)
       expect(converted).to include <<~HTML
         <div class="#{admon_class} admon">
         <div class="icon"></div>
@@ -1441,7 +1441,7 @@ RSpec.describe DocbookCompat do
             ASCIIDOC
           end
           it "renders with Elastic's custom template" do
-            expect_admonition '<p>words</p>'
+            expect_block_admonition '<p>words</p>'
           end
         end
         context 'with complex content' do
@@ -1454,7 +1454,7 @@ RSpec.describe DocbookCompat do
             ASCIIDOC
           end
           it 'contains the complex content' do
-            expect_admonition <<~HTML.strip
+            expect_block_admonition <<~HTML.strip
               <div class="olist orderedlist">
               <ol class="orderedlist">
               <li class="listitem">
@@ -1474,7 +1474,7 @@ RSpec.describe DocbookCompat do
             ASCIIDOC
           end
           it "doesn't have default text" do
-            expect_admonition '<p></p>'
+            expect_block_admonition '<p></p>'
           end
         end
         context 'with a title' do
@@ -1524,24 +1524,58 @@ RSpec.describe DocbookCompat do
     end
     context 'elastic custom admonitions' do
       shared_examples 'custom admonition' do
-        context 'with text' do
-          let(:input) do
-            <<~ASCIIDOC
-              #{key}::[words]
-            ASCIIDOC
+        context 'block form' do
+          context 'with text' do
+            let(:input) do
+              <<~ASCIIDOC
+                #{key}::[words]
+              ASCIIDOC
+            end
+            it "renders with Elastic's custom template" do
+              expect_block_admonition '<p>words</p>'
+            end
           end
-          it "renders with Elastic's custom template" do
-            expect_admonition '<p>words</p>'
+          context 'without content' do
+            let(:input) do
+              <<~ASCIIDOC
+                #{key}::[]
+              ASCIIDOC
+            end
+            it 'has default text' do
+              expect_block_admonition "<p>#{default_text}</p>"
+            end
           end
         end
-        context 'without content' do
-          let(:input) do
-            <<~ASCIIDOC
-              #{key}::[]
-            ASCIIDOC
+        context 'inline form' do
+          def expect_inline_admonition(text)
+            expect(converted).to include <<~HTML.strip
+              <span class="Admonishment Admonishment--#{key}">
+              [<span class="Admonishment-title u-mono">#{key}</span>]
+              <span class="Admonishment-detail">
+              #{text}
+              </span>
+              </span>
+            HTML
           end
-          it 'has default text' do
-            expect_admonition "<p>#{default_text}</p>"
+          context 'with text' do
+            let(:input) do
+              <<~ASCIIDOC
+                Words #{key}:[admon words] words.
+              ASCIIDOC
+            end
+            it "renders with Elastic's custom template" do
+              expect_inline_admonition 'admon words'
+            end
+          end
+          context 'without text' do
+            let(:input) do
+              <<~ASCIIDOC
+                Words #{key}:[] words.
+              ASCIIDOC
+            end
+            it 'has default text' do
+              expect_inline_admonition default_text
+            end
           end
         end
       end
