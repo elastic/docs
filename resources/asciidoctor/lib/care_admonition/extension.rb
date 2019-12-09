@@ -60,7 +60,11 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     end
 
     def process(parent, _target, attrs)
-      Asciidoctor::Inline.new(parent, :quoted, text(attrs))
+      if parent.document.basebackend? 'html'
+        Asciidoctor::Inline.new parent, :admonition, attrs[:text], type: @role
+      else
+        Asciidoctor::Inline.new parent, :quoted, text(attrs)
+      end
     end
 
     def text(attrs)

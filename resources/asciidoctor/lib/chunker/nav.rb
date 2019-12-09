@@ -43,7 +43,7 @@ module Chunker
       # section could be the document itself which shouldn't render.
       return unless section.context == :section
 
-      %(<a #{link_href section}>#{lmarker}#{section.title}#{rmarker}</a>)
+      %(<a #{link_href section}>#{lmarker}#{link_text section}#{rmarker}</a>)
     end
   end
 end
