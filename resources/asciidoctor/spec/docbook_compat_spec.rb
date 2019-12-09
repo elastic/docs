@@ -849,7 +849,7 @@ RSpec.describe DocbookCompat do
           ==
         ASCIIDOC
       end
-      it "contains the target's title without the markup" do
+      it "doesn't contain a title at all" do
         expect(converted).not_to include('title')
       end
     end

@@ -37,8 +37,12 @@ module DocbookCompat
       return text if text
 
       # The text is empty! Let's grab the parent section's heading.
-      section = ref.parent
-      section = section.parent until section.context == :section
+      section = ref
+      until section.context == :section
+        section = section.parent
+        # If there isn't a parent then we just don't have anything.
+        return unless section
+      end
 
       # Docbook doesn't use 'short' as the default here, strangely. So neither
       # do we.
