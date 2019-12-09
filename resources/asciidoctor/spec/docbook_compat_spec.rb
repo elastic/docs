@@ -297,6 +297,25 @@ RSpec.describe DocbookCompat do
             ASCIIDOC
           end
           include_examples 'reftext'
+          context 'when the titleabbrev contains an attribute' do
+            let(:input) do
+              <<~ASCIIDOC
+                = Title
+
+                :abbrev: S1
+                [[s1]]
+                == Section 1
+                ++++
+                <titleabbrev>{abbrev}</titleabbrev>
+                ++++
+
+                === Section 2
+
+                <<s1>>
+              ASCIIDOC
+            end
+            include_examples 'reftext'
+          end
         end
         context 'using an attribute' do
           let(:input) do

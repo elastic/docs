@@ -28,6 +28,7 @@ module DocbookCompat
     private
 
     def process_titleabbrev(block, reftext)
+      reftext = block.apply_subs reftext, [:attributes]
       section = block.parent
       section = section.parent until section.context == :section
       # Docbook seems to bold links to sections less than 2 so we should too.

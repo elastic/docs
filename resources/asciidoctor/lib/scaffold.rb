@@ -12,24 +12,32 @@ class TreeProcessorScaffold < Asciidoctor::Extensions::TreeProcessor
   end
 
   def process(document)
+    backup = document.attributes.dup
     process_blocks document
+    document.attributes.replace backup
     nil
   end
 
   def process_blocks(block)
+    unless block.document == block
+      block.document.playback_attributes block.attributes
+    end
     process_block block
-    sub_blocks =
-      if block.context == :dlist
-        block.blocks.flatten
-      else
-        # Dup so modifications to the list don't cause us to reprocess
-        block.blocks.dup
-      end
-    sub_blocks.each do |sub_block|
-      # subblock can be nil for definition lists without a definition.
+    sub_blocks(block).each do |sub_block|
+      # sub_block can be nil for definition lists without a definition.
       # this is weird, but it is safe to skip nil here because subclasses
       # can't change it anyway.
       process_blocks sub_block if sub_block
+    end
+  end
+
+  def sub_blocks(block)
+    if block.context == :dlist
+      # If there isn't a definition then the list can have a nil. So we compact.
+      block.blocks.flatten.compact
+    else
+      # Dup so modifications to the list don't cause us to reprocess
+      block.blocks.dup
     end
   end
 end
