@@ -656,7 +656,7 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains the deprecated branch' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="master">master (current)</option><option value="nonlive" selected>nonlive (out of date)</option></select>
+            <select id="live_versions"><option value="master">master (current)</option><option value="nonlive" selected>nonlive</option></select>
           HTML
         end
       end
