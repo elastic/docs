@@ -4,7 +4,7 @@
 
 set -eo pipefail
 
-export AIR_GAPPED=docker.elastic.co/docs/preview:latest
+export AIR_GAPPED=docker.elastic.co/docs-private/air_gapped:latest
 
 cd $(git rev-parse --show-toplevel)
 

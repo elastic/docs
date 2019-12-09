@@ -38,24 +38,43 @@ RSpec.describe OpenInWidget do
   end
 
   shared_context 'open in widget' do
+    let(:relative_path) { "snippets/#{index}.#{lang}" }
+    ##
+    # In most examples below the exact text of the snippet is written as the
+    # snippet. *But* in some examples we write something slightly different.
+    let(:copied_snippet) { "#{text}\n" }
+    ##
+    # In most examples below we write the snippet so this is the log we expect.
+    # But one we override it.
+    let(:expected_log) do
+      <<~LOG.strip
+        INFO: <stdin>: line #{line}: writing snippet #{relative_path}
+      LOG
+    end
+
     shared_context 'basic snippet' do
       it 'preserves the snippet' do
         expect(converted).to include(text)
       end
+      let(:expected_link) do
+        if backend == :html5
+          <<~HTML
+            <div class="#{lang}_widget" data-snippet="#{relative_path}"></div>
+          HTML
+        else
+          <<~ASCIIDOC.strip
+            <ulink type="snippet" url="#{relative_path}"/>
+          ASCIIDOC
+        end
+      end
       it 'adds a link to extracted snippet' do
-        expect(converted).to include(<<~ASCIIDOC.strip)
-          <ulink type="snippet" url="snippets/#{index}.#{lang}"/>
-        ASCIIDOC
+        expect(converted).to include(expected_link)
       end
       it 'logs that it wrote the snippet' do
-        expect(logs).to include(<<~LOG.strip)
-          INFO: <stdin>: line #{line}: writing snippet snippets/#{index}.#{lang}
-        LOG
+        expect(logs).to include(expected_log)
       end
-    end
-    shared_context 'snippet' do
       it 'writes the snippet' do
-        expect(copied).to include(["snippets/#{index}.#{lang}", "#{text}\n"])
+        expect(copied).to include([relative_path, copied_snippet])
       end
     end
     context 'when there is a code block with this language' do
@@ -68,7 +87,7 @@ RSpec.describe OpenInWidget do
           ----
         ASCIIDOC
       end
-      include_context 'snippet'
+      include_context 'basic snippet'
       let(:text) { 'GET /' }
       let(:index) { 1 }
       let(:line) { 3 }
@@ -84,7 +103,14 @@ RSpec.describe OpenInWidget do
           ASCIIDOC
         end
         include_context 'basic snippet'
-        let(:text) { 'GET / <co id="CO1-1"/>' }
+        let(:text) do
+          if backend == :html5
+            'GET / <b class="conum">(1)</b>'
+          else
+            'GET / <co id="CO1-1"/>'
+          end
+        end
+        let(:copied_snippet) { "GET /\n" }
         let(:index) { 1 }
         let(:line) { 3 }
         it 'writes the snippet without the callout' do
@@ -118,25 +144,25 @@ RSpec.describe OpenInWidget do
         ASCIIDOC
       end
       context 'first snippet' do
-        include_context 'snippet'
+        include_context 'basic snippet'
         let(:text) { 'GET /foo' }
         let(:index) { 1 }
         let(:line) { 3 }
       end
       context 'second snippet' do
-        include_context 'snippet'
+        include_context 'basic snippet'
         let(:text) { 'GET /bar' }
         let(:index) { 2 }
         let(:line) { 8 }
       end
       context 'third snippet' do
-        include_context 'snippet'
+        include_context 'basic snippet'
         let(:text) { 'GET /baz' }
         let(:index) { 3 }
         let(:line) { 13 }
       end
       context 'fourth snippet' do
-        include_context 'snippet'
+        include_context 'basic snippet'
         let(:text) { 'GET /bort' }
         let(:index) { 4 }
         let(:line) { 18 }
@@ -154,26 +180,22 @@ RSpec.describe OpenInWidget do
           ----
         ASCIIDOC
       end
-      it 'includes a link to the overridden path' do
-        expect(converted).to include(
-          %(<ulink type="snippet" url="#{relative_path}"/>)
-        )
+      let(:line) { 1 }
+      let(:text) { 'GET /' }
+      include_context 'basic snippet'
+      let(:expected_log) do
+        <<~LOG
+          INFO: <stdin>: line 3: copying snippet #{absolue_path}
+        LOG
       end
-      it 'logs that it copies the snippet' do
-        expect(logs).to include(
-          "INFO: <stdin>: line 3: copying snippet #{absolue_path}"
-        )
-      end
+      # Instead of writing some snippet text like the default for this attribute
+      # we are copying a file. When we copy files we log their paths in place
+      # of the text so we assert that the log of copies contains the path.
+      let(:copied_snippet) { absolue_path }
       it 'logs a warning about how bad of an idea this is' do
         expect(logs).to include(<<~LOG.strip)
           WARN: <stdin>: line 3: MIGRATION: reading snippets from a path makes the book harder to read
         LOG
-      end
-      it 'copies the file' do
-        expect(copied).to eq(
-          [["snippets/snippet.#{lang}",
-            "#{spec_dir}/snippets/snippet.#{lang}"]]
-        )
       end
       context 'when you disable the migration warning' do
         let(:input) do
@@ -213,16 +235,44 @@ RSpec.describe OpenInWidget do
       end
     end
   end
-  context 'for the console widget' do
-    include_context 'open in widget'
-    let(:lang) { 'console' }
+  context 'for docbook' do
+    let(:backend) { :docbook45 }
+    context 'for the console widget' do
+      include_context 'open in widget'
+      let(:lang) { 'console' }
+    end
+    context 'for the sense widget' do
+      include_context 'open in widget'
+      let(:lang) { 'sense' }
+    end
+    context 'for the kibana widget' do
+      include_context 'open in widget'
+      let(:lang) { 'kibana' }
+    end
   end
-  context 'for the sense widget' do
-    include_context 'open in widget'
-    let(:lang) { 'sense' }
-  end
-  context 'for the kibana widget' do
-    include_context 'open in widget'
-    let(:lang) { 'kibana' }
+
+  context 'for html' do
+    let(:backend) { :html5 }
+    context 'for the console widget' do
+      include_context 'open in widget'
+      let(:lang) { 'console' }
+    end
+    context 'for the sense widget' do
+      include_context 'open in widget'
+      let(:lang) { 'sense' }
+    end
+    context 'for the kibana widget' do
+      include_context 'open in widget'
+      let(:lang) { 'kibana' }
+    end
+    context 'for the ess widget' do
+      include_context 'open in widget'
+      let(:lang) { 'ess' }
+    end
+    context 'for the ece widget' do
+      include_context 'open in widget'
+      let(:lang) { 'ece' }
+    end
+    # NOCOMMIT ess and ece but they don't copy the snippet
   end
 end
