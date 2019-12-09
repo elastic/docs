@@ -10,6 +10,7 @@ require_relative 'convert_listing'
 require_relative 'convert_lists'
 require_relative 'convert_open'
 require_relative 'convert_outline'
+require_relative 'convert_quote'
 require_relative 'convert_table'
 require_relative 'titleabbrev_handler'
 
@@ -34,6 +35,7 @@ module DocbookCompat
     include ConvertLists
     include ConvertOpen
     include ConvertOutline
+    include ConvertQuote
     include ConvertTable
 
     def convert_section(node)

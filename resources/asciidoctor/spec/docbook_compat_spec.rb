@@ -1855,4 +1855,54 @@ RSpec.describe DocbookCompat do
       end
     end
   end
+
+  context 'a quote' do
+    let(:input) do
+      <<~ASCIIDOC
+        [quote]
+        __________________________
+        Baz
+        __________________________
+      ASCIIDOC
+    end
+    it 'is wrapped in a blockquote' do
+      expect(converted).to include <<~HTML
+        <blockquote>
+        <p>Baz</p>
+        </blockquote>
+      HTML
+    end
+
+    context 'with an attribution' do
+      let(:input) do
+        <<~ASCIIDOC
+          [quote, Brendan Francis Behan]
+          __________________________
+          Once we accept our limits, we go beyond them.
+          __________________________
+        ASCIIDOC
+      end
+      it 'looks like docbook' do
+        expect(converted).to include <<~HTML
+          <div class="blockquote">
+          <table border="0" class="blockquote" summary="Block quote">
+          <tr>
+          <td valign="top" width="10%"></td>
+          <td valign="top" width="80%">
+          <p>Once we accept our limits, we go beyond them.</p>
+          </td>
+          <td valign="top" width="10%"></td>
+          </tr>
+          <tr>
+          <td valign="top" width="10%"></td>
+          <td align="right" colspan="2" valign="top">
+          -- <span class="attribution">Brendan Francis Behan</span>
+          </td>
+          </tr>
+          </table>
+          </div>
+        HTML
+      end
+    end
+  end
 end
