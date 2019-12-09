@@ -119,15 +119,11 @@ RSpec.describe EditMe do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
-            expect(converted).to include(
-              ">#{type.capitalize} 1#{link}</"
-            )
+            expect(converted).to include("#{type.capitalize} 1#{link}</")
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
-            expect(converted).to include(
-              ">#{type.capitalize} 2#{link}</"
-            )
+            expect(converted).to include("#{type.capitalize} 2#{link}</")
           end
         end
         context "that doesn't override edit_url" do
@@ -169,15 +165,11 @@ RSpec.describe EditMe do
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
-              expect(converted).to include(
-                ">#{type.capitalize} 1#{link}</"
-              )
+              expect(converted).to include("#{type.capitalize} 1#{link}</")
             end
             it "adds a link to #{type} 2" do
               link = edit_link 'bar'
-              expect(converted).to include(
-                ">#{type.capitalize} 2#{link}</"
-              )
+              expect(converted).to include("#{type.capitalize} 2#{link}</")
             end
             context 'when overriding to an empty string' do
               let(:input) do
@@ -189,14 +181,10 @@ RSpec.describe EditMe do
                 ASCIIDOC
               end
               it "doesn't add edit links to #{type} 1" do
-                expect(converted).to include(
-                  ">#{type.capitalize} 1</"
-                )
+                expect(converted).to include("#{type.capitalize} 1</")
               end
               it "doesn't add edit links to #{type} 2" do
-                expect(converted).to include(
-                  ">#{type.capitalize} 2</"
-                )
+                expect(converted).to include("#{type.capitalize} 2</")
               end
             end
           end
@@ -270,14 +258,10 @@ RSpec.describe EditMe do
           ASCIIDOC
         end
         it "doesn't add a link to #{type} 1" do
-          expect(converted).to include(
-            ">#{type.capitalize} 1</"
-          )
+          expect(converted).to include("#{type.capitalize} 1</")
         end
         it "doesn't add a link to #{type} 2" do
-          expect(converted).to include(
-            ">#{type.capitalize} 2</"
-          )
+          expect(converted).to include("#{type.capitalize} 2</")
         end
       end
     end

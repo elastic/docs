@@ -38,17 +38,17 @@ def normalize_html(html):
     # hurt anything so we can ignore it.
     for e in soup.select('.itemizedlist.ulist'):
         e['class'].remove('ulist')
-    # Docbook adds type="disc" to ul which is the default and isn't needed.
+    # Docbook adds type which we override in css.
     for e in soup.select('ul'):
-        if 'type' in e.attrs and e['type'] == 'disc':
+        if 'type' in e.attrs:
             del e['type']
     # Asciidoctor adds a "olist" class to all ordered lists which doesn't
     # hurt anything so we can ignore it.
     for e in soup.select('.orderedlist.olist'):
         e['class'].remove('olist')
-    # Docbook adds type="1" to ol which is the default and isn't needed.
+    # Docbook adds type="1" to ol which we override with css.
     for e in soup.select('ol'):
-        if 'type' in e.attrs and e['type'] == '1':
+        if 'type' in e.attrs:
             del e['type']
     # Docbook emits images with the 'inlinemediaobject' class and Asciidoctor
     # has the 'image' class. We've updated our styles to make both work.
@@ -93,6 +93,13 @@ def normalize_html(html):
     for e in soup.select('.content'):
         e['class'].remove('content')
         e['class'].append('mediaobject')
+    # Asciidoctor emits examples as "exampleblock" instead of "informalexample"
+    # but these don't make any visual difference.
+    for e in soup.select('.exampleblock'):
+        e['class'].remove('exampleblock')
+        e['class'].append('informalexample')
+        for c in e.select('.mediaobject'):
+            c.unwrap()
     # Docbook links with `<a class="link"` when linking from one page of a book
     # to another. Asciidoctor emits `<a class="link"`. Both look fine.
     for e in soup.select('a.xref'):
@@ -117,6 +124,29 @@ def normalize_html(html):
     # dropping those.
     for e in soup.select('p:empty'):
         e.extract()
+    # Docbook makes `<code class="literal"><code class="literal">` sometimes.
+    # Just one `<code>` is fine though.
+    for e in soup.select("code.literal > code.literal"):
+        e.unwrap()
+    # Docbook adds non-breaking spaces inside the title attributes for some
+    # links. It doesn't seem like we need that.
+    for e in soup.select('link[title]'):
+        e['title'] = e['title'].replace('\xa0', ' ')
+    # Docbook adds a generated id to tables with ids. They aren't used and we
+    # have no change of generating it properly so we just ignore it.
+    for a in soup.select('.table a'):
+        if a['id'].startswith('id-'):
+            a.extract()
+    # Docbook renders partintro's slightly differently but the difference isn't
+    # visually distinct so we can ignore it.
+    for e in soup.select('.partintro:not(.openblock) > div:empty'):
+        e.extract()
+    for e in soup.select('.partintro:not(.openblock)'):
+        e['class'].remove('partintro')
+        e['class'].append('mediaobject')
+        wrapper = soup.new_tag("div")
+        wrapper['class'] = ['openblock', 'partintro']
+        e.wrap(wrapper)
 
     # Remove empty "class" attributes and sort the listed classes.
     for e in soup.select('*'):
@@ -132,6 +162,7 @@ def normalize_html(html):
     html = html.replace(
         '<meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>',
         '<meta charset="utf-8"/>')
+    html = re.sub(r'(Appendix\s\w+)\.([^<]+)', '\\1:\\2', html)
     return html
 
 
