@@ -1643,7 +1643,6 @@ RSpec.describe DocbookCompat do
   context 'a sidebar' do
     let(:input) do
       <<~ASCIIDOC
-        .Title
         ****
         Words
         ****
@@ -1652,12 +1651,30 @@ RSpec.describe DocbookCompat do
     it 'renders like docbook' do
       expect(converted).to include(<<~HTML)
         <div class="sidebar">
-        <div class="titlepage"><div><div>
-        <p class="title"><strong>Title</strong></p>
-        </div></div></div>
+        <div class="titlepage"></div>
         <p>Words</p>
         </div>
       HTML
+    end
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          ****
+          Words
+          ****
+        ASCIIDOC
+      end
+      it 'renders like docbook' do
+        expect(converted).to include(<<~HTML)
+          <div class="sidebar">
+          <div class="titlepage"><div><div>
+          <p class="title"><strong>Title</strong></p>
+          </div></div></div>
+          <p>Words</p>
+          </div>
+        HTML
+      end
     end
   end
 
