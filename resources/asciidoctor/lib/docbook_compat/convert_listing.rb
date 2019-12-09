@@ -8,22 +8,9 @@ module DocbookCompat
       [
         node.title ? '<p>' : nil,
         node.id ? %(<a id="#{node.id}"></a>) : nil,
-        node.title ? %(<strong>#{node.title}.</strong></p>\n) : nil,
+        node.title ? convert_listing_title(node) : nil,
         convert_listing_body(node),
       ].compact.join
-    end
-
-    def convert_listing_body(node)
-      if (lang = node.attr 'language')
-        pre_classes = "programlisting prettyprint lang-#{lang}"
-        [
-          %(<div class="pre_wrapper lang-#{lang}">),
-          %(<pre class="#{pre_classes}">#{node.content || ''}</pre>),
-          %(</div>),
-        ].join "\n"
-      else
-        %(<pre class="screen">#{node.content || ''}</pre>)
-      end
     end
 
     def convert_inline_callout(node)
@@ -38,6 +25,28 @@ module DocbookCompat
         '</table>',
         '</div>',
       ].flatten.compact.join "\n"
+    end
+
+    private
+
+    def convert_listing_title(node)
+      title = '<strong>' + node.title
+      title += '.' unless [':', '.'].include? node.title[-1]
+      title += "</strong></p>\n"
+      title
+    end
+
+    def convert_listing_body(node)
+      if (lang = node.attr 'language')
+        pre_classes = "programlisting prettyprint lang-#{lang}"
+        [
+          %(<div class="pre_wrapper lang-#{lang}">),
+          %(<pre class="#{pre_classes}">#{node.content || ''}</pre>),
+          %(</div>),
+        ].join "\n"
+      else
+        %(<pre class="screen">#{node.content || ''}</pre>)
+      end
     end
 
     def convert_colist_item(item)
