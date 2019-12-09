@@ -29,10 +29,14 @@ module DocbookCompat
     end
 
     def convert_horizontal_dlist(node)
+      node.assign_caption nil, :table
       [
+        convert_table_intro(node),
+        convert_table_tag(node, 0),
         Horizontal::INTRO,
         node.items.map { |terms, dd| Horizontal.convert_dlist_item terms, dd },
         Horizontal::OUTRO,
+        convert_table_outro(node),
       ].flatten
     end
 
@@ -77,8 +81,6 @@ module DocbookCompat
     # Creates a "horizontal" style dlists.
     module Horizontal
       INTRO = [
-        '<div class="informaltable">',
-        '<table border="0" cellpadding="4px">',
         '<colgroup>',
         '<col/>',
         '<col/>',
@@ -88,7 +90,6 @@ module DocbookCompat
       OUTRO = [
         '</tbody>',
         '</table>',
-        '</div>',
       ].freeze
 
       def self.convert_dlist_item(terms, definition)

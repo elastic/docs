@@ -1373,6 +1373,30 @@ RSpec.describe DocbookCompat do
           </tr>
         HTML
       end
+
+      context 'when it has a title' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title
+            [horizontal]
+            Foo:: The foo.
+            Bar:: The bar.
+          ASCIIDOC
+        end
+        it 'has the title in a strong' do
+          expect(converted).to include <<~HTML
+            <div class="table">
+            <p class="title"><strong>Table 1. Title</strong></p>
+            <div class="table-contents">
+          HTML
+        end
+        it 'has the title as the summary' do
+          expect(converted).to include <<~HTML
+            <div class="table-contents">
+            <table border="0" cellpadding="4px" summary="Title">
+          HTML
+        end
+      end
     end
     context 'question and anwer styled' do
       let(:input) do
