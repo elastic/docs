@@ -7,7 +7,7 @@ module DocbookCompat
     def docinfo(location = :head, suffix = nil)
       case location
       when :head
-        super + extra_docbook_compat_head
+        [super, extra_docbook_compat_head].compact.join "\n"
       else
         super
       end
