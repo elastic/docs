@@ -29,7 +29,7 @@ module DocbookCompat
     end
 
     def convert_horizontal_dlist(node)
-      node.assign_caption nil, :table
+      node.assign_caption nil, :table # Caption the dlist like a table
       [
         convert_table_intro(node),
         convert_table_tag(node, 0),
