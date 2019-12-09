@@ -3,8 +3,10 @@
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
 require_relative 'breadcrumbs'
+require_relative 'convert_outline'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
+require_relative 'footnotes'
 require_relative 'nav'
 
 ##
@@ -29,7 +31,9 @@ module Chunker
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
     include Breadcrumbs
+    include ConvertOutline
     include FindRelated
+    include Footnotes
 
     def initialize(delegate, chunk_level)
       super(delegate)
@@ -37,23 +41,11 @@ module Chunker
     end
 
     def convert_document(doc)
-      unless doc.attr 'home'
-        title = doc.doctitle partition: true
-        doc.attributes['home'] = title.main.strip
-      end
+      title = doc.doctitle partition: true
+      doc.attributes['home'] = title.main.strip + doc.attr('title-extra', '')
       doc.attributes['next_section'] = find_next_in doc, 0
-      nav = Nav.new doc
-      doc.blocks.insert 0, nav.header
-      doc.blocks.append nav.footer
+      add_nav doc
       yield
-    end
-
-    def convert_outline(node, opts = {})
-      # Fix links in the toc
-      toclevels = opts[:toclevels] || node.document.attributes['toclevels'].to_i
-      outline = yield
-      cleanup_outline outline, node, toclevels
-      outline
     end
 
     def convert_section(section)
@@ -68,6 +60,12 @@ module Chunker
     def convert_inline_anchor(node)
       correct_xref node if node.type == :xref
       yield
+    end
+
+    def add_nav(doc)
+      nav = Nav.new doc
+      doc.blocks.insert 0, nav.header
+      doc.blocks.append nav.footer
     end
 
     def correct_xref(node)
@@ -91,12 +89,17 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
+      add_subdoc_sections doc, subdoc, section, html
+      subdoc.convert
+    end
+
+    def add_subdoc_sections(doc, subdoc, section, html)
       subdoc << generate_breadcrumbs(doc, section)
       nav = Nav.new subdoc
       subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
+      subdoc << footnotes(doc, subdoc) if doc.footnotes?
       subdoc << nav.footer
-      subdoc.convert
     end
 
     def subdoc_opts(doc, section)
@@ -114,7 +117,7 @@ module Chunker
     def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['doctitle'] = "#{section.title} | #{maintitle.main}"
+      attrs['doctitle'] = "#{section.captioned_title} | #{maintitle.main}"
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear
@@ -124,6 +127,7 @@ module Chunker
       attrs['icons'] = nil unless attrs['icons']
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
       attrs['noheader'] = true
+      attrs['title-separator'] = ''
       attrs.merge! find_related(section)
       attrs
     end
@@ -135,14 +139,6 @@ module Chunker
         f.write html
       end
       file
-    end
-
-    def cleanup_outline(outline, node, toclevels)
-      node.sections.each do |section|
-        outline.gsub!(%(href="##{section.id}"), %(href="#{section.id}.html")) ||
-          raise("Couldn't fix section link for #{section.id} in #{outline}")
-        cleanup_outline outline, section, toclevels if section.level < toclevels
-      end
     end
   end
 end

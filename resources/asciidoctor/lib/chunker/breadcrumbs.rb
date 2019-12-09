@@ -20,8 +20,9 @@ module Chunker
       result = []
       parent = section
       while (parent = parent.parent)
+        extra = parent.context == :document ? parent.attr('title-extra') : ''
         result << <<~HTML.strip
-          <span class="breadcrumb-link"><a #{link_href parent}>#{link_text parent}</a></span>
+          <span class="breadcrumb-link"><a #{link_href parent}>#{parent.title}#{extra}</a></span>
           »
         HTML
       end

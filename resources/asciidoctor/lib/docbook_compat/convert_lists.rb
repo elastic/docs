@@ -10,9 +10,26 @@ module DocbookCompat
     end
 
     def convert_olist(node, &block)
-      node.style = 'orderedlist' if node.style.nil? || node.style == 'arabic'
+      override_style = node.style.nil?
+      # The style can be a symbol or the a string.....
+      override_style ||= %w[arabic loweralpha].include? node.style.to_s
+      node.style = 'orderedlist' if override_style
       convert_list node, &block
     end
+
+    def convert_list_item(item)
+      return item.text unless item.blocks?
+      return item.content unless item.text
+
+      [
+        '<p>',
+        item.text,
+        '</p>',
+        item.content,
+      ].compact.join "\n"
+    end
+
+    private
 
     def convert_list(node)
       node.items.each { |item| item.attributes['role'] ||= 'listitem' }

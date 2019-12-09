@@ -15,14 +15,10 @@ module Chunker
       end
     end
 
-    def link_title(target)
-      %(title="#{link_text target}")
-    end
-
     def link_text(target)
       case target.context
       when :section
-        target.title
+        target.captioned_title
       when :document
         target.doctitle(partition: true).main.strip
       else

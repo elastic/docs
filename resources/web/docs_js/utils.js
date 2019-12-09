@@ -7,10 +7,6 @@ export function get_base_url(href) {
 
 const VERSION_REGEX = /[^\/]+\/+([^\/]+\.html)/;
 export function get_current_page_in_version(version) {
-  if (version === "other") {
-    location.href = location.href.replace(VERSION_REGEX, "index.html");
-    return;
-  }
   var url = location.href.replace(VERSION_REGEX, version + "/$1");
   return $.get(url).done(function() {
     location.href = url

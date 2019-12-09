@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'chunker/extension'
+require 'docbook_compat/extension'
 require 'fileutils'
 require 'tmpdir'
 
@@ -27,7 +28,7 @@ RSpec.describe Chunker do
       end
       it 'contains the home link' do
         expect(contents).to include(<<~HTML)
-          <link rel="home" href="index.html" title="Title"/>
+          <link rel="home" href="index.html" title="Title#{convert_attributes['title-extra']}"/>
         HTML
       end
       if prev_page
@@ -119,7 +120,7 @@ RSpec.describe Chunker do
           'toc' => '',
         }
       end
-      context 'there is are two level 1 sections' do
+      context 'there are two level 1 sections' do
         let(:input) do
           <<~ASCIIDOC
             = Title
@@ -128,7 +129,7 @@ RSpec.describe Chunker do
             == Section 1
 
             [[linkme]]
-            Words words.
+            Words words.footnote:[foo]
 
             <<s2>>
 
@@ -140,6 +141,8 @@ RSpec.describe Chunker do
             <<linkme,override text>>
 
             <<s1,override text>>
+
+            footnote:[bar]
           ASCIIDOC
         end
         context 'the main output' do
@@ -158,6 +161,9 @@ RSpec.describe Chunker do
           it "doesn't contain breadcrumbs" do
             expect(converted).not_to include('<div class="breadcrumbs">')
           end
+          it "doesn't contain any footnotes" do
+            expect(converted).not_to include('<div id="footnotes">')
+          end
         end
         file_context 'the first section', 's1.html' do
           include_examples 'standard page', 'index', 'Title', 's2', 'Section 2'
@@ -169,7 +175,9 @@ RSpec.describe Chunker do
             expect(contents).to include('<h2 id="s1">Section 1</h2>')
           end
           it 'contains the contents' do
-            expect(contents).to include '<p>Words words.</p>'
+            expect(contents).to include <<~HTML
+              <p>Words words.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
+            HTML
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
@@ -182,6 +190,15 @@ RSpec.describe Chunker do
           end
           it 'contains a link to the second section' do
             expect(contents).to include('<a href="s2.html">Section 2</a>')
+          end
+          it 'contains the footnote' do
+            expect(contents).to include <<~HTML
+              <div id="footnotes">
+              <div class="footnote" id="_footnotedef_1">
+              <sup>[<a href="#_footnoteref_1">1</a>]</sup> foo
+              </div>
+              </div>
+            HTML
           end
         end
         file_context 'the second section', 's2.html' do
@@ -212,6 +229,15 @@ RSpec.describe Chunker do
           end
           it 'contains a link to the first section with override text' do
             expect(contents).to include('<a href="s1.html">override text</a>')
+          end
+          it 'contains the footnote' do
+            expect(contents).to include <<~HTML
+              <div id="footnotes">
+              <div class="footnote" id="_footnotedef_2">
+              <sup>[<a href="#_footnoteref_2">2</a>]</sup> bar
+              </div>
+              </div>
+            HTML
           end
         end
       end
@@ -321,6 +347,107 @@ RSpec.describe Chunker do
           end
         end
       end
+      context 'when there is title-extra' do
+        let(:convert_attributes) do
+          {
+            'outdir' => outdir,
+            'chunk_level' => 1,
+            # Shrink the output slightly so it is easier to read
+            'stylesheet!' => false,
+            # We always enable the toc for multi-page books
+            'toc' => '',
+            'title-extra' => ' [fooo]',
+          }
+        end
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s1]]
+            == Section 1
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 's1', 'Section 1'
+          it 'contains the correct title' do
+            expect(contents).to include('<title>Title</title>')
+          end
+        end
+        file_context 'the section', 's1.html' do
+          include_examples 'standard page', 'index', 'Title [fooo]', nil, nil
+          include_examples 'subpage'
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title [fooo]</a></span>
+              »
+              <span class="breadcrumb-node">Section 1</span>
+              </div>
+            HTML
+          end
+        end
+      end
+      context 'there is a subtitle on a section' do
+        before(:each) do
+          # We need docbook compat to verify that we disabled the
+          # title separator. We unregister_all first because the order that we
+          # register the plugins matters.
+          Asciidoctor::Extensions.unregister_all
+          Asciidoctor::Extensions.register DocbookCompat
+          Asciidoctor::Extensions.register Chunker
+        end
+
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s]]
+            == Section: With subtitle
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil,
+                           's', 'Section: With subtitle'
+          it 'contains a link to the section' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><span class="chapter"><a href="s.html">Section: With subtitle</a></span>
+              </li>
+            HTML
+          end
+        end
+        file_context 'the section', 's.html' do
+          include_examples 'standard page', 'index', 'Title', nil, nil
+          include_examples 'subpage'
+          it 'contains the correct title' do
+            expect(contents).to include(
+              '<title>Section: With subtitle | Title | Elastic</title>'
+            )
+          end
+          it 'contains the heading' do
+            expect(contents).to include(
+              '<h1 class="title"><a id="s"></a>Section: With subtitle</h1>'
+            )
+          end
+          it 'contains the contents' do
+            expect(contents).to include <<~HTML
+              <p>Words.</p>
+            HTML
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">Section: With subtitle</span>
+              </div>
+            HTML
+          end
+        end
+      end
     end
     context 'when chunk level is 2' do
       let(:convert_attributes) do
@@ -333,7 +460,7 @@ RSpec.describe Chunker do
           'toc' => '',
         }
       end
-      context 'there is are a few sections' do
+      context 'there are a few sections' do
         let(:input) do
           <<~ASCIIDOC
             = Title
@@ -473,6 +600,108 @@ RSpec.describe Chunker do
               <span class="breadcrumb-link"><a href="s2.html">S2</a></span>
               »
               <span class="breadcrumb-node">S2_2</span>
+              </div>
+            HTML
+          end
+        end
+      end
+      context 'there is an appendix' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s1]]
+            == S1
+
+            [appendix,id=app]
+            == Foo
+
+            [[app_1]]
+            === Foo 1
+
+            [[app_2]]
+            === Foo 2
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 's1', 'S1'
+          it 'contains a link to the level 1 sections' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s1.html">S1</a>
+            HTML
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="app.html">Appendix A: Foo</a>
+            HTML
+          end
+          it 'contains a link to the level 2 sections' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="app_1.html">Foo 1</a></li>
+            HTML
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="app_2.html">Foo 2</a></li>
+            HTML
+          end
+        end
+        file_context 'the section', 's1.html' do
+          include_examples 'standard page', 'index', 'Title',
+                           'app', 'Appendix A: Foo'
+          include_examples 'subpage'
+        end
+        file_context 'the appendix', 'app.html' do
+          include_examples 'standard page', 's1', 'S1', 'app_1', 'Foo 1'
+          include_examples 'subpage'
+          it 'contains the correct title' do
+            expect(contents).to include(
+              '<title>Appendix A: Foo | Title</title>'
+            )
+          end
+          it 'contains the heading' do
+            expect(contents).to include('<h2 id="app">Appendix A: Foo</h2>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">Foo</span>
+              </div>
+            HTML
+          end
+        end
+        file_context 'the first page in the appendix', 'app_1.html' do
+          include_examples 'standard page', 'app', 'Appendix A: Foo',
+                           'app_2', 'Foo 2'
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h3 id="app_1">Foo 1</h3>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-link"><a href="app.html">Foo</a></span>
+              »
+              <span class="breadcrumb-node">Foo 1</span>
+              </div>
+            HTML
+          end
+        end
+        file_context 'the first page in the appendix', 'app_2.html' do
+          include_examples 'standard page', 'app_1', 'Foo 1', nil, nil
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include('<h3 id="app_2">Foo 2</h3>')
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-link"><a href="app.html">Foo</a></span>
+              »
+              <span class="breadcrumb-node">Foo 2</span>
               </div>
             HTML
           end

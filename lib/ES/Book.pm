@@ -265,8 +265,8 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                private       => $self->private,
-                noindex       => $self->noindex($branch),
+                private       => $self->private( $branch ),
+                noindex       => $self->noindex( $branch ),
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
@@ -290,8 +290,8 @@ sub _build_book {
                 version       => $branch,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
-                private       => $self->private,
-                noindex       => $self->noindex($branch),
+                private       => $self->private( $branch ),
+                noindex       => $self->noindex( $branch ),
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
                 page_header   => $self->_page_header($branch),
@@ -329,7 +329,8 @@ sub _update_title_and_version_drop_downs {
 #===================================
     my ( $self, $branch_dir, $branch ) = @_;
 
-    my $title = '<li id="book_title"><span>' . $self->title . ': <select>';
+    my $title = '<li id="book_title"><span>' . $self->title . ': ';
+    $title .= '<select id="live_versions">';
     my $removed_any = 0;
     for my $b ( @{ $self->branches } ) {
         my $live = grep( /^$b$/, @{ $self->{live_branches} } );
@@ -346,7 +347,19 @@ sub _update_title_and_version_drop_downs {
         $title .= '</option>';
     }
     $title .= '<option value="other">other versions</option>' if $removed_any;
-    $title .= '</select></span></li>';
+    $title .= '</select>';
+    if ( $removed_any ) {
+        $title .= '<span id="other_versions">other versions: <select>';
+        for my $b ( @{ $self->branches } ) {
+            $title .= '<option value="' . $b . '"';
+            $title .= ' selected'  if $branch eq $b;
+            $title .= '>' . $self->branch_title($b);
+            $title .= ' (current)' if $self->current eq $b;
+            $title .= '</option>';
+        }
+        $title .= '</select>';
+    }
+    $title .= '</span></li>';
     for ( 'toc.html', 'index.html' ) {
         my $file = $branch_dir->file($_);
         # Ignore missing files because the books haven't been built yet. This
@@ -448,6 +461,15 @@ sub noindex {
     return 1;
 }
 
+#===================================
+sub private {
+#===================================
+    my ( $self, $branch ) = @_;
+    return 1 if $self->{private};
+    return 0 if grep( /^$branch$/, @{ $self->{live_branches} } );
+    return 1;
+}
+
 
 #===================================
 sub title            { shift->{title} }
@@ -461,7 +483,6 @@ sub branches         { shift->{branches} }
 sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
-sub private          { shift->{private} }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
 sub source           { shift->{source} }

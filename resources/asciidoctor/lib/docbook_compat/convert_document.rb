@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 
+require_relative 'extra_docinfo'
+require_relative 'munge_body'
+
 module DocbookCompat
   ##
   # Methods to convert the document at the top level. All of these are a bit
   # scary but required at this point for docbook compatibility.
   module ConvertDocument
+    include MungeBody
+
     def convert_document(doc)
       # We'll manually add the toc ourselves if it was requested.
       wants_toc = doc.attr?('toc') && doc.attr?('toc-placement', 'auto')
@@ -17,25 +22,10 @@ module DocbookCompat
       html + "\n"
     end
 
-    ##
-    # Adds extra tags <link> tags to the <head> to emulate docbook.
-    module ExtraDocinfo
-      def docinfo(location = :head, suffix = nil)
-        info = super
-        return info unless location == :head
-
-        info + <<~HTML
-          <meta name="DC.type" content="#{attributes['dc.type']}"/>
-          <meta name="DC.subject" content="#{attributes['dc.subject']}"/>
-          <meta name="DC.identifier" content="#{attributes['dc.identifier']}"/>
-        HTML
-      end
-    end
-
     def munge_html(doc, html, wants_toc)
       title = doc.doctitle partition: true
       munge_html_tag html
-      munge_head title, html
+      munge_head doc.attr('title-extra'), title, html
       munge_body doc, html
       munge_title doc, title, html
       add_toc doc, html if wants_toc
@@ -46,9 +36,10 @@ module DocbookCompat
         raise("Coudn't fix html in #{html}")
     end
 
-    def munge_head(title, html)
+    def munge_head(title_extra, title, html)
       html.gsub!(
-        %r{<title>.+</title>}, "<title>#{title.main} | Elastic</title>"
+        %r{<title>.+</title>},
+        "<title>#{title.main}#{title_extra} | Elastic</title>"
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
     end
@@ -64,36 +55,6 @@ module DocbookCompat
         raise("Couldn't remove viewport in #{html}")
       html.gsub!(/<meta name="generator" content="Asciidoctor [^"]+">\n/, '') ||
         raise("Couldn't remove generator in #{html}")
-    end
-
-    def munge_body(doc, html)
-      if doc.attr 'noheader'
-        html.gsub!(/<body[^>]+>/, '<body>')
-      else
-        munge_body_and_header_open doc, html
-        munge_body_and_header_close html
-      end
-    end
-
-    def munge_body_and_header_open(doc, html)
-      # Note nav header and footer should be *outside* the div wrapping the body
-      wrapped = [
-        %(<body>),
-        html.slice!(%r{<div class="navheader">.+?<\/div>\n}m)&.strip,
-        %(<div class="#{doc.doctype}" lang="#{doc.attr 'lang', 'en'}">),
-      ].compact.join "\n"
-      html.gsub!(/<body[^>]+>/, wrapped) ||
-        raise("Couldn't wrap body in #{html}")
-    end
-
-    def munge_body_and_header_close(html)
-      wrapped = [
-        '</div>',
-        html.slice!(%r{<div class="navfooter">.+?<\/div>\n}m),
-        '</body>',
-      ].compact.join
-      html.gsub!('</body>', wrapped) ||
-        raise("Couldn't wrap body in #{html}")
     end
 
     def munge_title(doc, title, html)
