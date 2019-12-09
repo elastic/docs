@@ -5,7 +5,7 @@ module DocbookCompat
   # Methods to convert admonitions.
   module ConvertAdmonition
     def convert_admonition(node)
-      content = admonition_content node
+      content = block_admonition_content node
       [
         %(<div class="#{node.attr 'name'} admon">),
         %(<div class="icon"></div>),
@@ -15,6 +15,17 @@ module DocbookCompat
         '</div>',
         '</div>',
       ].compact.join "\n"
+    end
+
+    def convert_inline_admonition(node)
+      [
+        %(<span class="Admonishment Admonishment--#{node.type}">),
+        %([<span class="Admonishment-title u-mono">#{node.type}</span>]),
+        '<span class="Admonishment-detail">',
+        inline_admonition_text(node),
+        '</span>',
+        '</span>',
+      ].join "\n"
     end
 
     private
@@ -27,11 +38,19 @@ module DocbookCompat
         This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
       TEXT
     }.freeze
-    def admonition_content(node)
+
+    def block_admonition_content(node)
       content = node.content
       return content unless content == ''
 
       ADMONITION_DEFAULT_MESSAGE[node.role]
+    end
+
+    def inline_admonition_text(node)
+      text = node.text
+      return text if text
+
+      ADMONITION_DEFAULT_MESSAGE[node.type]
     end
   end
 end
