@@ -10,6 +10,7 @@ require_relative 'convert_listing'
 require_relative 'convert_lists'
 require_relative 'convert_open'
 require_relative 'convert_outline'
+require_relative 'convert_paragraph'
 require_relative 'convert_table'
 require_relative 'titleabbrev_handler'
 
@@ -34,6 +35,7 @@ module DocbookCompat
     include ConvertLists
     include ConvertOpen
     include ConvertOutline
+    include ConvertParagraph
     include ConvertTable
 
     def convert_section(node)
@@ -57,17 +59,6 @@ module DocbookCompat
       <<~HTML
         <#{tag_name}#{classes_html}>#{anchor}#{node.title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</#{tag_name}>
       HTML
-    end
-
-    def convert_paragraph(node)
-      # Asciidoctor adds a \n at the end of the paragraph so we don't.
-      %(<p>#{paragraph_id_part node}#{node.content}</p>)
-    end
-
-    def paragraph_id_part(node)
-      return if node.id.nil? || node.id.empty?
-
-      %(<a id="#{node.id}"></a>)
     end
 
     def convert_inline_quoted(node)
