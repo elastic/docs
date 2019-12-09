@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'chunker/extension'
+require 'docbook_compat/extension'
 require 'fileutils'
 require 'tmpdir'
 
@@ -119,7 +120,7 @@ RSpec.describe Chunker do
           'toc' => '',
         }
       end
-      context 'there is are two level 1 sections' do
+      context 'there are two level 1 sections' do
         let(:input) do
           <<~ASCIIDOC
             = Title
@@ -387,6 +388,66 @@ RSpec.describe Chunker do
           end
         end
       end
+      context 'there is a subtitle on a section' do
+        before(:each) do
+          # We need docbook compat to verify that we disabled the
+          # title separator. We unregister_all first because the order that we
+          # register the plugins matters.
+          Asciidoctor::Extensions.unregister_all
+          Asciidoctor::Extensions.register DocbookCompat
+          Asciidoctor::Extensions.register Chunker
+        end
+
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s]]
+            == Section: With subtitle
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil,
+                           's', 'Section: With subtitle'
+          it 'contains a link to the section' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><span class="chapter"><a href="s.html">Section: With subtitle</a></span>
+              </li>
+            HTML
+          end
+        end
+        file_context 'the section', 's.html' do
+          include_examples 'standard page', 'index', 'Title', nil, nil
+          include_examples 'subpage'
+          it 'contains the correct title' do
+            expect(contents).to include(
+              '<title>Section: With subtitle | Title | Elastic</title>'
+            )
+          end
+          it 'contains the heading' do
+            expect(contents).to include(
+              '<h1 class="title"><a id="s"></a>Section: With subtitle</h1>'
+            )
+          end
+          it 'contains the contents' do
+            expect(contents).to include <<~HTML
+              <p>Words.</p>
+            HTML
+          end
+          it 'contains the breadcrumbs' do
+            expect(contents).to include <<~HTML
+              <div class="breadcrumbs">
+              <span class="breadcrumb-link"><a href="index.html">Title</a></span>
+              »
+              <span class="breadcrumb-node">Section: With subtitle</span>
+              </div>
+            HTML
+          end
+        end
+      end
     end
     context 'when chunk level is 2' do
       let(:convert_attributes) do
@@ -399,7 +460,7 @@ RSpec.describe Chunker do
           'toc' => '',
         }
       end
-      context 'there is are a few sections' do
+      context 'there are a few sections' do
         let(:input) do
           <<~ASCIIDOC
             = Title
@@ -590,6 +651,11 @@ RSpec.describe Chunker do
         file_context 'the appendix', 'app.html' do
           include_examples 'standard page', 's1', 'S1', 'app_1', 'Foo 1'
           include_examples 'subpage'
+          it 'contains the correct title' do
+            expect(contents).to include(
+              '<title>Appendix A: Foo | Title</title>'
+            )
+          end
           it 'contains the heading' do
             expect(contents).to include('<h2 id="app">Appendix A: Foo</h2>')
           end
