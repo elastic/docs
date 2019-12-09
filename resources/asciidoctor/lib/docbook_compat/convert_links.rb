@@ -53,7 +53,7 @@ module DocbookCompat
       # nice if there was a cleaner way to do this but there really isn't.
       # Luckily this html all comes from asciidoctor so we at least know it is
       # valid.
-      ref.title.gsub %r{</?[^>]*>}, ''
+      ref.title&.gsub %r{</?[^>]*>}, ''
     end
   end
 end
