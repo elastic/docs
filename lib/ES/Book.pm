@@ -343,7 +343,6 @@ sub _update_title_and_version_drop_downs {
         $title .= ' selected'  if $branch eq $b;
         $title .= '>' . $self->branch_title($b);
         $title .= ' (current)' if $self->current eq $b;
-        $title .= ' (out of date)' unless $live;
         $title .= '</option>';
     }
     $title .= '<option value="other">other versions</option>' if $removed_any;
