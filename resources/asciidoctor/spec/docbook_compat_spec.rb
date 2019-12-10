@@ -995,6 +995,24 @@ RSpec.describe DocbookCompat do
           <div class="pre_wrapper lang-sh">
         HTML
       end
+
+      context 'that ends in a :' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title:
+            [source,sh]
+            ----
+            cpanm Search::Elasticsearch
+            ----
+          ASCIIDOC
+        end
+        it "the title is before in docbook's funny wrapper" do
+          expect(converted).to include(<<~HTML)
+            <p><strong>Title:</strong></p>
+            <div class="pre_wrapper lang-sh">
+          HTML
+        end
+      end
     end
     context 'with an id' do
       let(:input) do
