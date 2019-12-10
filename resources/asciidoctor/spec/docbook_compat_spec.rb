@@ -297,6 +297,25 @@ RSpec.describe DocbookCompat do
             ASCIIDOC
           end
           include_examples 'reftext'
+          context 'when the titleabbrev contains an attribute' do
+            let(:input) do
+              <<~ASCIIDOC
+                = Title
+
+                :abbrev: S1
+                [[s1]]
+                == Section 1
+                ++++
+                <titleabbrev>{abbrev}</titleabbrev>
+                ++++
+
+                === Section 2
+
+                <<s1>>
+              ASCIIDOC
+            end
+            include_examples 'reftext'
+          end
         end
         context 'using an attribute' do
           let(:input) do
@@ -808,6 +827,32 @@ RSpec.describe DocbookCompat do
         expect(converted).to include('>override text</a>')
       end
     end
+    context 'when the section title has markup' do
+      let(:input) do
+        <<~ASCIIDOC
+          Words <<foo>>.
+
+          [[foo]]
+          == `foo`
+        ASCIIDOC
+      end
+      it "contains the target's title without the markup" do
+        expect(converted).to include('title="foo"')
+      end
+    end
+    context 'when the section title is empty' do
+      let(:input) do
+        <<~ASCIIDOC
+          Words <<foo>>.
+
+          [[foo]]
+          ==
+        ASCIIDOC
+      end
+      it "doesn't contain a title at all" do
+        expect(converted).not_to include('title')
+      end
+    end
     context 'when the cross reference is to an inline anchor' do
       let(:input) do
         <<~ASCIIDOC
@@ -819,8 +864,28 @@ RSpec.describe DocbookCompat do
       it 'references the url' do
         expect(converted).to include('href="#target"')
       end
-      it 'has the right title' do
+      it 'has the right text' do
         expect(converted).to include('><code class="literal">target</code></a>')
+      end
+
+      context 'when that inline anchor has empty text' do
+        let(:input) do
+          <<~ASCIIDOC
+            == Section heading
+
+            Words.
+            [[target]]
+            more words.
+
+            <<target>>
+          ASCIIDOC
+        end
+        it 'references the url' do
+          expect(converted).to include('href="#target"')
+        end
+        it 'has the right text' do
+          expect(converted).to include('>Section heading</a>')
+        end
       end
     end
   end
@@ -929,6 +994,24 @@ RSpec.describe DocbookCompat do
           <p><strong>Title.</strong></p>
           <div class="pre_wrapper lang-sh">
         HTML
+      end
+
+      context 'that ends in a :' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title:
+            [source,sh]
+            ----
+            cpanm Search::Elasticsearch
+            ----
+          ASCIIDOC
+        end
+        it "the title is before in docbook's funny wrapper" do
+          expect(converted).to include(<<~HTML)
+            <p><strong>Title:</strong></p>
+            <div class="pre_wrapper lang-sh">
+          HTML
+        end
       end
     end
     context 'with an id' do
@@ -1308,6 +1391,30 @@ RSpec.describe DocbookCompat do
           </tr>
         HTML
       end
+
+      context 'when it has a title' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title
+            [horizontal]
+            Foo:: The foo.
+            Bar:: The bar.
+          ASCIIDOC
+        end
+        it 'has the title in a strong' do
+          expect(converted).to include <<~HTML
+            <div class="table">
+            <p class="title"><strong>Table 1. Title</strong></p>
+            <div class="table-contents">
+          HTML
+        end
+        it 'has the title as the summary' do
+          expect(converted).to include <<~HTML
+            <div class="table-contents">
+            <table border="0" cellpadding="4px" summary="Title">
+          HTML
+        end
+      end
     end
     context 'question and anwer styled' do
       let(:input) do
@@ -1624,7 +1731,6 @@ RSpec.describe DocbookCompat do
   context 'a sidebar' do
     let(:input) do
       <<~ASCIIDOC
-        .Title
         ****
         Words
         ****
@@ -1633,12 +1739,30 @@ RSpec.describe DocbookCompat do
     it 'renders like docbook' do
       expect(converted).to include(<<~HTML)
         <div class="sidebar">
-        <div class="titlepage"><div><div>
-        <p class="title"><strong>Title</strong></p>
-        </div></div></div>
+        <div class="titlepage"></div>
         <p>Words</p>
         </div>
       HTML
+    end
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          ****
+          Words
+          ****
+        ASCIIDOC
+      end
+      it 'renders like docbook' do
+        expect(converted).to include(<<~HTML)
+          <div class="sidebar">
+          <div class="titlepage"><div><div>
+          <p class="title"><strong>Title</strong></p>
+          </div></div></div>
+          <p>Words</p>
+          </div>
+        HTML
+      end
     end
   end
 
@@ -1769,6 +1893,84 @@ RSpec.describe DocbookCompat do
       it 'has the width' do
         expect(converted).to include <<~HTML
           <table border="1" cellpadding="4px" width="50%">
+        HTML
+      end
+    end
+    context 'with colspan' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          2+|Col
+          |===
+        ASCIIDOC
+      end
+      it 'has the colspan' do
+        expect(converted).to include <<~HTML.strip
+          <td align="left" colspan="2" valign="top">
+        HTML
+      end
+    end
+    context 'with rowspan' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          .2+|Col
+          |===
+        ASCIIDOC
+      end
+      it 'has the rowspan' do
+        expect(converted).to include <<~HTML.strip
+          <td align="left" rowspan="2" valign="top">
+        HTML
+      end
+    end
+  end
+
+  context 'a quote' do
+    let(:input) do
+      <<~ASCIIDOC
+        [quote]
+        __________________________
+        Baz
+        __________________________
+      ASCIIDOC
+    end
+    it 'is wrapped in a blockquote' do
+      expect(converted).to include <<~HTML
+        <blockquote>
+        <p>Baz</p>
+        </blockquote>
+      HTML
+    end
+
+    context 'with an attribution' do
+      let(:input) do
+        <<~ASCIIDOC
+          [quote, Brendan Francis Behan]
+          __________________________
+          Once we accept our limits, we go beyond them.
+          __________________________
+        ASCIIDOC
+      end
+      it 'looks like docbook' do
+        expect(converted).to include <<~HTML
+          <div class="blockquote">
+          <table border="0" class="blockquote" summary="Block quote">
+          <tr>
+          <td valign="top" width="10%"></td>
+          <td valign="top" width="80%">
+          <p>Once we accept our limits, we go beyond them.</p>
+          </td>
+          <td valign="top" width="10%"></td>
+          </tr>
+          <tr>
+          <td valign="top" width="10%"></td>
+          <td align="right" colspan="2" valign="top">
+          -- <span class="attribution">Brendan Francis Behan</span>
+          </td>
+          </tr>
+          </table>
+          </div>
         HTML
       end
     end
