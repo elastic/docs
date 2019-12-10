@@ -6,7 +6,7 @@ module DocbookCompat
   module ConvertTableCell
     def convert_table_cell(cell, data_tag, allow_formatting)
       result = [convert_cell_open(cell, data_tag)]
-      result += convert_cell_content(cell, allow_formatting)
+      result << convert_cell_content(cell, allow_formatting)
       result << '</' << data_tag << '>'
       result.join
     end
@@ -32,17 +32,17 @@ module DocbookCompat
 
     def convert_cell_content(cell, allow_formatting)
       if cell.inner_document
-        ["\n", cell.content, "\n"]
+        ["\n", cell.content, "\n"].join
       elsif allow_formatting
-        ['<p>', cell_text(cell), '</p>']
+        cell_text cell
       else
-        [cell.text]
+        cell.text
       end
     end
 
     def cell_text(cell)
       cell.style = :strong if cell.style == :header
-      cell.content.join "</p>\n<p>"
+      "<p>#{cell.content.join "</p>\n<p>"}</p>"
     end
   end
 end
