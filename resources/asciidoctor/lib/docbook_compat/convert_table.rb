@@ -20,13 +20,16 @@ module DocbookCompat
     end
 
     def convert_table_intro(node)
-      return '<div class="informaltable">' unless node.title
+      return '<div class="informaltable">' unless node.title || node.id
 
-      [
-        '<div class="table">',
-        %(<p class="title"><strong>#{node.captioned_title}</strong></p>),
-        '<div class="table-contents">',
-      ]
+      result = ['<div class="table">']
+      result << %(<a id="#{node.id}"></a>) if node.id
+      if node.title
+        title = node.captioned_title
+        result << %(<p class="title"><strong>#{title}</strong></p>)
+      end
+      result << '<div class="table-contents">'
+      result
     end
 
     def convert_table_outro(node)

@@ -1980,6 +1980,24 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'with an id' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[id]]
+          |===
+          |Col 1 | Col 2
+          |===
+        ASCIIDOC
+      end
+      it 'is wrapped in table' do
+        expect(converted).to include <<~HTML
+          <div class="table">
+          <a id="id"></a>
+          <div class="table-contents">
+          <table border="1" cellpadding="4px">
+        HTML
+      end
+    end
     context 'with width' do
       let(:input) do
         <<~ASCIIDOC
