@@ -1766,7 +1766,9 @@ RSpec.describe DocbookCompat do
                 ASCIIDOC
               end
               it "renders with Elastic's custom template" do
-                expect_inline_admonition '7.0.0-beta1', 'admon words'
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1. admon words"
+                )
               end
             end
             context 'without text' do
@@ -1801,7 +1803,7 @@ RSpec.describe DocbookCompat do
           let(:key) { 'deprecated' }
           let(:admon_class) { 'warning' }
           let(:message) { 'Deprecated' }
-          let(:extra_class) { 'u-strikethrough' }
+          let(:extra_class) { ' u-strikethrough' }
           include_examples 'change admonition'
         end
       end
