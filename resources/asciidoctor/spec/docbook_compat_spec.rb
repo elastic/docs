@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'care_admonition/extension'
+require 'change_admonition/extension'
 require 'docbook_compat/extension'
 require 'fileutils'
 require 'tmpdir'
@@ -8,6 +9,7 @@ require 'tmpdir'
 RSpec.describe DocbookCompat do
   before(:each) do
     Asciidoctor::Extensions.register CareAdmonition
+    Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register DocbookCompat
   end
 
@@ -758,6 +760,17 @@ RSpec.describe DocbookCompat do
         expect(converted).to include '<p><a id="foo"></a>Words.</p>'
       end
     end
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          Words.
+        ASCIIDOC
+      end
+      it 'contains a paragraph for each anchor' do
+        expect(converted).to include '<p><strong>Title</strong>Words.</p>'
+      end
+    end
   end
 
   context 'a link' do
@@ -994,6 +1007,24 @@ RSpec.describe DocbookCompat do
           <p><strong>Title.</strong></p>
           <div class="pre_wrapper lang-sh">
         HTML
+      end
+
+      context 'that ends in a :' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title:
+            [source,sh]
+            ----
+            cpanm Search::Elasticsearch
+            ----
+          ASCIIDOC
+        end
+        it "the title is before in docbook's funny wrapper" do
+          expect(converted).to include(<<~HTML)
+            <p><strong>Title:</strong></p>
+            <div class="pre_wrapper lang-sh">
+          HTML
+        end
       end
     end
     context 'with an id' do
@@ -1373,6 +1404,30 @@ RSpec.describe DocbookCompat do
           </tr>
         HTML
       end
+
+      context 'when it has a title' do
+        let(:input) do
+          <<~ASCIIDOC
+            .Title
+            [horizontal]
+            Foo:: The foo.
+            Bar:: The bar.
+          ASCIIDOC
+        end
+        it 'has the title in a strong' do
+          expect(converted).to include <<~HTML
+            <div class="table">
+            <p class="title"><strong>Table 1. Title</strong></p>
+            <div class="table-contents">
+          HTML
+        end
+        it 'has the title as the summary' do
+          expect(converted).to include <<~HTML
+            <div class="table-contents">
+            <table border="0" cellpadding="4px" summary="Title">
+          HTML
+        end
+      end
     end
     context 'question and anwer styled' do
       let(:input) do
@@ -1588,81 +1643,167 @@ RSpec.describe DocbookCompat do
       end
     end
     context 'elastic custom admonitions' do
-      shared_examples 'custom admonition' do
-        context 'block form' do
-          context 'with text' do
-            let(:input) do
-              <<~ASCIIDOC
-                #{key}::[words]
-              ASCIIDOC
+      context 'care admonitions' do
+        shared_examples 'care admonition' do
+          context 'block form' do
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[words]
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_block_admonition '<p>words</p>'
+              end
             end
-            it "renders with Elastic's custom template" do
-              expect_block_admonition '<p>words</p>'
+            context 'without content' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_block_admonition "<p>#{default_text}</p>"
+              end
             end
           end
-          context 'without content' do
-            let(:input) do
-              <<~ASCIIDOC
-                #{key}::[]
-              ASCIIDOC
+          context 'inline form' do
+            def expect_inline_admonition(text)
+              expect(converted).to include <<~HTML.strip
+                <span class="Admonishment Admonishment--#{key}">
+                [<span class="Admonishment-title u-mono">#{key}</span>]
+                <span class="Admonishment-detail">
+                #{text}
+                </span>
+                </span>
+              HTML
             end
-            it 'has default text' do
-              expect_block_admonition "<p>#{default_text}</p>"
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[admon words] words.
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_inline_admonition 'admon words'
+              end
+            end
+            context 'without text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[] words.
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
             end
           end
         end
-        context 'inline form' do
-          def expect_inline_admonition(text)
-            expect(converted).to include <<~HTML.strip
-              <span class="Admonishment Admonishment--#{key}">
-              [<span class="Admonishment-title u-mono">#{key}</span>]
-              <span class="Admonishment-detail">
-              #{text}
-              </span>
-              </span>
-            HTML
+        context 'beta' do
+          let(:key) { 'beta' }
+          let(:admon_class) { 'warning' }
+          let(:default_text) do
+            <<~TEXT.strip
+              This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+            TEXT
           end
-          context 'with text' do
-            let(:input) do
-              <<~ASCIIDOC
-                Words #{key}:[admon words] words.
-              ASCIIDOC
-            end
-            it "renders with Elastic's custom template" do
-              expect_inline_admonition 'admon words'
-            end
+          include_examples 'care admonition'
+        end
+        context 'experimental' do
+          let(:key) { 'experimental' }
+          let(:admon_class) { 'warning' }
+          let(:default_text) do
+            <<~TEXT.strip
+              This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+            TEXT
           end
-          context 'without text' do
-            let(:input) do
-              <<~ASCIIDOC
-                Words #{key}:[] words.
-              ASCIIDOC
-            end
-            it 'has default text' do
-              expect_inline_admonition default_text
-            end
-          end
+          include_examples 'care admonition'
         end
       end
-      context 'beta' do
-        let(:key) { 'beta' }
-        let(:admon_class) { 'warning' }
-        let(:default_text) do
-          <<~TEXT.strip
-            This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
-          TEXT
+      context 'change admonitions' do
+        shared_examples 'change admonition' do
+          context 'block form' do
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[7.0.0-beta1, words]
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_block_admonition <<~HTML.strip
+                  <h3>#{message} in 7.0.0-beta1.</h3>
+                  <p>words</p>
+                HTML
+              end
+            end
+            context 'without content' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_block_admonition "<p>#{message} in 7.0.0-beta1.</p>"
+              end
+            end
+          end
+          context 'inline form' do
+            def expect_inline_admonition(version, text)
+              expect(converted).to include <<~HTML.strip
+                <span class="Admonishment Admonishment--change">
+                [<span class="Admonishment-version u-mono#{extra_class}">#{version}</span>]
+                <span class="Admonishment-detail">
+                #{text}
+                </span>
+                </span>
+              HTML
+            end
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[7.0.0-beta1, admon words] words.
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_inline_admonition '7.0.0-beta1', 'admon words'
+              end
+            end
+            context 'without text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[7.0.0-beta1] words.
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+            end
+          end
         end
-        include_examples 'custom admonition'
-      end
-      context 'experimental' do
-        let(:key) { 'experimental' }
-        let(:admon_class) { 'warning' }
-        let(:default_text) do
-          <<~TEXT.strip
-            This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
-          TEXT
+        context 'added' do
+          let(:key) { 'added' }
+          let(:admon_class) { 'note' }
+          let(:message) { 'Added' }
+          let(:extra_class) { '' }
+          include_examples 'change admonition'
         end
-        include_examples 'custom admonition'
+        context 'coming' do
+          let(:key) { 'coming' }
+          let(:admon_class) { 'note' }
+          let(:message) { 'Coming' }
+          let(:extra_class) { '' }
+          include_examples 'change admonition'
+        end
+        context 'deprecated' do
+          let(:key) { 'deprecated' }
+          let(:admon_class) { 'warning' }
+          let(:message) { 'Deprecated' }
+          let(:extra_class) { 'u-strikethrough' }
+          include_examples 'change admonition'
+        end
       end
     end
   end
@@ -1851,6 +1992,174 @@ RSpec.describe DocbookCompat do
       it 'has the width' do
         expect(converted).to include <<~HTML
           <table border="1" cellpadding="4px" width="50%">
+        HTML
+      end
+    end
+    context 'with colspan' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          2+|Col
+          |===
+        ASCIIDOC
+      end
+      it 'has the colspan' do
+        expect(converted).to include <<~HTML.strip
+          <td align="left" colspan="2" valign="top">
+        HTML
+      end
+    end
+    context 'with rowspan' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          .2+|Col
+          |===
+        ASCIIDOC
+      end
+      it 'has the rowspan' do
+        expect(converted).to include <<~HTML.strip
+          <td align="left" rowspan="2" valign="top">
+        HTML
+      end
+    end
+    context 'with horizontal alignment' do
+      let(:input) do
+        <<~ASCIIDOC
+          [cols="<,^,>"]
+          |===
+          |1 |2 |3
+          |===
+        ASCIIDOC
+      end
+      it 'aligns the cells' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top"><p>1</p></td>
+          <td align="center" valign="top"><p>2</p></td>
+          <td align="right" valign="top"><p>3</p></td>
+        HTML
+      end
+    end
+    context 'with vertical alignment' do
+      let(:input) do
+        <<~ASCIIDOC
+          [cols=".<,.^,.>"]
+          |===
+          |1 |2 |3
+          |===
+        ASCIIDOC
+      end
+      it 'aligns the cells' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top"><p>1</p></td>
+          <td align="left" valign="middle"><p>2</p></td>
+          <td align="left" valign="bottom"><p>3</p></td>
+        HTML
+      end
+    end
+    context 'with cell formatting' do
+      shared_examples 'with formatting' do
+        let(:input) do
+          <<~ASCIIDOC
+            [cols="#{code}"]
+            |===
+            |Cell
+            |===
+          ASCIIDOC
+        end
+        it 'includes the formatting' do
+          expect(converted).to include <<~HTML.strip
+            <td align="left" valign="top"><p>#{cell}</p></td>
+          HTML
+        end
+      end
+      context 'emphasis' do
+        let(:code) { 'e' }
+        let(:cell) { '<em>Cell</em>' }
+        include_examples 'with formatting'
+      end
+      context 'header' do
+        let(:code) { 'h' }
+        let(:cell) do
+          '<span class="strong strong"><strong>Cell</strong></span>'
+        end
+        include_examples 'with formatting'
+      end
+      context 'literal' do
+        let(:code) { 'l' }
+        let(:cell) { 'Cell' }
+        include_examples 'with formatting'
+      end
+      context 'monospaced' do
+        let(:code) { 'm' }
+        let(:cell) { '<code class="literal">Cell</code>' }
+        include_examples 'with formatting'
+      end
+      context 'explicit "none"' do
+        let(:code) { 'd' } # "d" stands for default, apparently
+        let(:cell) { 'Cell' }
+        include_examples 'with formatting'
+      end
+      context 'strong' do
+        let(:code) { 's' }
+        let(:cell) do
+          '<span class="strong strong"><strong>Cell</strong></span>'
+        end
+        include_examples 'with formatting'
+      end
+      context 'verse' do
+        let(:code) { 'v' }
+        let(:cell) { 'Cell' }
+        include_examples 'with formatting'
+      end
+    end
+  end
+
+  context 'a quote' do
+    let(:input) do
+      <<~ASCIIDOC
+        [quote]
+        __________________________
+        Baz
+        __________________________
+      ASCIIDOC
+    end
+    it 'is wrapped in a blockquote' do
+      expect(converted).to include <<~HTML
+        <blockquote>
+        <p>Baz</p>
+        </blockquote>
+      HTML
+    end
+
+    context 'with an attribution' do
+      let(:input) do
+        <<~ASCIIDOC
+          [quote, Brendan Francis Behan]
+          __________________________
+          Once we accept our limits, we go beyond them.
+          __________________________
+        ASCIIDOC
+      end
+      it 'looks like docbook' do
+        expect(converted).to include <<~HTML
+          <div class="blockquote">
+          <table border="0" class="blockquote" summary="Block quote">
+          <tr>
+          <td valign="top" width="10%"></td>
+          <td valign="top" width="80%">
+          <p>Once we accept our limits, we go beyond them.</p>
+          </td>
+          <td valign="top" width="10%"></td>
+          </tr>
+          <tr>
+          <td valign="top" width="10%"></td>
+          <td align="right" colspan="2" valign="top">
+          -- <span class="attribution">Brendan Francis Behan</span>
+          </td>
+          </tr>
+          </table>
+          </div>
         HTML
       end
     end

@@ -35,15 +35,11 @@ RSpec.describe ElasticCompatPreprocessor do
       include_context 'convert without logs'
 
       shared_examples 'invokes the block macro' do
-        let(:expected) do
-          <<~DOCBOOK
-            <#{tag_start}>
-            <simpara></simpara>
-            </#{tag_end}>
-          DOCBOOK
-        end
         it 'invokes the block macro' do
-          expect(converted).to include(expected)
+          expect(converted).to include <<~DOCBOOK.strip
+            <#{tag_start}>
+            <simpara>
+          DOCBOOK
         end
       end
       context 'when the admonition is alone on a line' do

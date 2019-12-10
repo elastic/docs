@@ -1,21 +1,23 @@
 # frozen_string_literal: true
 
+require_relative 'convert_table_cell'
+
 module DocbookCompat
   ##
   # Methods to convert tables.
   module ConvertTable
+    include ConvertTableCell
+
     def convert_table(node)
       [
         convert_table_intro(node),
-        convert_table_tag(node),
+        convert_table_tag(node, 1),
         convert_colgroups(node),
         convert_parts(node),
         '</table>',
         convert_table_outro(node),
       ].flatten.join "\n"
     end
-
-    private
 
     def convert_table_intro(node)
       return '<div class="informaltable">' unless node.title
@@ -33,10 +35,10 @@ module DocbookCompat
       ['</div>', '</div>']
     end
 
-    def convert_table_tag(node)
+    def convert_table_tag(node, border)
       [
         '<table',
-        ' border="1" cellpadding="4px"',
+        %( border="#{border}" cellpadding="4px"),
         node.title ? %( summary="#{node.title}") : nil,
         (width = node.attr 'width') ? %( width="#{width}") : nil,
         '>',
@@ -93,25 +95,12 @@ module DocbookCompat
       ].flatten
     end
 
-    def convert_row(row, data_tag, wrap_text)
+    def convert_row(row, data_tag, allow_formatting)
       [
         '<tr>',
-        row.map { |cell| convert_cell cell, data_tag, wrap_text },
+        row.map { |cell| convert_table_cell cell, data_tag, allow_formatting },
         '</tr>',
       ].flatten
-    end
-
-    def convert_cell(cell, data_tag, wrap_text)
-      result = ['<', data_tag, ' align="left" valign="top">']
-      if cell.inner_document
-        result << "\n" << cell.content << "\n"
-      else
-        result << '<p>' if wrap_text
-        result << cell.text
-        result << '</p>' if wrap_text
-      end
-      result << '</' << data_tag << '>'
-      result.join
     end
   end
 end
