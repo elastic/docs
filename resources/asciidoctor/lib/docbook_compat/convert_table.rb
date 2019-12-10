@@ -95,10 +95,10 @@ module DocbookCompat
       ].flatten
     end
 
-    def convert_row(row, data_tag, wrap_text)
+    def convert_row(row, data_tag, allow_formatting)
       [
         '<tr>',
-        row.map { |cell| convert_table_cell cell, data_tag, wrap_text },
+        row.map { |cell| convert_table_cell cell, data_tag, allow_formatting },
         '</tr>',
       ].flatten
     end

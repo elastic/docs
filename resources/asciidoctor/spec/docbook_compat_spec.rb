@@ -2023,6 +2023,96 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'with horizontal alignment' do
+      let(:input) do
+        <<~ASCIIDOC
+          [cols="<,^,>"]
+          |===
+          |1 |2 |3
+          |===
+        ASCIIDOC
+      end
+      it 'aligns the cells' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top"><p>1</p></td>
+          <td align="center" valign="top"><p>2</p></td>
+          <td align="right" valign="top"><p>3</p></td>
+        HTML
+      end
+    end
+    context 'with vertical alignment' do
+      let(:input) do
+        <<~ASCIIDOC
+          [cols=".<,.^,.>"]
+          |===
+          |1 |2 |3
+          |===
+        ASCIIDOC
+      end
+      it 'aligns the cells' do
+        expect(converted).to include <<~HTML
+          <td align="left" valign="top"><p>1</p></td>
+          <td align="left" valign="middle"><p>2</p></td>
+          <td align="left" valign="bottom"><p>3</p></td>
+        HTML
+      end
+    end
+    context 'with cell formatting' do
+      shared_examples 'with formatting' do
+        let(:input) do
+          <<~ASCIIDOC
+            [cols="#{code}"]
+            |===
+            |Cell
+            |===
+          ASCIIDOC
+        end
+        it 'includes the formatting' do
+          expect(converted).to include <<~HTML.strip
+            <td align="left" valign="top"><p>#{cell}</p></td>
+          HTML
+        end
+      end
+      context 'emphasis' do
+        let(:code) { 'e' }
+        let(:cell) { '<em>Cell</em>' }
+        include_examples 'with formatting'
+      end
+      context 'header' do
+        let(:code) { 'h' }
+        let(:cell) do
+          '<span class="strong strong"><strong>Cell</strong></span>'
+        end
+        include_examples 'with formatting'
+      end
+      context 'literal' do
+        let(:code) { 'l' }
+        let(:cell) { 'Cell' }
+        include_examples 'with formatting'
+      end
+      context 'monospaced' do
+        let(:code) { 'm' }
+        let(:cell) { '<code class="literal">Cell</code>' }
+        include_examples 'with formatting'
+      end
+      context 'explicit "none"' do
+        let(:code) { 'd' } # "d" stands for default, apparently
+        let(:cell) { 'Cell' }
+        include_examples 'with formatting'
+      end
+      context 'strong' do
+        let(:code) { 's' }
+        let(:cell) do
+          '<span class="strong strong"><strong>Cell</strong></span>'
+        end
+        include_examples 'with formatting'
+      end
+      context 'verse' do
+        let(:code) { 'v' }
+        let(:cell) { 'Cell' }
+        include_examples 'with formatting'
+      end
+    end
   end
 
   context 'a quote' do
