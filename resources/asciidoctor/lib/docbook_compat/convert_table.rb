@@ -11,15 +11,13 @@ module DocbookCompat
     def convert_table(node)
       [
         convert_table_intro(node),
-        convert_table_tag(node),
+        convert_table_tag(node, 1),
         convert_colgroups(node),
         convert_parts(node),
         '</table>',
         convert_table_outro(node),
       ].flatten.join "\n"
     end
-
-    private
 
     def convert_table_intro(node)
       return '<div class="informaltable">' unless node.title
@@ -37,10 +35,10 @@ module DocbookCompat
       ['</div>', '</div>']
     end
 
-    def convert_table_tag(node)
+    def convert_table_tag(node, border)
       [
         '<table',
-        ' border="1" cellpadding="4px"',
+        %( border="#{border}" cellpadding="4px"),
         node.title ? %( summary="#{node.title}") : nil,
         (width = node.attr 'width') ? %( width="#{width}") : nil,
         '>',
