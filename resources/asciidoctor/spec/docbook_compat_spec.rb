@@ -2099,6 +2099,27 @@ RSpec.describe DocbookCompat do
         let(:code) { 'd' } # "d" stands for default, apparently
         let(:cell) { 'Cell' }
         include_examples 'with formatting'
+        context 'when the content is a couple of paragraphs' do
+          let(:input) do
+            <<~ASCIIDOC
+              [cols="#{code}"]
+              |===
+              |Cell
+
+              with
+
+              paragraphs.
+              |===
+            ASCIIDOC
+          end
+          it 'includes the formatting' do
+            expect(converted).to include <<~HTML.strip
+              <td align="left" valign="top"><p>Cell</p>
+              <p>with</p>
+              <p>paragraphs.</p></td>
+            HTML
+          end
+        end
       end
       context 'strong' do
         let(:code) { 's' }
