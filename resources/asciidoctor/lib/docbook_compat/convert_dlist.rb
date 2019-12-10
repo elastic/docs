@@ -50,8 +50,16 @@ module DocbookCompat
       ].flatten
     end
 
+    def convert_glossary_dlist(node)
+      [
+        '<dl>',
+        node.items.map { |terms, dd| Glossary.convert_dlist_item terms, dd },
+        '</dl>',
+      ].flatten.compact.join "\n"
+    end
+
     ##
-    # Creates a "vertical" style (the default) dlists.
+    # Creates "vertical" style (the default) dlists.
     module Vertical
       def self.convert_dlist_item(terms, definition)
         [
@@ -78,7 +86,7 @@ module DocbookCompat
     end
 
     ##
-    # Creates a "horizontal" style dlists.
+    # Creates "horizontal" style dlists.
     module Horizontal
       INTRO = [
         '<colgroup>',
@@ -119,7 +127,7 @@ module DocbookCompat
     end
 
     ##
-    # Creates a "qanda" style dlists.
+    # Creates "qanda" style dlists.
     module QuestionAndAnswer
       INTRO = [
         '<div class="qandaset">',
@@ -175,6 +183,33 @@ module DocbookCompat
           index ? "<p><strong>#{index + 1}.</strong></p>" : nil,
           '</td>',
         ].compact
+      end
+    end
+
+    ##
+    # Creates "glossary" style dlists.
+    module Glossary
+      def self.convert_dlist_item(terms, definition)
+        [
+          terms.map { |term| convert_dlist_term term },
+          convert_dlist_definition(definition),
+        ].flatten
+      end
+
+      def self.convert_dlist_term(term)
+        [
+          '<dt>',
+          '<span class="glossterm">',
+          term.convert,
+          '</span>',
+          '</dt>',
+        ]
+      end
+
+      def self.convert_dlist_definition(definition)
+        return unless definition
+
+        ['<dd class="glossdef">', definition.convert, '</dd>']
       end
     end
   end

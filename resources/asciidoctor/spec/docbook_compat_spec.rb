@@ -1500,6 +1500,43 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'glossary styled' do
+      let(:input) do
+        <<~ASCIIDOC
+          [glossary]
+          Foo:: The foo.
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'is wrapped in a dl' do
+        expect(converted).to include '<dl>'
+        expect(converted).to include '</dl>'
+      end
+      it 'contains a dt/dd pair for the first entry' do
+        expect(converted).to include <<~HTML
+          <dt>
+          <span class="glossterm">
+          Foo
+          </span>
+          </dt>
+          <dd class="glossdef">
+          The foo.
+          </dd>
+        HTML
+      end
+      it 'contains a dt/dd pair for the second entry' do
+        expect(converted).to include <<~HTML
+          <dt>
+          <span class="glossterm">
+          Bar
+          </span>
+          </dt>
+          <dd class="glossdef">
+          The bar.
+          </dd>
+        HTML
+      end
+    end
     context 'an unimplemented dlist style' do
       include_context 'convert with logs'
       let(:input) do
