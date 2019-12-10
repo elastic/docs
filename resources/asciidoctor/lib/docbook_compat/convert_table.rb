@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
+require_relative 'convert_table_cell'
+
 module DocbookCompat
   ##
   # Methods to convert tables.
   module ConvertTable
+    include ConvertTableCell
+
     def convert_table(node)
       [
         convert_table_intro(node),
@@ -96,22 +100,9 @@ module DocbookCompat
     def convert_row(row, data_tag, wrap_text)
       [
         '<tr>',
-        row.map { |cell| convert_cell cell, data_tag, wrap_text },
+        row.map { |cell| convert_table_cell cell, data_tag, wrap_text },
         '</tr>',
       ].flatten
-    end
-
-    def convert_cell(cell, data_tag, wrap_text)
-      result = ['<', data_tag, ' align="left" valign="top">']
-      if cell.inner_document
-        result << "\n" << cell.content << "\n"
-      else
-        result << '<p>' if wrap_text
-        result << cell.text
-        result << '</p>' if wrap_text
-      end
-      result << '</' << data_tag << '>'
-      result.join
     end
   end
 end

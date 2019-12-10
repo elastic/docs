@@ -1854,5 +1854,33 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'with colspan' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          2+|Col
+          |===
+        ASCIIDOC
+      end
+      it 'has the colspan' do
+        expect(converted).to include <<~HTML.strip
+          <td align="left" colspan="2" valign="top">
+        HTML
+      end
+    end
+    context 'with rowspan' do
+      let(:input) do
+        <<~ASCIIDOC
+          |===
+          .2+|Col
+          |===
+        ASCIIDOC
+      end
+      it 'has the rowspan' do
+        expect(converted).to include <<~HTML.strip
+          <td align="left" rowspan="2" valign="top">
+        HTML
+      end
+    end
   end
 end
