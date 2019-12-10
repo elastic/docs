@@ -39,7 +39,7 @@ module DocbookCompat
     def munge_head(title_extra, title, html)
       html.gsub!(
         %r{<title>.+</title>},
-        "<title>#{title.main}#{title_extra} | Elastic</title>"
+        "<title>#{strip_tags title.main}#{title_extra} | Elastic</title>"
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
     end
