@@ -135,7 +135,7 @@ alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $G
 # Elasticsearch Extras
 alias docbldres='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single --toc'
 
-alias docbldpls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
+alias docbldpls='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
 
 alias docbldepi='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
 
