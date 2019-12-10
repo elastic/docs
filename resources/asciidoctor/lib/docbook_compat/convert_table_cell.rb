@@ -41,48 +41,8 @@ module DocbookCompat
     end
 
     def cell_text(cell)
-      return cell.text unless (style = cell.attr 'style')
-
-      cell.document.converter.convert cell, "cell_text_#{style}"
-    rescue NoMethodError
-      warn block: cell, message: "Unknown style for cell [#{style}]."
-      convert_cell_text_none cell
-    end
-
-    def convert_cell_text_emphasis(cell)
-      delegate_cell_text cell, :emphasis
-    end
-
-    def convert_cell_text_header(cell)
-      convert_cell_text_strong cell
-    end
-
-    def convert_cell_text_literal(cell)
-      delegate_cell_text cell, :literal
-    end
-
-    def convert_cell_text_monospaced(cell)
-      delegate_cell_text cell, :monospaced
-    end
-
-    def convert_cell_text_none(cell)
-      cell.text
-    end
-
-    def convert_cell_text_strong(cell)
-      delegate_cell_text cell, :strong
-    end
-
-    def convert_cell_text_verse(cell)
-      delegate_cell_text cell, :verse
-    end
-
-    private
-
-    def delegate_cell_text(cell, type)
-      Asciidoctor::Inline.new(
-        cell.parent, :quoted, cell.text, type: type
-      ).convert
+      cell.style = :strong if cell.style == :header
+      cell.content.join "</p>\n<p>"
     end
   end
 end
