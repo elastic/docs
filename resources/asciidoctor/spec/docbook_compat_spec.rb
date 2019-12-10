@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'care_admonition/extension'
+require 'change_admonition/extension'
 require 'docbook_compat/extension'
 require 'fileutils'
 require 'tmpdir'
@@ -8,6 +9,7 @@ require 'tmpdir'
 RSpec.describe DocbookCompat do
   before(:each) do
     Asciidoctor::Extensions.register CareAdmonition
+    Asciidoctor::Extensions.register ChangeAdmonition
     Asciidoctor::Extensions.register DocbookCompat
   end
 
@@ -1588,81 +1590,167 @@ RSpec.describe DocbookCompat do
       end
     end
     context 'elastic custom admonitions' do
-      shared_examples 'custom admonition' do
-        context 'block form' do
-          context 'with text' do
-            let(:input) do
-              <<~ASCIIDOC
-                #{key}::[words]
-              ASCIIDOC
+      context 'care admonitions' do
+        shared_examples 'care admonition' do
+          context 'block form' do
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[words]
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_block_admonition '<p>words</p>'
+              end
             end
-            it "renders with Elastic's custom template" do
-              expect_block_admonition '<p>words</p>'
+            context 'without content' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_block_admonition "<p>#{default_text}</p>"
+              end
             end
           end
-          context 'without content' do
-            let(:input) do
-              <<~ASCIIDOC
-                #{key}::[]
-              ASCIIDOC
+          context 'inline form' do
+            def expect_inline_admonition(text)
+              expect(converted).to include <<~HTML.strip
+                <span class="Admonishment Admonishment--#{key}">
+                [<span class="Admonishment-title u-mono">#{key}</span>]
+                <span class="Admonishment-detail">
+                #{text}
+                </span>
+                </span>
+              HTML
             end
-            it 'has default text' do
-              expect_block_admonition "<p>#{default_text}</p>"
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[admon words] words.
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_inline_admonition 'admon words'
+              end
+            end
+            context 'without text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[] words.
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
             end
           end
         end
-        context 'inline form' do
-          def expect_inline_admonition(text)
-            expect(converted).to include <<~HTML.strip
-              <span class="Admonishment Admonishment--#{key}">
-              [<span class="Admonishment-title u-mono">#{key}</span>]
-              <span class="Admonishment-detail">
-              #{text}
-              </span>
-              </span>
-            HTML
+        context 'beta' do
+          let(:key) { 'beta' }
+          let(:admon_class) { 'warning' }
+          let(:default_text) do
+            <<~TEXT.strip
+              This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+            TEXT
           end
-          context 'with text' do
-            let(:input) do
-              <<~ASCIIDOC
-                Words #{key}:[admon words] words.
-              ASCIIDOC
-            end
-            it "renders with Elastic's custom template" do
-              expect_inline_admonition 'admon words'
-            end
+          include_examples 'care admonition'
+        end
+        context 'experimental' do
+          let(:key) { 'experimental' }
+          let(:admon_class) { 'warning' }
+          let(:default_text) do
+            <<~TEXT.strip
+              This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+            TEXT
           end
-          context 'without text' do
-            let(:input) do
-              <<~ASCIIDOC
-                Words #{key}:[] words.
-              ASCIIDOC
-            end
-            it 'has default text' do
-              expect_inline_admonition default_text
-            end
-          end
+          include_examples 'care admonition'
         end
       end
-      context 'beta' do
-        let(:key) { 'beta' }
-        let(:admon_class) { 'warning' }
-        let(:default_text) do
-          <<~TEXT.strip
-            This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
-          TEXT
+      context 'change admonitions' do
+        shared_examples 'change admonition' do
+          context 'block form' do
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[7.0.0-beta1, words]
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_block_admonition <<~HTML.strip
+                  <h3>#{message} in 7.0.0-beta1.</h3>
+                  <p>words</p>
+                HTML
+              end
+            end
+            context 'without content' do
+              let(:input) do
+                <<~ASCIIDOC
+                  #{key}::[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_block_admonition "<p>#{message} in 7.0.0-beta1.</p>"
+              end
+            end
+          end
+          context 'inline form' do
+            def expect_inline_admonition(version, text)
+              expect(converted).to include <<~HTML.strip
+                <span class="Admonishment Admonishment--change">
+                [<span class="Admonishment-version u-mono#{extra_class}">#{version}</span>]
+                <span class="Admonishment-detail">
+                #{text}
+                </span>
+                </span>
+              HTML
+            end
+            context 'with text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[7.0.0-beta1, admon words] words.
+                ASCIIDOC
+              end
+              it "renders with Elastic's custom template" do
+                expect_inline_admonition '7.0.0-beta1', 'admon words'
+              end
+            end
+            context 'without text' do
+              let(:input) do
+                <<~ASCIIDOC
+                  Words #{key}:[7.0.0-beta1] words.
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+            end
+          end
         end
-        include_examples 'custom admonition'
-      end
-      context 'experimental' do
-        let(:key) { 'experimental' }
-        let(:admon_class) { 'warning' }
-        let(:default_text) do
-          <<~TEXT.strip
-            This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
-          TEXT
+        context 'added' do
+          let(:key) { 'added' }
+          let(:admon_class) { 'note' }
+          let(:message) { 'Added' }
+          let(:extra_class) { '' }
+          include_examples 'change admonition'
         end
-        include_examples 'custom admonition'
+        context 'coming' do
+          let(:key) { 'coming' }
+          let(:admon_class) { 'note' }
+          let(:message) { 'Coming' }
+          let(:extra_class) { '' }
+          include_examples 'change admonition'
+        end
+        context 'deprecated' do
+          let(:key) { 'deprecated' }
+          let(:admon_class) { 'warning' }
+          let(:message) { 'Deprecated' }
+          let(:extra_class) { 'u-strikethrough' }
+          include_examples 'change admonition'
+        end
       end
     end
   end

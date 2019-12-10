@@ -13,13 +13,20 @@ require 'asciidoctor/extensions'
 #   Foo experimental:[]
 #
 class CareAdmonition < Asciidoctor::Extensions::Group
+  BETA_DEFAULT_TEXT = <<~TEXT.strip
+    This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+  TEXT
+  EXPERIMENTAL_DEFAULT_TEXT = <<~TEXT.strip
+    This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+  TEXT
+
   def activate(registry)
     [
-      [:beta, 'beta'],
-      [:experimental, 'experimental'],
-    ].each do |(name, role)|
-      registry.block_macro ChangeAdmonitionBlock.new(role), name
-      registry.inline_macro ChangeAdmonitionInline.new(role), name
+      [:beta, 'beta', BETA_DEFAULT_TEXT],
+      [:experimental, 'experimental', EXPERIMENTAL_DEFAULT_TEXT],
+    ].each do |(name, role, default_text)|
+      registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
+      registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
     end
   end
 
@@ -29,15 +36,16 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     use_dsl
     name_positional_attributes :passtext
 
-    def initialize(role)
+    def initialize(role, default_text)
       super(nil)
       @role = role
+      @default_text = default_text
     end
 
     def process(parent, _target, attrs)
       Asciidoctor::Block.new(
         parent, :admonition,
-        source: attrs[:passtext],
+        source: attrs[:passtext] || @default_text,
         attributes: {
           'role' => @role,
           'name' => 'warning',
@@ -54,24 +62,41 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     name_positional_attributes :text
     format :short
 
-    def initialize(role)
+    def initialize(role, default_text)
       super(nil)
       @role = role
+      @default_text = default_text
     end
 
     def process(parent, _target, attrs)
+      text = attrs[:text]
       if parent.document.basebackend? 'html'
-        Asciidoctor::Inline.new parent, :admonition, attrs[:text], type: @role
+        process_html parent, text
       else
-        Asciidoctor::Inline.new parent, :quoted, text(attrs)
+        process_docbook parent, text
       end
     end
 
-    def text(attrs)
-      if attrs[:text]
+    def process_html(parent, text)
+      text ||= @default_text
+      Asciidoctor::Inline.new(
+        parent, :admonition, text, type: @role, attributes: {
+          'title_type' => 'title',
+          'title_class' => 'u-mono',
+          'title' => @role,
+        }
+      )
+    end
+
+    def process_docbook(parent, text)
+      Asciidoctor::Inline.new parent, :quoted, docbook_text(text)
+    end
+
+    def docbook_text(text)
+      if text
         <<~DOCBOOK
           <phrase role="#{@role}">
-            #{attrs[:text]}
+            #{text}
           </phrase>
         DOCBOOK
       else
