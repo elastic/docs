@@ -20,15 +20,12 @@ RSpec.describe CareAdmonition do
           #{name}::[]
         ASCIIDOC
       end
-      let(:expected) do
-        <<~DOCBOOK
+      it 'creates a warning' do
+        expect(converted).to include <<~DOCBOOK
           <warning role="#{name}">
-          <simpara></simpara>
+          <simpara>#{default_text}</simpara>
           </warning>
         DOCBOOK
-      end
-      it 'creates a warning' do
-        expect(converted).to include(expected)
       end
       context 'when there is asciidoc in the passtext' do
         let(:input) do
@@ -108,10 +105,20 @@ RSpec.describe CareAdmonition do
 
   context 'for beta' do
     let(:name) { 'beta' }
+    let(:default_text) do
+      <<~TEXT.strip
+        This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+      TEXT
+    end
     include_context 'care admonition'
   end
   context 'for experimental' do
     let(:name) { 'experimental' }
+    let(:default_text) do
+      <<~TEXT.strip
+        This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+      TEXT
+    end
     include_context 'care admonition'
   end
 end
