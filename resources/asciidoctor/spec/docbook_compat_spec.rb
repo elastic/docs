@@ -363,6 +363,32 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'when there is markup in the title' do
+      let(:input) do
+        <<~ASCIIDOC
+          = `foo`
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the title' do
+        it 'only includes the text of the title' do
+          expect(converted).to include('<title>foo | Elastic</title>')
+        end
+      end
+      context 'the header' do
+        it 'includes the title and subtitle' do
+          expect(converted).to include(<<~HTML)
+            <div class="titlepage">
+            <div>
+            <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
+            </div>
+            <hr>
+            </div>
+          HTML
+        end
+      end
+    end
     context 'contains a navheader' do
       # Emulates the chunker without trying to include it.
       let(:input) do
@@ -1500,6 +1526,43 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'glossary styled' do
+      let(:input) do
+        <<~ASCIIDOC
+          [glossary]
+          Foo:: The foo.
+          Bar:: The bar.
+        ASCIIDOC
+      end
+      it 'is wrapped in a dl' do
+        expect(converted).to include '<dl>'
+        expect(converted).to include '</dl>'
+      end
+      it 'contains a dt/dd pair for the first entry' do
+        expect(converted).to include <<~HTML
+          <dt>
+          <span class="glossterm">
+          Foo
+          </span>
+          </dt>
+          <dd class="glossdef">
+          The foo.
+          </dd>
+        HTML
+      end
+      it 'contains a dt/dd pair for the second entry' do
+        expect(converted).to include <<~HTML
+          <dt>
+          <span class="glossterm">
+          Bar
+          </span>
+          </dt>
+          <dd class="glossdef">
+          The bar.
+          </dd>
+        HTML
+      end
+    end
     context 'an unimplemented dlist style' do
       include_context 'convert with logs'
       let(:input) do
@@ -1766,7 +1829,9 @@ RSpec.describe DocbookCompat do
                 ASCIIDOC
               end
               it "renders with Elastic's custom template" do
-                expect_inline_admonition '7.0.0-beta1', 'admon words'
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1. admon words"
+                )
               end
             end
             context 'without text' do
@@ -1801,7 +1866,7 @@ RSpec.describe DocbookCompat do
           let(:key) { 'deprecated' }
           let(:admon_class) { 'warning' }
           let(:message) { 'Deprecated' }
-          let(:extra_class) { 'u-strikethrough' }
+          let(:extra_class) { ' u-strikethrough' }
           include_examples 'change admonition'
         end
       end
@@ -1977,6 +2042,24 @@ RSpec.describe DocbookCompat do
           <p class="title"><strong>Table 1. Title</strong></p>
           <div class="table-contents">
           <table border="1" cellpadding="4px" summary="Title">
+        HTML
+      end
+    end
+    context 'with an id' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[id]]
+          |===
+          |Col 1 | Col 2
+          |===
+        ASCIIDOC
+      end
+      it 'is wrapped in table' do
+        expect(converted).to include <<~HTML
+          <div class="table">
+          <a id="id"></a>
+          <div class="table-contents">
+          <table border="1" cellpadding="4px">
         HTML
       end
     end

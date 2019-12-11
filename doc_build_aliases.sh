@@ -30,7 +30,7 @@ alias docbldkb=docbldkbx
 alias docbldkbold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
-alias docbldlsx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
+alias docbldlsx='$GIT_HOME/docs/build_docs --direct_html --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
 
 alias docbldls=docbldlsx
 
@@ -141,11 +141,11 @@ alias docbldepi='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/pl
 
 alias docbldjvr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
-alias docbldejv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
+alias docbldejv='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
 
 alias docbldejs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
-alias docblderb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
+alias docblderb='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
 
 alias docbldegr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 

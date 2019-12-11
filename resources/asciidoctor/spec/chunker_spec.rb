@@ -20,6 +20,7 @@ RSpec.describe Chunker do
 
   shared_examples 'standard page' \
     do |prev_page, prev_title, next_page, next_title|
+    # TODO: replace these parameters with `let` to be more flexible
     context 'the <head>' do
       it 'contains the charset' do
         expect(contents).to include(<<~HTML)
@@ -44,8 +45,9 @@ RSpec.describe Chunker do
       end
       if next_page
         it 'contains the next link' do
+          # TODO: replace gsub with a better `let`
           expect(contents).to include(<<~HTML)
-            <link rel="next" href="#{next_page}.html" title="#{next_title}"/>
+            <link rel="next" href="#{next_page}.html" title="#{next_title.gsub(/<[^<]+>/, '')}"/>
           HTML
         end
       else
@@ -134,7 +136,7 @@ RSpec.describe Chunker do
             <<s2>>
 
             [[s2]]
-            == Section 2
+            == Section `2`
 
             Words again.
 
@@ -155,7 +157,7 @@ RSpec.describe Chunker do
           end
           it 'contains a link to the second section' do
             expect(converted).to include(<<~HTML.strip)
-              <li><a href="s2.html">Section 2</a></li>
+              <li><a href="s2.html">Section <code>2</code></a></li>
             HTML
           end
           it "doesn't contain breadcrumbs" do
@@ -166,7 +168,9 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the first section', 's1.html' do
-          include_examples 'standard page', 'index', 'Title', 's2', 'Section 2'
+          include_examples 'standard page', 'index', 'Title',
+                           's2', 'Section <code>2</code>'
+          let(:next_link_title) { 'Section 2' }
           include_examples 'subpage'
           it 'contains the correct title' do
             expect(contents).to include('<title>Section 1 | Title</title>')
@@ -189,7 +193,9 @@ RSpec.describe Chunker do
             HTML
           end
           it 'contains a link to the second section' do
-            expect(contents).to include('<a href="s2.html">Section 2</a>')
+            expect(contents).to include(
+              '<a href="s2.html">Section <code>2</code></a>'
+            )
           end
           it 'contains the footnote' do
             expect(contents).to include <<~HTML
@@ -208,7 +214,9 @@ RSpec.describe Chunker do
             expect(contents).to include('<title>Section 2 | Title</title>')
           end
           it 'contains the heading' do
-            expect(contents).to include('<h2 id="s2">Section 2</h2>')
+            expect(contents).to include(
+              '<h2 id="s2">Section <code>2</code></h2>'
+            )
           end
           it 'contains the contents' do
             expect(contents).to include '<p>Words again.</p>'
@@ -218,7 +226,7 @@ RSpec.describe Chunker do
               <div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="index.html">Title</a></span>
               »
-              <span class="breadcrumb-node">Section 2</span>
+              <span class="breadcrumb-node">Section <code>2</code></span>
               </div>
             HTML
           end
