@@ -617,32 +617,59 @@ RSpec.describe 'building all books' do
       book.branches << 'nonlive'
       book.live_branches = ['master']
     end
+    let(:repo) { @src.repo 'repo' }
     page_context 'the live branch', 'html/test/master/index.html' do
       it "doesn't contain the noindex flag" do
         expect(contents).not_to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow" />
         HTML
       end
-      context 'the version drop down' do
+      context 'the live versions drop down' do
         it 'contains only the live branch' do
           expect(body).to include(<<~HTML.strip)
-            <select><option value="master" selected>master (current)</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="master" selected>master (current)</option><option value="other">other versions</option></select>
+          HTML
+        end
+      end
+      context 'the other versions drop down' do
+        it 'contains all branches' do
+          expect(body).to include(<<~HTML.strip)
+            <span id="other_versions">other versions: <select><option value="master" selected>master (current)</option><option value="nonlive">nonlive</option></select>
           HTML
         end
       end
     end
-    page_context 'the dead branch', 'html/test/nonlive/index.html' do
+    page_context "the live branch's chapter", 'html/test/master/chapter.html' do
+      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      it 'contains an edit_me link' do
+        expect(body).to include <<~HTML.strip
+          <a href="#{edit_url}" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
+        HTML
+      end
+    end
+    page_context "the dead branch's index", 'html/test/nonlive/index.html' do
       it 'contains the noindex flag' do
         expect(contents).to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow" />
         HTML
       end
-      context 'the version drop down' do
+      context 'the live versions drop down' do
         it 'contains the deprecated branch' do
           expect(body).to include(<<~HTML.strip)
-            <select><option value="master">master (current)</option><option value="nonlive" selected>nonlive (out of date)</option></select>
+            <select id="live_versions"><option value="master">master (current)</option><option value="nonlive" selected>nonlive</option></select>
           HTML
         end
+      end
+      it "it doesn't contain the other versions drop down" do
+        # *because* there aren't any versions filtered from the list
+        expect(body).not_to include 'id="other_versions"'
+      end
+    end
+    page_context "the dead branch's chapter",
+                 'html/test/nonlive/chapter.html' do
+      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      it "doesn't contain an edit_me link" do
+        expect(body).not_to include('class="edit_me"')
       end
     end
   end

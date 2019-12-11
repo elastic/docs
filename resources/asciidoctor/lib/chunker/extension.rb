@@ -2,7 +2,9 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative '../strip_tags'
 require_relative 'breadcrumbs'
+require_relative 'convert_outline'
 require_relative 'extra_docinfo'
 require_relative 'find_related'
 require_relative 'footnotes'
@@ -30,8 +32,10 @@ module Chunker
   # A Converter implementation that chunks like docbook.
   class Converter < DelegatingConverter
     include Breadcrumbs
+    include ConvertOutline
     include FindRelated
     include Footnotes
+    include StripTags
 
     def initialize(delegate, chunk_level)
       super(delegate)
@@ -44,14 +48,6 @@ module Chunker
       doc.attributes['next_section'] = find_next_in doc, 0
       add_nav doc
       yield
-    end
-
-    def convert_outline(node, opts = {})
-      # Fix links in the toc
-      toclevels = opts[:toclevels] || node.document.attributes['toclevels'].to_i
-      outline = yield
-      cleanup_outline outline, node, toclevels
-      outline
     end
 
     def convert_section(section)
@@ -123,7 +119,7 @@ module Chunker
     def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['doctitle'] = "#{section.title} | #{maintitle.main}"
+      attrs['doctitle'] = subdoc_title section, maintitle
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear
@@ -133,8 +129,13 @@ module Chunker
       attrs['icons'] = nil unless attrs['icons']
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
       attrs['noheader'] = true
+      attrs['title-separator'] = ''
       attrs.merge! find_related(section)
       attrs
+    end
+
+    def subdoc_title(section, maintitle)
+      strip_tags "#{section.captioned_title} | #{maintitle.main}"
     end
 
     def write(doc, file, html)
@@ -144,14 +145,6 @@ module Chunker
         f.write html
       end
       file
-    end
-
-    def cleanup_outline(outline, node, toclevels)
-      node.sections.each do |section|
-        outline.gsub!(%(href="##{section.id}"), %(href="#{section.id}.html")) ||
-          raise("Couldn't fix section link for #{section.id} in #{outline}")
-        cleanup_outline outline, section, toclevels if section.level < toclevels
-      end
     end
   end
 end

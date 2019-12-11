@@ -30,7 +30,7 @@ alias docbldkb=docbldkbx
 alias docbldkbold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
-alias docbldlsx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
+alias docbldlsx='$GIT_HOME/docs/build_docs --direct_html --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
 
 alias docbldls=docbldlsx
 
@@ -52,13 +52,13 @@ alias docbldgls='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-d
 alias docbldgs='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
 # Stack Overview
-alias docbldso='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
+alias docbldso='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource $GIT_HOME/elasticsearch/docs --chunk 1'
 
 # Stack Overview versions 6.3-7.2
 alias docbldsoold=docbldso
 
 # Deploying Azure
-alias docbldaz='$GIT_HOME/docs/build_docs --asciidodctor --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
+alias docbldaz='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
 alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
@@ -81,7 +81,7 @@ alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-ente
 alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/heroku/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/saas --chunk 1'
 
 # Cloud - Elastic Cloud Control
-alias docbldecctl='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecctl/docs/index.asciidoc --chunk 1'
+alias docbldecctl='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/ecctl/docs/index.asciidoc --chunk 1'
 
 # Cloud - Elastic Cloud for K8s
 alias docbldk8s='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
@@ -139,13 +139,13 @@ alias docbldpls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/pa
 
 alias docbldepi='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
 
-alias docbldjvr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
+alias docbldjvr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
-alias docbldejv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
+alias docbldejv='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
 
 alias docbldejs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
-alias docblderb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
+alias docblderb='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
 
 alias docbldegr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 

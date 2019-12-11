@@ -128,14 +128,19 @@ function init_toc(lang_strings) {
   var v_selected = title.find('select option:selected');
   title
     .find('select')
-    .change(function() {
-       var version = title.find('option:selected').val();
-       utils.get_current_page_in_version(version).fail(function() {
-         v_selected.attr('selected', 'selected');
-         alert(lang_strings('This page is not available in the docs for version:')
-               + version);
-       });
-     });
+    .change(function(e) {
+      var version = $(e.target).find('option:selected').val();
+      if (version === "other") {
+        $("#other_versions").show();
+        $("#live_versions").hide();
+        return;
+      }
+      utils.get_current_page_in_version(version).fail(function() {
+        v_selected.attr('selected', 'selected');
+        alert(lang_strings('This page is not available in the docs for version:')
+              + version);
+      });
+    });
 }
 
 // Main function, runs on DOM ready

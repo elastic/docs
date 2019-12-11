@@ -24,29 +24,36 @@ module DocbookCompat
       return "#{xref}>#{refid}</a>" unless ref
 
       text = node.text || ref_text_for(ref, node)
-      title = ref.respond_to?(:title) ? ref.title : nil
+      title = ref_title_for ref
       <<~HTML.strip
         #{xref}#{title ? %(title="#{title}") : ''}>#{text}</a>
       HTML
     end
 
+    private
+
     def ref_text_for(ref, node)
-      if ref.node_name == 'inline_link'
-        special = ref_text_for_inline_link ref
-        return special if special
+      text = ref.xreftext node.attr('xrefstyle', 'short', true)
+      return text if text
+
+      # The text is empty! Let's grab the parent section's heading.
+      section = ref
+      until section.context == :section
+        section = section.parent
+        # If there isn't a parent then we just don't have anything.
+        return unless section
       end
 
-      ref.xreftext node.attr('xrefstyle', 'short', true)
+      # Docbook doesn't use 'short' as the default here, strangely. So neither
+      # do we.
+      section.xreftext nil
     end
 
-    ##
-    # Inline title's have *boring* text so we instead use the text of the
-    # next element. This is also what docbook does. Because it is better.
-    def ref_text_for_inline_link(ref)
-      return unless (parent = ref.parent)
-      return unless (index = parent.blocks.find_index ref)
+    def ref_title_for(ref)
+      # References to inline text don't have a title.
+      return unless ref.respond_to?(:title)
 
-      parent[index + 1]&.convert
+      strip_tags ref.title
     end
   end
 end
