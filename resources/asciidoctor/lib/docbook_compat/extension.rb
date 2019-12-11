@@ -2,6 +2,7 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative '../strip_tags'
 require_relative 'convert_admonition'
 require_relative 'convert_document'
 require_relative 'convert_dlist'
@@ -39,6 +40,7 @@ module DocbookCompat
     include ConvertParagraph
     include ConvertQuote
     include ConvertTable
+    include StripTags
 
     def convert_section(node)
       <<~HTML

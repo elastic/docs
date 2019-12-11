@@ -363,6 +363,32 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'when there is markup in the title' do
+      let(:input) do
+        <<~ASCIIDOC
+          = `foo`
+
+          Words.
+        ASCIIDOC
+      end
+      context 'the title' do
+        it 'only includes the text of the title' do
+          expect(converted).to include('<title>foo | Elastic</title>')
+        end
+      end
+      context 'the header' do
+        it 'includes the title and subtitle' do
+          expect(converted).to include(<<~HTML)
+            <div class="titlepage">
+            <div>
+            <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
+            </div>
+            <hr>
+            </div>
+          HTML
+        end
+      end
+    end
     context 'contains a navheader' do
       # Emulates the chunker without trying to include it.
       let(:input) do
