@@ -161,7 +161,7 @@ alias docbldepy='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elastic
 
 alias docbldecc='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single'
 
-alias docbldesh='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
+alias docbldesh='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
 # X-Pack Reference 5.4 to 6.2
 
