@@ -151,7 +151,7 @@ alias docbldegr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/gr
 
 alias docbldego='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --single'
 
-alias docbldnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
+alias docbldnet='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
 
 alias docbldphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-php/docs/index.asciidoc'
 
