@@ -97,8 +97,8 @@ RUN rm -rf /var/log/nginx && rm -rf /run/nginx
 FROM base AS py_test
 RUN install_packages python3 python3-pip
 RUN pip3 install \
-  beautifulsoup4==4.7.1 \
-  lxml==4.3.1 \
+  beautifulsoup4==4.8.1 \
+  lxml==4.4.2 \
   pycodestyle==2.5.0
 
 FROM node_deps AS node_test

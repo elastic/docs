@@ -9,6 +9,7 @@ module DocbookCompat
         %(<div class="#{node.attr 'name'} admon">),
         %(<div class="icon"></div>),
         %(<div class="admon_content">),
+        node.id ? %(<a id="#{node.id}"></a>) : nil,
         node.title? ? "<h3>#{node.title}</h3>" : nil,
         node.blocks.empty? ? "<p>#{node.content}</p>" : node.content,
         '</div>',
