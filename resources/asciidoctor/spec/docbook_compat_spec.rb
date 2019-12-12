@@ -1682,6 +1682,28 @@ RSpec.describe DocbookCompat do
             HTML
           end
         end
+        context 'with an id' do
+          let(:input) do
+            <<~ASCIIDOC
+              [[id]]
+              [#{key}]
+              --
+              words
+              --
+            ASCIIDOC
+          end
+          it "renders the id in Elastic's custom template" do
+            expect(converted).to include(<<~HTML)
+              <div class="#{admon_class} admon">
+              <div class="icon"></div>
+              <div class="admon_content">
+              <a id="id"></a>
+              <p>words</p>
+              </div>
+              </div>
+            HTML
+          end
+        end
       end
       let(:admon_class) { key.downcase }
       context 'note' do
