@@ -13,6 +13,7 @@ require_relative 'convert_open'
 require_relative 'convert_outline'
 require_relative 'convert_paragraph'
 require_relative 'convert_quote'
+require_relative 'convert_sidebar'
 require_relative 'convert_table'
 require_relative 'titleabbrev_handler'
 
@@ -39,6 +40,7 @@ module DocbookCompat
     include ConvertOutline
     include ConvertParagraph
     include ConvertQuote
+    include ConvertSidebar
     include ConvertTable
     include StripTags
 
@@ -82,19 +84,6 @@ module DocbookCompat
       <<~HTML
         <pre class="literallayout">#{node.content}</pre>
       HTML
-    end
-
-    def convert_sidebar(node)
-      result = [%(<div class="sidebar#{node.role ? " #{node.role}" : ''}">)]
-      if node.title
-        result << '<div class="titlepage"><div><div>'
-        result << %(<p class="title"><strong>#{node.title}</strong></p>)
-        result << %(</div></div></div>)
-      else
-        result << '<div class="titlepage"></div>'
-      end
-      result += [node.content, '</div>']
-      result.join "\n"
     end
 
     def xpack_tag(node)

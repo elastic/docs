@@ -1950,6 +1950,25 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[id]]
+          ****
+          Words
+          ****
+        ASCIIDOC
+      end
+      it 'renders like docbook' do
+        expect(converted).to include(<<~HTML)
+          <div class="sidebar">
+          <a id="id"></a>
+          <div class="titlepage"></div>
+          <p>Words</p>
+          </div>
+        HTML
+      end
+    end
   end
 
   context 'an open block' do
