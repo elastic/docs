@@ -134,7 +134,7 @@ def normalize_html(html):
         e['title'] = e['title'].replace('\xa0', ' ')
     # Docbook adds a generated id to tables with ids. They aren't used and we
     # have no change of generating it properly so we just ignore it.
-    for a in soup.select('.table a'):
+    for a in soup.select('.table a[id]'):
         if a['id'].startswith('id-'):
             a.extract()
     # Docbook renders partintro's slightly differently but the difference isn't
@@ -157,6 +157,12 @@ def normalize_html(html):
     # it consistent with the care admonitions.
     for e in soup.select('.Admonishment--change'):
         e['class'].remove('Admonishment--change')
+    # Docbook adds `<span class="quote"` whenever it sees quotes. These don't
+    # change the rendering and Asciidoctor doesns't add them.
+    for e in soup.select('span.quote'):
+        parent = e.parent
+        e.unwrap()
+        parent.smooth()
 
     # Remove empty "class" attributes and sort the listed classes.
     for e in soup.select('*'):
