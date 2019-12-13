@@ -2186,6 +2186,27 @@ RSpec.describe DocbookCompat do
           <table border="1" cellpadding="4px" summary="Title">
         HTML
       end
+
+      context 'and an id' do
+        let(:input) do
+          <<~ASCIIDOC
+            [[id]]
+            .Title
+            |===
+            |Col 1 | Col 2
+            |===
+          ASCIIDOC
+        end
+        it 'is wrapped in table' do
+          expect(converted).to include <<~HTML
+            <div class="table">
+            <a id="id"></a>
+            <p class="title"><strong>Table 1. Title</strong></p>
+            <div class="table-contents">
+            <table border="1" cellpadding="4px" summary="Title">
+          HTML
+        end
+      end
     end
     context 'with an id' do
       let(:input) do
@@ -2196,11 +2217,10 @@ RSpec.describe DocbookCompat do
           |===
         ASCIIDOC
       end
-      it 'is wrapped in table' do
+      it 'is wrapped in informaltable' do
         expect(converted).to include <<~HTML
-          <div class="table">
+          <div class="informaltable">
           <a id="id"></a>
-          <div class="table-contents">
           <table border="1" cellpadding="4px">
         HTML
       end

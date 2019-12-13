@@ -22,7 +22,7 @@ module DocbookCompat
     end
 
     def convert_table_intro(node)
-      return '<div class="informaltable">' unless node.title || node.id
+      return convert_table_informal_intro node unless node.title
 
       result = ['<div class="table">']
       result << %(<a id="#{node.id}"></a>) if node.id
@@ -32,6 +32,13 @@ module DocbookCompat
       end
       result << '<div class="table-contents">'
       result
+    end
+
+    def convert_table_informal_intro(node)
+      [
+        '<div class="informaltable">',
+        node.id ? %(<a id="#{node.id}"></a>) : nil,
+      ].compact
     end
 
     def convert_table_outro(node)
