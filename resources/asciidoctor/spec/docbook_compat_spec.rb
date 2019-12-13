@@ -277,7 +277,7 @@ RSpec.describe DocbookCompat do
             end
             it 'includes a link to the abbreviated section' do
               expect(converted).to include <<~HTML.strip
-                <a class="xref" href="#s1"title="Section 1"><em>S1</em></a>
+                <a class="xref" href="#s1" title="Section 1"><em>S1</em></a>
               HTML
             end
           end
@@ -842,17 +842,18 @@ RSpec.describe DocbookCompat do
       ASCIIDOC
     end
     it 'has xref class' do
-      expect(converted).to include('class="xref"')
+      expect(converted).to include(' class="xref"')
     end
     it 'references the target' do
-      expect(converted).to include('href="#foo"')
+      expect(converted).to include(' href="#foo"')
     end
     it "contains the target's title" do
-      expect(converted).to include('title="Foo"')
+      expect(converted).to include(' title="Foo"')
     end
     it 'wraps the title in <em>' do
       expect(converted).to include('><em>Foo</em></a>')
     end
+
     context 'when the link text is overridden' do
       let(:input) do
         <<~ASCIIDOC
@@ -892,7 +893,7 @@ RSpec.describe DocbookCompat do
         expect(converted).not_to include('title')
       end
     end
-    context 'when the cross reference is to an inline anchor' do
+    context 'to an inline anchor' do
       let(:input) do
         <<~ASCIIDOC
           [[target]]`target`:: foo
@@ -925,6 +926,23 @@ RSpec.describe DocbookCompat do
         it 'has the right text' do
           expect(converted).to include('>Section heading</a>')
         end
+      end
+    end
+    context 'to an appendix' do
+      let(:input) do
+        <<~ASCIIDOC
+          <<target>>
+
+          [[target]]
+          [appendix]
+          == Foo
+        ASCIIDOC
+      end
+      it 'references the url' do
+        expect(converted).to include('href="#target"')
+      end
+      it 'has the right text' do
+        expect(converted).to include('>Appendix A, <em>Foo</em></a>')
       end
     end
   end
@@ -1795,6 +1813,30 @@ RSpec.describe DocbookCompat do
               </div>
               </div>
             HTML
+          end
+
+          context 'and an id' do
+            let(:input) do
+              <<~ASCIIDOC
+                [[id]]
+                [#{key}]
+                .Title
+                --
+                words
+                --
+              ASCIIDOC
+            end
+            it "renders the title in Elastic's custom template" do
+              expect(converted).to include(<<~HTML)
+                <div class="#{admon_class} admon">
+                <div class="icon"></div>
+                <div class="admon_content">
+                <h3>Title<a id="id"></a></h3>
+                <p>words</p>
+                </div>
+                </div>
+              HTML
+            end
           end
         end
         context 'with an id' do
