@@ -2,7 +2,7 @@
 
 module DocbookCompat
   ##
-  # Methods to convert tables.
+  # Methods to convert quotes.
   module ConvertQuote
     def convert_quote(node)
       return convert_fancy_quote node if node.attr 'attribution'

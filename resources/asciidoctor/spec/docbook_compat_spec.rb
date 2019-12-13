@@ -942,6 +942,7 @@ RSpec.describe DocbookCompat do
     it 'has an inline anchor for docbook compatibility' do
       expect(converted).to include('<a id="_foo"></a>')
     end
+
     context 'with the xpack role' do
       let(:input) do
         <<~ASCIIDOC
@@ -953,6 +954,19 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(
           '<a class="xpack_tag" href="/subscriptions"></a></h4>'
         )
+      end
+    end
+    context 'with the xpack bug is declared inline' do
+      let(:input) do
+        <<~ASCIIDOC
+          [float]
+          ==== [xpack]#Foo#
+        ASCIIDOC
+      end
+      it 'has the xpack tag' do
+        expect(converted).to include <<~HTML
+          <span class="xpack">Foo</span><a class="xpack_tag" href="/subscriptions"></a></h4>
+        HTML
       end
     end
   end
