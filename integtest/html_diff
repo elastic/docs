@@ -163,6 +163,19 @@ def normalize_html(html):
         parent = e.parent
         e.unwrap()
         parent.smooth()
+    # Asciidoctor suppports adding a `<meta name="description"` if a book
+    # defines a `:description:` attribute. Docbook doesn't. We're quite ok with
+    # adding it but we can ignore it in the diff because, well, we don't need
+    # to see it.
+    for e in soup.select("meta[name='description']"):
+        e.extract()
+    # Docbook renders "indexterms" with an inline anchor and asciidoctor
+    # doesn't. You can't see them and no one is linking to them and the links
+    # don't really do anything. So we're ok ignoring them.
+    for e in soup.select("a.indexterm"):
+        parent = e.parent
+        e.extract()
+        parent.smooth()
 
     # Remove empty "class" attributes and sort the listed classes.
     for e in soup.select('*'):

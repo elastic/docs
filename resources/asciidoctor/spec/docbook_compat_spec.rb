@@ -1209,6 +1209,23 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          * Thing
+        ASCIIDOC
+      end
+      context 'the title' do
+        it 'is wrapped a strong' do
+          expect(converted).to include <<~HTML
+            <div class="ulist itemizedlist">
+            <p class="title"><strong>Title</strong></p>
+          HTML
+        end
+      end
+    end
   end
 
   context 'an ordered list' do
@@ -1253,6 +1270,22 @@ RSpec.describe DocbookCompat do
       end
     end
 
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          . Thing
+        ASCIIDOC
+      end
+      context 'the title' do
+        it 'is wrapped a strong' do
+          expect(converted).to include <<~HTML
+            <div class="olist orderedlist">
+            <p class="title"><strong>Title</strong></p>
+          HTML
+        end
+      end
+    end
     context 'when the list if defined with 1.' do
       let(:input) do
         <<~ASCIIDOC
@@ -1496,6 +1529,30 @@ RSpec.describe DocbookCompat do
             <div class="table-contents">
             <table border="0" cellpadding="4px" summary="Title">
           HTML
+        end
+
+        context 'when the title has markup in it' do
+          let(:input) do
+            <<~ASCIIDOC
+              .`foo`
+              [horizontal]
+              Foo:: The foo.
+              Bar:: The bar.
+            ASCIIDOC
+          end
+          it 'has the title in a strong with the html' do
+            expect(converted).to include <<~HTML
+              <div class="table">
+              <p class="title"><strong>Table 1. <code class="literal">foo</code></strong></p>
+              <div class="table-contents">
+            HTML
+          end
+          it 'has the title as the summary without the html' do
+            expect(converted).to include <<~HTML
+              <div class="table-contents">
+              <table border="0" cellpadding="4px" summary="foo">
+            HTML
+          end
         end
       end
     end
