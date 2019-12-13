@@ -17,9 +17,14 @@ def normalize_html(html):
     """Normalizes html to remove expected differences between AsciiDoc's
     output and Asciidoctor's output.
     """
+    soup = BeautifulSoup(html, 'lxml')
+    # Remove all duplicate classes because that doesn't make any
+    # visual difference.
+    for e in soup.descendants:
+        if hasattr(e, 'attrs') and 'class' in e.attrs:
+            e['class'] = list(set(e['class']))
     # Replace many whitespace characters with a single space in some elements
     # kind of like a browser does.
-    soup = BeautifulSoup(html, 'lxml')
     for e in soup.select(':not(script,pre,code,style)'):
         for part in e:
             if isinstance(part, NavigableString):
@@ -179,6 +184,16 @@ def normalize_html(html):
         parent = e.parent
         e.extract()
         parent.smooth()
+    # Docbook sometimes renders the xpack tag *after* the edit me link but
+    # asciidoctor always renders it before the edit me link. Either way is fine
+    # so we ignore the difference.
+    for e in soup.select("a.edit_me"):
+        parent = e.parent
+        parent.append(e.extract())
+    # Docbook passes the `exclude` class on some paragraphs and asciidoctor
+    # doesn't which is fine because it doesn't make a visual difference.
+    for e in soup.select('.exclude'):
+        e['class'].remove('exclude')
 
     # Remove empty "class" attributes and sort the listed classes.
     for e in soup.select('*'):
