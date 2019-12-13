@@ -9,12 +9,22 @@ module DocbookCompat
         %(<div class="#{node.attr 'name'} admon">),
         %(<div class="icon"></div>),
         %(<div class="admon_content">),
-        node.id ? %(<a id="#{node.id}"></a>) : nil,
-        node.title? ? "<h3>#{node.title}</h3>" : nil,
+        node.converter.convert(node, 'admonition_title_id'),
         node.blocks.empty? ? "<p>#{node.content}</p>" : node.content,
         '</div>',
         '</div>',
       ].compact.join "\n"
+    end
+
+    def convert_admonition_title_id(node)
+      return node.id ? %(<a id="#{node.id}"></a>) : nil unless node.title
+
+      [
+        '<h3>',
+        node.title,
+        node.id ? %(<a id="#{node.id}"></a>) : nil,
+        '</h3>',
+      ].compact.join
     end
 
     def convert_inline_admonition(node)
