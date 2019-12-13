@@ -26,14 +26,14 @@ module DocbookCompat
       text = node.text || ref_text_for(ref, node)
       title = ref_title_for ref
       <<~HTML.strip
-        #{xref}#{title ? %(title="#{title}") : ''}>#{text}</a>
+        #{xref}#{title ? %( title="#{title}") : ''}>#{text}</a>
       HTML
     end
 
     private
 
     def ref_text_for(ref, node)
-      text = ref.xreftext node.attr('xrefstyle', 'short', true)
+      text = ref.xreftext node.attr('xrefstyle', 'full', true)
       return text if text
 
       # The text is empty! Let's grab the parent section's heading.
