@@ -2,6 +2,7 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative '../strip_tags'
 require_relative 'breadcrumbs'
 require_relative 'convert_outline'
 require_relative 'extra_docinfo'
@@ -34,6 +35,7 @@ module Chunker
     include ConvertOutline
     include FindRelated
     include Footnotes
+    include StripTags
 
     def initialize(delegate, chunk_level)
       super(delegate)
@@ -42,7 +44,9 @@ module Chunker
 
     def convert_document(doc)
       title = doc.doctitle partition: true
-      doc.attributes['home'] = title.main.strip + doc.attr('title-extra', '')
+      doc.attributes['home'] = strip_tags(
+        title.main.strip + doc.attr('title-extra', '')
+      )
       doc.attributes['next_section'] = find_next_in doc, 0
       add_nav doc
       yield
@@ -117,7 +121,7 @@ module Chunker
     def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['doctitle'] = "#{section.captioned_title} | #{maintitle.main}"
+      attrs['doctitle'] = subdoc_title section, maintitle
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear
@@ -130,6 +134,10 @@ module Chunker
       attrs['title-separator'] = ''
       attrs.merge! find_related(section)
       attrs
+    end
+
+    def subdoc_title(section, maintitle)
+      strip_tags "#{section.captioned_title} | #{maintitle.main}"
     end
 
     def write(doc, file, html)

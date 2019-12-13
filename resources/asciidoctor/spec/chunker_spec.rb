@@ -17,9 +17,11 @@ RSpec.describe Chunker do
   include_context 'convert without logs'
   let(:backend) { :html5 }
   let(:standalone) { true }
+  let(:home_title) { 'Title' }
 
   shared_examples 'standard page' \
     do |prev_page, prev_title, next_page, next_title|
+    # TODO: replace these parameters with `let` to be more flexible
     context 'the <head>' do
       it 'contains the charset' do
         expect(contents).to include(<<~HTML)
@@ -28,13 +30,13 @@ RSpec.describe Chunker do
       end
       it 'contains the home link' do
         expect(contents).to include(<<~HTML)
-          <link rel="home" href="index.html" title="Title#{convert_attributes['title-extra']}"/>
+          <link rel="home" href="index.html" title="#{home_title}"/>
         HTML
       end
       if prev_page
         it 'contains the prev link' do
           expect(contents).to include(<<~HTML)
-            <link rel="prev" href="#{prev_page}.html" title="#{prev_title}"/>
+            <link rel="prev" href="#{prev_page}.html" title="#{prev_title.gsub(/<[^<]+>/, '').gsub('"', '&quot;')}"/>
           HTML
         end
       else
@@ -44,8 +46,9 @@ RSpec.describe Chunker do
       end
       if next_page
         it 'contains the next link' do
+          # TODO: replace gsub with a better `let`
           expect(contents).to include(<<~HTML)
-            <link rel="next" href="#{next_page}.html" title="#{next_title}"/>
+            <link rel="next" href="#{next_page}.html" title="#{next_title.gsub(/<[^<]+>/, '').gsub('"', '&quot;')}"/>
           HTML
         end
       else
@@ -126,7 +129,7 @@ RSpec.describe Chunker do
             = Title
 
             [[s1]]
-            == Section 1
+            == Section "1"
 
             [[linkme]]
             Words words.footnote:[foo]
@@ -134,7 +137,7 @@ RSpec.describe Chunker do
             <<s2>>
 
             [[s2]]
-            == Section 2
+            == Section `2`
 
             Words again.
 
@@ -147,15 +150,15 @@ RSpec.describe Chunker do
         end
         context 'the main output' do
           let(:contents) { converted }
-          include_examples 'standard page', nil, nil, 's1', 'Section 1'
+          include_examples 'standard page', nil, nil, 's1', 'Section "1"'
           it 'contains a link to the first section' do
             expect(converted).to include(<<~HTML.strip)
-              <li><a href="s1.html">Section 1</a></li>
+              <li><a href="s1.html">Section "1"</a></li>
             HTML
           end
           it 'contains a link to the second section' do
             expect(converted).to include(<<~HTML.strip)
-              <li><a href="s2.html">Section 2</a></li>
+              <li><a href="s2.html">Section <code>2</code></a></li>
             HTML
           end
           it "doesn't contain breadcrumbs" do
@@ -166,13 +169,15 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the first section', 's1.html' do
-          include_examples 'standard page', 'index', 'Title', 's2', 'Section 2'
+          include_examples 'standard page', 'index', 'Title',
+                           's2', 'Section <code>2</code>'
+          let(:next_link_title) { 'Section 2' }
           include_examples 'subpage'
           it 'contains the correct title' do
-            expect(contents).to include('<title>Section 1 | Title</title>')
+            expect(contents).to include('<title>Section "1" | Title</title>')
           end
           it 'contains the heading' do
-            expect(contents).to include('<h2 id="s1">Section 1</h2>')
+            expect(contents).to include('<h2 id="s1">Section "1"</h2>')
           end
           it 'contains the contents' do
             expect(contents).to include <<~HTML
@@ -184,12 +189,14 @@ RSpec.describe Chunker do
               <div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="index.html">Title</a></span>
               »
-              <span class="breadcrumb-node">Section 1</span>
+              <span class="breadcrumb-node">Section "1"</span>
               </div>
             HTML
           end
           it 'contains a link to the second section' do
-            expect(contents).to include('<a href="s2.html">Section 2</a>')
+            expect(contents).to include(
+              '<a href="s2.html">Section <code>2</code></a>'
+            )
           end
           it 'contains the footnote' do
             expect(contents).to include <<~HTML
@@ -202,13 +209,15 @@ RSpec.describe Chunker do
           end
         end
         file_context 'the second section', 's2.html' do
-          include_examples 'standard page', 's1', 'Section 1', nil, nil
+          include_examples 'standard page', 's1', 'Section "1"', nil, nil
           include_examples 'subpage'
           it 'contains the correct title' do
             expect(contents).to include('<title>Section 2 | Title</title>')
           end
           it 'contains the heading' do
-            expect(contents).to include('<h2 id="s2">Section 2</h2>')
+            expect(contents).to include(
+              '<h2 id="s2">Section <code>2</code></h2>'
+            )
           end
           it 'contains the contents' do
             expect(contents).to include '<p>Words again.</p>'
@@ -218,7 +227,7 @@ RSpec.describe Chunker do
               <div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="index.html">Title</a></span>
               »
-              <span class="breadcrumb-node">Section 2</span>
+              <span class="breadcrumb-node">Section <code>2</code></span>
               </div>
             HTML
           end
@@ -367,6 +376,7 @@ RSpec.describe Chunker do
             == Section 1
           ASCIIDOC
         end
+        let(:home_title) { 'Title [fooo]' }
         context 'the main output' do
           let(:contents) { converted }
           include_examples 'standard page', nil, nil, 's1', 'Section 1'
@@ -385,6 +395,59 @@ RSpec.describe Chunker do
               <span class="breadcrumb-node">Section 1</span>
               </div>
             HTML
+          end
+        end
+      end
+      context 'there are many spaces in the title' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title    With   Spaces
+
+            [[s]]
+            == Section
+
+            Words.
+          ASCIIDOC
+        end
+        let(:home_title) { 'Title With Spaces' }
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil, 's', 'Section'
+        end
+        file_context 'the section', 's.html' do
+          include_examples 'standard page', 'index', 'Title With Spaces',
+                           nil, nil
+          include_examples 'subpage'
+        end
+      end
+      context 'there is html in a section title' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [[s]]
+            == Section `foo`
+
+            Words.
+          ASCIIDOC
+        end
+        context 'the main output' do
+          let(:contents) { converted }
+          include_examples 'standard page', nil, nil,
+                           's', 'Section <code>foo</code>'
+          it 'contains a link to the section' do
+            expect(converted).to include(<<~HTML.strip)
+              <li><a href="s.html">Section <code>foo</code></a></li>
+            HTML
+          end
+        end
+        file_context 'the section', 's.html' do
+          include_examples 'standard page', 'index', 'Title', nil, nil
+          include_examples 'subpage'
+          it 'contains the heading' do
+            expect(contents).to include(
+              '<h2 id="s">Section <code>foo</code></h2>'
+            )
           end
         end
       end

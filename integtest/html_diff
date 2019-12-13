@@ -17,9 +17,14 @@ def normalize_html(html):
     """Normalizes html to remove expected differences between AsciiDoc's
     output and Asciidoctor's output.
     """
+    soup = BeautifulSoup(html, 'lxml')
+    # Remove all duplicate classes because that doesn't make any
+    # visual difference.
+    for e in soup.descendants:
+        if hasattr(e, 'attrs') and 'class' in e.attrs:
+            e['class'] = list(set(e['class']))
     # Replace many whitespace characters with a single space in some elements
     # kind of like a browser does.
-    soup = BeautifulSoup(html, 'lxml')
     for e in soup.select(':not(script,pre,code,style)'):
         for part in e:
             if isinstance(part, NavigableString):
@@ -74,8 +79,6 @@ def normalize_html(html):
     for e in soup.select('.figure'):
         e['class'].remove('figure')
         e['class'].append('imageblock')
-        for i in e.select('img[align=middle]'):
-            del i['align']
         for a in e.select('a'):
             if a['id'].startswith('id-'):
                 a.extract()
@@ -93,6 +96,11 @@ def normalize_html(html):
     for e in soup.select('.content'):
         e['class'].remove('content')
         e['class'].append('mediaobject')
+    # Blast some "defaults" that docbook renders and asciidoctor doesn't.
+    for e in soup.select('.imageblock .mediaobject[align=center]'):
+        del e['align']
+    for e in soup.select('.imageblock img[align=middle]'):
+        del e['align']
     # Asciidoctor emits examples as "exampleblock" instead of "informalexample"
     # but these don't make any visual difference.
     for e in soup.select('.exampleblock'):
@@ -134,7 +142,7 @@ def normalize_html(html):
         e['title'] = e['title'].replace('\xa0', ' ')
     # Docbook adds a generated id to tables with ids. They aren't used and we
     # have no change of generating it properly so we just ignore it.
-    for a in soup.select('.table a'):
+    for a in soup.select('.table a[id]'):
         if a['id'].startswith('id-'):
             a.extract()
     # Docbook renders partintro's slightly differently but the difference isn't
@@ -153,6 +161,39 @@ def normalize_html(html):
         e['class'].remove('blockquote')
     for e in soup.select('.quoteblock'):
         e['class'].remove('quoteblock')
+    # Docbook doesn't add `Admonishment--change` but Asciidoctor does to keep
+    # it consistent with the care admonitions.
+    for e in soup.select('.Admonishment--change'):
+        e['class'].remove('Admonishment--change')
+    # Docbook adds `<span class="quote"` whenever it sees quotes. These don't
+    # change the rendering and Asciidoctor doesns't add them.
+    for e in soup.select('span.quote'):
+        parent = e.parent
+        e.unwrap()
+        parent.smooth()
+    # Asciidoctor suppports adding a `<meta name="description"` if a book
+    # defines a `:description:` attribute. Docbook doesn't. We're quite ok with
+    # adding it but we can ignore it in the diff because, well, we don't need
+    # to see it.
+    for e in soup.select("meta[name='description']"):
+        e.extract()
+    # Docbook renders "indexterms" with an inline anchor and asciidoctor
+    # doesn't. You can't see them and no one is linking to them and the links
+    # don't really do anything. So we're ok ignoring them.
+    for e in soup.select("a.indexterm"):
+        parent = e.parent
+        e.extract()
+        parent.smooth()
+    # Docbook sometimes renders the xpack tag *after* the edit me link but
+    # asciidoctor always renders it before the edit me link. Either way is fine
+    # so we ignore the difference.
+    for e in soup.select("a.edit_me"):
+        parent = e.parent
+        parent.append(e.extract())
+    # Docbook passes the `exclude` class on some paragraphs and asciidoctor
+    # doesn't which is fine because it doesn't make a visual difference.
+    for e in soup.select('.exclude'):
+        e['class'].remove('exclude')
 
     # Remove empty "class" attributes and sort the listed classes.
     for e in soup.select('*'):

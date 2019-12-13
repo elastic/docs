@@ -30,7 +30,7 @@ alias docbldkb=docbldkbx
 alias docbldkbold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Logstash
-alias docbldlsx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
+alias docbldlsx='$GIT_HOME/docs/build_docs --direct_html --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
 
 alias docbldls=docbldlsx
 
@@ -52,7 +52,7 @@ alias docbldgls='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-d
 alias docbldgs='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
 
 # Stack Overview
-alias docbldso='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs --chunk 1'
+alias docbldso='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/stack/index.asciidoc --resource $GIT_HOME/elasticsearch/docs --chunk 1'
 
 # Stack Overview versions 6.3-7.2
 alias docbldsoold=docbldso
@@ -84,7 +84,7 @@ alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/heroku/ind
 alias docbldecctl='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/ecctl/docs/index.asciidoc --chunk 1'
 
 # Cloud - Elastic Cloud for K8s
-alias docbldk8s='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
+alias docbldk8s='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Beats
 alias docbldbpr='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
@@ -135,25 +135,25 @@ alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $G
 # Elasticsearch Extras
 alias docbldres='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single --toc'
 
-alias docbldpls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
+alias docbldpls='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
 
-alias docbldepi='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
+alias docbldepi='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
 
-alias docbldjvr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
+alias docbldjvr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
-alias docbldejv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
+alias docbldejv='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
 
 alias docbldejs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-js/docs/index.asciidoc'
 
-alias docblderb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
+alias docblderb='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
 
 alias docbldegr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
 alias docbldego='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --single'
 
-alias docbldnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
+alias docbldnet='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
 
-alias docbldphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-php/docs/index.asciidoc'
+alias docbldphp='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-php/docs/index.asciidoc'
 
 alias docbldepl='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/perl/index.asciidoc --single'
 
@@ -161,7 +161,7 @@ alias docbldepy='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elastic
 
 alias docbldecc='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single'
 
-alias docbldesh='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
+alias docbldesh='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
 # X-Pack Reference 5.4 to 6.2
 
