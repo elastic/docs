@@ -2486,4 +2486,44 @@ RSpec.describe DocbookCompat do
       end
     end
   end
+
+  context 'example' do
+    let(:input) do
+      <<~ASCIIDOC
+        ====
+        Words
+        ====
+      ASCIIDOC
+    end
+    it 'is wrapped in an exampleblock' do
+      expect(converted).to include <<~HTML
+        <div class="exampleblock">
+        <div class="content">
+        <p>Words</p>
+        </div>
+        </div>
+      HTML
+    end
+
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          ====
+          Words
+          ====
+        ASCIIDOC
+      end
+      it 'is wrapped in an example' do
+        expect(converted).to include <<~HTML
+          <div class="example">
+          <p class="title"><strong>Example 1. Title</strong></p>
+          <div class="example-contents">
+          <p>Words</p>
+          </div>
+          </div>
+        HTML
+      end
+    end
+  end
 end
