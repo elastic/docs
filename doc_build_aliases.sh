@@ -70,7 +70,7 @@ alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/uptime-gui
 alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
 
 # Curator
-alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
+alias docbldcr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
 
 # Cloud
 alias docbldec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
