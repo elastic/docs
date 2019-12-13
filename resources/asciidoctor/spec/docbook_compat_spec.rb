@@ -782,7 +782,7 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      it 'contains a paragraph for each anchor' do
+      it 'contains the id' do
         expect(converted).to include '<p><a id="foo"></a>Words.</p>'
       end
     end
@@ -793,8 +793,21 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      it 'contains a paragraph for each anchor' do
+      it 'contains the title' do
         expect(converted).to include '<p><strong>Title</strong>Words.</p>'
+      end
+    end
+    context 'with a role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [.screenshot]
+          image:foo[]
+        ASCIIDOC
+      end
+      it 'has the role as a class' do
+        expect(converted).to include <<~HTML
+          <p class="screenshot"><span class="image"><img src="foo" alt="foo"></span></p>
+        HTML
       end
     end
   end
