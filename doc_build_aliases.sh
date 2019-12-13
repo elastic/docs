@@ -137,7 +137,7 @@ alias docbldres='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elastic
 
 alias docbldpls='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
 
-alias docbldepi='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
+alias docbldepi='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
 
 alias docbldjvr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
@@ -151,9 +151,9 @@ alias docbldegr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/gr
 
 alias docbldego='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --single'
 
-alias docbldnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
+alias docbldnet='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
 
-alias docbldphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-php/docs/index.asciidoc'
+alias docbldphp='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-php/docs/index.asciidoc'
 
 alias docbldepl='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/perl/index.asciidoc --single'
 

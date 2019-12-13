@@ -44,7 +44,9 @@ module Chunker
 
     def convert_document(doc)
       title = doc.doctitle partition: true
-      doc.attributes['home'] = title.main.strip + doc.attr('title-extra', '')
+      doc.attributes['home'] = strip_tags(
+        title.main.strip + doc.attr('title-extra', '')
+      )
       doc.attributes['next_section'] = find_next_in doc, 0
       add_nav doc
       yield
