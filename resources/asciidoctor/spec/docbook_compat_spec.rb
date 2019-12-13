@@ -942,6 +942,7 @@ RSpec.describe DocbookCompat do
     it 'has an inline anchor for docbook compatibility' do
       expect(converted).to include('<a id="_foo"></a>')
     end
+
     context 'with the xpack role' do
       let(:input) do
         <<~ASCIIDOC
@@ -953,6 +954,19 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(
           '<a class="xpack_tag" href="/subscriptions"></a></h4>'
         )
+      end
+    end
+    context 'with the xpack bug is declared inline' do
+      let(:input) do
+        <<~ASCIIDOC
+          [float]
+          ==== [xpack]#Foo#
+        ASCIIDOC
+      end
+      it 'has the xpack tag' do
+        expect(converted).to include <<~HTML
+          <span class="xpack">Foo</span><a class="xpack_tag" href="/subscriptions"></a></h4>
+        HTML
       end
     end
   end
@@ -1015,6 +1029,50 @@ RSpec.describe DocbookCompat do
             </table>
             </div>
           HTML
+        end
+      end
+
+      context 'that has duplicates' do
+        let(:input) do
+          <<~ASCIIDOC
+            [source,sh]
+            ----
+            foo <1>
+            bar <1>
+            baz <2>
+            ----
+            <1> Foo
+            <2> Baz
+          ASCIIDOC
+        end
+        context 'the duplicated callouts in the listing' do
+          it 'have the same data-value' do
+            expect(converted).to include <<~HTML
+              foo <a id="CO1-1"></a><i class="conum" data-value="1"></i>
+              bar <a id="CO1-2"></a><i class="conum" data-value="1"></i>
+            HTML
+          end
+        end
+        context 'the unique callout in the listing' do
+          it 'has a number that counts up from the previously shown number' do
+            expect(converted).to include <<~HTML
+              baz <a id="CO1-3"></a><i class="conum" data-value="2"></i></pre>
+            HTML
+          end
+        end
+        context 'the duplicated callouts in the callout list' do
+          it 'only contains a single number' do
+            expect(converted).to include <<~HTML
+              <p><a href="#CO1-1"><i class="conum" data-value="1"></i></a><a href="#CO1-2"></a></p>
+            HTML
+          end
+        end
+        context 'the unique callout in the callout list' do
+          it 'has a number that counts up from the previously shown number' do
+            expect(converted).to include <<~HTML
+              <p><a href="#CO1-3"><i class="conum" data-value="2"></i></a></p>
+            HTML
+          end
         end
       end
     end
@@ -1165,6 +1223,23 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          * Thing
+        ASCIIDOC
+      end
+      context 'the title' do
+        it 'is wrapped a strong' do
+          expect(converted).to include <<~HTML
+            <div class="ulist itemizedlist">
+            <p class="title"><strong>Title</strong></p>
+          HTML
+        end
+      end
+    end
   end
 
   context 'an ordered list' do
@@ -1209,6 +1284,22 @@ RSpec.describe DocbookCompat do
       end
     end
 
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          . Thing
+        ASCIIDOC
+      end
+      context 'the title' do
+        it 'is wrapped a strong' do
+          expect(converted).to include <<~HTML
+            <div class="olist orderedlist">
+            <p class="title"><strong>Title</strong></p>
+          HTML
+        end
+      end
+    end
     context 'when the list if defined with 1.' do
       let(:input) do
         <<~ASCIIDOC
@@ -1453,6 +1544,30 @@ RSpec.describe DocbookCompat do
             <table border="0" cellpadding="4px" summary="Title">
           HTML
         end
+
+        context 'when the title has markup in it' do
+          let(:input) do
+            <<~ASCIIDOC
+              .`foo`
+              [horizontal]
+              Foo:: The foo.
+              Bar:: The bar.
+            ASCIIDOC
+          end
+          it 'has the title in a strong with the html' do
+            expect(converted).to include <<~HTML
+              <div class="table">
+              <p class="title"><strong>Table 1. <code class="literal">foo</code></strong></p>
+              <div class="table-contents">
+            HTML
+          end
+          it 'has the title as the summary without the html' do
+            expect(converted).to include <<~HTML
+              <div class="table-contents">
+              <table border="0" cellpadding="4px" summary="foo">
+            HTML
+          end
+        end
       end
     end
     context 'question and anwer styled' do
@@ -1676,6 +1791,28 @@ RSpec.describe DocbookCompat do
               <div class="icon"></div>
               <div class="admon_content">
               <h3>Title</h3>
+              <p>words</p>
+              </div>
+              </div>
+            HTML
+          end
+        end
+        context 'with an id' do
+          let(:input) do
+            <<~ASCIIDOC
+              [[id]]
+              [#{key}]
+              --
+              words
+              --
+            ASCIIDOC
+          end
+          it "renders the id in Elastic's custom template" do
+            expect(converted).to include(<<~HTML)
+              <div class="#{admon_class} admon">
+              <div class="icon"></div>
+              <div class="admon_content">
+              <a id="id"></a>
               <p>words</p>
               </div>
               </div>
@@ -1928,6 +2065,25 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'when there is a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          [[id]]
+          ****
+          Words
+          ****
+        ASCIIDOC
+      end
+      it 'renders like docbook' do
+        expect(converted).to include(<<~HTML)
+          <div class="sidebar">
+          <a id="id"></a>
+          <div class="titlepage"></div>
+          <p>Words</p>
+          </div>
+        HTML
+      end
+    end
   end
 
   context 'an open block' do
@@ -2044,6 +2200,27 @@ RSpec.describe DocbookCompat do
           <table border="1" cellpadding="4px" summary="Title">
         HTML
       end
+
+      context 'and an id' do
+        let(:input) do
+          <<~ASCIIDOC
+            [[id]]
+            .Title
+            |===
+            |Col 1 | Col 2
+            |===
+          ASCIIDOC
+        end
+        it 'is wrapped in table' do
+          expect(converted).to include <<~HTML
+            <div class="table">
+            <a id="id"></a>
+            <p class="title"><strong>Table 1. Title</strong></p>
+            <div class="table-contents">
+            <table border="1" cellpadding="4px" summary="Title">
+          HTML
+        end
+      end
     end
     context 'with an id' do
       let(:input) do
@@ -2054,11 +2231,10 @@ RSpec.describe DocbookCompat do
           |===
         ASCIIDOC
       end
-      it 'is wrapped in table' do
+      it 'is wrapped in informaltable' do
         expect(converted).to include <<~HTML
-          <div class="table">
+          <div class="informaltable">
           <a id="id"></a>
-          <div class="table-contents">
           <table border="1" cellpadding="4px">
         HTML
       end
