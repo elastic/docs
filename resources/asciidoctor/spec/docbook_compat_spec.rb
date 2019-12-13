@@ -1017,6 +1017,50 @@ RSpec.describe DocbookCompat do
           HTML
         end
       end
+
+      context 'that has duplicates' do
+        let(:input) do
+          <<~ASCIIDOC
+            [source,sh]
+            ----
+            foo <1>
+            bar <1>
+            baz <2>
+            ----
+            <1> Foo
+            <2> Baz
+          ASCIIDOC
+        end
+        context 'the duplicated callouts in the listing' do
+          it 'have the same data-value' do
+            expect(converted).to include <<~HTML
+              foo <a id="CO1-1"></a><i class="conum" data-value="1"></i>
+              bar <a id="CO1-2"></a><i class="conum" data-value="1"></i>
+            HTML
+          end
+        end
+        context 'the unique callout in the listing' do
+          it 'has a number that counts up from the previously shown number' do
+            expect(converted).to include <<~HTML
+              baz <a id="CO1-3"></a><i class="conum" data-value="2"></i></pre>
+            HTML
+          end
+        end
+        context 'the duplicated callouts in the callout list' do
+          it 'only contains a single number' do
+            expect(converted).to include <<~HTML
+              <p><a href="#CO1-1"><i class="conum" data-value="1"></i></a><a href="#CO1-2"></a></p>
+            HTML
+          end
+        end
+        context 'the unique callout in the callout list' do
+          it 'has a number that counts up from the previously shown number' do
+            expect(converted).to include <<~HTML
+              <p><a href="#CO1-3"><i class="conum" data-value="2"></i></a></p>
+            HTML
+          end
+        end
+      end
     end
     context 'with a title' do
       let(:input) do

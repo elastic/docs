@@ -21,7 +21,9 @@ module DocbookCompat
       [
         '<div class="calloutlist">',
         '<table border="0" summary="Callout list">',
-        node.items.map { |item| convert_colist_item item },
+        node.items.each_with_index.map do |item, index|
+          convert_colist_item item, index
+        end,
         '</table>',
         '</div>',
       ].flatten.compact.join "\n"
@@ -49,19 +51,19 @@ module DocbookCompat
       end
     end
 
-    def convert_colist_item(item)
+    def convert_colist_item(item, index)
       [
         '<tr>',
-        convert_colist_item_head(item),
+        convert_colist_item_head(item, index),
         convert_colist_item_body(item),
         '</tr>',
       ]
     end
 
-    def convert_colist_item_head(item)
+    def convert_colist_item_head(item, index)
       [
         '<td align="left" valign="top" width="5%">',
-        "<p>#{convert_colist_item_coids item}</p>",
+        "<p>#{convert_colist_item_coids item, index}</p>",
         '</td>',
       ]
     end
@@ -75,16 +77,17 @@ module DocbookCompat
       ]
     end
 
-    def convert_colist_item_coids(item)
+    def convert_colist_item_coids(item, index)
       return '' unless (coids = item.attr 'coids')
 
-      result = []
-      coids.split(' ').each do |coid|
-        num = coid.split('-')[1]
-        result << '<a href="#' << coid << '">'
-        result << '<i class="conum" data-value="' << num << '"></i></a>'
-      end
-      result.join
+      coids = coids.split(' ')
+      return '' unless (first = coids.shift)
+
+      [
+        %(<a href="##{first}">),
+        %(<i class="conum" data-value="#{index + 1}"></i></a>),
+        coids.map { |coid| %(<a href="##{coid}"></a>) },
+      ].compact.join
     end
   end
 end
