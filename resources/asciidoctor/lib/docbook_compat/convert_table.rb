@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../strip_tags'
 require_relative 'convert_table_cell'
 
 module DocbookCompat
@@ -7,6 +8,7 @@ module DocbookCompat
   # Methods to convert tables.
   module ConvertTable
     include ConvertTableCell
+    include StripTags
 
     def convert_table(node)
       [
@@ -42,7 +44,7 @@ module DocbookCompat
       [
         '<table',
         %( border="#{border}" cellpadding="4px"),
-        node.title ? %( summary="#{node.title}") : nil,
+        node.title ? %( summary="#{strip_tags node.title}") : nil,
         (width = node.attr 'width') ? %( width="#{width}") : nil,
         '>',
       ].compact.join
