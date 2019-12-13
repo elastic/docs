@@ -93,7 +93,7 @@ alias docbldbdg='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 
 alias docbldpb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/packetbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldfb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/filebeat/docs/index.asciidoc --chunk 1'
+alias docbldfb='$GIT_HOME/docs/build_docs --direct_html --respect_edit_url_overrides --doc $GIT_HOME/beats/filebeat/docs/index.asciidoc --chunk 1'
 
 alias docbldwb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/winlogbeat/docs/index.asciidoc --chunk 1'
 
