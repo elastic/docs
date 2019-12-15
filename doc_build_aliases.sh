@@ -61,7 +61,7 @@ alias docbldsoold=docbldso
 alias docbldaz='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
+alias docbldmet='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
 
 alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/logs/index.asciidoc --chunk 1'
 
