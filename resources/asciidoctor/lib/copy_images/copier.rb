@@ -98,7 +98,7 @@ module CopyImages
         end
       end
       warn block: block,
-           message: "can't read image [#{uri}]at any of #{checked}"
+           message: "can't read image [#{uri}] at any of #{checked}"
     end
   end
 end
