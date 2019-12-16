@@ -6,6 +6,7 @@ require_relative '../strip_tags'
 require_relative 'convert_admonition'
 require_relative 'convert_dlist'
 require_relative 'convert_document'
+require_relative 'convert_example'
 require_relative 'convert_floating_title'
 require_relative 'convert_inline_quoted'
 require_relative 'convert_links'
@@ -35,6 +36,7 @@ module DocbookCompat
     include ConvertAdmonition
     include ConvertDList
     include ConvertDocument
+    include ConvertExample
     include ConvertFloatingTitle
     include ConvertInlineQuoted
     include ConvertLinks
