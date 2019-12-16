@@ -1953,6 +1953,33 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition default_text
               end
             end
+            context 'inside a title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  == Foo #{key}:[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
+            context 'inside a floating title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  [float]
+                  == Foo #{key}:[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
           end
         end
         context 'beta' do
@@ -2036,6 +2063,37 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition(
                   '7.0.0-beta1', "#{message} in 7.0.0-beta1."
                 )
+              end
+            end
+            context 'inside a title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  == Foo #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
+            context 'inside a floating title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  [float]
+                  == Foo #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
               end
             end
           end
