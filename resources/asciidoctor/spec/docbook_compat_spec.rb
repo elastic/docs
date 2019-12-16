@@ -1063,6 +1063,23 @@ RSpec.describe DocbookCompat do
         end
       end
 
+      context 'that has a role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [source,sh]
+            ----
+            cpanm Search::Elasticsearch <1>
+            ----
+            [.foo]
+            <1> Foo
+          ASCIIDOC
+        end
+        context 'the callout list' do
+          it 'includes the role' do
+            expect(converted).to include '<div class="calloutlist foo">'
+          end
+        end
+      end
       context 'that has duplicates' do
         let(:input) do
           <<~ASCIIDOC
@@ -1171,6 +1188,23 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(<<~HTML)
           <p><a id="foo"></a><strong>Title.</strong></p>
           <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
+    context 'with a role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [source,sh,role=foo]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it 'the role is included as a class' do
+        expect(converted).to include(<<~HTML)
+          <div class="pre_wrapper lang-sh foo">
+          <pre class="programlisting prettyprint lang-sh foo">cpanm Search::Elasticsearch</pre>
+          </div>
         HTML
       end
     end
