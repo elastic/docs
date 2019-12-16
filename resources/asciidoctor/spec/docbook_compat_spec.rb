@@ -1953,6 +1953,36 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition default_text
               end
             end
+            context 'is in the title' do
+              let(:standalone) { true }
+              let(:convert_attributes) do
+                {
+                  # Shrink the output slightly so it is easier to read
+                  'stylesheet!' => false,
+                }
+              end
+              let(:input) do
+                <<~ASCIIDOC
+                  = Title #{key}:[]
+                ASCIIDOC
+              end
+              context 'the title' do
+                it "doesn't include the admonition" do
+                  expect(converted).to include '<title>Title</title>'
+                end
+              end
+              context 'the heading' do
+                it 'includes the admonition' do
+                  expect(converted).to include <<~HTML.strip
+                    <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
+                  HTML
+                  # Comment to fix syntax highlighting: ">HTML
+                end
+                it 'has default text' do
+                  expect_inline_admonition default_text
+                end
+              end
+            end
           end
         end
         context 'beta' do
@@ -2036,6 +2066,38 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition(
                   '7.0.0-beta1', "#{message} in 7.0.0-beta1."
                 )
+              end
+            end
+            context 'is in the title' do
+              let(:standalone) { true }
+              let(:convert_attributes) do
+                {
+                  # Shrink the output slightly so it is easier to read
+                  'stylesheet!' => false,
+                }
+              end
+              let(:input) do
+                <<~ASCIIDOC
+                  = Title #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              context 'the title' do
+                it "doesn't include the admonition" do
+                  expect(converted).to include '<title>Title</title>'
+                end
+              end
+              context 'the heading' do
+                it 'includes the admonition' do
+                  expect(converted).to include <<~HTML.strip
+                    <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
+                  HTML
+                  # Comment to fix syntax highlighting: ">HTML
+                end
+                it 'has default text' do
+                  expect_inline_admonition(
+                    '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                  )
+                end
               end
             end
           end
