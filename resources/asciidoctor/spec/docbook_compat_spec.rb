@@ -277,7 +277,7 @@ RSpec.describe DocbookCompat do
             end
             it 'includes a link to the abbreviated section' do
               expect(converted).to include <<~HTML.strip
-                <a class="xref" href="#s1"title="Section 1"><em>S1</em></a>
+                <a class="xref" href="#s1" title="Section 1"><em>S1</em></a>
               HTML
             end
           end
@@ -782,7 +782,7 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      it 'contains a paragraph for each anchor' do
+      it 'contains the id' do
         expect(converted).to include '<p><a id="foo"></a>Words.</p>'
       end
     end
@@ -793,8 +793,21 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      it 'contains a paragraph for each anchor' do
+      it 'contains the title' do
         expect(converted).to include '<p><strong>Title</strong>Words.</p>'
+      end
+    end
+    context 'with a role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [.screenshot]
+          image:foo[]
+        ASCIIDOC
+      end
+      it 'has the role as a class' do
+        expect(converted).to include <<~HTML
+          <p class="screenshot"><span class="image"><img src="foo" alt="foo"></span></p>
+        HTML
       end
     end
   end
@@ -842,17 +855,18 @@ RSpec.describe DocbookCompat do
       ASCIIDOC
     end
     it 'has xref class' do
-      expect(converted).to include('class="xref"')
+      expect(converted).to include(' class="xref"')
     end
     it 'references the target' do
-      expect(converted).to include('href="#foo"')
+      expect(converted).to include(' href="#foo"')
     end
     it "contains the target's title" do
-      expect(converted).to include('title="Foo"')
+      expect(converted).to include(' title="Foo"')
     end
     it 'wraps the title in <em>' do
       expect(converted).to include('><em>Foo</em></a>')
     end
+
     context 'when the link text is overridden' do
       let(:input) do
         <<~ASCIIDOC
@@ -892,7 +906,7 @@ RSpec.describe DocbookCompat do
         expect(converted).not_to include('title')
       end
     end
-    context 'when the cross reference is to an inline anchor' do
+    context 'to an inline anchor' do
       let(:input) do
         <<~ASCIIDOC
           [[target]]`target`:: foo
@@ -925,6 +939,23 @@ RSpec.describe DocbookCompat do
         it 'has the right text' do
           expect(converted).to include('>Section heading</a>')
         end
+      end
+    end
+    context 'to an appendix' do
+      let(:input) do
+        <<~ASCIIDOC
+          <<target>>
+
+          [[target]]
+          [appendix]
+          == Foo
+        ASCIIDOC
+      end
+      it 'references the url' do
+        expect(converted).to include('href="#target"')
+      end
+      it 'has the right text' do
+        expect(converted).to include('>Appendix A, <em>Foo</em></a>')
       end
     end
   end
@@ -1796,6 +1827,30 @@ RSpec.describe DocbookCompat do
               </div>
             HTML
           end
+
+          context 'and an id' do
+            let(:input) do
+              <<~ASCIIDOC
+                [[id]]
+                [#{key}]
+                .Title
+                --
+                words
+                --
+              ASCIIDOC
+            end
+            it "renders the title in Elastic's custom template" do
+              expect(converted).to include(<<~HTML)
+                <div class="#{admon_class} admon">
+                <div class="icon"></div>
+                <div class="admon_content">
+                <h3>Title<a id="id"></a></h3>
+                <p>words</p>
+                </div>
+                </div>
+              HTML
+            end
+          end
         end
         context 'with an id' do
           let(:input) do
@@ -2439,6 +2494,46 @@ RSpec.describe DocbookCompat do
           </td>
           </tr>
           </table>
+          </div>
+        HTML
+      end
+    end
+  end
+
+  context 'example' do
+    let(:input) do
+      <<~ASCIIDOC
+        ====
+        Words
+        ====
+      ASCIIDOC
+    end
+    it 'is wrapped in an exampleblock' do
+      expect(converted).to include <<~HTML
+        <div class="exampleblock">
+        <div class="content">
+        <p>Words</p>
+        </div>
+        </div>
+      HTML
+    end
+
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          ====
+          Words
+          ====
+        ASCIIDOC
+      end
+      it 'is wrapped in an example' do
+        expect(converted).to include <<~HTML
+          <div class="example">
+          <p class="title"><strong>Example 1. Title</strong></p>
+          <div class="example-contents">
+          <p>Words</p>
+          </div>
           </div>
         HTML
       end

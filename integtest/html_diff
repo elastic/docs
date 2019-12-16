@@ -79,7 +79,7 @@ def normalize_html(html):
     for e in soup.select('.figure'):
         e['class'].remove('figure')
         e['class'].append('imageblock')
-        for a in e.select('a'):
+        for a in e.select('a[id]'):
             if a['id'].startswith('id-'):
                 a.extract()
         for t in e.select('.title'):
@@ -108,6 +108,11 @@ def normalize_html(html):
         e['class'].append('informalexample')
         for c in e.select('.mediaobject'):
             c.unwrap()
+    # Docbook adds ids to all examples and asciidoctor doesn't. We don't need
+    # the ids so we ignore them.
+    for e in soup.select('.example a[id]'):
+        if e['id'].startswith('id-'):
+            e.extract()
     # Docbook links with `<a class="link"` when linking from one page of a book
     # to another. Asciidoctor emits `<a class="link"`. Both look fine.
     for e in soup.select('a.xref'):
