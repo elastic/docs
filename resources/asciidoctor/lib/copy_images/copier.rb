@@ -57,7 +57,7 @@ module CopyImages
         to_check += subdirs(dir)
       end
 
-      log_missing(block, checked)
+      log_missing block, checked, uri
       nil
     end
 
@@ -85,7 +85,7 @@ module CopyImages
 
     ##
     # Log a warning for files that we couldn't find.
-    def log_missing(block, checked)
+    def log_missing(block, checked, uri)
       # Sort the list of directories we did check so it is consistent from
       # machine to machine. This is mostly useful for testing, but it nice
       # if you happen to want to compare CI to a local machine.
@@ -97,7 +97,8 @@ module CopyImages
           lhs <=> rhs
         end
       end
-      warn block: block, message: "can't read image at any of #{checked}"
+      warn block: block,
+           message: "can't read image [#{uri}]at any of #{checked}"
     end
   end
 end

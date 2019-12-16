@@ -125,6 +125,20 @@ RSpec.describe CopyImages do
         include_examples 'copies example1'
       end
     end
+    context 'when using the imagesdir attribute' do
+      let(:target) { 'example1.png' }
+      let(:resolved) { 'resources/copy_images/example1.png' }
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          :imagesdir: resources/copy_images
+
+          #{image_command}
+        ASCIIDOC
+      end
+      let(:include_line) { 4 }
+      include_examples 'copies example1'
+    end
     context 'when referencing an external image' do
       let(:target) do
         'https://f.cloud.github.com/assets/4320215/768165/19d8b1aa-e899-11e2-91bc-6b0553e8d722.png'
