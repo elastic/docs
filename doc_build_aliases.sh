@@ -67,7 +67,7 @@ alias docbldlog='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-d
 
 alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
 
-alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
+alias docbldsec='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
