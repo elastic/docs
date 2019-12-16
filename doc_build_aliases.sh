@@ -87,7 +87,7 @@ alias docbldecctl='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/ecctl
 alias docbldk8s='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Beats
-alias docbldbpr='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
+alias docbldbpr='$GIT_HOME/docs/build_docs --direct_html --respect_edit_url_overrides --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
 
 alias docbldbdg='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/docs/devguide/index.asciidoc --chunk 1'
 
