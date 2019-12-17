@@ -117,6 +117,39 @@ RSpec.describe OpenInWidget do
           expect(copied).to include(["snippets/1.#{lang}", "GET /\n"])
         end
       end
+      context 'with a role' do
+        let(:input) do
+          <<~ASCIIDOC
+            == Example
+            [source,#{lang},role=foo]
+            ----
+            GET / <1>
+            ----
+            <1> words
+          ASCIIDOC
+        end
+        let(:expected_link) do
+          if backend == :html5
+            <<~HTML
+              <div class="#{lang}_widget foo" data-snippet="#{relative_path}"></div>
+            HTML
+          else
+            <<~ASCIIDOC.strip
+              <ulink type="snippet" url="#{relative_path}"/>
+            ASCIIDOC
+          end
+        end
+        it 'adds a link to extracted snippet' do
+          expect(converted).to include(expected_link)
+        end
+        let(:text) { 'GET /' }
+        let(:copied_snippet) { "GET /\n" }
+        let(:index) { 1 }
+        let(:line) { 3 }
+        it 'writes the snippet without the callout' do
+          expect(copied).to include(["snippets/1.#{lang}", "GET /\n"])
+        end
+      end
     end
     context 'when there are many blocks with the language' do
       let(:input) do
