@@ -3,6 +3,7 @@
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
 require_relative '../strip_tags'
+require_relative 'clear_cached_titles'
 require_relative 'convert_admonition'
 require_relative 'convert_dlist'
 require_relative 'convert_document'
@@ -26,6 +27,7 @@ module DocbookCompat
   def self.activate(registry)
     return unless registry.document.basebackend? 'html'
 
+    registry.treeprocessor ClearCachedTitles
     registry.treeprocessor TitleabbrevHandler
     DelegatingConverter.setup(registry.document) { |d| Converter.new d }
   end

@@ -981,6 +981,9 @@ RSpec.describe DocbookCompat do
           ==== Foo
         ASCIIDOC
       end
+      it 'has the xpack class' do
+        expect(converted).to include '<h4 class="xpack">'
+      end
       it 'has the xpack tag' do
         expect(converted).to include(
           '<a class="xpack_tag" href="/subscriptions"></a></h4>'
@@ -1063,6 +1066,23 @@ RSpec.describe DocbookCompat do
         end
       end
 
+      context 'that has a role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [source,sh]
+            ----
+            cpanm Search::Elasticsearch <1>
+            ----
+            [.foo]
+            <1> Foo
+          ASCIIDOC
+        end
+        context 'the callout list' do
+          it 'includes the role' do
+            expect(converted).to include '<div class="calloutlist foo">'
+          end
+        end
+      end
       context 'that has duplicates' do
         let(:input) do
           <<~ASCIIDOC
@@ -1171,6 +1191,23 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(<<~HTML)
           <p><a id="foo"></a><strong>Title.</strong></p>
           <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
+    context 'with a role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [source,sh,role=foo]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it 'the role is included as a class' do
+        expect(converted).to include(<<~HTML)
+          <div class="pre_wrapper lang-sh foo">
+          <pre class="programlisting prettyprint lang-sh foo">cpanm Search::Elasticsearch</pre>
+          </div>
         HTML
       end
     end
@@ -1953,6 +1990,33 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition default_text
               end
             end
+            context 'inside a title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  == Foo #{key}:[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
+            context 'inside a floating title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  [float]
+                  == Foo #{key}:[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
           end
         end
         context 'beta' do
@@ -2036,6 +2100,37 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition(
                   '7.0.0-beta1', "#{message} in 7.0.0-beta1."
                 )
+              end
+            end
+            context 'inside a title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  == Foo #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
+            context 'inside a floating title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  [float]
+                  == Foo #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
               end
             end
           end
