@@ -125,6 +125,20 @@ RSpec.describe CopyImages do
         include_examples 'copies example1'
       end
     end
+    context 'when using the imagesdir attribute' do
+      let(:target) { 'example1.png' }
+      let(:resolved) { 'resources/copy_images/example1.png' }
+      let(:input) do
+        <<~ASCIIDOC
+          == Example
+          :imagesdir: resources/copy_images
+
+          #{image_command}
+        ASCIIDOC
+      end
+      let(:include_line) { 4 }
+      include_examples 'copies example1'
+    end
     context 'when referencing an external image' do
       let(:target) do
         'https://f.cloud.github.com/assets/4320215/768165/19d8b1aa-e899-11e2-91bc-6b0553e8d722.png'
@@ -139,7 +153,8 @@ RSpec.describe CopyImages do
     context "when it can't find a file" do
       include_examples "when it can't find a file"
       let(:expected_logs) do
-        %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image\ at\ any\ of\ \[
+        %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image
+          \ \[not_found\.jpg\]\ at\ any\ of\ \[
           "#{spec_dir}/not_found.jpg",\s
           "#{spec_dir}/resources/not_found.jpg",\s
           .+
@@ -202,7 +217,8 @@ RSpec.describe CopyImages do
       context "when it can't find a file" do
         include_examples "when it can't find a file"
         let(:expected_logs) do
-          %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image\ at\ any\ of\ \[
+          %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image
+            \ \[not_found\.jpg\]\ at\ any\ of\ \[
             "#{tmp}/not_found.jpg",\s
             "#{spec_dir}/not_found.jpg",\s
             .+
@@ -217,7 +233,8 @@ RSpec.describe CopyImages do
       context "when it can't find a file" do
         include_examples "when it can't find a file"
         let(:expected_logs) do
-          %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image\ at\ any\ of\ \[
+          %r{WARN:\ <stdin>:\ line\ \d+:\ can't\ read\ image
+            \ \[not_found\.jpg\] \ at\ any\ of\ \[
             "/dummy1/not_found.jpg",\s
             "/dummy2/not_found.jpg",\s
             "#{tmp}/not_found.jpg",\s

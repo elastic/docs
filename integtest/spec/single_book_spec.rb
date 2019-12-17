@@ -510,20 +510,35 @@ RSpec.describe 'building a single book' do
         #{ConsoleExamples::README_LIKE}
       ASCIIDOC
     end
-    convert_before do |src, dest|
-      repo = src.repo 'src'
-      from = repo.write 'index.asciidoc', index
-      repo.commit 'commit outstanding'
-      # Points java to a directory without any examples so we can report that.
-      dest.prepare_convert_single(from, '.')
-          .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
-          .alternatives(
-            'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
-          )
-          .alternatives('console', 'java', "#{__dir__}/helper")
-          .convert
+    shared_context 'console alternatives' do |direct_html|
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.asciidoc', index
+        repo.commit 'commit outstanding'
+        # Points java to a directory without any examples so we can report that.
+        convert = dest.prepare_convert_single(from, '.')
+                      .alternatives(
+                        'console', 'js', "#{__dir__}/../readme_examples/js"
+                      )
+                      .alternatives(
+                        'console', 'csharp',
+                        "#{__dir__}/../readme_examples/csharp"
+                      )
+                      .alternatives('console', 'java', "#{__dir__}/helper")
+        convert.direct_html if direct_html
+        convert.convert
+      end
     end
-    include_examples 'README-like console alternatives', 'raw', '.'
+    context 'with direct_html' do
+      include_context 'console alternatives', true
+      let(:direct_html) { true }
+      include_examples 'README-like console alternatives', 'raw', '.'
+    end
+    context 'without direct_html' do
+      include_context 'console alternatives', false
+      let(:direct_html) { false }
+      include_examples 'README-like console alternatives', 'raw', '.'
+    end
   end
 
   context 'for a book with en -extra-title-page.html file' do
