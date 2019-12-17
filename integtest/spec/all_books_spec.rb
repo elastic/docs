@@ -434,6 +434,7 @@ RSpec.describe 'building all books' do
       java_alts = { source_lang: 'console', alternative_lang: 'java' }
       book.source(java_repo, 'examples', alternatives: java_alts)
     end
+    let(:direct_html) { false }
     include_examples 'README-like console alternatives',
                      'raw/test/master', 'html/test/master'
   end
