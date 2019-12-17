@@ -7,7 +7,7 @@ module DocbookCompat
     def convert_paragraph(node)
       # Asciidoctor adds a \n at the end of the paragraph so we don't.
       [
-        '<p>',
+        node.role ? %(<p class="#{node.role}">) : '<p>',
         paragraph_id_part(node),
         paragraph_title_part(node),
         node.content,

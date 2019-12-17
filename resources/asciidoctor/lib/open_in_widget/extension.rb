@@ -65,16 +65,23 @@ module OpenInWidget
 
     def convert_listing_with_widget(node, lang, snippet_path, original)
       if node.document.basebackend? 'html'
-        <<~HTML.strip
-          #{original}
-          <div class="#{lang}_widget" data-snippet="#{snippet_path}"></div>
-        HTML
+        convert_listing_with_widget_html node, lang, snippet_path, original
       else
         original.gsub(
           '</programlisting>',
           "<ulink type=\"snippet\" url=\"#{snippet_path}\"/></programlisting>"
         )
       end
+    end
+
+    def convert_listing_with_widget_html(node, lang, snippet_path, original)
+      roles = node.roles
+      roles.delete 'default'
+      extra_classes = roles.empty? ? '' : " #{roles.join ' '}"
+      <<~HTML.strip
+        #{original}
+        <div class="#{lang}_widget#{extra_classes}" data-snippet="#{snippet_path}"></div>
+      HTML
     end
 
     def snippet_path(block, lang, snippet)
