@@ -1992,6 +1992,12 @@ RSpec.describe DocbookCompat do
             end
             context 'inside the document title' do
               let(:standalone) { true }
+              let(:convert_attributes) do
+                {
+                  # Shrink the output slightly so it is easier to read
+                  'stylesheet!' => false,
+                }
+              end
               let(:input) do
                 <<~ASCIIDOC
                   = Title #{key}:[]
@@ -1999,7 +2005,7 @@ RSpec.describe DocbookCompat do
               end
               context 'the title' do
                 it "doesn't include the admonition" do
-                  expect(converted).to include '<title>Title</title>'
+                  expect(converted).to include '<title>Title | Elastic</title>'
                 end
               end
               context 'the heading' do
@@ -2012,6 +2018,8 @@ RSpec.describe DocbookCompat do
                 it 'has default text' do
                   expect_inline_admonition default_text
                 end
+              end
+            end
             context 'inside a title' do
               let(:input) do
                 <<~ASCIIDOC
@@ -2126,6 +2134,12 @@ RSpec.describe DocbookCompat do
             end
             context 'inside the document title' do
               let(:standalone) { true }
+              let(:convert_attributes) do
+                {
+                  # Shrink the output slightly so it is easier to read
+                  'stylesheet!' => false,
+                }
+              end
               let(:input) do
                 <<~ASCIIDOC
                   = Title #{key}:[7.0.0-beta1]
@@ -2133,7 +2147,7 @@ RSpec.describe DocbookCompat do
               end
               context 'the title' do
                 it "doesn't include the admonition" do
-                  expect(converted).to include '<title>Title</title>'
+                  expect(converted).to include '<title>Title | Elastic</title>'
                 end
               end
               context 'the heading' do
@@ -2148,6 +2162,8 @@ RSpec.describe DocbookCompat do
                     '7.0.0-beta1', "#{message} in 7.0.0-beta1."
                   )
                 end
+              end
+            end
             context 'inside a title' do
               let(:input) do
                 <<~ASCIIDOC
