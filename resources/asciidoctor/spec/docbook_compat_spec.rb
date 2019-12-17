@@ -981,6 +981,9 @@ RSpec.describe DocbookCompat do
           ==== Foo
         ASCIIDOC
       end
+      it 'has the xpack class' do
+        expect(converted).to include '<h4 class="xpack">'
+      end
       it 'has the xpack tag' do
         expect(converted).to include(
           '<a class="xpack_tag" href="/subscriptions"></a></h4>'
