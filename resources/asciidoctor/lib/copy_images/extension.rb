@@ -35,14 +35,14 @@ module CopyImages
 
     #### "Conversion" methods
     def convert_image(node)
-      copy_image node, node.attr('target')
+      copy_image node, node.image_uri(node.attr('target'))
       yield
     end
 
     def convert_inline_image(node)
       # Inline images aren't "real" and don't have a source_location so we have
       # to get the location from the parent.
-      copy_image node.parent, node.target
+      copy_image node.parent, node.image_uri(node.target)
       yield
     end
 

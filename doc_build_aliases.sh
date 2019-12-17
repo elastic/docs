@@ -12,13 +12,13 @@
 
 
 # Elasticsearch
-alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
+alias docbldesx='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
 
 alias docbldes=docbldesx
 
 # Elasticsearch 6.2 and earlier
 
-alias docbldesold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
+alias docbldesold='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
 
 # Kibana
 alias docbldkbx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.asciidoc --chunk 1'
@@ -129,7 +129,7 @@ alias docbldamnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-dotnet/do
 
 
 # Definitive Guide
-alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
+alias docblddg='$GIT_HOME/docs/build_docs --direct_html --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
 
 
 # Elasticsearch Extras
@@ -165,7 +165,7 @@ alias docbldesh='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elastic
 
 # X-Pack Reference 5.4 to 6.2
 
-alias docbldx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
+alias docbldx='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
 
 # ECS
 alias docbldecs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
