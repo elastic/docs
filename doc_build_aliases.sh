@@ -111,7 +111,7 @@ alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GI
 # APM
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
 
-alias docbldamr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
+alias docbldamr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
 
 alias docbldamn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1'
 
