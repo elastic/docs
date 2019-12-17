@@ -61,13 +61,13 @@ alias docbldsoold=docbldso
 alias docbldaz='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
+alias docbldmet='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
 
-alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/logs/index.asciidoc --chunk 1'
+alias docbldlog='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/logs/index.asciidoc --chunk 1'
 
-alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
+alias docbldup='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
 
-alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
+alias docbldsec='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
@@ -87,9 +87,9 @@ alias docbldecctl='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/ecctl
 alias docbldk8s='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Beats
-alias docbldbpr='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
+alias docbldbpr='$GIT_HOME/docs/build_docs --direct_html --respect_edit_url_overrides --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
 
-alias docbldbdg='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/docs/devguide/index.asciidoc --chunk 1'
+alias docbldbdg='$GIT_HOME/docs/build_docs --direct_html --respect_edit_url_overrides --doc $GIT_HOME/beats/docs/devguide/index.asciidoc --chunk 1'
 
 alias docbldpb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/packetbeat/docs/index.asciidoc --chunk 1'
 
@@ -129,7 +129,7 @@ alias docbldamnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-dotnet/do
 
 
 # Definitive Guide
-alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
+alias docblddg='$GIT_HOME/docs/build_docs --direct_html --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
 
 
 # Elasticsearch Extras
@@ -147,7 +147,7 @@ alias docbldejs='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elastic
 
 alias docblderb='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch-ruby/docs/index.asciidoc'
 
-alias docbldegr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
+alias docbldegr='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
 alias docbldego='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --single'
 
@@ -165,7 +165,7 @@ alias docbldesh='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/elastic
 
 # X-Pack Reference 5.4 to 6.2
 
-alias docbldx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
+alias docbldx='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
 
 # ECS
 alias docbldecs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 1'
