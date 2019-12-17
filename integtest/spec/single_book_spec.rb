@@ -586,6 +586,96 @@ RSpec.describe 'building a single book' do
       end
     end
   end
+  context 'for a book with page-header.html' do
+    shared_context 'page-header' do |direct_html|
+      context 'single page' do
+        convert_before do |src, dest|
+          repo = src.repo 'src'
+          from = repo.write 'index.adoc', <<~ASCIIDOC
+            = Title
+
+            [[section]]
+            == Section
+
+            Words.
+          ASCIIDOC
+          repo.write 'page_header.html', '<p>header</p>'
+          repo.commit 'commit outstanding'
+          convert = dest.prepare_convert_single(from, '.')
+          convert.direct_html if direct_html
+          convert.single.convert
+        end
+        file_context 'raw/index.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>header</p>'
+          end
+        end
+      end
+      context 'multipage' do
+        convert_before do |src, dest|
+          repo = src.repo 'src'
+          from = repo.write 'index.adoc', <<~ASCIIDOC
+            = Title
+
+            [[section]]
+            == Section
+
+            Words.
+          ASCIIDOC
+          repo.write 'page_header.html', '<p>header</p>'
+          repo.commit 'commit outstanding'
+          convert = dest.prepare_convert_single(from, '.')
+          convert.direct_html if direct_html
+          convert.convert
+        end
+        file_context 'raw/index.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>header</p>'
+          end
+        end
+        file_context 'raw/section.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>header</p>'
+          end
+        end
+      end
+      context 'with chinese text' do
+        # We've failed in the past on Chinese text with encoding issues.
+        convert_before do |src, dest|
+          repo = src.repo 'src'
+          from = repo.write 'index.adoc', <<~ASCIIDOC
+            = Title
+
+            [[section]]
+            == Section
+
+            Words.
+          ASCIIDOC
+          repo.write 'page_header.html', '<p>请注意</p>'
+          repo.commit 'commit outstanding'
+          convert = dest.prepare_convert_single(from, '.')
+          convert.direct_html if direct_html
+          convert.convert
+        end
+        file_context 'raw/index.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>请注意</p>'
+          end
+        end
+        file_context 'raw/section.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>请注意</p>'
+          end
+        end
+      end
+    end
+    context 'with direct_html' do
+      include_examples 'page-header', true
+    end
+    context 'without direct_html' do
+      include_examples 'page-header', false
+    end
+  end
 
   context 'for a book that uses {source_branch}' do
     INDEX = <<~ASCIIDOC
