@@ -18,8 +18,9 @@ module DocbookCompat
     end
 
     def convert_colist(node)
+      extra_classes = node.roles.empty? ? '' : " #{node.roles.join ' '}"
       [
-        '<div class="calloutlist">',
+        %(<div class="calloutlist#{extra_classes}">),
         '<table border="0" summary="Callout list">',
         node.items.each_with_index.map do |item, index|
           convert_colist_item item, index
@@ -40,15 +41,20 @@ module DocbookCompat
 
     def convert_listing_body(node)
       if (lang = node.attr 'language')
-        pre_classes = "programlisting prettyprint lang-#{lang}"
-        [
-          %(<div class="pre_wrapper lang-#{lang}">),
-          %(<pre class="#{pre_classes}">#{node.content || ''}</pre>),
-          %(</div>),
-        ].join "\n"
+        convert_listing_body_with_language node, lang
       else
         %(<pre class="screen">#{node.content || ''}</pre>)
       end
+    end
+
+    def convert_listing_body_with_language(node, lang)
+      extra_classes = node.roles.empty? ? '' : " #{node.roles.join ' '}"
+      pre_classes = "programlisting prettyprint lang-#{lang}#{extra_classes}"
+      [
+        %(<div class="pre_wrapper lang-#{lang}#{extra_classes}">),
+        %(<pre class="#{pre_classes}">#{node.content || ''}</pre>),
+        %(</div>),
+      ].join "\n"
     end
 
     def convert_colist_item(item, index)
