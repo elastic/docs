@@ -782,7 +782,7 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      it 'contains a paragraph for each anchor' do
+      it 'contains the id' do
         expect(converted).to include '<p><a id="foo"></a>Words.</p>'
       end
     end
@@ -793,8 +793,21 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      it 'contains a paragraph for each anchor' do
+      it 'contains the title' do
         expect(converted).to include '<p><strong>Title</strong>Words.</p>'
+      end
+    end
+    context 'with a role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [.screenshot]
+          image:foo[]
+        ASCIIDOC
+      end
+      it 'has the role as a class' do
+        expect(converted).to include <<~HTML
+          <p class="screenshot"><span class="image"><img src="foo" alt="foo"></span></p>
+        HTML
       end
     end
   end
@@ -968,6 +981,9 @@ RSpec.describe DocbookCompat do
           ==== Foo
         ASCIIDOC
       end
+      it 'has the xpack class' do
+        expect(converted).to include '<h4 class="xpack">'
+      end
       it 'has the xpack tag' do
         expect(converted).to include(
           '<a class="xpack_tag" href="/subscriptions"></a></h4>'
@@ -1050,6 +1066,23 @@ RSpec.describe DocbookCompat do
         end
       end
 
+      context 'that has a role' do
+        let(:input) do
+          <<~ASCIIDOC
+            [source,sh]
+            ----
+            cpanm Search::Elasticsearch <1>
+            ----
+            [.foo]
+            <1> Foo
+          ASCIIDOC
+        end
+        context 'the callout list' do
+          it 'includes the role' do
+            expect(converted).to include '<div class="calloutlist foo">'
+          end
+        end
+      end
       context 'that has duplicates' do
         let(:input) do
           <<~ASCIIDOC
@@ -1158,6 +1191,23 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(<<~HTML)
           <p><a id="foo"></a><strong>Title.</strong></p>
           <div class="pre_wrapper lang-sh">
+        HTML
+      end
+    end
+    context 'with a role' do
+      let(:input) do
+        <<~ASCIIDOC
+          [source,sh,role=foo]
+          ----
+          cpanm Search::Elasticsearch
+          ----
+        ASCIIDOC
+      end
+      it 'the role is included as a class' do
+        expect(converted).to include(<<~HTML)
+          <div class="pre_wrapper lang-sh foo">
+          <pre class="programlisting prettyprint lang-sh foo">cpanm Search::Elasticsearch</pre>
+          </div>
         HTML
       end
     end
@@ -1940,6 +1990,63 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition default_text
               end
             end
+            context 'inside the document title' do
+              let(:standalone) { true }
+              let(:convert_attributes) do
+                {
+                  # Shrink the output slightly so it is easier to read
+                  'stylesheet!' => false,
+                }
+              end
+              let(:input) do
+                <<~ASCIIDOC
+                  = Title #{key}:[]
+                ASCIIDOC
+              end
+              context 'the title' do
+                it "doesn't include the admonition" do
+                  expect(converted).to include '<title>Title | Elastic</title>'
+                end
+              end
+              context 'the heading' do
+                it 'includes the admonition' do
+                  expect(converted).to include <<~HTML.strip
+                    <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
+                  HTML
+                  # Comment to fix syntax highlighting: ">HTML
+                end
+                it 'has default text' do
+                  expect_inline_admonition default_text
+                end
+              end
+            end
+            context 'inside a title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  == Foo #{key}:[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
+            context 'inside a floating title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  [float]
+                  == Foo #{key}:[]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition default_text
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
           end
         end
         context 'beta' do
@@ -2023,6 +2130,69 @@ RSpec.describe DocbookCompat do
                 expect_inline_admonition(
                   '7.0.0-beta1', "#{message} in 7.0.0-beta1."
                 )
+              end
+            end
+            context 'inside the document title' do
+              let(:standalone) { true }
+              let(:convert_attributes) do
+                {
+                  # Shrink the output slightly so it is easier to read
+                  'stylesheet!' => false,
+                }
+              end
+              let(:input) do
+                <<~ASCIIDOC
+                  = Title #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              context 'the title' do
+                it "doesn't include the admonition" do
+                  expect(converted).to include '<title>Title | Elastic</title>'
+                end
+              end
+              context 'the heading' do
+                it 'includes the admonition' do
+                  expect(converted).to include <<~HTML.strip
+                    <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
+                  HTML
+                  # Comment to fix syntax highlighting: ">HTML
+                end
+                it 'has default text' do
+                  expect_inline_admonition(
+                    '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                  )
+                end
+              end
+            end
+            context 'inside a title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  == Foo #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
+              end
+            end
+            context 'inside a floating title' do
+              let(:input) do
+                <<~ASCIIDOC
+                  [float]
+                  == Foo #{key}:[7.0.0-beta1]
+                ASCIIDOC
+              end
+              it 'has default text' do
+                expect_inline_admonition(
+                  '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+                )
+              end
+              it "doesn't modify the id" do
+                expect(converted).to include 'id="_foo"'
               end
             end
           end
@@ -2481,6 +2651,46 @@ RSpec.describe DocbookCompat do
           </td>
           </tr>
           </table>
+          </div>
+        HTML
+      end
+    end
+  end
+
+  context 'example' do
+    let(:input) do
+      <<~ASCIIDOC
+        ====
+        Words
+        ====
+      ASCIIDOC
+    end
+    it 'is wrapped in an exampleblock' do
+      expect(converted).to include <<~HTML
+        <div class="exampleblock">
+        <div class="content">
+        <p>Words</p>
+        </div>
+        </div>
+      HTML
+    end
+
+    context 'with a title' do
+      let(:input) do
+        <<~ASCIIDOC
+          .Title
+          ====
+          Words
+          ====
+        ASCIIDOC
+      end
+      it 'is wrapped in an example' do
+        expect(converted).to include <<~HTML
+          <div class="example">
+          <p class="title"><strong>Example 1. Title</strong></p>
+          <div class="example-contents">
+          <p>Words</p>
+          </div>
           </div>
         HTML
       end
