@@ -40,10 +40,19 @@ module DocbookCompat
     # empty string. ClearCachedTitles will make sure we get reconverted
     # when we're rendered.
     def skip_inline_admonition(node)
-      return false unless node.parent
-      return false if node.parent.id
+      return false unless (parent = node.parent)
+      return false if parent.id
 
-      %i[section floating_title].include? node.parent.context
+      case parent.context
+      when :section
+        # the first level 0 heading doesn't ever auto-generate an id so we
+        # need to render the docs.
+        parent.level != 0 || parent.index != 0
+      when :floating_title
+        true
+      else
+        false
+      end
     end
 
     def convert_inline_admonition_for_real(node)
