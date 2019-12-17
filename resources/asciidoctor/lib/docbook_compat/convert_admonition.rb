@@ -28,6 +28,34 @@ module DocbookCompat
     end
 
     def convert_inline_admonition(node)
+      return '' if skip_inline_admonition node
+
+      convert_inline_admonition_for_real node
+    end
+
+    ##
+    # If the parent is a section and it doesn't yet have an id then we're
+    # being invoked during the parse phase to generate an id for that section.
+    # We don't want to include the admonition in the id so we convert as
+    # empty string. ClearCachedTitles will make sure we get reconverted
+    # when we're rendered.
+    def skip_inline_admonition(node)
+      return false unless (parent = node.parent)
+      return false if parent.id
+
+      case parent.context
+      when :section
+        # the first level 0 heading doesn't ever auto-generate an id so we
+        # need to render the docs.
+        parent.level != 0 || parent.index != 0
+      when :floating_title
+        true
+      else
+        false
+      end
+    end
+
+    def convert_inline_admonition_for_real(node)
       title_classes =
         "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
       [
