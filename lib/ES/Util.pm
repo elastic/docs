@@ -470,7 +470,7 @@ sub extract_toc_from_index {
     my $dir = shift;
     my $html
         = $dir->file('index.html')->slurp( 'iomode' => '<:encoding(UTF-8)' );
-    $html =~ s/^.+<!--START_TOC-->//s;
+    $html =~ s/^.+<!--START_TOC-->\n?//s;
     $html =~ s/<!--END_TOC-->.*$//s;
     $dir->file('toc.html')->spew( iomode => '>:utf8', $html );
 }

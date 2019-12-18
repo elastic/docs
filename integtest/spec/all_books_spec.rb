@@ -33,7 +33,7 @@ RSpec.describe 'building all books' do
     file_context 'raw/test/master/index.html' do
       it "doesn't contain the noindex flag" do
         expect(contents).not_to include(<<~HTML.strip)
-          <meta name="robots" content="noindex,nofollow" />
+          <meta name="robots" content="noindex,nofollow"/>
         HTML
       end
     end
@@ -127,7 +127,7 @@ RSpec.describe 'building all books' do
                  'raw/test/current/chapter.html' do
       it 'has a link to the image' do
         expect(body).to include(<<~HTML.strip)
-          <img src="resources/readme/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat">
         HTML
       end
     end
@@ -135,7 +135,7 @@ RSpec.describe 'building all books' do
                  'html/test/current/chapter.html' do
       it 'has a link to the image' do
         expect(body).to include(<<~HTML.strip)
-          <img src="resources/readme/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat">
         HTML
       end
     end
@@ -143,7 +143,7 @@ RSpec.describe 'building all books' do
                  'html/test/master/chapter.html' do
       it 'has a link to the image' do
         expect(body).to include(<<~HTML.strip)
-          <img src="resources/readme/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat">
         HTML
       end
     end
@@ -151,7 +151,7 @@ RSpec.describe 'building all books' do
                  'raw/test/master/chapter.html' do
       it 'has a link to the image' do
         expect(contents).to include(<<~HTML.strip)
-          <img src="resources/readme/cat.jpg" alt="A cat" />
+          <img src="resources/readme/cat.jpg" alt="A cat">
         HTML
       end
     end
@@ -273,11 +273,8 @@ RSpec.describe 'building all books' do
       end
     end
     let(:edit_me) do
-      <<~HTML.lines.map { |l| ' ' + l.strip }.join.strip
-        <a href="#{edit_url}"
-           class="edit_me"
-           title="Edit this page on GitHub"
-           rel="nofollow">edit</a>
+      <<~HTML.strip
+        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
       HTML
     end
     context "when respect_edit_url_overrides isn't specified" do
@@ -312,7 +309,7 @@ RSpec.describe 'building all books' do
     page_context 'raw/test/master/chapter.html' do
       it 'contains a relative link to www.elatic.co' do
         expect(body).to include(<<~HTML.strip)
-          <a class="ulink" href="/cloud/" target="_top">link</a>
+          <a href="/cloud/" class="ulink" target="_top">link</a>
         HTML
       end
     end
@@ -330,7 +327,7 @@ RSpec.describe 'building all books' do
 
         book = src.book 'Test'
         book.source repo, 'index.asciidoc'
-        book.direct_html = true if direct_html
+        book.direct_html = direct_html
         book.branches.push 'foo', '7.x', '1.2'
       end
       shared_examples 'contains branch' do |branch|
@@ -434,7 +431,7 @@ RSpec.describe 'building all books' do
       java_alts = { source_lang: 'console', alternative_lang: 'java' }
       book.source(java_repo, 'examples', alternatives: java_alts)
     end
-    let(:direct_html) { false }
+    let(:direct_html) { true }
     include_examples 'README-like console alternatives',
                      'raw/test/master', 'html/test/master'
   end
@@ -603,7 +600,7 @@ RSpec.describe 'building all books' do
     file_context 'raw/test/master/index.html' do
       it 'contains the noindex flag' do
         expect(contents).to include(<<~HTML.strip)
-          <meta name="robots" content="noindex,nofollow" />
+          <meta name="robots" content="noindex,nofollow"/>
         HTML
       end
     end
@@ -622,7 +619,7 @@ RSpec.describe 'building all books' do
     page_context 'the live branch', 'html/test/master/index.html' do
       it "doesn't contain the noindex flag" do
         expect(contents).not_to include(<<~HTML.strip)
-          <meta name="robots" content="noindex,nofollow" />
+          <meta name="robots" content="noindex,nofollow"/>
         HTML
       end
       context 'the live versions drop down' do
@@ -644,14 +641,14 @@ RSpec.describe 'building all books' do
       let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
       it 'contains an edit_me link' do
         expect(body).to include <<~HTML.strip
-          <a href="#{edit_url}" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
         HTML
       end
     end
     page_context "the dead branch's index", 'html/test/nonlive/index.html' do
       it 'contains the noindex flag' do
         expect(contents).to include(<<~HTML.strip)
-          <meta name="robots" content="noindex,nofollow" />
+          <meta name="robots" content="noindex,nofollow"/>
         HTML
       end
       context 'the live versions drop down' do
