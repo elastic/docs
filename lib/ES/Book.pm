@@ -279,7 +279,6 @@ sub _build_book {
                 branch => $branch,
                 roots => $roots,
                 relativize => 1,
-                direct_html => $self->{direct_html},
             );
         }
         else {
@@ -304,7 +303,6 @@ sub _build_book {
                 branch => $branch,
                 roots => $roots,
                 relativize => 1,
-                direct_html => $self->{direct_html},
             );
         }
         $checkout->rmtree;
