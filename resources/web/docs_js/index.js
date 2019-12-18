@@ -7,6 +7,7 @@ import {lang_strings} from "./localization";
 import store from "./store";
 import * as utils from "./utils.js";
 import PR from "../lib/prettify/prettify";
+import "./prettify/lang-asciidoc";
 import "./prettify/lang-console";
 import "../lib/prettify/lang-sql";
 import "../lib/prettify/lang-yaml";
