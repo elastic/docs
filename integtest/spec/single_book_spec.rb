@@ -11,9 +11,9 @@ RSpec.describe 'building a single book' do
     == Chapter
   ASCIIDOC
 
-  let(:emdash)           { "&#8212;" }
-  let(:ellipsis)         { "&#8230;" }
-  let(:zero_width_space) { "&#8203;" }
+  let(:emdash)           { '&#8212;' }
+  let(:ellipsis)         { '&#8230;' }
+  let(:zero_width_space) { '&#8203;' }
 
   context 'for a minimal book' do
     shared_context 'expected' do |file_name, direct_html|
