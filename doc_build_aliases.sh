@@ -36,7 +36,7 @@ alias docbldls=docbldlsx
 
 # Logstash 6.2 and earlier
 
-alias docbldlsold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash-extra/x-pack-logstash/docs/ --chunk 1'
+alias docbldlsold='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash-extra/x-pack-logstash/docs/ --chunk 1'
 
 # Installation and Upgrade Guide 7.0 and later
 alias docbldstk='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --chunk 1'
