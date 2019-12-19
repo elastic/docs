@@ -137,7 +137,7 @@ sub _reference_args {
     return () unless $self->{reference_dir};
     return ('--reference', $self->{reference_dir}) if -e $self->{reference_dir};
     say " - Reference missing so not caching: " . $self->{reference_dir};
-    $self->{reference_dir} = 0;  # NOCOMMIT check me
+    $self->{reference_dir} = 0;
     return ();
 }
 

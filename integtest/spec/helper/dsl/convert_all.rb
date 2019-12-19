@@ -29,7 +29,6 @@ module Dsl
     end
     shared_examples 'builds all books' do
       it 'prints that it is updating repositories' do
-        # TODO: more assertions about the logged output
         expect(out).to include('Updating repositories')
       end
       it 'prints that it is building all branches of every book' do

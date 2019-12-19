@@ -306,6 +306,5 @@ RSpec.describe OpenInWidget do
       include_context 'open in widget'
       let(:lang) { 'ece' }
     end
-    # NOCOMMIT ess and ece but they don't copy the snippet
   end
 end
