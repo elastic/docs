@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../../test/dsl/file_context'
+require_relative '../../test/matcher/file_exist'
 require 'chunker/extension'
 require 'docbook_compat/extension'
 require 'fileutils'
@@ -115,6 +117,13 @@ RSpec.describe Chunker do
   context 'when outdir is configured' do
     let(:outdir) { Dir.mktmpdir }
     after(:example) { FileUtils.remove_entry outdir }
+    ##
+    # Build a path to a file in the destination directory.
+    # Needed by file_context.
+    def dest_file(file)
+      converted
+      File.join outdir, file
+    end
     context 'when chunk level is 1' do
       let(:convert_attributes) do
         {

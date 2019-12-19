@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../test/matcher/file_exist'
 require 'docbook45/converter'
 
 RSpec.configure do |config|
@@ -110,32 +109,5 @@ RSpec.shared_context 'convert without logs' do
                           .join("\n")
     end
     converted
-  end
-end
-
-##### TODO: This should be shared with integ tests
-##
-# Create a context to assert things about a file. By default it just
-# asserts that the file was created but if you pass a block you can add
-# assertions on `contents`.
-def file_context(name, file_name = name, &block)
-  context "for #{name}" do
-    include_context 'Dsl_file', file_name
-
-    # Yield to the block to add more tests.
-    class_exec(&block) if block
-  end
-end
-RSpec.shared_context 'Dsl_file' do |file_name|
-  let(:file) do
-    converted # force the conversion so the file will exist
-    File.join outdir, file_name
-  end
-  let(:contents) do
-    File.open file, 'r:UTF-8', &:read if File.exist? file
-  end
-
-  it 'is created' do
-    expect(file).to file_exist
   end
 end
