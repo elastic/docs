@@ -181,3 +181,6 @@ alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:el
 # Do not include the docs repo in this list. The build always uses your local files.
 # For example:
 # --sub_dir elasticsearch:master:./elasticsearch
+
+# Machine learning
+alias docbldml='$GIT_HOME/docs/build_docs --direct_html --doc $GIT_HOME/stack-docs/docs/en/stack/ml/index.asciidoc --resource $GIT_HOME/elasticsearch/docs --chunk 1'
