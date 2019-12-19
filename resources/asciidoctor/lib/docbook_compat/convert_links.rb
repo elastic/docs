@@ -26,14 +26,14 @@ module DocbookCompat
       text = node.text || ref_text_for(ref, node)
       title = ref_title_for ref
       <<~HTML.strip
-        #{xref}#{title ? %(title="#{title}") : ''}>#{text}</a>
+        #{xref}#{title ? %( title="#{title}") : ''}>#{text}</a>
       HTML
     end
 
     private
 
     def ref_text_for(ref, node)
-      text = ref.xreftext node.attr('xrefstyle', 'short', true)
+      text = ref.xreftext node.attr('xrefstyle', 'full', true)
       return text if text
 
       # The text is empty! Let's grab the parent section's heading.
@@ -53,11 +53,7 @@ module DocbookCompat
       # References to inline text don't have a title.
       return unless ref.respond_to?(:title)
 
-      # Strip the html if there is any becaue this is inside a tag. It'd be
-      # nice if there was a cleaner way to do this but there really isn't.
-      # Luckily this html all comes from asciidoctor so we at least know it is
-      # valid.
-      ref.title&.gsub %r{</?[^>]*>}, ''
+      strip_tags ref.title
     end
   end
 end

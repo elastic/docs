@@ -58,13 +58,18 @@ class Book
   def initialize(title, prefix)
     @title = title
     @prefix = prefix
+    init_defaults
+  end
+
+  def init_defaults
     @index = 'index.asciidoc'
     @sources = []
     @branches = ['master']
     @current_branch = 'master'
     @lang = 'en'
     @respect_edit_url_overrides = @suppress_migration_warnings = false
-    @direct_html = @noindex = @single = false
+    @noindex = @single = false
+    @direct_html = true
     @live_branches = @toc_extra = nil
   end
 

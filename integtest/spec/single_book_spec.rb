@@ -11,10 +11,9 @@ RSpec.describe 'building a single book' do
     == Chapter
   ASCIIDOC
 
-  let(:emdash)           { "\u2014" }
-  let(:ellipsis)         { "\u2026" }
-  let(:no_break_space)   { "\u00a0" }
-  let(:zero_width_space) { "\u200b" }
+  let(:emdash)           { '&#8212;' }
+  let(:ellipsis)         { '&#8230;' }
+  let(:zero_width_space) { '&#8203;' }
 
   context 'for a minimal book' do
     shared_context 'expected' do |file_name, direct_html|
@@ -140,7 +139,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
-          <a href="unknown/edit/master/index.asciidoc" class="edit_me" title="Edit this page on GitHub" rel="nofollow">edit</a>
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="unknown/edit/master/index.asciidoc">edit</a>
         HTML
       end
     end
@@ -208,7 +207,7 @@ RSpec.describe 'building a single book' do
       end
       let(:empty_cell) do
         <<~HTML.strip
-          <td align="left" valign="top">#{no_break_space}</td>
+          <td align="left" valign="top"><p></p></td>
         HTML
       end
       let(:non_empty_cell) do
@@ -220,7 +219,12 @@ RSpec.describe 'building a single book' do
         it "the empty cell doesn't contain any other tags" do
           # We match on the empty cell followed by the non-empty cell so we
           # can be sure we're matching the right part of the table.
-          expect(body).to include("<tr>#{empty_cell}#{non_empty_cell}</tr>")
+          expect(body).to include <<~HTML
+            <tr>
+            #{empty_cell}
+            #{non_empty_cell}
+            </tr>
+          HTML
         end
       end
     end
@@ -303,7 +307,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'contains an absolute link to www.elatic.co' do
         expect(body).to include(<<~HTML.strip)
-          <a class="ulink" href="https://www.elastic.co/cloud/" target="_top">link</a>
+          <a href="https://www.elastic.co/cloud/" class="ulink" target="_top">link</a>
         HTML
       end
     end
@@ -311,11 +315,8 @@ RSpec.describe 'building a single book' do
 
   context 'regarding the xpack tag' do
     let(:edit_me) do
-      <<~HTML.lines.map { |l| ' ' + l.strip }.join.strip
-        <a href="https://github.com/elastic/docs/edit/master/index.asciidoc"
-           class="edit_me"
-           title="Edit this page on GitHub"
-           rel="nofollow">edit</a>
+      <<~HTML.strip
+        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/docs/edit/master/index.asciidoc">edit</a>
       HTML
     end
     let(:xpack_tag) do
@@ -466,18 +467,30 @@ RSpec.describe 'building a single book' do
         expect(title).to eq('Images')
       end
       it 'has the cat image with a title' do
-        expect(body).to include(<<~HTML.strip)
-          <div class="figure-contents"><div class="mediaobject"><img src="resources/readme/cat.jpg" alt="Alt text" /></div></div></div>
+        expect(body).to include <<~HTML
+          <div id="cat" class="imageblock">
+          <div class="content">
+          <img src="resources/readme/cat.jpg" alt="Alt text">
+          </div>
+          <div class="title">Figure 1. A scaredy cat</div>
+          </div>
         HTML
       end
       it 'has the cat image with specified width and without a title' do
-        expect(body).to include(<<~HTML.strip)
-          <div class="informalfigure"><div class="mediaobject"><img src="resources/readme/cat.jpg" width="108" alt="Alt text" /></div></div>
+        expect(body).to include <<~HTML
+          <div id="cat" class="imageblock">
+          <div class="content">
+          <img src="resources/readme/cat.jpg" alt="Alt text">
+          </div>
         HTML
       end
       it 'has the screenshot' do
-        expect(body).to include(<<~HTML.strip)
-          <div class="screenshot informalfigure"><div class="mediaobject"><img src="resources/readme/screenshot.png" alt="A screenshot example" /></div></div>
+        expect(body).to include <<~HTML
+          <div class="imageblock screenshot">
+          <div class="content">
+          <img src="resources/readme/screenshot.png" alt="A screenshot example">
+          </div>
+          </div>
         HTML
       end
     end
@@ -510,20 +523,35 @@ RSpec.describe 'building a single book' do
         #{ConsoleExamples::README_LIKE}
       ASCIIDOC
     end
-    convert_before do |src, dest|
-      repo = src.repo 'src'
-      from = repo.write 'index.asciidoc', index
-      repo.commit 'commit outstanding'
-      # Points java to a directory without any examples so we can report that.
-      dest.prepare_convert_single(from, '.')
-          .alternatives('console', 'js', "#{__dir__}/../readme_examples/js")
-          .alternatives(
-            'console', 'csharp', "#{__dir__}/../readme_examples/csharp"
-          )
-          .alternatives('console', 'java', "#{__dir__}/helper")
-          .convert
+    shared_context 'console alternatives' do |direct_html|
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.asciidoc', index
+        repo.commit 'commit outstanding'
+        # Points java to a directory without any examples so we can report that.
+        convert = dest.prepare_convert_single(from, '.')
+                      .alternatives(
+                        'console', 'js', "#{__dir__}/../readme_examples/js"
+                      )
+                      .alternatives(
+                        'console', 'csharp',
+                        "#{__dir__}/../readme_examples/csharp"
+                      )
+                      .alternatives('console', 'java', "#{__dir__}/helper")
+        convert.direct_html if direct_html
+        convert.convert
+      end
     end
-    include_examples 'README-like console alternatives', 'raw', '.'
+    context 'with direct_html' do
+      include_context 'console alternatives', true
+      let(:direct_html) { true }
+      include_examples 'README-like console alternatives', 'raw', '.'
+    end
+    context 'without direct_html' do
+      include_context 'console alternatives', false
+      let(:direct_html) { false }
+      include_examples 'README-like console alternatives', 'raw', '.'
+    end
   end
 
   context 'for a book with en -extra-title-page.html file' do
@@ -569,6 +597,96 @@ RSpec.describe 'building a single book' do
           expect(contents).not_to include("<div>\n<p>extra!</p>\n</div>")
         end
       end
+    end
+  end
+  context 'for a book with page-header.html' do
+    shared_context 'page-header' do |direct_html|
+      context 'single page' do
+        convert_before do |src, dest|
+          repo = src.repo 'src'
+          from = repo.write 'index.adoc', <<~ASCIIDOC
+            = Title
+
+            [[section]]
+            == Section
+
+            Words.
+          ASCIIDOC
+          repo.write 'page_header.html', '<p>header</p>'
+          repo.commit 'commit outstanding'
+          convert = dest.prepare_convert_single(from, '.')
+          convert.direct_html if direct_html
+          convert.single.convert
+        end
+        file_context 'raw/index.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>header</p>'
+          end
+        end
+      end
+      context 'multipage' do
+        convert_before do |src, dest|
+          repo = src.repo 'src'
+          from = repo.write 'index.adoc', <<~ASCIIDOC
+            = Title
+
+            [[section]]
+            == Section
+
+            Words.
+          ASCIIDOC
+          repo.write 'page_header.html', '<p>header</p>'
+          repo.commit 'commit outstanding'
+          convert = dest.prepare_convert_single(from, '.')
+          convert.direct_html if direct_html
+          convert.convert
+        end
+        file_context 'raw/index.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>header</p>'
+          end
+        end
+        file_context 'raw/section.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>header</p>'
+          end
+        end
+      end
+      context 'with chinese text' do
+        # We've failed in the past on Chinese text with encoding issues.
+        convert_before do |src, dest|
+          repo = src.repo 'src'
+          from = repo.write 'index.adoc', <<~ASCIIDOC
+            = Title
+
+            [[section]]
+            == Section
+
+            Words.
+          ASCIIDOC
+          repo.write 'page_header.html', '<p>请注意</p>'
+          repo.commit 'commit outstanding'
+          convert = dest.prepare_convert_single(from, '.')
+          convert.direct_html if direct_html
+          convert.convert
+        end
+        file_context 'raw/index.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>请注意</p>'
+          end
+        end
+        file_context 'raw/section.html' do
+          it 'should contain the header' do
+            expect(contents).to include '<p>请注意</p>'
+          end
+        end
+      end
+    end
+    context 'with direct_html' do
+      include_examples 'page-header', true
+    end
+    context 'without direct_html' do
+      include_examples 'page-header', false
     end
   end
 
@@ -746,6 +864,7 @@ RSpec.describe 'building a single book' do
       repo.create_worktree worktree, 'HEAD'
       FileUtils.rm_rf repo.root
       dest.prepare_convert_single("#{worktree}/index.asciidoc", '.')
+          .direct_html
           .convert
     end
     page_context 'chapter.html' do
@@ -767,6 +886,7 @@ RSpec.describe 'building a single book' do
           ----
         ASCIIDOC
         c = dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+        c.direct_html
         c.suppress_migration_warnings if suppress
         c.convert(expect_failure: !suppress)
       end
@@ -803,6 +923,7 @@ RSpec.describe 'building a single book' do
         include::missing.asciidoc[]
       ASCIIDOC
       dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+          .direct_html
           .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do
@@ -820,6 +941,7 @@ RSpec.describe 'building a single book' do
         <<missing-ref>>
       ASCIIDOC
       dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
+          .direct_html
           .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do

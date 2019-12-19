@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../strip_tags'
 require_relative 'link'
 
 module Chunker
@@ -7,6 +8,7 @@ module Chunker
   # Adds extra tags <link> tags to the <head> to emulate docbook.
   module ExtraDocinfo
     include Link
+    include StripTags
 
     def docinfo(location = :head, suffix = nil)
       info = super
@@ -29,8 +31,10 @@ module Chunker
       return unless related
 
       extra = related.context == :document ? related.attr('title-extra') : ''
-      title = %(title="#{link_text related}#{extra}")
-      %(<link rel="#{rel}" #{link_href related} #{title}/>)
+      title = "#{strip_tags(link_text(related))}#{extra}"
+      # We're in an attribute so escape quotes too!
+      title = title.gsub '"', '&quot;'
+      %(<link rel="#{rel}" #{link_href related} title="#{title}"/>)
     end
   end
 end

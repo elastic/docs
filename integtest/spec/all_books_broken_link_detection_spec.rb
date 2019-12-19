@@ -36,7 +36,7 @@ RSpec.describe 'building all books' do
 
       # The preview of the book is important here because it is how we detect
       # the versions of kibana to check.
-      # NOCOMMIT maybe we shouldn't?!
+      # TODO: This is probably worth generalizing. Lots of repos reference docs.
       repo = src.repo_with_index 'repo', "Doesn't matter"
       book = src.book 'Test', prefix: 'en/kibana'
       book.source repo, 'index.asciidoc'

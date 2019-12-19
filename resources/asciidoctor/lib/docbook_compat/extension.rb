@@ -2,9 +2,14 @@
 
 require 'asciidoctor/extensions'
 require_relative '../delegating_converter'
+require_relative '../strip_tags'
+require_relative 'clear_cached_titles'
 require_relative 'convert_admonition'
-require_relative 'convert_document'
 require_relative 'convert_dlist'
+require_relative 'convert_document'
+require_relative 'convert_example'
+require_relative 'convert_floating_title'
+require_relative 'convert_inline_quoted'
 require_relative 'convert_links'
 require_relative 'convert_listing'
 require_relative 'convert_lists'
@@ -12,6 +17,7 @@ require_relative 'convert_open'
 require_relative 'convert_outline'
 require_relative 'convert_paragraph'
 require_relative 'convert_quote'
+require_relative 'convert_sidebar'
 require_relative 'convert_table'
 require_relative 'titleabbrev_handler'
 
@@ -21,6 +27,7 @@ module DocbookCompat
   def self.activate(registry)
     return unless registry.document.basebackend? 'html'
 
+    registry.treeprocessor ClearCachedTitles
     registry.treeprocessor TitleabbrevHandler
     DelegatingConverter.setup(registry.document) { |d| Converter.new d }
   end
@@ -29,8 +36,11 @@ module DocbookCompat
   # A Converter implementation that emulates Elastic's docbook generated html.
   class Converter < DelegatingConverter
     include ConvertAdmonition
-    include ConvertDocument
     include ConvertDList
+    include ConvertDocument
+    include ConvertExample
+    include ConvertFloatingTitle
+    include ConvertInlineQuoted
     include ConvertLinks
     include ConvertListing
     include ConvertLists
@@ -38,7 +48,9 @@ module DocbookCompat
     include ConvertOutline
     include ConvertParagraph
     include ConvertQuote
+    include ConvertSidebar
     include ConvertTable
+    include StripTags
 
     def convert_section(node)
       <<~HTML
@@ -51,48 +63,10 @@ module DocbookCompat
       HTML
     end
 
-    def convert_floating_title(node)
-      tag_name = %(h#{node.level + 1})
-      # Asciidoctor's standard is to put the id on the header tag but docbook
-      # puts it in its own anchor tag.
-      anchor = node.id ? %(<a id="#{node.id}"></a>) : ''
-      classes = [node.role].compact
-      classes_html = classes.empty? ? '' : " class=#{classes.join ' '}"
-      <<~HTML
-        <#{tag_name}#{classes_html}>#{anchor}#{node.title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</#{tag_name}>
-      HTML
-    end
-
-    def convert_inline_quoted(node)
-      case node.type
-      when :monospaced
-        node.attributes['role'] ||= 'literal'
-        yield
-      when :strong
-        # Docbook's "strong" rendering is comically repetitive.....
-        %(<span class="strong strong"><strong>#{node.text}</strong></span>)
-      else
-        yield
-      end
-    end
-
     def convert_literal(node)
       <<~HTML
         <pre class="literallayout">#{node.content}</pre>
       HTML
-    end
-
-    def convert_sidebar(node)
-      result = [%(<div class="sidebar#{node.role ? " #{node.role}" : ''}">)]
-      if node.title
-        result << '<div class="titlepage"><div><div>'
-        result << %(<p class="title"><strong>#{node.title}</strong></p>)
-        result << %(</div></div></div>)
-      else
-        result << '<div class="titlepage"></div>'
-      end
-      result += [node.content, '</div>']
-      result.join "\n"
     end
 
     def xpack_tag(node)

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../strip_tags'
 require_relative 'convert_table_cell'
 
 module DocbookCompat
@@ -7,6 +8,7 @@ module DocbookCompat
   # Methods to convert tables.
   module ConvertTable
     include ConvertTableCell
+    include StripTags
 
     def convert_table(node)
       [
@@ -20,13 +22,23 @@ module DocbookCompat
     end
 
     def convert_table_intro(node)
-      return '<div class="informaltable">' unless node.title
+      return convert_table_informal_intro node unless node.title
 
+      result = ['<div class="table">']
+      result << %(<a id="#{node.id}"></a>) if node.id
+      if node.title
+        title = node.captioned_title
+        result << %(<p class="title"><strong>#{title}</strong></p>)
+      end
+      result << '<div class="table-contents">'
+      result
+    end
+
+    def convert_table_informal_intro(node)
       [
-        '<div class="table">',
-        %(<p class="title"><strong>#{node.captioned_title}</strong></p>),
-        '<div class="table-contents">',
-      ]
+        '<div class="informaltable">',
+        node.id ? %(<a id="#{node.id}"></a>) : nil,
+      ].compact
     end
 
     def convert_table_outro(node)
@@ -39,7 +51,7 @@ module DocbookCompat
       [
         '<table',
         %( border="#{border}" cellpadding="4px"),
-        node.title ? %( summary="#{node.title}") : nil,
+        node.title ? %( summary="#{strip_tags node.title}") : nil,
         (width = node.attr 'width') ? %( width="#{width}") : nil,
         '>',
       ].compact.join

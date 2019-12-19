@@ -220,8 +220,9 @@ RSpec.describe 'building all books' do
         end
         context 'the toc' do
           def chapter(index)
-            <<~HTML.strip
-              <li><span class="chapter"><a href="chapter#{index}.html">Chapter #{index}</a></span></li>
+            <<~HTML
+              <li><span class="chapter"><a href="chapter#{index}.html">Chapter #{index}</a></span>
+              </li>
             HTML
           end
           it 'contains all chapters' do
@@ -447,8 +448,8 @@ RSpec.describe 'building all books' do
           build_one_book_out_of_one_repo_twice(
             before_first_build: lambda do |src, _config|
               book = src.book 'Test'
-              # For now direct_html only works with single page books.
               book.single = true
+              book.direct_html = false
             end,
             before_second_build: lambda do |src, _config|
               book = src.book 'Test'
@@ -462,7 +463,6 @@ RSpec.describe 'building all books' do
             before_first_build: lambda do |src, _config|
               book = src.book 'Test'
               book.direct_html = true
-              # For now direct_html only works with single page books.
               book.single = true
             end,
             before_second_build: lambda do |src, _config|

@@ -34,6 +34,15 @@ module DocbookCompat
     def convert_list(node)
       node.items.each { |item| item.attributes['role'] ||= 'listitem' }
       html = yield
+      html.sub!(
+        %r{<div class="title">#{node.title}</div>},
+        %(<p class="title"><strong>#{node.title}</strong></p>)
+      )
+      munge_list_items node, html
+      html
+    end
+
+    def munge_list_items(node, html)
       node.items.each do |item|
         next unless item.text
         next if item.blocks?
@@ -41,7 +50,6 @@ module DocbookCompat
         html.sub!("<p>#{item.text}</p>", item.text) ||
           raise("Couldn't remove <p> for #{item.text} in #{html}")
       end
-      html
     end
   end
 end
