@@ -4,11 +4,16 @@ include common.mk
 check: unit_test integration_test
 
 .PHONY: unit_test
-unit_test: style test_check asciidoctor_check web_check template_check preview_check
+unit_test: style style_check test_check asciidoctor_check \
+           web_check template_check preview_check
 
 .PHONY: style
 style: build_docs
 	$(DOCKER) py_test pycodestyle build_docs
+
+.PHONY: style_check
+style_check:
+	$(MAKE) -C resources/style
 
 .PHONY: test_check
 test_check:
