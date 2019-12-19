@@ -36,12 +36,18 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
         target, reader.dir, nil, target_name: 'include file'
       )
       @relpath = doc.path_resolver.relative_path @path, doc.base_dir
+      init_regexes
+      init_state
+    end
 
-      # These are used when scanning the file
+    # These are used when scanning the file
+    def init_regexes
       @start_match = /^(\s*).+tag::#{@tag}\b/
       @end_match = /end::#{@tag}\b/
+    end
 
-      # These are modified when scanning the file
+    # These are modified when scanning the file
+    def init_state
       @lines = []
       @start_of_include = nil
       @found_end = false
@@ -58,22 +64,16 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
         return @target
       end
 
-      return @path unless read_file
+      return @path unless read_file && check_markers
 
-      if @start_of_include.nil?
-        warn "missing start tag [#{@tag}]"
-        return @path
-      end
-      if @found_end == false
-        warn "missing end tag [#{@tag}]", Asciidoctor::Reader::Cursor.new(
-          @path, @relpath, @relpath, @start_of_include
-        )
-      end
       @reader.push_include @lines, @path, @relpath, @start_of_include, @attrs
     end
 
+    ##
+    # Read the file. Returns true if we successfully read the file, nil
+    # otherwise.
     def read_file
-      File.open(@path, 'r') { |f| scan_file(f) }
+      File.open(@path, 'r:UTF-8') { |f| @found_end = scan_file f }
       true
     rescue Errno::ENOENT
       error message: "include file not found: #{@path}",
@@ -83,30 +83,46 @@ class ElasticIncludeTagged < Asciidoctor::Extensions::IncludeProcessor
     end
 
     ##
-    # Scan the file for the lines, populating instance variables along the way.
-    def scan_file(file)
-      lineno = 0
-      found_tag = false
-      indentation = nil
-      file.each_line do |line|
-        lineno += 1
-        line.force_encoding Encoding::UTF_8
-        if @end_match =~ line
-          @found_end = true
-          break
-        end
-        if found_tag
-          line = line.sub(indentation, '')
-          @lines << line if line
-          next
-        end
-        start_match_data = @start_match.match(line)
-        next unless start_match_data
-
-        found_tag = true
-        indentation = /^#{start_match_data[1]}/
-        @start_of_include = lineno
+    # Check the markers for a successful read. Returns true if we got
+    # *something*, false otherwise.
+    def check_markers
+      if @start_of_include.nil?
+        warn "missing start tag [#{@tag}]"
+        return false
       end
+      unless @found_end
+        warn "missing end tag [#{@tag}]", Asciidoctor::Reader::Cursor.new(
+          @path, @relpath, @relpath, @start_of_include
+        )
+      end
+      true
+    end
+
+    ##
+    # Scan the file for the lines, populating instance variables along the way.
+    # Returns true if we found the end of the file, false otherwise.
+    def scan_file(file)
+      indentation = nil
+      file.each_line.with_index do |line, index|
+        if indentation
+          return true if @end_match =~ line
+
+          @lines << line.sub(indentation, '')
+        else
+          indentation = scan_for_start line, index
+        end
+      end
+      false
+    end
+
+    ##
+    # Scans a line for the start of a match. Returns the indentation cleanup
+    # regex if we find the start, nil otherwise.
+    def scan_for_start(line, index)
+      return unless (start_match_data = @start_match.match line)
+
+      @start_of_include = index + 1
+      /^#{start_match_data[1]}/
     end
 
     def warn(message, cursor = @reader.cursor)

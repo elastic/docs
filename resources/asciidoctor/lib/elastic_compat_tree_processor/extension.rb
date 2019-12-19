@@ -69,13 +69,7 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
   }.freeze
 
   def process_lang_override(block)
-    # Check if the next block is a marker for the language
-    # We don't want block.next_adjacent_block because that'll go "too far"
-    # and it has trouble with definition lists.
-    return unless (my_index = block.parent.blocks.find_index block)
-
-    next_block = block.parent.blocks[my_index + 1]
-    return unless next_block && next_block.context == :pass
+    return unless (next_block = candidate_block block)
     return unless (match = LANG_OVERRIDE_RX.match(next_block.source))
     return unless (lang = LANG_MAPPING[match[1]]) # Not a language we handle
 
@@ -84,5 +78,17 @@ class ElasticCompatTreeProcessor < TreeProcessorScaffold
 
     block.parent.blocks.delete next_block
     block.parent.reindex_sections
+  end
+
+  # Check if the next block is a marker for the language
+  # We don't want block.next_adjacent_block because that'll go "too far"
+  # and it has trouble with definition lists.
+  def candidate_block(block)
+    return unless (my_index = block.parent.blocks.find_index block)
+
+    next_block = block.parent.blocks[my_index + 1]
+    return unless next_block && next_block.context == :pass
+
+    next_block
   end
 end
