@@ -15,6 +15,7 @@ RSpec.describe EditMe do
   end
 
   let(:spec_dir) { __dir__ }
+  let(:backend) { 'html5' }
 
   context 'when edit_urls is invalid' do
     include_context 'convert with logs'
@@ -33,43 +34,20 @@ RSpec.describe EditMe do
     end
   end
 
-  shared_context 'preface' do
-    let(:input) do
-      <<~ASCIIDOC
-        :preface-title: Preface
-        Words.
-      ASCIIDOC
-    end
-  end
-
   ##
   # Includes `standard document part` for every part of the document that we
   # can test using common code. Before including this in a context you have to
   # define a `shared_examples 'standard document part'` that is appropriate to
   # that context.
   shared_examples 'all standard document parts' do
-    context 'when the backend is docbook' do
-      let(:backend) { 'docbook45' }
-      include_examples 'standard document part', 'chapter'
-      include_examples 'standard document part', 'section'
-      include_examples 'standard document part', 'appendix'
-      include_examples 'standard document part', 'glossary'
-      include_examples 'standard document part', 'bibliography'
-      include_examples 'standard document part', 'dedication'
-      include_examples 'standard document part', 'colophon'
-      include_examples 'standard document part', 'float'
-    end
-    context 'when the backend is html5' do
-      let(:backend) { 'html5' }
-      include_examples 'standard document part', 'chapter'
-      include_examples 'standard document part', 'section'
-      include_examples 'standard document part', 'appendix'
-      include_examples 'standard document part', 'glossary'
-      include_examples 'standard document part', 'bibliography'
-      include_examples 'standard document part', 'dedication'
-      include_examples 'standard document part', 'colophon'
-      include_examples 'standard document part', 'float'
-    end
+    include_examples 'standard document part', 'chapter'
+    include_examples 'standard document part', 'section'
+    include_examples 'standard document part', 'appendix'
+    include_examples 'standard document part', 'glossary'
+    include_examples 'standard document part', 'bibliography'
+    include_examples 'standard document part', 'dedication'
+    include_examples 'standard document part', 'colophon'
+    include_examples 'standard document part', 'float'
   end
 
   context 'when edit_urls is configured' do
@@ -81,13 +59,9 @@ RSpec.describe EditMe do
     end
     let(:convert_attributes) { { 'edit_urls' => edit_urls } }
     def edit_link(url)
-      if backend == 'docbook45'
-        %(<ulink role="edit_me" url="#{url}">Edit me</ulink>)
-      else
-        attrs = 'class="edit_me" rel="nofollow" ' \
-                'title="Edit this page on GitHub" href="' + url + '"'
-        "<a #{attrs}>edit</a>"
-      end
+      attrs = 'class="edit_me" rel="nofollow" ' \
+              'title="Edit this page on GitHub" href="' + url + '"'
+      "<a #{attrs}>edit</a>"
     end
     let(:stdin_link) do
       edit_link 'www.example.com/stdin'
@@ -96,23 +70,6 @@ RSpec.describe EditMe do
       edit_link "www.example.com/spec_dir/resources/edit_me/#{file}"
     end
     include_context 'convert without logs'
-
-    context 'for a document with a preface' do
-      include_context 'preface'
-      context 'when the backend is docbook' do
-        let(:backend) { 'docbook45' }
-        it 'adds a link to the preface' do
-          expect(converted).to include("<title>Preface#{stdin_link}</title>")
-        end
-      end
-      # TODO: handle the preface
-      # context 'when the backend is html5' do
-      #   let(:backend) { 'html5' }
-      #   it 'adds a link to the preface' do
-      #     expect(converted).to include("<h1>Preface#{stdin_link}</<h1>")
-      #   end
-      # end
-    end
 
     shared_examples 'standard document part' do |type|
       context "for a document with #{type}s" do
@@ -156,12 +113,7 @@ RSpec.describe EditMe do
               }
             end
             it 'adds a link to the enclosing chapter' do
-              # Overrides "bleed" up into the enclosing chapter in docbook
-              # for sections and floats. But in html5 it doesn't!
-              unless backend == 'docbook45' &&
-                     %w[section float].include?(type)
-                expect(converted).to include(">Chapter#{stdin_link}</")
-              end
+              expect(converted).to include(">Chapter#{stdin_link}</")
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
@@ -197,7 +149,6 @@ RSpec.describe EditMe do
     include_examples 'all standard document parts'
 
     context 'when edit_urls has two matches' do
-      let(:backend) { 'docbook45' }
       let(:convert_attributes) do
         edit_urls = <<~CSV
           <stdin>,www.example.com/stdin
@@ -215,7 +166,9 @@ RSpec.describe EditMe do
       end
       it 'uses the longest match' do
         link = edit_link 'www.example.com/section2'
-        expect(converted).to include("<title>Section 2#{link}</title>")
+        expect(converted).to include <<~HTML
+          <h2 class="title"><a id="_section_2"></a>Section 2#{link}</h2>
+        HTML
       end
     end
     context 'when edit_urls explictly disables a path' do
@@ -235,18 +188,14 @@ RSpec.describe EditMe do
         ASCIIDOC
       end
       it "doesn't have an edit me link" do
-        expect(converted).to include('<title>Section 2</title>')
+        expect(converted).to include <<~HTML
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>
+        HTML
       end
     end
   end
   context 'when edit_urls is not configured' do
     include_context 'convert without logs'
-    context 'for a document with a preface' do
-      include_context 'preface'
-      it "doesn't add a link to the preface" do
-        expect(converted).to include('<title>Preface</title>')
-      end
-    end
 
     shared_examples 'standard document part' do |type|
       context "for a document with #{type}s" do

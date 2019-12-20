@@ -2,6 +2,7 @@
 
 require 'care_admonition/extension'
 require 'change_admonition/extension'
+require 'docbook_compat/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_compat_tree_processor/extension'
 require 'elastic_include_tagged/extension'
@@ -13,6 +14,7 @@ RSpec.describe ElasticCompatPreprocessor do
   before(:each) do
     Asciidoctor::Extensions.register CareAdmonition
     Asciidoctor::Extensions.register ChangeAdmonition
+    Asciidoctor::Extensions.register DocbookCompat
     Asciidoctor::Extensions.register OpenInWidget
     Asciidoctor::Extensions.register do
       block_macro LangOverride
@@ -26,7 +28,8 @@ RSpec.describe ElasticCompatPreprocessor do
     Asciidoctor::Extensions.unregister_all
   end
 
-  spec_dir = File.dirname(__FILE__)
+  let(:spec_dir) { File.dirname(__FILE__) }
+  let(:backend) { :html5 }
 
   include_examples "doesn't break line numbers"
 
@@ -37,8 +40,7 @@ RSpec.describe ElasticCompatPreprocessor do
       shared_examples 'invokes the block macro' do
         it 'invokes the block macro' do
           expect(converted).to include <<~DOCBOOK.strip
-            <#{tag_start}>
-            <simpara>
+            <div class="#{block_admon_class} admon">
           DOCBOOK
         end
       end
@@ -57,21 +59,18 @@ RSpec.describe ElasticCompatPreprocessor do
       context 'when the admonition has a `]` in it' do
         let(:invocation_text) { 'link:link.html[Title]' }
         let(:input) { invocation_with_text }
-        let(:expected) do
-          <<~DOCBOOK
-            <#{tag_start}>
-            <simpara><ulink url="link.html">Title</ulink></simpara>
-            </#{tag_end}>
-          DOCBOOK
-        end
-        it 'invokes the block macro' do
-          expect(converted).to include(expected)
+        it 'includes the correct body' do
+          expect(converted).to include <<~HTML
+            <p><a href="link.html" class="ulink" target="_top">Title</a></p>
+          HTML
         end
       end
 
       shared_examples 'invokes the inline macro' do
         it 'invokes the inline macro' do
-          expect(converted).to include("<phrase #{phrase}/>")
+          expect(converted).to include <<~HTML
+            <span class="Admonishment Admonishment--#{inline_admon_class}">
+          HTML
         end
       end
       context 'when the admonition is surrounded by other text' do
@@ -98,7 +97,7 @@ RSpec.describe ElasticCompatPreprocessor do
           ASCIIDOC
         end
         it 'skips the admonition' do
-          expect(converted).not_to include('revisionflag')
+          expect(converted).not_to include('Admonishment')
         end
         it 'properly converts the rest of the text' do
           expect(converted).to include('words before skip')
@@ -111,46 +110,41 @@ RSpec.describe ElasticCompatPreprocessor do
       include_examples 'admonition'
       let(:invocation) { "#{name}[some_version]" }
       let(:invocation_with_text) { "#{name}[some_version, #{invocation_text}]" }
-      let(:tag_start) do
-        %(#{tag} revisionflag="#{revisionflag}" revision="some_version")
-      end
-      let(:tag_end) { tag }
-      let(:phrase) { %(revisionflag="#{revisionflag}" revision="some_version") }
     end
     context 'for added' do
       include_context 'change admonition'
       let(:name) { 'added' }
-      let(:revisionflag) { 'added' }
-      let(:tag) { 'note' }
+      let(:block_admon_class) { 'note' }
+      let(:inline_admon_class) { 'change' }
     end
     context 'for coming' do
       include_context 'change admonition'
       let(:name) { 'coming' }
-      let(:revisionflag) { 'changed' }
-      let(:tag) { 'note' }
+      let(:block_admon_class) { 'note' }
+      let(:inline_admon_class) { 'change' }
     end
-    context 'for added' do
+    context 'for deprecated' do
       include_context 'change admonition'
       let(:name) { 'deprecated' }
-      let(:revisionflag) { 'deleted' }
-      let(:tag) { 'warning' }
+      let(:block_admon_class) { 'warning' }
+      let(:inline_admon_class) { 'change' }
     end
 
     shared_examples 'care admonition' do
       include_examples 'admonition'
       let(:invocation) { "#{name}[]" }
       let(:invocation_with_text) { "#{name}[#{invocation_text}]" }
-      let(:tag_start) { %(warning role="#{name}") }
-      let(:tag_end) { 'warning' }
-      let(:phrase) { %(role="#{name}") }
+      let(:block_admon_class) { 'warning' }
     end
     context 'for beta' do
       include_context 'care admonition'
       let(:name) { 'beta' }
+      let(:inline_admon_class) { 'beta' }
     end
     context 'for experimental' do
       include_context 'care admonition'
       let(:name) { 'experimental' }
+      let(:inline_admon_class) { 'experimental' }
     end
   end
 
@@ -168,10 +162,10 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'it includes the tagged portion of the file' do
-      expect(converted).to include(<<~JAVA.strip)
+      expect(converted).to include <<~JAVA.strip
         System.err.println("I'm an example");
         for (int i = 0; i &lt; 10; i++) {
-            System.err.println(i); <co id="CO1-1"/>
+            System.err.println(i); <a id="CO1-1"></a><i class="conum" data-value="1"></i>
         }
       JAVA
     end
@@ -196,10 +190,14 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'uses the attributes for the header' do
-      expect(converted).to include('<chapter id="foo-bar">')
+      expect(converted).to include <<~HTML
+        <h1 class="title"><a id="foo-bar"></a>Header</h1>
+      HTML
     end
     it 'uses the attributes outside of the header' do
-      expect(converted).to include('<xref linkend="foo-bar"/>')
+      expect(converted).to include <<~HTML.strip
+        <a class="xref" href="#foo-bar" title="Header"><em>Header</em></a>
+      HTML
     end
     context 'when it is followed by other complex processing' do
       let(:input) do
@@ -217,9 +215,9 @@ RSpec.describe ElasticCompatPreprocessor do
         ASCIIDOC
       end
       it 'the processing works as expected' do
-        expect(converted).to include(<<~ASCIIDOC.strip)
-          <note revisionflag="added" revision="some_version">
-        ASCIIDOC
+        expect(converted).to include <<~HTML
+          <p>Added in some_version.</p>
+        HTML
       end
     end
   end
@@ -237,9 +235,9 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'the contents of the block are processed normally' do
-      expect(converted).to include(<<~ASCIIDOC.strip)
-        <note revisionflag="added" revision="some_version">
-      ASCIIDOC
+      expect(converted).to include <<~HTML
+        <p>Added in some_version.</p>
+      HTML
     end
   end
 
@@ -258,7 +256,7 @@ RSpec.describe ElasticCompatPreprocessor do
     it "doesn't remove the block" do
       # The point here is that the attribute setting *doesn't* apply to the
       # text because we haven't doctored the block.
-      expect(converted).to include('<simpara>{attr}</simpara>')
+      expect(converted).to include('<p>{attr}</p>')
     end
   end
 
@@ -275,9 +273,9 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'processes callouts anyway' do
-      expect(converted).to include(<<~ASCIIDOC.strip)
-        cd elasticsearch-{version}/ <co id="CO1-1"/>
-      ASCIIDOC
+      expect(converted).to include <<~HTML.strip
+        cd elasticsearch-{version}/ <a id="CO1-1"></a><i class="conum" data-value="1"></i>
+      HTML
     end
     context 'when the block is skipped' do
       let(:input) do
@@ -294,12 +292,14 @@ RSpec.describe ElasticCompatPreprocessor do
         ASCIIDOC
       end
       it 'skips the block' do
-        expect(converted).to eq(<<~DOCBOOK.strip)
-          <chapter id="_example">
-          <title>Example</title>
+        expect(converted).to eq <<~HTML
+          <div class="chapter">
+          <div class="titlepage"><div><div>
+          <h1 class="title"><a id="_example"></a>Example</h1>
+          </div></div></div>
 
-          </chapter>
-        DOCBOOK
+          </div>
+        HTML
       end
     end
   end
@@ -314,7 +314,7 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'renders the code block' do
-      expect(converted).to include('<screen>foo</screen>')
+      expect(converted).to include('<pre class="screen">foo</pre>')
     end
     it 'logs a migration warning' do
       expect(logs).to eq(<<~LOGS.strip)
@@ -333,12 +333,14 @@ RSpec.describe ElasticCompatPreprocessor do
         ASCIIDOC
       end
       it 'skips the block' do
-        expect(converted).to eq(<<~DOCBOOK.strip)
-          <chapter id="_example">
-          <title>Example</title>
+        expect(converted).to eq <<~HTML
+          <div class="chapter">
+          <div class="titlepage"><div><div>
+          <h1 class="title"><a id="_example"></a>Example</h1>
+          </div></div></div>
 
-          </chapter>
-        DOCBOOK
+          </div>
+        HTML
       end
       it "doesn't log anything" do
         expect(logs).to eq('')
@@ -364,7 +366,7 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'preservers the table' do
-      expect(converted).to include("<screen>#{table}</screen>")
+      expect(converted).to include(%(<pre class="screen">#{table}</pre>))
     end
   end
 
@@ -386,9 +388,7 @@ RSpec.describe ElasticCompatPreprocessor do
       snippet += override if override
       snippet
     end
-    let(:has_lang) do
-      /<programlisting language="#{lang}" linenumbering="unnumbered">/
-    end
+    let(:lang_declaration) { %(<div class="pre_wrapper lang-#{lang}">) }
     let(:input) do
       <<~ASCIIDOC
         == Example
@@ -397,13 +397,12 @@ RSpec.describe ElasticCompatPreprocessor do
     end
   end
   shared_examples 'linked snippet' do |override, lang, path|
-    let(:has_link_to_path) { %r{<ulink type="snippet" url="#{path}"/>} }
     shared_examples 'converted with override' do
       it "has the #{lang} language" do
-        expect(converted).to match(has_lang)
+        expect(converted).to include(lang_declaration)
       end
       it 'have a link to the snippet' do
-        expect(converted).to match(has_link_to_path)
+        expect(converted).to include(%(data-snippet="#{path}"))
       end
     end
 
@@ -450,7 +449,7 @@ RSpec.describe ElasticCompatPreprocessor do
     let(:has_any_link) { /<ulink type="snippet"/ }
 
     it 'has the js language' do
-      expect(converted).to match(has_lang)
+      expect(converted).to include(lang_declaration)
     end
     it 'not have a link to any snippet' do
       expect(converted).not_to match(has_any_link)
@@ -466,7 +465,9 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'has the right offset' do
-      expect(converted).to include('<chapter id="_target">')
+      expect(converted).to include <<~HTML
+        <h1 class="title"><a id="_target"></a>Target</h1>
+      HTML
     end
   end
 end
