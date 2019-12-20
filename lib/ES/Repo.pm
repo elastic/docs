@@ -51,7 +51,7 @@ sub add_sub_dir {
 sub has_changed {
 #===================================
     my $self = shift;
-    my ( $title, $branch, $path, $direct_html ) = @_;
+    my ( $title, $branch, $path ) = @_;
 
     $path = $self->normalize_path( $path, $branch );
     $branch = $self->normalize_branch( $branch );
@@ -83,7 +83,6 @@ sub has_changed {
                 . $self->name);
     }
     my $new_info = $new;
-    $new_info .= '|direct_html' if $direct_html;
 
     # We check sub_dirs *after* the checks above so we can handle sub_dir for
     # new sources specially.
@@ -93,11 +92,6 @@ sub has_changed {
         return $old_info ne $new_info ? 'changed' : 'not_changed';
     }
     return 'not_changed' if $old_info eq $new_info;
-    # If the direct_html-ness of the previous build doesn't match this one then
-    # we've changed. It'd be nice if build-info were a class but we'll be
-    # dropping direct_html as soon as we've migrated all of the books and this
-    # is sort of a local minima of effort.
-    return 'changed' unless ($old_info =~ /\|direct_html$/) == $direct_html;
 
     my $changed;
     eval {
@@ -115,7 +109,7 @@ sub has_changed {
 sub mark_done {
 #===================================
     my $self = shift;
-    my ( $title, $branch, $path, $direct_html ) = @_;
+    my ( $title, $branch, $path ) = @_;
 
     my $new;
     if ( exists $self->{sub_dirs}->{$branch} ) {
@@ -126,7 +120,6 @@ sub mark_done {
     } else {
         $new = $self->sha_for_branch( $branch );
     }
-    $new .= '|direct_html' if $direct_html;
 
     $self->tracker->set_sha_for_branch( $self->name,
         $self->_tracker_branch(@_), $new );
@@ -377,18 +370,20 @@ sub show_file {
 }
 
 #===================================
-# Information about the last commit, *not* including flags like `direct_html.`
+# Information about the last commit, *not* including flag.
+# NOTE: We don't presently need any flags but we probably will in the future.
 #===================================
 sub _last_commit {
 #===================================
     my $self = shift;
     my $sha = $self->_last_commit_info(@_);
-    $sha =~ s/\|.+$//;  # Strip |direct_html if it is in the hash
+    $sha =~ s/\|.+$//;  # Strip flags (|whatever) if it is in the hash
     return $sha;
 }
 
 #===================================
-# Information about the last commit, including flags like `direct_html.`
+# Information about the last commit, including flags.
+# NOTE: We don't presently need any flags but we probably will in the future.
 #===================================
 sub _last_commit_info {
 #===================================
