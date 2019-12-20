@@ -45,13 +45,12 @@ sub has_changed {
     my $self   = shift;
     my $title  = shift;
     my $branch = shift;
-    my $direct_html = shift;
     # If any of the repos have changed then we'll return 1. 
     my $all_new_sub_dir = 1;
     for my $source ( $self->_sources_for_branch($branch) ) {
         my $repo_branch = $source->{map_branches}->{$branch} || $branch;
         my $has_changed = $source->{repo}->has_changed(
-            $title, $repo_branch, $source->{path}, $direct_html
+            $title, $repo_branch, $source->{path}
         );
         if ( $has_changed eq 'new_sub_dir' ) {
             # sub_dirs for new sources are special: They don't count as
@@ -78,10 +77,9 @@ sub mark_done {
     my $self   = shift;
     my $title  = shift;
     my $branch = shift;
-    my $direct_html = shift;
     for my $source ( $self->_sources_for_branch($branch) ) {
         my $repo_branch = $source->{map_branches}->{$branch} || $branch;
-        $source->{repo}->mark_done( $title, $repo_branch, $source->{path}, $direct_html );
+        $source->{repo}->mark_done( $title, $repo_branch, $source->{path} );
     }
     return;
 }
