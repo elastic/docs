@@ -16,8 +16,8 @@ RSpec.describe 'building a single book' do
   let(:zero_width_space) { '&#8203;' }
 
   context 'for a minimal book' do
-    shared_context 'expected' do |file_name, direct_html|
-      convert_single_before_context(direct_html: direct_html) do |src|
+    shared_context 'expected' do |file_name|
+      convert_single_before_context do |src|
         src.write file_name, <<~ASCIIDOC
           #{HEADER}
           This is a minimal viable asciidoc file for use with build_docs. The
@@ -106,15 +106,11 @@ RSpec.describe 'building a single book' do
     end
 
     context 'when the file ends in .asciidoc' do
-      include_context 'expected', 'minimal.asciidoc', false
+      include_context 'expected', 'minimal.asciidoc'
     end
 
     context 'when the file ends in .adoc' do
-      include_context 'expected', 'minimal.adoc', false
-    end
-
-    context 'when the we use direct_html' do
-      include_context 'expected', 'minimal.asciidoc', true
+      include_context 'expected', 'minimal.adoc'
     end
   end
 
@@ -523,35 +519,23 @@ RSpec.describe 'building a single book' do
         #{ConsoleExamples::README_LIKE}
       ASCIIDOC
     end
-    shared_context 'console alternatives' do |direct_html|
-      convert_before do |src, dest|
-        repo = src.repo 'src'
-        from = repo.write 'index.asciidoc', index
-        repo.commit 'commit outstanding'
-        # Points java to a directory without any examples so we can report that.
-        convert = dest.prepare_convert_single(from, '.')
-                      .alternatives(
-                        'console', 'js', "#{__dir__}/../readme_examples/js"
-                      )
-                      .alternatives(
-                        'console', 'csharp',
-                        "#{__dir__}/../readme_examples/csharp"
-                      )
-                      .alternatives('console', 'java', "#{__dir__}/helper")
-        convert.direct_html if direct_html
-        convert.convert
-      end
+    convert_before do |src, dest|
+      repo = src.repo 'src'
+      from = repo.write 'index.asciidoc', index
+      repo.commit 'commit outstanding'
+      # Points java to a directory without any examples so we can report that.
+      convert = dest.prepare_convert_single(from, '.')
+                    .alternatives(
+                      'console', 'js', "#{__dir__}/../readme_examples/js"
+                    )
+                    .alternatives(
+                      'console', 'csharp',
+                      "#{__dir__}/../readme_examples/csharp"
+                    )
+                    .alternatives('console', 'java', "#{__dir__}/helper")
+      convert.convert
     end
-    context 'with direct_html' do
-      include_context 'console alternatives', true
-      let(:direct_html) { true }
-      include_examples 'README-like console alternatives', 'raw', '.'
-    end
-    context 'without direct_html' do
-      include_context 'console alternatives', false
-      let(:direct_html) { false }
-      include_examples 'README-like console alternatives', 'raw', '.'
-    end
+    include_examples 'README-like console alternatives', 'raw', '.'
   end
 
   context 'for a book with en -extra-title-page.html file' do
@@ -566,7 +550,7 @@ RSpec.describe 'building a single book' do
         ASCIIDOC
         repo.write 'index-extra-title-page.html', '<p>extra!</p>'
         repo.commit 'commit outstanding'
-        dest.prepare_convert_single(from, '.').direct_html.single.convert
+        dest.prepare_convert_single(from, '.').single.convert
       end
       file_context 'raw/index.html' do
         it 'should contain the extra title page' do
@@ -585,7 +569,7 @@ RSpec.describe 'building a single book' do
         ASCIIDOC
         repo.write 'index-extra-title-page.html', '<p>extra!</p>'
         repo.commit 'commit outstanding'
-        dest.prepare_convert_single(from, '.').direct_html.convert
+        dest.prepare_convert_single(from, '.').convert
       end
       file_context 'raw/index.html' do
         it 'should contain the extra title page' do
@@ -600,93 +584,79 @@ RSpec.describe 'building a single book' do
     end
   end
   context 'for a book with page-header.html' do
-    shared_context 'page-header' do |direct_html|
-      context 'single page' do
-        convert_before do |src, dest|
-          repo = src.repo 'src'
-          from = repo.write 'index.adoc', <<~ASCIIDOC
-            = Title
+    context 'single page' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', <<~ASCIIDOC
+          = Title
 
-            [[section]]
-            == Section
+          [[section]]
+          == Section
 
-            Words.
-          ASCIIDOC
-          repo.write 'page_header.html', '<p>header</p>'
-          repo.commit 'commit outstanding'
-          convert = dest.prepare_convert_single(from, '.')
-          convert.direct_html if direct_html
-          convert.single.convert
-        end
-        file_context 'raw/index.html' do
-          it 'should contain the header' do
-            expect(contents).to include '<p>header</p>'
-          end
-        end
+          Words.
+        ASCIIDOC
+        repo.write 'page_header.html', '<p>header</p>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').single.convert
       end
-      context 'multipage' do
-        convert_before do |src, dest|
-          repo = src.repo 'src'
-          from = repo.write 'index.adoc', <<~ASCIIDOC
-            = Title
-
-            [[section]]
-            == Section
-
-            Words.
-          ASCIIDOC
-          repo.write 'page_header.html', '<p>header</p>'
-          repo.commit 'commit outstanding'
-          convert = dest.prepare_convert_single(from, '.')
-          convert.direct_html if direct_html
-          convert.convert
-        end
-        file_context 'raw/index.html' do
-          it 'should contain the header' do
-            expect(contents).to include '<p>header</p>'
-          end
-        end
-        file_context 'raw/section.html' do
-          it 'should contain the header' do
-            expect(contents).to include '<p>header</p>'
-          end
-        end
-      end
-      context 'with chinese text' do
-        # We've failed in the past on Chinese text with encoding issues.
-        convert_before do |src, dest|
-          repo = src.repo 'src'
-          from = repo.write 'index.adoc', <<~ASCIIDOC
-            = Title
-
-            [[section]]
-            == Section
-
-            Words.
-          ASCIIDOC
-          repo.write 'page_header.html', '<p>请注意</p>'
-          repo.commit 'commit outstanding'
-          convert = dest.prepare_convert_single(from, '.')
-          convert.direct_html if direct_html
-          convert.convert
-        end
-        file_context 'raw/index.html' do
-          it 'should contain the header' do
-            expect(contents).to include '<p>请注意</p>'
-          end
-        end
-        file_context 'raw/section.html' do
-          it 'should contain the header' do
-            expect(contents).to include '<p>请注意</p>'
-          end
+      file_context 'raw/index.html' do
+        it 'should contain the header' do
+          expect(contents).to include '<p>header</p>'
         end
       end
     end
-    context 'with direct_html' do
-      include_examples 'page-header', true
+    context 'multipage' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', <<~ASCIIDOC
+          = Title
+
+          [[section]]
+          == Section
+
+          Words.
+        ASCIIDOC
+        repo.write 'page_header.html', '<p>header</p>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').convert
+      end
+      file_context 'raw/index.html' do
+        it 'should contain the header' do
+          expect(contents).to include '<p>header</p>'
+        end
+      end
+      file_context 'raw/section.html' do
+        it 'should contain the header' do
+          expect(contents).to include '<p>header</p>'
+        end
+      end
     end
-    context 'without direct_html' do
-      include_examples 'page-header', false
+    context 'with chinese text' do
+      # We've failed in the past on Chinese text with encoding issues.
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', <<~ASCIIDOC
+          = Title
+
+          [[section]]
+          == Section
+
+          Words.
+        ASCIIDOC
+        repo.write 'page_header.html', '<p>请注意</p>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').convert
+      end
+      file_context 'raw/index.html' do
+        it 'should contain the header' do
+          expect(contents).to include '<p>请注意</p>'
+        end
+      end
+      file_context 'raw/section.html' do
+        it 'should contain the header' do
+          expect(contents).to include '<p>请注意</p>'
+        end
+      end
     end
   end
 
@@ -864,7 +834,6 @@ RSpec.describe 'building a single book' do
       repo.create_worktree worktree, 'HEAD'
       FileUtils.rm_rf repo.root
       dest.prepare_convert_single("#{worktree}/index.asciidoc", '.')
-          .direct_html
           .convert
     end
     page_context 'chapter.html' do
@@ -886,7 +855,6 @@ RSpec.describe 'building a single book' do
           ----
         ASCIIDOC
         c = dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
-        c.direct_html
         c.suppress_migration_warnings if suppress
         c.convert(expect_failure: !suppress)
       end
@@ -923,7 +891,6 @@ RSpec.describe 'building a single book' do
         include::missing.asciidoc[]
       ASCIIDOC
       dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
-          .direct_html
           .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do
@@ -941,7 +908,6 @@ RSpec.describe 'building a single book' do
         <<missing-ref>>
       ASCIIDOC
       dest.prepare_convert_single("#{repo.root}/index.asciidoc", '.')
-          .direct_html
           .convert(expect_failure: true)
     end
     it 'fails with an appropriate error status' do
