@@ -726,10 +726,6 @@ sub push_changes {
 #===================================
 sub init_env {
 #===================================
-    $ENV{PATH}
-        . ":$FindBin::RealBin:"
-        . $ENV{PATH};
-
     if (exists $ENV{SSH_AUTH_SOCK}
             && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
         print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
