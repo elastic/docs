@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'helper/matcher/doc_body'
+require_relative '../../resources/test/dsl/file_context'
 require_relative '../../resources/test/matcher/file_exist'
 require_relative 'helper/matcher/have_same_keys'
 require_relative 'helper/matcher/initial_js_state'
