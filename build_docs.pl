@@ -69,6 +69,12 @@ The Asciidoctor migration is complete! --asciidoctor will emit this message
 forever in honor of our success but otherwise doesn't do anything.
 MSG
 }
+if ( $Opts->{direct_html} ) {
+   say <<MSG
+The direct_html migration is complete! --direct_html will emit this message
+forever in honor of our success but otherwise doesn't do anything.
+MSG
+}
 
 init_env();
 
@@ -887,7 +893,6 @@ sub command_line_opts {
         # Options only compatible with --doc
         'doc=s',
         'alternatives=s@',
-        'direct_html',
         'chunk=i',
         'lang=s',
         'lenient',
@@ -917,6 +922,7 @@ sub command_line_opts {
         # Options that do *something* for either --doc or --all or --preview
         'asciidoctor',
         'conf=s',
+        'direct_html',
         'in_standard_docker',
         'open',
         'procs=i',
@@ -937,8 +943,6 @@ sub usage {
           --chunk 1         Also chunk sections into separate files
           --alternatives <source_lang>:<alternative_lang>:<dir>
                             Examples in alternative languages.
-          --direct_html     Generate html directly from Asciidoctor without
-                            using docbook.
           --lang            Defaults to 'en'
           --lenient         Ignore linking errors
           --out dest/dir/   Defaults to ./html_docs.
@@ -981,6 +985,7 @@ sub usage {
           --asciidoctor     Emit a happy message.
           --conf <ymlfile>  Use your own configuration file, defaults to the
                             bundled conf.yaml
+          --direct_html     Emit a happy message.
           --in_standard_docker
                             Specified by build_docs when running in
                             its container
@@ -988,23 +993,6 @@ sub usage {
           --procs           Number of processes to run in parallel, defaults
                             to 3
           --verbose         Output more logs
-
-    Self Test:
-
-        build_docs --self-test <args to pass to make>
-
-    `--self-test` is a wrapper around `make` which is used exclusively for
-    testing. Like `make`, the current directory selects the `Makefile` and
-    you can make specific targets. Some examples:
-
-    Execute all tests:
-        build_docs --self-test
-
-    Execute all of the tests for our extensions to Asciidoctor:
-        build_docs --self-test -C resources/asciidoctor
-
-    Run rubocop on our extensions to Asciidoctor:
-        build_docs --self-test -C resources/asciidoctor rubocop
 USAGE
 }
 
@@ -1015,7 +1003,6 @@ sub check_opts {
         die('--alternatives only compatible with --doc') if $Opts->{alternatives};
         die('--chunk only compatible with --doc') if $Opts->{chunk};
         # Lang will be 'en' even if it isn't specified so we don't check it.
-        die('--direct_html only compatible with --doc') if $Opts->{direct_html};
         die('--lenient only compatible with --doc') if $Opts->{lenient};
         die('--out only compatible with --doc') if $Opts->{out};
         die('--resource only compatible with --doc') if $Opts->{resource};

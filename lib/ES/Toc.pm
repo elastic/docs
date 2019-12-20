@@ -45,7 +45,6 @@ sub write {
             branch => '', # TOCs don't have a branch but it is a required arg
             relativize => 1,
             extra => $extra,
-            direct_html => 1,
     );
     $adoc_file->remove;
 }

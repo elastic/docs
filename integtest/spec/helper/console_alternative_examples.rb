@@ -37,9 +37,6 @@ module ConsoleExamples
 end
 
 RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
-  # NOTE: this class has lots of `if direct_html ... else ... end` going on.
-  # That is because direct_html outputs classes in a different order than
-  # docbook and adds many extra newlines.
   page_context "#{path}/chapter.html" do
     let(:has_classes) { 'has-js has-csharp' }
     let(:console_widget) do
@@ -48,112 +45,65 @@ RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
       HTML
     end
     it 'contains the js listing followed by the csharp listing' do
-      if direct_html
-        expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper lang-js alternative">
-          <pre class="programlisting prettyprint lang-js alternative">const result = await client.search({
-            body: { query: 'foo bar' } <a id="A0-CO1-1"></a><i class="conum" data-value="1"></i>
-          })</pre>
-          </div>
-          <div class="pre_wrapper lang-csharp alternative">
-        HTML
-      else
-        expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper alternative lang-js"><pre class="alternative programlisting prettyprint lang-js">const result = await client.search({
-            body: { query: 'foo bar' } <a id="A0-CO1-1"></a><i class="conum" data-value="1"></i>
-          })</pre></div><div class="pre_wrapper alternative lang-csharp">
-        HTML
-      end
+      expect(body).to include(<<~HTML.strip)
+        <div class="pre_wrapper lang-js alternative">
+        <pre class="programlisting prettyprint lang-js alternative">const result = await client.search({
+          body: { query: 'foo bar' } <a id="A0-CO1-1"></a><i class="conum" data-value="1"></i>
+        })</pre>
+        </div>
+        <div class="pre_wrapper lang-csharp alternative">
+      HTML
     end
     it 'contains the csharp listing followed by the default listing' do
-      if direct_html
-        expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper lang-csharp alternative">
-          <pre class="programlisting prettyprint lang-csharp alternative">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
-              .Query(q =&gt; q
-                  .QueryString(m =&gt; m
-                      .Query("foo bar") <a id="A1-CO1-1"></a><i class="conum" data-value="1"></i>
-                  )
-              )
-          );</pre>
-          </div>
-          <div class="pre_wrapper lang-console default #{has_classes}">
-        HTML
-      else
-        expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper alternative lang-csharp"><pre class="alternative programlisting prettyprint lang-csharp">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
-              .Query(q =&gt; q
-                  .QueryString(m =&gt; m
-                      .Query("foo bar") <a id="A1-CO1-1"></a><i class="conum" data-value="1"></i>
-                  )
-              )
-          );</pre></div><div class="pre_wrapper default #{has_classes} lang-console">
-        HTML
-      end
+      expect(body).to include(<<~HTML.strip)
+        <div class="pre_wrapper lang-csharp alternative">
+        <pre class="programlisting prettyprint lang-csharp alternative">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
+            .Query(q =&gt; q
+                .QueryString(m =&gt; m
+                    .Query("foo bar") <a id="A1-CO1-1"></a><i class="conum" data-value="1"></i>
+                )
+            )
+        );</pre>
+        </div>
+        <div class="pre_wrapper lang-console default #{has_classes}">
+      HTML
     end
     it 'contains the default listing followed by the console widget' do
-      if direct_html
-        expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper lang-console default #{has_classes}">
-          <pre class="programlisting prettyprint lang-console default #{has_classes}">GET /_search
-          {
-              "query": "foo bar" <a id="CO1-1"></a><i class="conum" data-value="1"></i>
-          }</pre>
-          </div>
-          #{console_widget}
-        HTML
-      else
-        expect(body).to include(<<~HTML.strip)
-          <div class="pre_wrapper default #{has_classes} lang-console"><pre class="default #{has_classes} programlisting prettyprint lang-console">GET /_search
-          {
-              "query": "foo bar" <a id="CO1-1"></a><i class="conum" data-value="1"></i>
-          }</pre></div>#{console_widget}
-        HTML
-      end
+      expect(body).to include(<<~HTML.strip)
+        <div class="pre_wrapper lang-console default #{has_classes}">
+        <pre class="programlisting prettyprint lang-console default #{has_classes}">GET /_search
+        {
+            "query": "foo bar" <a id="CO1-1"></a><i class="conum" data-value="1"></i>
+        }</pre>
+        </div>
+        #{console_widget}
+      HTML
     end
     it 'contains the console widget followed by the js calloutlist' do
-      if direct_html
-        expect(body).to include(<<~HTML.strip)
-          #{console_widget}
-          <div class="calloutlist alternative lang-js">
-        HTML
-      else
-        expect(body).to include(<<~HTML.strip)
-          #{console_widget}<div class="alternative lang-js calloutlist">
-        HTML
-      end
+      expect(body).to include(<<~HTML.strip)
+        #{console_widget}
+        <div class="calloutlist alternative lang-js">
+      HTML
     end
     it 'contains the js calloutlist followed by the csharp calloutlist' do
-      if direct_html
-        expect(body).to include(<<~HTML.strip)
-          js</p>
-          </td>
-          </tr>
-          </table>
-          </div>
-          <div class="calloutlist alternative lang-csharp">
-        HTML
-      else
-        expect(body).to include(<<~HTML.strip)
-          js</p></td></tr></table></div><div class="alternative lang-csharp calloutlist">
-        HTML
-      end
+      expect(body).to include(<<~HTML.strip)
+        js</p>
+        </td>
+        </tr>
+        </table>
+        </div>
+        <div class="calloutlist alternative lang-csharp">
+      HTML
     end
     it 'contains the csharp calloutlist followed by the default calloutlist' do
-      if direct_html
-        expect(body).to include(<<~HTML.strip)
-          csharp</p>
-          </td>
-          </tr>
-          </table>
-          </div>
-          <div class="calloutlist default #{has_classes} lang-console">
-        HTML
-      else
-        expect(body).to include(<<~HTML.strip)
-          csharp</p></td></tr></table></div><div class="default #{has_classes} lang-console calloutlist">
-        HTML
-      end
+      expect(body).to include(<<~HTML.strip)
+        csharp</p>
+        </td>
+        </tr>
+        </table>
+        </div>
+        <div class="calloutlist default #{has_classes} lang-console">
+      HTML
     end
     context 'the initial js state' do
       it 'contains the available alternatives' do
