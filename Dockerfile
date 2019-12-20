@@ -84,6 +84,7 @@ RUN install_packages \
   libpath-class-perl \
   libxml-libxml-perl \
   libyaml-perl
+    # Perl libraries used by the docs build
 
 COPY --from=node_deps /node_modules /node_modules
 COPY --from=ruby_deps /var/lib/gems /var/lib/gems
