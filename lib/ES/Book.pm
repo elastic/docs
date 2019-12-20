@@ -15,8 +15,7 @@ use utf8;
 our %Page_Header = (
     en => {
         old => <<"HEADER",
-<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates 
-will be released for this version. For the latest information, see the 
+A newer version is available. For the latest information, see the 
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
