@@ -726,15 +726,6 @@ sub push_changes {
 #===================================
 sub init_env {
 #===================================
-    $ENV{SGML_CATALOG_FILES} = $ENV{XML_CATALOG_FILES} = join ' ',
-        file('resources/docbook-xsl-1.78.1/catalog.xml')->absolute,
-        file('resources/docbook-xml-4.5/catalog.xml')->absolute;
-
-    $ENV{PATH}
-        = dir('resources/asciidoc-8.6.8/')->absolute
-        . ":$FindBin::RealBin:"
-        . $ENV{PATH};
-
     if (exists $ENV{SSH_AUTH_SOCK}
             && $ENV{SSH_AUTH_SOCK} eq '/tmp/forwarded_ssh_auth') {
         print "Waiting for ssh auth to be forwarded to " . hostname . "\n";
