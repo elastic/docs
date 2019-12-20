@@ -38,7 +38,7 @@ module Dsl
     let(:statuses) { @dest.convert_statuses }
 
     ##
-    # Build a path to a file in the destination.
+    # Build a path to a file in the destination. Needed by file_context.
     def dest_file(file)
       @dest.path(file)
     end
