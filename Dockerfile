@@ -67,8 +67,6 @@ RUN install_packages \
     # Clone source repositories and commit to destination repositories
   libnss-wrapper \
     # Used to clean up user id differences in the docker image.
-  libxml2-utils \
-    # Validates the docsbook xml
   make \
     # Used by the tests
   nginx \
@@ -80,15 +78,13 @@ RUN install_packages \
     # Used to forward git authentication to the image on OSX
   perl-base \
     # The "glue" of the docs build is written in perl
-  xsltproc \
-    # Converts the docbook xml into html
-    # Perl libraries used by the docs build
   libcapture-tiny-perl \
   libfile-copy-recursive-perl \
   libparallel-forkmanager-perl \
   libpath-class-perl \
   libxml-libxml-perl \
   libyaml-perl
+    # Perl libraries used by the docs build
 
 COPY --from=node_deps /node_modules /node_modules
 COPY --from=ruby_deps /var/lib/gems /var/lib/gems
