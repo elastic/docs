@@ -12,6 +12,7 @@ RSpec.describe OpenInWidget do
   end
 
   let(:spec_dir) { File.dirname(__FILE__) }
+  let(:backend) { :html5 }
 
   def stub_file_opts(result)
     {
@@ -57,15 +58,9 @@ RSpec.describe OpenInWidget do
         expect(converted).to include(text)
       end
       let(:expected_link) do
-        if backend == :html5
-          <<~HTML
-            <div class="#{lang}_widget" data-snippet="#{relative_path}"></div>
-          HTML
-        else
-          <<~ASCIIDOC.strip
-            <ulink type="snippet" url="#{relative_path}"/>
-          ASCIIDOC
-        end
+        <<~HTML
+          <div class="#{lang}_widget" data-snippet="#{relative_path}"></div>
+        HTML
       end
       it 'adds a link to extracted snippet' do
         expect(converted).to include(expected_link)
@@ -104,11 +99,7 @@ RSpec.describe OpenInWidget do
         end
         include_context 'basic snippet'
         let(:text) do
-          if backend == :html5
-            'GET / <b class="conum">(1)</b>'
-          else
-            'GET / <co id="CO1-1"/>'
-          end
+          'GET / <b class="conum">(1)</b>'
         end
         let(:copied_snippet) { "GET /\n" }
         let(:index) { 1 }
@@ -129,15 +120,9 @@ RSpec.describe OpenInWidget do
           ASCIIDOC
         end
         let(:expected_link) do
-          if backend == :html5
-            <<~HTML
-              <div class="#{lang}_widget foo" data-snippet="#{relative_path}"></div>
-            HTML
-          else
-            <<~ASCIIDOC.strip
-              <ulink type="snippet" url="#{relative_path}"/>
-            ASCIIDOC
-          end
+          <<~HTML
+            <div class="#{lang}_widget foo" data-snippet="#{relative_path}"></div>
+          HTML
         end
         it 'adds a link to extracted snippet' do
           expect(converted).to include(expected_link)
@@ -268,43 +253,24 @@ RSpec.describe OpenInWidget do
       end
     end
   end
-  context 'for docbook' do
-    let(:backend) { :docbook45 }
-    context 'for the console widget' do
-      include_context 'open in widget'
-      let(:lang) { 'console' }
-    end
-    context 'for the sense widget' do
-      include_context 'open in widget'
-      let(:lang) { 'sense' }
-    end
-    context 'for the kibana widget' do
-      include_context 'open in widget'
-      let(:lang) { 'kibana' }
-    end
+  context 'for the console widget' do
+    include_context 'open in widget'
+    let(:lang) { 'console' }
   end
-
-  context 'for html' do
-    let(:backend) { :html5 }
-    context 'for the console widget' do
-      include_context 'open in widget'
-      let(:lang) { 'console' }
-    end
-    context 'for the sense widget' do
-      include_context 'open in widget'
-      let(:lang) { 'sense' }
-    end
-    context 'for the kibana widget' do
-      include_context 'open in widget'
-      let(:lang) { 'kibana' }
-    end
-    context 'for the ess widget' do
-      include_context 'open in widget'
-      let(:lang) { 'ess' }
-    end
-    context 'for the ece widget' do
-      include_context 'open in widget'
-      let(:lang) { 'ece' }
-    end
+  context 'for the sense widget' do
+    include_context 'open in widget'
+    let(:lang) { 'sense' }
+  end
+  context 'for the kibana widget' do
+    include_context 'open in widget'
+    let(:lang) { 'kibana' }
+  end
+  context 'for the ess widget' do
+    include_context 'open in widget'
+    let(:lang) { 'ess' }
+  end
+  context 'for the ece widget' do
+    include_context 'open in widget'
+    let(:lang) { 'ece' }
   end
 end

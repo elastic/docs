@@ -54,58 +54,29 @@ module EditMe
   end
 
   ##
-  # Converter implementation that decorates docbook with edit me links.
+  # Converter implementation that decorates titles with edit me links.
   class Converter < DelegatingConverter
     include LogUtil
 
     RESPECT_OVERRIDES = 'respect_edit_url_overrides'
 
-    def convert_preamble(block)
-      yield.sub '</title>' do
-        "#{link_for block}</title>"
-      end
-    end
-
     def convert_section(block)
-      if block.document.basebackend? 'html'
-        block.attributes['edit_me_link'] = link_for block
-        yield
-      else
-        yield.sub '</title>' do
-          "#{link_for block}</title>"
-        end
-      end
+      block.attributes['edit_me_link'] = link_for block
+      yield
     end
 
     def convert_floating_title(block)
-      if block.document.basebackend? 'html'
-        block.attributes['edit_me_link'] = link_for block
-        yield
-      else
-        yield.sub '</bridgehead>' do
-          "#{link_for block}</bridgehead>"
-        end
-      end
+      block.attributes['edit_me_link'] = link_for block
+      yield
     end
 
     def link_for(block)
       url = edit_url block
       return '' unless url
-      return html_link_for url if block.document.basebackend? 'html'
 
-      docbook_link_for url
-    end
-
-    def html_link_for(url)
       <<~HTML.strip
         <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{url}">edit</a>
       HTML
-    end
-
-    def docbook_link_for(url)
-      <<~DOCBOOK.strip
-        <ulink role="edit_me" url="#{url}">Edit me</ulink>
-      DOCBOOK
     end
 
     def edit_url(block)
