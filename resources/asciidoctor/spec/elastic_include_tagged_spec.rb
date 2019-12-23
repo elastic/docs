@@ -25,13 +25,18 @@ RSpec.describe ElasticIncludeTagged do
   end
   include_context 'convert with logs'
   let(:expected) do
-    asciidoc = <<~ASCIIDOC
-      <chapter id="_example">
-      <title>Example</title>
-      <programlisting language="java" linenumbering="unnumbered">#{expected_include.strip}</programlisting>
-      </chapter>
-    ASCIIDOC
-    asciidoc.strip
+    <<~HTML.strip
+      <div class="sect1">
+      <h2 id="_example">Example</h2>
+      <div class="sectionbody">
+      <div class="listingblock">
+      <div class="content">
+      <pre class="highlight"><code class="language-java" data-lang="java">#{expected_include.strip}</code></pre>
+      </div>
+      </div>
+      </div>
+      </div>
+    HTML
   end
 
   context 'when including a tag' do
@@ -40,7 +45,7 @@ RSpec.describe ElasticIncludeTagged do
       <<~JAVA
         System.err.println("I'm an example");
         for (int i = 0; i &lt; 10; i++) {
-            System.err.println(i); <co id="CO1-1"/>
+            System.err.println(i); // <b class="conum">(1)</b>
         }
       JAVA
     end

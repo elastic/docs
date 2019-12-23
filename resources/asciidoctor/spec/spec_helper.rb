@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'docbook45/converter'
-
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = '.rspec_status'
@@ -20,18 +18,17 @@ $VERBOSE = true
 ##
 # Used by the `convert with logs` and `convert without logs` contexts
 def internal_convert(
-    input, convert_logger, backend, standalone, extra_attributes
+    input, convert_logger, standalone, extra_attributes
   )
   attributes = { 'docdir' => File.dirname(__FILE__) }
   attributes.merge! extra_attributes
-  args = internal_convert_args convert_logger, backend, standalone, attributes
+  args = internal_convert_args convert_logger, standalone, attributes
   Asciidoctor.convert input, args
 end
 
-def internal_convert_args(convert_logger, backend, standalone, attributes)
+def internal_convert_args(convert_logger, standalone, attributes)
   {
     safe: :unsafe, # Used to include "funny" files.
-    backend: backend,
     logger: convert_logger,
     standalone: standalone,
     doctype: :book,
@@ -45,7 +42,6 @@ end
 #
 # In:
 #   input            - asciidoc text to convert
-#   backend          - the conversion backend - defaults to :docbook45
 #   extra_attributes - attributes added to the conversion - defaults to {}
 #
 # Out:
@@ -58,12 +54,10 @@ RSpec.shared_context 'convert with logs' do
     # `converted` in the let for `logs` but it'd cause `converted` to be
     # evaluated before `before(:example)` blocks
     extra_attributes = defined?(convert_attributes) ? convert_attributes : {}
-    explicit_backend = defined?(backend) ? backend : :docbook45
     explicit_standalone = defined?(standalone) ? standalone : false
     internal_convert(
       input,
       convert_logger,
-      explicit_backend,
       explicit_standalone,
       extra_attributes
     )
@@ -84,7 +78,6 @@ end
 #
 # In:
 #   input            - asciidoc text to convert
-#   backend          - the conversion backend - defaults to :docbook45
 #   extra_attributes - attributes added to the conversion - defaults to {}
 #
 # Out:
@@ -93,12 +86,10 @@ RSpec.shared_context 'convert without logs' do
   let(:converted) do
     convert_logger = Asciidoctor::MemoryLogger.new
     extra_attributes = defined?(convert_attributes) ? convert_attributes : {}
-    explicit_backend = defined?(backend) ? backend : :docbook45
     explicit_standalone = defined?(standalone) ? standalone : false
     converted = internal_convert(
       input,
       convert_logger,
-      explicit_backend,
       explicit_standalone,
       extra_attributes
     )
