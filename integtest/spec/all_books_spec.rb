@@ -316,43 +316,34 @@ RSpec.describe 'building all books' do
   end
 
   context 'for a book with many branches' do
-    shared_examples 'many branches' do |direct_html|
-      convert_all_before_context do |src|
-        repo = src.repo_with_index 'repo', <<~ASCIIDOC
-          The branch is {source_branch}.
-        ASCIIDOC
-        repo.switch_to_new_branch 'foo'
-        repo.switch_to_new_branch '7.x'
-        repo.switch_to_new_branch '1.2'
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        The branch is {source_branch}.
+      ASCIIDOC
+      repo.switch_to_new_branch 'foo'
+      repo.switch_to_new_branch '7.x'
+      repo.switch_to_new_branch '1.2'
 
-        book = src.book 'Test'
-        book.source repo, 'index.asciidoc'
-        book.direct_html = direct_html
-        book.branches.push 'foo', '7.x', '1.2'
-      end
-      shared_examples 'contains branch' do |branch|
-        it 'uses {source_branch} to resolve the branch name' do
-          expect(body).to include("The branch is #{branch}.")
-        end
-      end
-      page_context 'html/test/master/chapter.html' do
-        include_examples 'contains branch', 'master'
-      end
-      page_context 'html/test/foo/chapter.html' do
-        include_examples 'contains branch', 'foo'
-      end
-      page_context 'html/test/7.x/chapter.html' do
-        include_examples 'contains branch', '7.x'
-      end
-      page_context 'html/test/1.2/chapter.html' do
-        include_examples 'contains branch', '1.2'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.branches.push 'foo', '7.x', '1.2'
+    end
+    shared_examples 'contains branch' do |branch|
+      it 'uses {source_branch} to resolve the branch name' do
+        expect(body).to include("The branch is #{branch}.")
       end
     end
-    context 'when built with docbook' do
-      include_examples 'many branches', false
+    page_context 'html/test/master/chapter.html' do
+      include_examples 'contains branch', 'master'
     end
-    context 'when built with direct_html' do
-      include_examples 'many branches', true
+    page_context 'html/test/foo/chapter.html' do
+      include_examples 'contains branch', 'foo'
+    end
+    page_context 'html/test/7.x/chapter.html' do
+      include_examples 'contains branch', '7.x'
+    end
+    page_context 'html/test/1.2/chapter.html' do
+      include_examples 'contains branch', '1.2'
     end
   end
 
@@ -431,7 +422,6 @@ RSpec.describe 'building all books' do
       java_alts = { source_lang: 'console', alternative_lang: 'java' }
       book.source(java_repo, 'examples', alternatives: java_alts)
     end
-    let(:direct_html) { true }
     include_examples 'README-like console alternatives',
                      'raw/test/master', 'html/test/master'
   end
@@ -608,37 +598,79 @@ RSpec.describe 'building all books' do
   context 'when the book has "live" branches' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', 'test'
+      repo.switch_to_new_branch '0.9_oldbutlive'
       repo.switch_to_new_branch 'nonlive'
 
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
-      book.branches << 'nonlive'
-      book.live_branches = ['master']
+      book.branches = ['master', '0.9_oldbutlive', 'nonlive']
+      book.live_branches = ['master', '0.9_oldbutlive']
     end
     let(:repo) { @src.repo 'repo' }
-    page_context 'the live branch', 'html/test/master/index.html' do
+    page_context 'the current branch', 'html/test/master/index.html' do
       it "doesn't contain the noindex flag" do
         expect(contents).not_to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow"/>
         HTML
       end
       context 'the live versions drop down' do
-        it 'contains only the live branch' do
+        it 'contains only the live branches' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="master" selected>master (current)</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="master" selected>master (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
           HTML
         end
       end
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master" selected>master (current)</option><option value="nonlive">nonlive</option></select>
+            <span id="other_versions">other versions: <select><option value="master" selected>master (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="nonlive">nonlive</option></select>
           HTML
         end
+      end
+      it "doesn't contain a page header" do
+        expect(body).not_to include 'class="page_header"'
       end
     end
     page_context "the live branch's chapter", 'html/test/master/chapter.html' do
       let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      it 'contains an edit_me link' do
+        expect(body).to include <<~HTML.strip
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
+        HTML
+      end
+    end
+    page_context 'the old branch', 'html/test/0.9_oldbutlive/index.html' do
+      it "doesn't contain the noindex flag" do
+        expect(contents).not_to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow"/>
+        HTML
+      end
+      context 'the live versions drop down' do
+        it 'contains only the live branches' do
+          expect(body).to include(<<~HTML.strip)
+            <select id="live_versions"><option value="master">master (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="other">other versions</option></select>
+          HTML
+        end
+      end
+      context 'the other versions drop down' do
+        it 'contains all branches' do
+          expect(body).to include(<<~HTML.strip)
+            <span id="other_versions">other versions: <select><option value="master">master (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="nonlive">nonlive</option></select>
+          HTML
+        end
+      end
+      it 'includes the "old" version header' do
+        expect(body).to include <<~HTML
+          <div class="page_header">
+          A newer version is available. For the latest information, see the
+          <a href="../current/index.html">current release documentation</a>.
+          </div>
+        HTML
+      end
+    end
+    page_context "the old branch's chapter",
+                 'html/test/0.9_oldbutlive/chapter.html' do
+      let(:edit_url) { "#{repo.root}/edit/0.9_oldbutlive/index.asciidoc" }
       it 'contains an edit_me link' do
         expect(body).to include <<~HTML.strip
           <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
@@ -654,13 +686,22 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains the deprecated branch' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="master">master (current)</option><option value="nonlive" selected>nonlive</option></select>
+            <select id="live_versions"><option value="master">master (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="nonlive" selected>nonlive</option></select>
           HTML
         end
       end
       it "it doesn't contain the other versions drop down" do
         # *because* there aren't any versions filtered from the list
         expect(body).not_to include 'id="other_versions"'
+      end
+      it 'includes the "dead" version header' do
+        expect(body).to include <<~HTML
+          <div class="page_header">
+          <strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
+          will be released for this version. For the latest information, see the
+          <a href="../current/index.html">current release documentation</a>.
+          </div>
+        HTML
       end
     end
     page_context "the dead branch's chapter",

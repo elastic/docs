@@ -52,7 +52,6 @@ module BookConf
   def flags_conf
     {
       noindex: @noindex ? 1 : nil,
-      direct_html: @direct_html ? true : nil,
       respect_edit_url_overrides: @respect_edit_url_overrides ? true : nil,
       suppress_migration_warnings: @suppress_migration_warnings ? 1 : nil,
       single: @single ? 1 : nil,

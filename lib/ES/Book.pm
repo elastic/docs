@@ -15,7 +15,12 @@ use utf8;
 our %Page_Header = (
     en => {
         old => <<"HEADER",
-A newer version is available. For the latest information, see the 
+A newer version is available. For the latest information, see the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        dead => <<"HEADER",
+<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
+will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
@@ -28,14 +33,21 @@ HEADER
         old => <<"HEADER",
 你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
 HEADER
+        dead => <<"HEADER",
+你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
+HEADER
         new => <<"HEADER"
 你当前正在查看的是未发布版本的预览版文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
 HEADER
     },
     ja => {
         old => <<"HEADER",
-You are looking at documentation for an older release.
-Not what you want? See the
+A newer version is available. For the latest information, see the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        dead => <<"HEADER",
+<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
+will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
@@ -46,8 +58,12 @@ HEADER
     },
     ko => {
         old => <<"HEADER",
-You are looking at documentation for an older release.
-Not what you want? See the
+A newer version is available. For the latest information, see the
+<a href="../current/index.html">current release documentation</a>.
+HEADER
+        dead => <<"HEADER",
+<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
+will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
@@ -396,6 +412,7 @@ sub _page_header {
     my $current = $self->current;
     return '' if $current eq $branch;
 
+    my $orig_branch = $branch;
     if ( $current !~ /-\w/ ) {
         $current .= '-zzzzzz';
     }
@@ -403,7 +420,10 @@ sub _page_header {
         $branch .= '-zzzzzz';
     }
 
-    return $self->_page_header_text( $branch lt $current ? 'old' : 'new' );
+    my $key = $branch lt $current ? 'old' : 'new';
+    $key = 'dead' if $key == 'old' && !grep( /^$orig_branch$/, @{ $self->{live_branches} } );
+
+    return $self->_page_header_text( $key );
 }
 
 #===================================
