@@ -421,7 +421,7 @@ sub _page_header {
     }
 
     my $key = $branch lt $current ? 'old' : 'new';
-    $key = 'dead' if $key == 'old' && !grep( /^$orig_branch$/, @{ $self->{live_branches} } );
+    $key = 'dead' if $key eq 'old' && !grep( /^$orig_branch$/, @{ $self->{live_branches} } );
 
     return $self->_page_header_text( $key );
 }
