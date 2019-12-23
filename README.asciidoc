@@ -120,15 +120,23 @@ where appropriate.
 
 === Chunking in the right place
 
-Asciidoc combines all of the source files into one big file, which it converts
-to a single XML file for DocBook to process.  _Chunking_ is the process of
-breaking that XML file up into multiple HTML pages.
+Before Christmas 2019 we built all of the docs using
+https://tdg.docbook.org/tdg/4.5/[docbook] which is designed to generate
+HTML, PDFs, and physical books. In the past this *was* useful because the
+Definitive Guide is both HTML and a physical book. But now we only really
+make HTML. And docbook is very slow and difficult to customize. So we
+removed it from our build process and instead generate HTML directly from
+the Asciidoc files.
+
+But we still have some docbook concepts hanging around because we have tons
+of Asciidoc files written with docbook in mind. Thus we still use docbook's
+concept of "chunking".
 
 By default, each _part_ (`= Part Title`) and _chapter_ (`== Chapter Title`) is
-"chunked" into a separate HTML file. However, for bigger books, such as the
-Elasticsearch reference  docs, this results in enormous pages.  These bigger
-books are also chunked at the first _section_ level (`=== Section One Title`).
-This behaviour is specified in the https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`]
+"chunked" into a separate HTML file. However, for mot of our books, this
+results in enormous pages. So we mostly chunk at the first _section_ level
+(`=== Section One Title`). This behaviour is specified in the
+https://github.com/elastic/docs/blob/master/conf.yaml[`conf.yaml`]
 file, but must also be specified on the command line when building a single
 book:
 
@@ -136,6 +144,8 @@ book:
 ----------------------------
 build_docs --doc path/to/index.asciidoc --chunk 1
 ----------------------------
+
+NOTE: If you leave out the `--chunk` flag we'll use the default chunking.
 
 [[alternative_languages]]
 === Alternative languages for examples
@@ -151,54 +161,6 @@ cd docs/
     --alternatives console:js:integtest/readme_examples/js \
     --alternatives console:csharp:integtest/readme_examples/csharp
 ----------------------------
-
-== Correcting errors
-
-Asciidoc is converted to DocBook, which is then converted to HTML.
-DocBook is strict, which means that you have to follow the rules
-(see <<asciidoc-guide>>) otherwise the build process will throw
-an error.
-
-The most common errors are:
-
-* Asciidoc syntax error, eg `=Title` instead of `= Title` or
-  unclosed block delimiters, ie `======` or `------`
-* incorrect order of elements, eg `= Title` followed by
-  a `=== Level 3` header
-* Linking to an non-existent ID
-
-Errors may be thrown either by Asciidoc or by DocBook.  Asciidoc errors refer
-to the actual `.asciidoc` page where the error occurred,  but DocBook errors
-only refer to a line in the generated XML file, and look something like this:
-
-    path/to/index.xml:1518: element xref: validity error : XXXXX
-
-The easiest way to debug these is to open the XML file (`index.xml` in the
-example above) and navigate to the specified line number (`1518` in the
-example above). This marks the *end* of the section containing the error.
-
-== Building part of a book
-
-Building a big book is time consuming.  Unfortunately, in order to test that
-all links exist, the entire book needs to be built in one go.  However, while
-you're writing docs it is useful to be able to build just a single `.asciidoc`
-page.
-
-You can do this by telling `build_docs` to ignore errors with the `--lenient`
-parameter:
-
-[source,bash]
-----------------------------
-build_docs --doc path/to/some/page.asciidoc --lenient --single --open
-----------------------------
-
-If the page you are building contains links to content in other pages, the
-above command will output warnings like:
-
-    ERROR: xref linking to relevance-intro has no generated link text.
-
-NOTE: You should still build the whole book without the `--lenient` parameter
-before committing, to be sure that you haven't broken any links.
 
 [[website]]
 == Building all of the Elastic docs
@@ -278,9 +240,7 @@ to the remote `docs` repo.
 [partintro]
 --
 Asciidoc is a powerful markup language that is easy to read as
-plain text.  In general, it is pretty simple to use, but
-there are some rules that you have to follow to ensure that
-it generates valid DocBook output.
+plain text.
 
 Below I include most of the Asciidoc syntax that you will
 need.  For more, you can take a look at the
@@ -1035,9 +995,10 @@ syntax highlighting, eg:
 ----------------------------------
 ==================================
 
-IMPORTANT: The language to use for source highlighting
--- eg `js` above -- *must* be specified, otherwise Asciidoc
-emits invalid DocBook.
+IMPORTANT: If you don't specify the source language then the generated
+HTML is *quite* different so, in general, you should specify a language.
+We use the language as a hint for the syntax highlighter. See files in
+this repository names `lang-*.js` for information.
 
 === Callouts
 
@@ -1691,13 +1652,9 @@ video::366852847[vimeo,height=480]
 [[tables]]
 == Tables
 
-In general, tables are frowned upon in DocBook as they
-don't display well in formats other than HTML, eg PDF,
-ePub, etc.
-
-It's almost always better to use <<horizonta-defn-list>>
-instead, but if you really want to use tables, you
-can read about them https://asciidoctor.org/docs/user-manual/#tables[here].
+Our CSS for tables isn't great at the moment so it's almost always better
+to use <<horizonta-defn-list>> instead, but if you really want to use
+tables, you can read about them https://asciidoctor.org/docs/user-manual/#tables[here].
 
 [[edit_me]]
 == Edit links
