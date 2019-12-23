@@ -316,43 +316,34 @@ RSpec.describe 'building all books' do
   end
 
   context 'for a book with many branches' do
-    shared_examples 'many branches' do |direct_html|
-      convert_all_before_context do |src|
-        repo = src.repo_with_index 'repo', <<~ASCIIDOC
-          The branch is {source_branch}.
-        ASCIIDOC
-        repo.switch_to_new_branch 'foo'
-        repo.switch_to_new_branch '7.x'
-        repo.switch_to_new_branch '1.2'
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'repo', <<~ASCIIDOC
+        The branch is {source_branch}.
+      ASCIIDOC
+      repo.switch_to_new_branch 'foo'
+      repo.switch_to_new_branch '7.x'
+      repo.switch_to_new_branch '1.2'
 
-        book = src.book 'Test'
-        book.source repo, 'index.asciidoc'
-        book.direct_html = direct_html
-        book.branches.push 'foo', '7.x', '1.2'
-      end
-      shared_examples 'contains branch' do |branch|
-        it 'uses {source_branch} to resolve the branch name' do
-          expect(body).to include("The branch is #{branch}.")
-        end
-      end
-      page_context 'html/test/master/chapter.html' do
-        include_examples 'contains branch', 'master'
-      end
-      page_context 'html/test/foo/chapter.html' do
-        include_examples 'contains branch', 'foo'
-      end
-      page_context 'html/test/7.x/chapter.html' do
-        include_examples 'contains branch', '7.x'
-      end
-      page_context 'html/test/1.2/chapter.html' do
-        include_examples 'contains branch', '1.2'
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.branches.push 'foo', '7.x', '1.2'
+    end
+    shared_examples 'contains branch' do |branch|
+      it 'uses {source_branch} to resolve the branch name' do
+        expect(body).to include("The branch is #{branch}.")
       end
     end
-    context 'when built with docbook' do
-      include_examples 'many branches', false
+    page_context 'html/test/master/chapter.html' do
+      include_examples 'contains branch', 'master'
     end
-    context 'when built with direct_html' do
-      include_examples 'many branches', true
+    page_context 'html/test/foo/chapter.html' do
+      include_examples 'contains branch', 'foo'
+    end
+    page_context 'html/test/7.x/chapter.html' do
+      include_examples 'contains branch', '7.x'
+    end
+    page_context 'html/test/1.2/chapter.html' do
+      include_examples 'contains branch', '1.2'
     end
   end
 
@@ -431,7 +422,6 @@ RSpec.describe 'building all books' do
       java_alts = { source_lang: 'console', alternative_lang: 'java' }
       book.source(java_repo, 'examples', alternatives: java_alts)
     end
-    let(:direct_html) { true }
     include_examples 'README-like console alternatives',
                      'raw/test/master', 'html/test/master'
   end

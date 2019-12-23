@@ -197,11 +197,6 @@ class Dest
       self
     end
 
-    def direct_html
-      @cmd += ['--direct_html']
-      self
-    end
-
     def single
       @cmd += ['--single']
       self

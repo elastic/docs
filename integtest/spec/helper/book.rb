@@ -33,10 +33,6 @@ class Book
   attr_accessor :suppress_migration_warnings
 
   ##
-  # Should this book built directly to html (true) or to docbook first (false).
-  attr_accessor :direct_html
-
-  ##
   # Should the book declare itself noindex? Defaults to false.
   attr_accessor :noindex
 
@@ -69,7 +65,6 @@ class Book
     @lang = 'en'
     @respect_edit_url_overrides = @suppress_migration_warnings = false
     @noindex = @single = false
-    @direct_html = true
     @live_branches = @toc_extra = nil
   end
 
