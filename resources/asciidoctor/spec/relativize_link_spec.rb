@@ -15,9 +15,9 @@ RSpec.describe RelativizeLink do
     include_context 'convert without logs'
     let(:input) { 'https://www.elastic.co/guide/foo[foo]' }
     it "doesn't do anything" do
-      expect(converted).to include(<<~DOCBOOK.strip)
-        <ulink url="https://www.elastic.co/guide/foo">foo</ulink>
-      DOCBOOK
+      expect(converted).to include <<~HTML.strip
+        <a href="https://www.elastic.co/guide/foo">foo</a>
+      HTML
     end
   end
   context 'when configured' do
@@ -28,17 +28,17 @@ RSpec.describe RelativizeLink do
     context 'when the url matches' do
       let(:input) { 'https://www.elastic.co/guide/foo[foo]' }
       it 'relativizes the link' do
-        expect(converted).to include(<<~DOCBOOK.strip)
-          <ulink url="/guide/foo">foo</ulink>
-        DOCBOOK
+        expect(converted).to include <<~HTML.strip
+          <a href="/guide/foo">foo</a>
+        HTML
       end
     end
     context "when the url doesn't match" do
       let(:input) { 'https://not.elastic.co/guide/foo[foo]' }
       it "doesn't do anything" do
-        expect(converted).to include(<<~DOCBOOK.strip)
-          <ulink url="https://not.elastic.co/guide/foo">foo</ulink>
-        DOCBOOK
+        expect(converted).to include <<~HTML.strip
+          <a href="https://not.elastic.co/guide/foo">foo</a>
+        HTML
       end
     end
   end

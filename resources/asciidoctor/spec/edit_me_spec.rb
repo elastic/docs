@@ -15,7 +15,6 @@ RSpec.describe EditMe do
   end
 
   let(:spec_dir) { __dir__ }
-  let(:backend) { 'html5' }
 
   context 'when edit_urls is invalid' do
     include_context 'convert with logs'

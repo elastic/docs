@@ -17,7 +17,6 @@ RSpec.describe Chunker do
   end
 
   include_context 'convert without logs'
-  let(:backend) { :html5 }
   let(:standalone) { true }
   let(:home_title) { 'Title' }
   let(:prev_title) { prev_page == 'index' ? 'Title' : prev_page.upcase }

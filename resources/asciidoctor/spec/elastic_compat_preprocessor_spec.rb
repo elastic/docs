@@ -29,7 +29,6 @@ RSpec.describe ElasticCompatPreprocessor do
   end
 
   let(:spec_dir) { File.dirname(__FILE__) }
-  let(:backend) { :html5 }
 
   include_examples "doesn't break line numbers"
 
@@ -39,9 +38,9 @@ RSpec.describe ElasticCompatPreprocessor do
 
       shared_examples 'invokes the block macro' do
         it 'invokes the block macro' do
-          expect(converted).to include <<~DOCBOOK.strip
+          expect(converted).to include <<~HTML.strip
             <div class="#{block_admon_class} admon">
-          DOCBOOK
+          HTML
         end
       end
       context 'when the admonition is alone on a line' do

@@ -31,12 +31,17 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
 
   shared_examples "doesn't modify the output" do
     it "doesn't modify the output" do
-      expect(converted).to eq(<<~DOCBOOK.strip)
-        <preface>
-        <title></title>
-        <programlisting language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
-        </preface>
-      DOCBOOK
+      expect(converted).to eq <<~HTML.strip
+        <div id="preamble">
+        <div class="sectionbody">
+        <div class="listingblock">
+        <div class="content">
+        <pre class="highlight"><code class="language-console" data-lang="console">#{snippet_contents}</code></pre>
+        </div>
+        </div>
+        </div>
+        </div>
+      HTML
     end
   end
 
@@ -155,14 +160,29 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       include_context 'convert without logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /just_js_alternative' }
-      it 'adds the alternative' do
-        expect(converted).to eq(<<~DOCBOOK.strip)
-          <preface>
-          <title></title>
-          <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('just js alternative');</programlisting>
-          <programlisting role="default has-js" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
-          </preface>
-        DOCBOOK
+      context 'the conversion' do
+        it 'contains the existing alternative' do
+          expect(converted).to include <<~HTML
+            <div class="listingblock alternative">
+            <div class="content">
+            <pre class="highlight"><code class="language-js" data-lang="js">console.info('just js alternative');</code></pre>
+            </div>
+            </div>
+          HTML
+        end
+        it 'contains the default' do
+          expect(converted).to include <<~HTML
+            <div class="listingblock default has-js">
+            <div class="content">
+            <pre class="highlight"><code class="language-console" data-lang="console">GET /just_js_alternative</code></pre>
+            </div>
+            </div>
+          HTML
+        end
+        it "doesn't contain any missing alternative" do
+          expect(converted).not_to include 'data-lang="csharp"'
+          expect(converted).not_to include 'data-lang="java"'
+        end
       end
       context 'the alternatives report' do
         it 'shows only js populated' do
@@ -198,16 +218,43 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       include_context 'convert without logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /all_alternatives' }
-      it 'adds the alternatives' do
-        expect(converted).to eq(<<~DOCBOOK.strip)
-          <preface>
-          <title></title>
-          <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('all alternatives');</programlisting>
-          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("all alternatives");</programlisting>
-          <programlisting role="alternative" language="java" linenumbering="unnumbered">System.out.println("all alternatives");</programlisting>
-          <programlisting role="default has-js has-csharp has-java" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
-          </preface>
-        DOCBOOK
+      context 'the conversion' do
+        it 'contains the js alternative' do
+          expect(converted).to include <<~HTML
+            <div class="listingblock alternative">
+            <div class="content">
+            <pre class="highlight"><code class="language-js" data-lang="js">console.info('all alternatives');</code></pre>
+            </div>
+            </div>
+          HTML
+        end
+        it 'contains the csharp alternative' do
+          expect(converted).to include <<~HTML
+            <div class="listingblock alternative">
+            <div class="content">
+            <pre class="highlight"><code class="language-csharp" data-lang="csharp">Console.WriteLine("all alternatives");</code></pre>
+            </div>
+            </div>
+          HTML
+        end
+        it 'contains the java alternative' do
+          expect(converted).to include <<~HTML
+            <div class="listingblock alternative">
+            <div class="content">
+            <pre class="highlight"><code class="language-java" data-lang="java">System.out.println("all alternatives");</code></pre>
+            </div>
+            </div>
+          HTML
+        end
+        it 'contains the contains the default' do
+          expect(converted).to include <<~HTML
+            <div class="listingblock default has-js has-csharp has-java">
+            <div class="content">
+            <pre class="highlight"><code class="language-console" data-lang="console">GET /all_alternatives</code></pre>
+            </div>
+            </div>
+          HTML
+        end
       end
       context 'the alternatives report' do
         it 'shows all languages populated' do
@@ -256,16 +303,27 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       end
       let(:snippet_contents) { 'GET /just_js_alternative' }
       let(:result_contents) { '{"just_js_result": {}}' }
-      it 'adds the alternative' do
-        expect(converted).to eq(<<~DOCBOOK.strip)
-          <preface>
-          <title></title>
-          <programlisting role="alternative" language="js" linenumbering="unnumbered">console.info('just js alternative');</programlisting>
-          <programlisting role="default has-js" language="console" linenumbering="unnumbered">#{snippet_contents}</programlisting>
-          <programlisting role="alternative" language="js-result" linenumbering="unnumbered">'just js result'</programlisting>
-          <programlisting role="default has-js" language="console-result" linenumbering="unnumbered">#{result_contents}</programlisting>
-          </preface>
-        DOCBOOK
+      context 'the conversion' do
+        it 'contain the alternative request' do
+          expect(converted).to include <<~HTML.strip
+            <code class="language-js" data-lang="js">
+          HTML
+        end
+        it 'contain the default request' do
+          expect(converted).to include <<~HTML.strip
+            <code class="language-console" data-lang="console">
+          HTML
+        end
+        it 'contain the alternative result' do
+          expect(converted).to include <<~HTML.strip
+            <code class="language-js-result" data-lang="js-result">
+          HTML
+        end
+        it 'contain the default result' do
+          expect(converted).to include <<~HTML.strip
+            <code class="language-console-result" data-lang="console-result">
+          HTML
+        end
       end
       context 'the alternatives report' do
         it 'includes the request snippet' do
@@ -307,7 +365,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /has_<' }
       it 'adds the alternative' do
-        expect(converted).to include(<<~DOCBOOK.strip)
+        expect(converted).to include <<~HTML.strip
           var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
               .Query(q =&gt; q
                   .QueryString(m =&gt; m
@@ -315,7 +373,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
                   )
               )
           );
-        DOCBOOK
+        HTML
       end
     end
     context 'when the alternative includes another file' do
@@ -351,30 +409,29 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
         ASCIIDOC
       end
       it 'inserts the alternative code above the default code' do
-        expect(converted).to include(<<~DOCBOOK.strip)
-          <programlisting role="alternative" language="csharp" linenumbering="unnumbered">Console.WriteLine("there are callouts"); <co id="A0-CO1-1"/> <co id="A0-CO1-2"/></programlisting>
-          <programlisting role="default has-csharp" language="console" linenumbering="unnumbered">GET /there_are_callouts <co id="CO1-1"/> <co id="CO1-2"/></programlisting>
-        DOCBOOK
+        expect(converted).to include <<~HTML
+          <pre class="highlight"><code class="language-csharp" data-lang="csharp">Console.WriteLine("there are callouts"); <b class="conum">(1)</b> <b class="conum">(2)</b></code></pre>
+          </div>
+          </div>
+          <div class="listingblock default has-csharp">
+          <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">GET /there_are_callouts <b class="conum">(1)</b> <b class="conum">(2)</b></code></pre>
+        HTML
       end
       it 'inserts the alternative callouts above the default callouts' do
-        expect(converted).to include(<<~DOCBOOK.strip)
-          <calloutlist role="alternative lang-csharp">
-          <callout arearefs="A0-CO1-1">
-          <para>csharp a</para>
-          </callout>
-          <callout arearefs="A0-CO1-2">
-          <para>csharp b</para>
-          </callout>
-          </calloutlist>
-          <calloutlist role="default has-csharp lang-console">
-          <callout arearefs="CO1-1">
-          <para>a</para>
-          </callout>
-          <callout arearefs="CO1-2">
-          <para>b</para>
-          </callout>
-          </calloutlist>
-        DOCBOOK
+        expect(converted).to include <<~HTML
+          <div class="colist arabic alternative lang-csharp">
+          <ol>
+          <li>
+          <p>csharp a</p>
+          </li>
+          <li>
+          <p>csharp b</p>
+          </li>
+          </ol>
+          </div>
+          <div class="colist arabic default has-csharp lang-console">
+        HTML
       end
     end
     context 'when there is an error in the alternative' do
@@ -382,9 +439,9 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /has_error' }
       it 'adds the alternative with the error text' do
-        expect(converted).to include(<<~DOCBOOK.strip)
+        expect(converted).to include <<~HTML.strip
           include::missing.adoc[]
-        DOCBOOK
+        HTML
       end
       it 'logs an error' do
         expect(logs).to eq(<<~LOG.strip)

@@ -42,7 +42,9 @@ RSpec.describe ElasticCompatTreeProcessor do
       ASCIIDOC
     end
     it 'successfully converts the text anyway' do
-      expect(converted).to include('<term><literal>thing2</literal></term>')
+      expect(converted).to include <<~HTML
+        <dt class="hdlist1"><code>thing2</code></dt>
+      HTML
     end
   end
 
@@ -59,12 +61,11 @@ RSpec.describe ElasticCompatTreeProcessor do
         snippet += "lang_override::[#{override}]" if override
         snippet
       end
-      let(:has_lang) do
-        /<programlisting language="#{lang}" linenumbering="unnumbered">/
-      end
       shared_examples 'has the expected language' do
         it "has the #{lang} language" do
-          expect(converted).to match(has_lang)
+          expect(converted).to include <<~HTML.strip
+            <code class="language-#{lang}" data-lang="#{lang}">
+          HTML
         end
       end
       context 'when it is alone' do
@@ -87,7 +88,9 @@ RSpec.describe ElasticCompatTreeProcessor do
         end
         include_examples 'has the expected language'
         it 'the paragraph is intact' do
-          expect(converted).to match(%r{<simpara>Words words words.</simpara>})
+          expect(converted).to include <<~HTML
+            <p>Words words words.</p>
+          HTML
         end
       end
       context 'when it is inside a definition list' do
@@ -114,7 +117,7 @@ RSpec.describe ElasticCompatTreeProcessor do
         end
         include_examples 'has the expected language'
         it 'has a working callout list' do
-          expect(converted).to match(/<callout arearefs="CO1-1">\n<para>foo/)
+          expect(converted).to include 'GET / <b class="conum">(1)</b>'
         end
       end
     end

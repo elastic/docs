@@ -12,7 +12,6 @@ RSpec.describe OpenInWidget do
   end
 
   let(:spec_dir) { File.dirname(__FILE__) }
-  let(:backend) { :html5 }
 
   def stub_file_opts(result)
     {

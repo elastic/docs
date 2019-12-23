@@ -70,14 +70,6 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
     def process(parent, _target, attrs)
       text = attrs[:text]
-      if parent.document.basebackend? 'html'
-        process_html parent, text
-      else
-        process_docbook parent, text
-      end
-    end
-
-    def process_html(parent, text)
       text ||= @default_text
       Asciidoctor::Inline.new(
         parent, :admonition, text, type: @role, attributes: {
@@ -86,24 +78,6 @@ class CareAdmonition < Asciidoctor::Extensions::Group
           'title' => @role,
         }
       )
-    end
-
-    def process_docbook(parent, text)
-      Asciidoctor::Inline.new parent, :quoted, docbook_text(text)
-    end
-
-    def docbook_text(text)
-      if text
-        <<~DOCBOOK
-          <phrase role="#{@role}">
-            #{text}
-          </phrase>
-        DOCBOOK
-      else
-        <<~DOCBOOK
-          <phrase role="#{@role}"/>
-        DOCBOOK
-      end
     end
   end
 end

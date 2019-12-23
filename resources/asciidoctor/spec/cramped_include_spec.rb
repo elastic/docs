@@ -30,12 +30,11 @@ RSpec.describe CrampedInclude do
       ASCIIDOC
     end
     it 'renders both callout lists' do
-      expect(converted).to include('<callout arearefs="CO1-1">')
-      expect(converted).to include('<callout arearefs="CO2-1">')
+      expect(converted.scan(/<div class="colist arabic">/).count).to eq 2
     end
     it 'renders the sections that contain the lists' do
-      expect(converted).to include('<title>P1</title>')
-      expect(converted).to include('<title>P2</title>')
+      expect(converted).to include('<h3 id="P1">P1</h3>')
+      expect(converted).to include('<h3 id="P2">P2</h3>')
     end
   end
 
@@ -48,8 +47,8 @@ RSpec.describe CrampedInclude do
       ASCIIDOC
     end
     it "doesn't add an extra newline" do
-      expect(converted).to include('<screen>public class Example {}</screen>')
-      # If it did add an extra new line it'd be here --------------^
+      expect(converted).to include('<pre>public class Example {}</pre>')
+      # If it did add an extra new line it'd be here -----------^
     end
   end
 end
