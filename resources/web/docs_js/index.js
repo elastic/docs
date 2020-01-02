@@ -12,6 +12,9 @@ import "./prettify/lang-console";
 import "../lib/prettify/lang-sql";
 import "../lib/prettify/lang-yaml";
 
+// Add support for <details> in IE and the like
+import "../../../../../node_modules/details-polyfill";
+
 export function init_headers(right_col, lang_strings) {
   // Add on-this-page block
   var this_page = $('<div id="this_page"></div>').prependTo(right_col);
