@@ -2406,5 +2406,25 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'collapsible' do
+      let(:input) do
+        <<~ASCIIDOC
+          [%collapsible]
+          .Title
+          ====
+          Words
+          ====
+        ASCIIDOC
+      end
+      it "uses asciidoctor's default" do
+        expect(converted).to include <<~HTML
+          <details>
+          <summary class="title">Title</summary>
+          <div class="content">
+          <p>Words</p>
+          </div>
+        HTML
+      end
+    end
   end
 end

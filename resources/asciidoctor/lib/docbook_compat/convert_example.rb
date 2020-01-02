@@ -6,6 +6,7 @@ module DocbookCompat
   module ConvertExample
     def convert_example(node)
       return yield unless node.title
+      return yield if node.option? 'collapsible'
 
       [
         '<div class="example">',

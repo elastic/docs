@@ -50,6 +50,7 @@ RSpec.describe 'building all books' do
       has_license 'code-prettify', 'The Apache 2.0 License'
       has_license "code-prettify's lang-sql", 'The Apache 2.0 License'
       has_license "code-prettify's lang-yaml", 'The Apache 2.0 License'
+      has_license 'details-polyfill', 'The MIT License (MIT)'
       has_license 'js-cookie', 'The MIT License (MIT)'
       has_license 'linkstate', 'The MIT License (MIT)'
       has_license 'loose-envify', 'The MIT License (MIT)'
