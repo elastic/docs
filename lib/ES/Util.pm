@@ -260,7 +260,7 @@ sub _add_extra_title_page {
 #===================================
     my ( $index, $html_file ) = @_;
     my $extra_title_page = $index->basename;
-    $extra_title_page =~ s/\.a(scii)?doc$/-extra-title-page.html/ || die;
+    $extra_title_page =~ s/(\.x)?\.a(scii)?doc$/-extra-title-page.html/ || die;
     $extra_title_page = $index->parent->file( $extra_title_page );
     if ( -e $extra_title_page ) {
         $extra_title_page = $extra_title_page->slurp( iomode => '<:encoding(UTF-8)' );
