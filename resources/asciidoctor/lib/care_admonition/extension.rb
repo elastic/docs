@@ -58,7 +58,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       if github_link
         github_issue = github_link.split('/').last
         github_text = <<~TEXT
-          For feature status,see #{github_link}[\##{github_issue}].
+          For feature status, see #{github_link}[\##{github_issue}].
           TEXT
         text += ' ' + github_text
       end
