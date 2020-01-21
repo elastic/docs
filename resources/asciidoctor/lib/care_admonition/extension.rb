@@ -43,12 +43,11 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     end
 
     def process(parent, _target, attrs)
-  
       text = attrs[:passtext]
       link_pattern = /^https?:\/\/github\.com\/elastic\/\S+[^\/]\/issues\/\d+$/
 
       ## If the passtext looks like a Github link, use it.
-      if text && text.match(link_pattern)
+      if text&.match(link_pattern)
         github_link = attrs[:passtext]
         text = @default_text
       else
@@ -58,8 +57,10 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
       if github_link
         github_issue = github_link.split('/').last
-        github_text = "For feature status, see #{github_link}[\##{github_issue}]."
-        text += " " + github_text
+        github_text = <<~TEXT
+          For feature status,see #{github_link}[\##{github_issue}].
+          TEXT
+        text += ' ' + github_text
       end
 
       Asciidoctor::Block.new(
