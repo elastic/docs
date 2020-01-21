@@ -34,7 +34,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
   # Block care admonition.
   class ChangeAdmonitionBlock < Asciidoctor::Extensions::BlockMacroProcessor
     use_dsl
-    name_positional_attributes :passtext
+    name_positional_attributes :passtext, :github
 
     def initialize(role, default_text)
       super(nil)
@@ -43,9 +43,28 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     end
 
     def process(parent, _target, attrs)
+  
+      text = attrs[:passtext]
+      link_pattern = /^https?:\/\/github\.com\/elastic\/\S+[^\/]\/issues\/\d+$/
+
+      ## If the passtext looks like a Github link, use it.
+      if text && text.match(link_pattern)
+        github_link = attrs[:passtext]
+        text = @default_text
+      else
+        github_link = attrs[:github]
+        text ||= @default_text
+      end
+
+      if github_link
+        github_issue = github_link.split('/').last
+        github_text = "For feature status, see #{github_link}[\##{github_issue}]."
+        text += " " + github_text
+      end
+
       Asciidoctor::Block.new(
         parent, :admonition,
-        source: attrs[:passtext] || @default_text,
+        source: text,
         attributes: {
           'role' => @role,
           'name' => 'warning',
