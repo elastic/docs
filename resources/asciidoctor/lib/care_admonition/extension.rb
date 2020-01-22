@@ -42,27 +42,28 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       @default_text = default_text
     end
 
-    def generate_github_text(github_link,text)
-      github_issue = github_link.split('/').last.chomp('/')
-      github_text = <<~TEXT
-        For feature status, see #{github_link}[\##{github_issue}].
+    def generate_issue_text(text, issue_url)
+      issue_no = issue_url.split('/').last.chomp('/')
+      issue_text = <<~TEXT
+        For feature status, see #{issue_url}[\##{issue_no}].
       TEXT
-      text += ' ' + github_text
-      return text
+      text += ' ' + issue_text
+    end
+
+    def generate_text(text, issue_url)
+      if text&.start_with?('http')
+        issue_url = text
+        text = @default_text
+      else
+        issue_url = issue_url
+        text ||= @default_text
+      end
+      text = generate_issue_text(text,issue_url) if issue_url
+      text
     end
 
     def process(parent, _target, attrs)
-      text = attrs[:passtext]
-      if text&.start_with?("http")
-        github_link = attrs[:passtext]
-        text = @default_text
-      else
-        github_link = attrs[:issue_url]
-        text ||= @default_text
-      end
-      if github_link
-        text = generate_github_text(github_link,text)
-      end
+      text = generate_text(attrs[:passtext], attrs[:issue_url])
       Asciidoctor::Block.new(
         parent, :admonition, source: text, attributes: {
           'role' => @role,
