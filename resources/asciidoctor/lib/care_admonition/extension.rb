@@ -42,10 +42,8 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       @default_text = default_text
     end
 
-    def 
-
     def generate_github_text(github_link,text)
-      github_issue = github_link.split('/').last.chomp!('/')
+      github_issue = github_link.split('/').last.chomp('/')
       github_text = <<~TEXT
         For feature status, see #{github_link}[\##{github_issue}].
       TEXT
@@ -55,7 +53,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
     def process(parent, _target, attrs)
       text = attrs[:passtext]
-      if text.start_with("http")
+      if text&.start_with?("http")
         github_link = attrs[:passtext]
         text = @default_text
       else
