@@ -42,10 +42,20 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       @default_text = default_text
     end
 
+    def 
+
+    def generate_github_text(github_link,text)
+      github_issue = github_link.split('/').last.chomp!('/')
+      github_text = <<~TEXT
+        For feature status, see #{github_link}[\##{github_issue}].
+      TEXT
+      text += ' ' + github_text
+      return text
+    end
+
     def process(parent, _target, attrs)
       text = attrs[:passtext]
-      gh_pattern = %r{^https?:\/\/github\.com\/elastic\/\S+[^\/]\/issues\/\d+$}
-      if text&.match(gh_pattern)
+      if text.start_with("http")
         github_link = attrs[:passtext]
         text = @default_text
       else
@@ -53,16 +63,10 @@ class CareAdmonition < Asciidoctor::Extensions::Group
         text ||= @default_text
       end
       if github_link
-        github_issue = github_link.split('/').last
-        github_text = <<~TEXT
-          For feature status, see #{github_link}[\##{github_issue}].
-          TEXT
-        text += ' ' + github_text
+        text = generate_github_text(github_link,text)
       end
       Asciidoctor::Block.new(
-        parent, :admonition,
-        source: text,
-        attributes: {
+        parent, :admonition, source: text, attributes: {
           'role' => @role,
           'name' => 'warning',
           'style' => 'warning',
