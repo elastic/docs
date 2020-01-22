@@ -71,6 +71,56 @@ RSpec.describe CareAdmonition do
           expect(converted).to include "<p>#{key}[]</p>"
         end
       end
+      context 'when only a Github issue link is provided' do
+        let(:input) do
+          <<~ASCIIDOC
+            #{key}::[https://github.com/elastic/docs/issues/505]
+          ASCIIDOC
+        end
+        it 'has default text and github text' do
+          expect_block_admonition <<~HTML.strip
+            <p>#{default_text} For feature status, see <a href="https://github.com/elastic/docs/issues/505" class="ulink" target="_top">#505</a>.</p>
+          HTML
+        end
+      end
+      context 'when only an {issue} link is provided' do
+        let(:input) do
+          <<~ASCIIDOC
+            :issue: https://github.com/elastic/docs/issues/
+            #{key}::[{issue}505]
+          ASCIIDOC
+        end
+        it 'has default text and github text' do
+          expect_block_admonition <<~HTML.strip
+            <p>#{default_text} For feature status, see <a href="https://github.com/elastic/docs/issues/505" class="ulink" target="_top">#505</a>.</p>
+          HTML
+        end
+      end
+      context 'when custom text and a Github issue link are provided' do
+        let(:input) do
+          <<~ASCIIDOC
+            #{key}::["Custom text." https://github.com/elastic/docs/issues/505]
+          ASCIIDOC
+        end
+        it 'has custom text and github text' do
+          expect_block_admonition <<~HTML.strip
+            <p>Custom text. For feature status, see <a href="https://github.com/elastic/docs/issues/505" class="ulink" target="_top">#505</a>.</p>
+          HTML
+        end
+      end
+      context 'when custom text and an {issue} link are provided' do
+        let(:input) do
+          <<~ASCIIDOC
+            :issue: https://github.com/elastic/docs/issues/
+            #{key}::["Custom text." {issue}505]
+          ASCIIDOC
+        end
+        it 'has custom text and github text' do
+          expect_block_admonition <<~HTML.strip
+            <p>Custom text. For feature status, see <a href="https://github.com/elastic/docs/issues/505" class="ulink" target="_top">#505</a>.</p>
+          HTML
+        end
+      end
     end
     context 'inline form' do
       def expect_inline_admonition(text)

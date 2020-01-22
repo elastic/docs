@@ -42,24 +42,34 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       @default_text = default_text
     end
 
-    def generate_issue_text(text, issue_url)
-      issue_no = issue_url.split('/').last.chomp('/')
-      issue_text = <<~TEXT
-        For feature status, see #{issue_url}[\##{issue_no}].
-      TEXT
-      text + ' ' + issue_text
-    end
-
     def generate_text(text, issue_url)
-      if text&.start_with?('http')
+      if text&.start_with?('http', '{issue}')
         issue_url = text
         text = @default_text
       else
         issue_url = issue_url
         text ||= @default_text
       end
-      text = generate_issue_text(text, issue_url) if issue_url
+      text = add_issue_text(text, issue_url) if issue_url
       text
+    end
+
+    def add_issue_text(text, issue_url)
+      issue_num = get_issue_num(issue_url)
+      issue_text = <<~TEXT
+        For feature status, see #{issue_url}[\##{issue_num}].
+      TEXT
+      text + ' ' + issue_text
+    end
+
+    def get_issue_num(issue_url)
+      if issue_url.start_with?('http')
+        issue_num = issue_url.split('/').last
+        issue_num.chomp!('/')
+      else
+        issue_num = issue_url.sub('{issue}', '')
+      end
+      issue_num
     end
 
     def process(parent, _target, attrs)
