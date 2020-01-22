@@ -47,7 +47,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       issue_text = <<~TEXT
         For feature status, see #{issue_url}[\##{issue_no}].
       TEXT
-      text += ' ' + issue_text
+      text + ' ' + issue_text
     end
 
     def generate_text(text, issue_url)
@@ -58,7 +58,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
         issue_url = issue_url
         text ||= @default_text
       end
-      text = generate_issue_text(text,issue_url) if issue_url
+      text = generate_issue_text(text, issue_url) if issue_url
       text
     end
 
