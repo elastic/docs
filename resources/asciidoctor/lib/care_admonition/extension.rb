@@ -34,7 +34,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
   # Block care admonition.
   class ChangeAdmonitionBlock < Asciidoctor::Extensions::BlockMacroProcessor
     use_dsl
-    name_positional_attributes :passtext, :github
+    name_positional_attributes :passtext, :issue_url
 
     def initialize(role, default_text)
       super(nil)
@@ -57,7 +57,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
         github_link = attrs[:passtext]
         text = @default_text
       else
-        github_link = attrs[:github]
+        github_link = attrs[:issue_url]
         text ||= @default_text
       end
       if github_link
