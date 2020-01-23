@@ -62,14 +62,10 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       text + ' ' + issue_text
     end
 
-    def get_issue_num(issue_url)
-      if issue_url.start_with?('http')
-        issue_num = issue_url.split('/').last
-        issue_num.chomp!('/')
-      else
-        issue_num = issue_url.sub('{issue}', '')
-      end
-      issue_num
+    def get_issue_num(url)
+      return url.split('/').last.chomp('/') if url.start_with?('http')
+
+      url.sub('{issue}', '')
     end
 
     def process(parent, _target, attrs)
