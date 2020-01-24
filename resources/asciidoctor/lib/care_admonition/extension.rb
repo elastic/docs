@@ -34,7 +34,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
   # Block care admonition.
   class ChangeAdmonitionBlock < Asciidoctor::Extensions::BlockMacroProcessor
     use_dsl
-    name_positional_attributes :passtext
+    name_positional_attributes :passtext, :issue_url
 
     def initialize(role, default_text)
       super(nil)
@@ -42,11 +42,36 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       @default_text = default_text
     end
 
+    def generate_text(text, issue_url)
+      if text&.start_with?('http', '{issue}')
+        issue_url = text
+        text = @default_text
+      else
+        issue_url = issue_url
+        text ||= @default_text
+      end
+      text = add_issue_text(text, issue_url) if issue_url
+      text
+    end
+
+    def add_issue_text(text, issue_url)
+      issue_num = get_issue_num(issue_url)
+      issue_text = <<~TEXT
+        For feature status, see #{issue_url}[\##{issue_num}].
+      TEXT
+      text + ' ' + issue_text
+    end
+
+    def get_issue_num(url)
+      return url.split('/').last.chomp('/') if url.start_with?('http')
+
+      url.sub('{issue}', '')
+    end
+
     def process(parent, _target, attrs)
+      text = generate_text(attrs[:passtext], attrs[:issue_url])
       Asciidoctor::Block.new(
-        parent, :admonition,
-        source: attrs[:passtext] || @default_text,
-        attributes: {
+        parent, :admonition, source: text, attributes: {
           'role' => @role,
           'name' => 'warning',
           'style' => 'warning',
