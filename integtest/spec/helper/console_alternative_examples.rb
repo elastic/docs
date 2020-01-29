@@ -65,6 +65,7 @@ RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
             )
         );</pre>
         </div>
+        <a id="8a7e0a79b1743d5fd94d79a7106ee930"></a>
         <div class="pre_wrapper lang-console default #{has_classes}">
       HTML
     end

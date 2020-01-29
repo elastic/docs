@@ -6,9 +6,7 @@ require 'alternative_language_lookup/extension'
 
 RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
   before(:each) do
-    Asciidoctor::Extensions.register do
-      treeprocessor AlternativeLanguageLookup::AlternativeLanguageLookup
-    end
+    Asciidoctor::Extensions.register AlternativeLanguageLookup
   end
 
   after(:each) do
@@ -125,7 +123,20 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
       include_context 'convert without logs'
       let(:input) { one_snippet }
       let(:snippet_contents) { 'GET /no_alternatives' }
-      include_examples "doesn't modify the output"
+      it 'only adds the digest' do
+        expect(converted).to eq <<~HTML.strip
+          <div id="preamble">
+          <div class="sectionbody">
+          <a id="3fcdfa6097c68c04f3e175dcf3934af6"></a>
+          <div class="listingblock">
+          <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">#{snippet_contents}</code></pre>
+          </div>
+          </div>
+          </div>
+          </div>
+        HTML
+      end
       context 'the alternatives report' do
         it 'contains an entry for the snippet' do
           expect(report).to eq(
@@ -413,6 +424,7 @@ RSpec.describe AlternativeLanguageLookup::AlternativeLanguageLookup do
           <pre class="highlight"><code class="language-csharp" data-lang="csharp">Console.WriteLine("there are callouts"); <b class="conum">(1)</b> <b class="conum">(2)</b></code></pre>
           </div>
           </div>
+          <a id="9e01493a85c06a5100ff712f6b3eead4"></a>
           <div class="listingblock default has-csharp">
           <div class="content">
           <pre class="highlight"><code class="language-console" data-lang="console">GET /there_are_callouts <b class="conum">(1)</b> <b class="conum">(2)</b></code></pre>

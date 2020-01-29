@@ -5,12 +5,20 @@ require 'csv'
 require 'digest/murmurhash'
 require_relative '../log_util'
 require_relative '../scaffold'
+require_relative 'converter'
 require_relative 'listing'
 require_relative 'lookup'
 require_relative 'report'
 require_relative 'summary'
 
+##
+# Extension to add "alternative" languages to language examples.
 module AlternativeLanguageLookup
+  def self.activate(registry)
+    registry.treeprocessor AlternativeLanguageLookup
+    DelegatingConverter.setup(registry.document) { |d| Converter.new d }
+  end
+
   ##
   # TreeProcessor extension find alternative languages for snippets.
   class AlternativeLanguageLookup < TreeProcessorScaffold
