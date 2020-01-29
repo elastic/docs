@@ -1305,6 +1305,42 @@ RSpec.describe DocbookCompat do
         end
       end
     end
+    context 'when it is a TODO list' do
+      let(:input) do
+        <<~ASCIIDOC
+          * [ ] Thing
+        ASCIIDOC
+      end
+      it 'includes to empty check box' do
+        expect(converted).to include <<~HTML
+          <div class="ulist checklist itemizedlist">
+          <ul class="checklist">
+          <li class="listitem">
+          &#10063; Thing
+          </li>
+          </ul>
+          </div>
+        HTML
+      end
+    end
+    context 'when it is a "done" TODO list' do
+      let(:input) do
+        <<~ASCIIDOC
+          * [x] Thing
+        ASCIIDOC
+      end
+      it 'includes the check mark' do
+        expect(converted).to include <<~HTML
+          <div class="ulist checklist itemizedlist">
+          <ul class="checklist">
+          <li class="listitem">
+          &#10003; Thing
+          </li>
+          </ul>
+          </div>
+        HTML
+      end
+    end
   end
 
   context 'an ordered list' do

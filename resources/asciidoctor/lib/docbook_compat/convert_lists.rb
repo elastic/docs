@@ -47,9 +47,17 @@ module DocbookCompat
         next unless item.text
         next if item.blocks?
 
-        html.sub!("<p>#{item.text}</p>", item.text) ||
-          raise("Couldn't remove <p> for #{item.text} in #{html}")
+        text = item_text item
+        html.sub!("<p>#{text}</p>", text) ||
+          raise("Couldn't remove <p> for #{text} in #{html}")
       end
+    end
+
+    def item_text(item)
+      return '&#10003; ' + item.text if item.attr? 'checked'
+      return '&#10063; ' + item.text if item.attr? 'checkbox'
+
+      item.text
     end
   end
 end
