@@ -47,17 +47,36 @@ module DocbookCompat
         next unless item.text
         next if item.blocks?
 
-        text = item_text item
+        text = item_text node, item
         html.sub!("<p>#{text}</p>", text) ||
           raise("Couldn't remove <p> for #{text} in #{html}")
       end
     end
 
-    def item_text(item)
-      return '&#10003; ' + item.text if item.attr? 'checked'
-      return '&#10063; ' + item.text if item.attr? 'checkbox'
+    def item_text(node, item)
+      if item.attr? 'checked'
+        checked_text(node) + item.text
+      elsif item.attr? 'checkbox'
+        checkbox_text(node) + item.text
+      else
+        item.text
+      end
+    end
 
-      item.text
+    def checked_text(node)
+      if node.option? 'interactive'
+        '<input type="checkbox" data-item-complete="1" checked> '
+      else
+        '&#10003; '
+      end
+    end
+
+    def checkbox_text(node)
+      if node.option? 'interactive'
+        '<input type="checkbox" data-item-complete="0"> '
+      else
+        '&#10063; '
+      end
     end
   end
 end
