@@ -32,6 +32,7 @@ module AlternativeLanguageLookup
     def process
       return unless alternatives
 
+      block.attributes['digest'] = digest
       found_langs = []
 
       alternatives.each do |lookup|

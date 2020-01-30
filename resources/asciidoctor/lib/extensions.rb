@@ -35,8 +35,8 @@ Asciidoctor::Extensions.register do
   preprocessor CrampedInclude
   preprocessor ElasticCompatPreprocessor
   treeprocessor ElasticCompatTreeProcessor
-  # The tree processors after this must come after ElasticComptTreeProcessor
+  # Everything after this must come after ElasticCompatTreeProcessor
   # or they won't see the right tree.
-  treeprocessor AlternativeLanguageLookup::AlternativeLanguageLookup
   include_processor ElasticIncludeTagged
 end
+Asciidoctor::Extensions.register AlternativeLanguageLookup
