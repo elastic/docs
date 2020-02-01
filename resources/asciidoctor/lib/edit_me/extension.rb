@@ -76,7 +76,7 @@ module EditMe
 
       if block.document.attr 'private_edit_urls'
         css_class = 'edit_me edit_me_private'
-        title = 'Editing is available only to the authorized users'
+        title = 'Editing on GitHub is available to Elastic'
       else
         css_class = 'edit_me'
         title = 'Edit this page on GitHub'
