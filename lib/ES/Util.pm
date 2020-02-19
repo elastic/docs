@@ -84,8 +84,7 @@ sub build_chunked {
             # Use ` to delimit monospaced literals because our docs
             # expect that
             '-a' => 'compat-mode=legacy',
-            !$private ? () : ( '-a' => "private_edit_urls" ),
-            !$edit_urls ? () : ( '-a' => "edit_urls=" .
+            $private || !$edit_urls ? () : ( '-a' => "edit_urls=" .
                 edit_urls_for_asciidoctor($edit_urls) ),
             # Disable warning on missing attributes because we have
             # missing attributes!
