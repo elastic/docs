@@ -270,7 +270,7 @@ $(function() {
   // If you're have been given access to the private repository these docs
   // relate to *and* you use the 'edit' in the query string or hash, we'll show
   // you an edit button taking you to the private repo.
-  if (window.location.search.indexOf('edit') > -1 || window.location.hash.indexOf('edit') > -1) {
+  if (window.location.search.indexOf('edit') > -1 || window.location.hash.indexOf('?edit') > -1) {
     $('a.edit_me_private').show();
 
     // Carefully rewrite the query string of each relative docs link to add an
