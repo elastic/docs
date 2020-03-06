@@ -269,7 +269,8 @@ $(function() {
 
   // For the private docs repositories, the edit button is hidden
   // unless there is an '?edit' in the query string or hash.
-  if (window.location.search.indexOf('edit') > -1 || window.location.hash.indexOf('?edit') > -1) {
+  if (utils.deparam(window.location.search).edit !== undefined
+      || window.location.hash.indexOf('?edit') > -1) {
     $('a.edit_me_private').show();
 
     // Carefully rewrite the query string of each relative docs link to add an
