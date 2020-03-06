@@ -267,9 +267,8 @@ $(function() {
     document.head.appendChild(hotcss);
   }
 
-  // If you're have been given access to the private repository these docs
-  // relate to *and* you use the 'edit' in the query string or hash, we'll show
-  // you an edit button taking you to the private repo.
+  // For the private docs repositories, the edit button is hidden
+  // unless there is an '?edit' in the query string or hash.
   if (window.location.search.indexOf('edit') > -1 || window.location.hash.indexOf('?edit') > -1) {
     $('a.edit_me_private').show();
 
