@@ -273,7 +273,7 @@ $(function() {
       || window.location.hash.indexOf('?edit') > -1) {
     $('a.edit_me_private').show();
 
-    // Carefully rewrite the query string of each relative docs link to add an
+    // Rewrite the query string of each relative docs link to add an
     // 'edit' param while preserving any existing parameters.
     $('a').each(function(index) {
       if (this.href.startsWith(window.location.origin)) {
