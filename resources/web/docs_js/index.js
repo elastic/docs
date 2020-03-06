@@ -279,7 +279,6 @@ $(function() {
       if (this.href.startsWith(window.location.origin)) {
         var query_obj = utils.deparam(this.search);
         query_obj.edit = "";
-        console.log(query_obj);
         this.search = decodeURIComponent($.param(query_obj));
       }
     });
