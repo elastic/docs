@@ -267,5 +267,23 @@ $(function() {
     document.head.appendChild(hotcss);
   }
 
+  // If you're have been given access to the private repository these docs
+  // relate to *and* you use the 'edit' in the query string or hash, we'll show
+  // you an edit button taking you to the private repo.
+  if (window.location.search.indexOf('edit') > -1 || window.location.hash.indexOf('edit') > -1) {
+    $('a.edit_me_private').show();
+
+    // Carefully rewrite the query string of each relative docs link to add an
+    // 'edit' param while preserving any existing parameters.
+    $('a').each(function(index) {
+      if (this.href.startsWith(window.location.origin)) {
+        var query_obj = utils.deparam(this.search);
+        query_obj.edit = "";
+        console.log(query_obj);
+        this.search = decodeURIComponent($.param(query_obj));
+      }
+    });
+  }
+
   // Test comment used to detect unminifed JS in tests
 });
