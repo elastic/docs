@@ -254,6 +254,7 @@ $(function() {
       right_col.append(data);
       init_toc(LangStrings);
       utils.open_current(location.pathname);
+      rewrite_internal_links();
     }).always(function() {
       init_headers(right_col, LangStrings);
     });
@@ -272,17 +273,23 @@ $(function() {
 
   // For the private docs repositories, the edit button is hidden
   // unless there is an '?edit' in the query string or hash.
-  if (utils.deparam(window.location.search).edit !== undefined
+
+  if (new URLSearchParams(window.location.search).has('edit')
       || window.location.hash.indexOf('?edit') > -1) {
+
     $('a.edit_me_private').show();
 
+    rewrite_internal_links();
+  }
+
+  function rewrite_internal_links() {
     // Rewrite the query string of each relative docs link to add an
     // 'edit' param while preserving any existing parameters.
     $('a').each(function(index) {
       if (this.href.startsWith(window.location.origin)) {
-        var query_obj = utils.deparam(this.search);
-        query_obj.edit = "";
-        this.search = decodeURIComponent($.param(query_obj));
+        var params = new URLSearchParams(this.search);
+        params.append('edit', '');
+        this.search = params.toString();
       }
     });
   }
