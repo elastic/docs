@@ -15,6 +15,9 @@ import "../lib/prettify/lang-yaml";
 // Add support for <details> in IE and the like
 import "../../../../../node_modules/details-polyfill";
 
+// Add support for URLSearchParams Web API in IE
+import "../../../../../node_modules/url-search-params-polyfill";
+
 export function init_headers(right_col, lang_strings) {
   // Add on-this-page block
   var this_page = $('<div id="this_page"></div>').prependTo(right_col);
