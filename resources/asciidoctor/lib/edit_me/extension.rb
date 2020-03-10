@@ -75,15 +75,15 @@ module EditMe
       return '' unless url
 
       if block.document.attr 'private_edit_urls'
-        css_class = 'edit_me edit_me_private'
+        css_classes = 'edit_me edit_me_private'
         title = 'Editing on GitHub is available to Elastic'
       else
-        css_class = 'edit_me'
+        css_classes = 'edit_me'
         title = 'Edit this page on GitHub'
       end
 
       <<~HTML.strip
-        <a class="#{css_class}" rel="nofollow" title="#{title}" href="#{url}">edit</a>
+        <a class="#{css_classes}" rel="nofollow" title="#{title}" href="#{url}">edit</a>
       HTML
     end
 
