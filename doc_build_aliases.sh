@@ -7,8 +7,6 @@
 #    export GIT_HOME="/<fullPathTYourRepos>"
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
-# These aliases assume that you have cloned the elastic repos according to
-# the directory layout described in https://github.com/elastic/x-pack/blob/master/README.md
 
 
 # Elasticsearch
