@@ -165,6 +165,8 @@ alias docbldecc='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/co
 
 alias docbldesh='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
+alias docbldela='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-eland-docs/docs/en/index.asciidoc'
+
 # X-Pack Reference 5.4 to 6.2
 
 alias docbldx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/x-pack/docs/en/index.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs --chunk 1'
