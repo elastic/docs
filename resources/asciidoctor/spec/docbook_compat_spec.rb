@@ -597,6 +597,12 @@ RSpec.describe DocbookCompat do
           else
             ''
           end
+        let(:cloud_tag) do
+          if input.include? '.cloud'
+            '<a class="cloud_tag" href="/subscriptions"></a>'
+          else
+            ''
+          end
         end
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)

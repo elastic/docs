@@ -12,6 +12,7 @@ module DocbookCompat
         node.title,
         node.attr('edit_me_link', ''),
         xpack_tag(node),
+        cloud_tag(node),
         '</', tag_name, '>'
       ].compact.join
     end

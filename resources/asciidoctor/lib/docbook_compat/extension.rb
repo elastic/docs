@@ -75,6 +75,12 @@ module DocbookCompat
       '<a class="xpack_tag" href="/subscriptions"></a>'
     end
 
+    def cloud_tag(node)
+      return unless node.roles.include? 'cloud'
+
+      '<a class="cloud_tag" href="/subscriptions"></a>'
+    end
+    
     def hlevel(section)
       # Walk up the ancestry until the ancestor's parent is the document. The
       # ancestor that we end up with is the "biggest" section containing this
