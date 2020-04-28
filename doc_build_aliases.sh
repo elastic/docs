@@ -73,6 +73,8 @@ alias docbldees='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-doc
 
 alias docbldews='$GIT_HOME/docs/build_docs --doc $GIT_HOME/workplace-search-docs/index.asciidoc --chunk=1'
 
+alias docbldas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/app-search-docs/index.asciidoc --chunk=1'
+
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
 
