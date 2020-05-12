@@ -232,6 +232,16 @@ RSpec.describe CareAdmonition do
     end
     include_examples 'care admonition'
   end
+  context 'dev' do
+    let(:key) { 'dev' }
+    let(:admon_class) { 'warning' }
+    let(:default_text) do
+      <<~TEXT.strip
+        This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
+      TEXT
+    end
+    include_examples 'care admonition'
+  end
   context 'experimental' do
     let(:key) { 'experimental' }
     let(:admon_class) { 'warning' }
