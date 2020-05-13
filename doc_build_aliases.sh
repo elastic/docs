@@ -69,6 +69,12 @@ alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/si
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
 
+alias docbldees='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-docs/index.asciidoc --chunk=1'
+
+alias docbldews='$GIT_HOME/docs/build_docs --doc $GIT_HOME/workplace-search-docs/index.asciidoc --chunk=1'
+
+alias docbldas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/app-search-docs/index.asciidoc --chunk=1'
+
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
 
