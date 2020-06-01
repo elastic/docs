@@ -84,7 +84,7 @@ alias docbldec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.
 alias docbldess=docbldec
 
 # Cloud - Elastic Cloud Enterprise
-alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud-assets/docs --chunk 1'
+alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud-assets/docs --chunk 2'
 
 alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/heroku/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/saas --chunk 1'
 
