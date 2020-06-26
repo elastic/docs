@@ -8,6 +8,9 @@
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
 
+# Prototype
+
+alias docbldproto='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/index-landing-all-stack-docbuild.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --resource=$GIT_HOME/cloud/docs --chunk 3 --open --lenient'
 
 # Elasticsearch
 alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
