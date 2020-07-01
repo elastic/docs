@@ -59,9 +59,11 @@ alias docbldsoold=docbldso
 alias docbldaz='$GIT_HOME/docs/build_docs --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/metrics/index.asciidoc --chunk 1'
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 1'
 
-alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/logs/index.asciidoc --chunk 1'
+alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/metrics/index.asciidoc --chunk 1'
+
+alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/logs/index.asciidoc --chunk 1'
 
 alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/uptime-guide/index.asciidoc --chunk 1'
 
@@ -117,7 +119,7 @@ alias docbldfnb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
 
 # Ingest management
-alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/beats/x-pack/elastic-agent/docs --chunk 1'
+alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/beats/x-pack/elastic-agent/docs --chunk 1'
 
 # APM
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
