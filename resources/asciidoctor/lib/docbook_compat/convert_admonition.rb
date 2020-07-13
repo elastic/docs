@@ -57,41 +57,31 @@ module DocbookCompat
 
     def convert_inline_admonition_for_real(node)
 
-      # # If creating a defintiion admonition, maintain normal style
-      # if node.type == 'definition'
-      #   title_classes =
-      #     "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
-      #   [
-      #     %(<span class="Admonishment Admonishment--#{node.type}">),
-      #     %(<span class="#{title_classes}">#{node.attr 'title'}</span>),
-      #     '<span class="Admonishment-detail">',
-      #     node.text,
-      #     '</span>',
-      #     '</span>',
-      #   ].join "\n"
-      # # For all other admonitions, add custom admonishment style
-      # else
-      #   title_classes =
-      #     "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
-      #   [
-      #     %(<span class="Admonishment Admonishment--#{node.type}">),
-      #     %([<span class="#{title_classes}">#{node.attr 'title'}</span>]),
-      #     '<span class="Admonishment-detail">',
-      #     node.text,
-      #     '</span>',
-      #     '</span>',
-      #   ].join "\n"
-      # end
-      title_classes =
-        "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
-      [
-        %(<span class="Admonishment Admonishment--#{node.type}">),
-        %([<span class="#{title_classes}">#{node.attr 'title'}</span>]),
-        '<span class="Admonishment-detail">',
-        node.text,
-        '</span>',
-        '</span>',
-      ].join "\n"
+      # If creating a defintiion admonition, maintain normal style
+      if node.type == 'definition'
+        # title_classes =
+        #   "Definition-#{node.attr 'title_type'} #{node.attr 'title_class'}"
+        [
+          %(<span class="Definition Definition--#{node.type}">),
+          %(<span class="Definition-word">#{node.attr 'title'}</span>),
+          '<span class="Definition-defined">',
+          node.text,
+          '</span>',
+          '</span>',
+        ].join "\n"
+      # For all other admonitions, add custom admonishment style
+      else
+        title_classes =
+          "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
+        [
+          %(<span class="Admonishment Admonishment--#{node.type}">),
+          %([<span class="#{title_classes}">#{node.attr 'title'}</span>]),
+          '<span class="Admonishment-detail">',
+          node.text,
+          '</span>',
+          '</span>',
+        ].join "\n"
+      end
     end
   end
 end

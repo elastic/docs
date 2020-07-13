@@ -26,6 +26,7 @@ end
 Asciidoctor::Extensions.register DocbookCompat
 Asciidoctor::Extensions.register CareAdmonition
 Asciidoctor::Extensions.register ChangeAdmonition
+Asciidoctor::Extensions.register DefinitionAdmonition
 Asciidoctor::Extensions.register Chunker
 Asciidoctor::Extensions.register CopyImages
 Asciidoctor::Extensions.register EditMe

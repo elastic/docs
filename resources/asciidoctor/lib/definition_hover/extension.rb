@@ -10,9 +10,9 @@ require 'asciidoctor/extensions'
 #   definition::["word", "definition"]
 #   Foo definition:["word", "definition"]
 #
-class ChangeAdmonition < Asciidoctor::Extensions::Group
+class DefinitionAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [
-    [:definitions, 'word', 'definition', nil, nil],
+    [:definition, 'word', 'definition', nil, nil],
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
@@ -69,7 +69,6 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       Asciidoctor::Inline.new(
         parent, :admonition, message, type: 'definition', attributes: {
           'title_type' => 'version',
-          'title_class' => "u-mono#{@extra_title_class}",
           'title' => version,
         }
       )
