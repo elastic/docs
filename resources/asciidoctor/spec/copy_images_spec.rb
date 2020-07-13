@@ -3,6 +3,7 @@
 require 'care_admonition/extension'
 require 'change_admonition/extension'
 require 'copy_images/extension'
+require 'definition_hover/extension'
 require 'fileutils'
 require 'tmpdir'
 

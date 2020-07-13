@@ -2,6 +2,7 @@
 
 require 'care_admonition/extension'
 require 'change_admonition/extension'
+require 'definition_hover/extension'
 require 'docbook_compat/extension'
 require 'fileutils'
 require 'tmpdir'

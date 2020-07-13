@@ -2,6 +2,7 @@
 
 require 'care_admonition/extension'
 require 'change_admonition/extension'
+require 'definition_hover/extension'
 require 'docbook_compat/extension'
 require 'elastic_compat_preprocessor/extension'
 require 'elastic_compat_tree_processor/extension'
