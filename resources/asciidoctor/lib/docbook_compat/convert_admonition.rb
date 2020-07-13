@@ -60,7 +60,7 @@ module DocbookCompat
         "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
       [
         %(<span class="Admonishment Admonishment--#{node.type}">),
-        %([<span class="#{title_classes}">#{node.attr 'title'}</span>]),
+        %(<span class="#{title_classes}">#{node.attr 'title'}</span>),
         '<span class="Admonishment-detail">',
         node.text,
         '</span>',

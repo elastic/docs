@@ -20,6 +20,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     [:added, 'added', 'note', 'Added in', nil],
     [:coming, 'changed', 'note', 'Coming in', nil],
     [:deprecated, 'deleted', 'warning', 'Deprecated in', ' u-strikethrough'],
+    [:definition, 'word', 'definition', nil, nil],
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
@@ -46,6 +47,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     def process(parent, _target, attrs)
       version = attrs[:version]
       passtext = attrs[:passtext]
+      # text = "#{@message} #{version}."
       text = "#{@message} #{version}."
       source = passtext || text
       Asciidoctor::Block.new parent, :admonition, source: source, attributes: {
@@ -72,10 +74,11 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
 
     def process(parent, _target, attrs)
       version = attrs[:version]
-      message = "#{@message} #{version}."
-      message += ' ' + attrs[:text] if attrs[:text]
+      # message = "#{@message} #{version}."
+      message = "#{@message}" + attrs[:text] if attrs[:text]
       Asciidoctor::Inline.new(
-        parent, :admonition, message, type: 'change', attributes: {
+        # parent, :admonition, message, type: 'change', attributes: {
+        parent, :admonition, message, type: 'definition', attributes: {
           'title_type' => 'version',
           'title_class' => "u-mono#{@extra_title_class}",
           'title' => version,
