@@ -4,11 +4,12 @@ require 'asciidoctor/extensions'
 
 ##
 # Extension for adding a definition to key terms in the docs
+# Must be used inline. Does not have unique block formatting
 #
 # Usage
 #
-#   definition::["word", "definition"]
 #   Foo definition:["word", "definition"]
+#   I like to definition:[run,To move at a speed faster than a walk.]
 #
 class DefinitionAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [
@@ -16,37 +17,8 @@ class DefinitionAdmonition < Asciidoctor::Extensions::Group
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
-      block = ChangeAdmonitionBlock.new revisionflag, tag, message
       inline = ChangeAdmonitionInline.new message, title_class
-      registry.block_macro block, name
       registry.inline_macro inline, name
-    end
-  end
-
-  ##
-  # Block change admonition.
-  class ChangeAdmonitionBlock < Asciidoctor::Extensions::BlockMacroProcessor
-    use_dsl
-    name_positional_attributes :version, :passtext
-
-    def initialize(revisionflag, tag, message)
-      super(nil)
-      @revisionflag = revisionflag
-      @tag = tag
-      @message = message
-    end
-
-    def process(parent, _target, attrs)
-      version = attrs[:version]
-      passtext = attrs[:passtext]
-      text = "#{@message} #{version}."
-      source = passtext || text
-      Asciidoctor::Block.new parent, :admonition, source: source, attributes: {
-        'name' => @tag,
-        'revisionflag' => @revisionflag,
-        'version' => version,
-        'title' => passtext ? text : nil,
-      }
     end
   end
 
