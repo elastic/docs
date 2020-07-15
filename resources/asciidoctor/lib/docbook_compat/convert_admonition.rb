@@ -56,7 +56,6 @@ module DocbookCompat
     end
 
     def convert_inline_admonition_for_real(node)
-
       # If creating a defintiion admonition, maintain normal style
       if node.type == 'definition'
         [
