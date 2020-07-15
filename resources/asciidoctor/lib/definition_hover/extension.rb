@@ -13,11 +13,11 @@ require 'asciidoctor/extensions'
 #
 class DefinitionAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [
-    [:definition, 'word', 'definition', nil, nil],
+    [:definition, 'word', 'definition'],
   ].freeze
   def activate(registry)
-    MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
-      inline = ChangeAdmonitionInline.new message, title_class
+    MACRO_CONF.each do |(name, word, definition)|
+      inline = ChangeAdmonitionInline.new word, definition
       registry.inline_macro inline, name
     end
   end
@@ -26,22 +26,34 @@ class DefinitionAdmonition < Asciidoctor::Extensions::Group
   # Inline change admonition.
   class ChangeAdmonitionInline < Asciidoctor::Extensions::InlineMacroProcessor
     use_dsl
-    name_positional_attributes :version, :text
+
+    # Stores content passed in from asciidoc in `attrs[:x]`
+    name_positional_attributes :input_word, :input_def
+
+    # I don't know what this does, but it's necessary for this widget to work
     format :short
 
-    def initialize(message, extra_title_class)
+    def initialize(word, definition)
       super(nil)
-      @message = message
-      @extra_title_class = extra_title_class
+      # I have no idea if this is necessary
+      # I also have no idea what it does
+      @word = word
+      @definition = definition
     end
 
     def process(parent, _target, attrs)
-      version = attrs[:version]
-      message = "#{@message}" + attrs[:text] if attrs[:text]
+      # Access attributes passed in from raw asciidoc
+      input_word = attrs[:input_word]
+      message = attrs[:input_def]
+
+      # Create a new line block
       Asciidoctor::Inline.new(
         parent, :admonition, message, type: 'definition', attributes: {
-          'title_type' => 'version',
-          'title' => version,
+          'input_word' => input_word,
+
+          # These aren't needed. I'll delete them soon enough
+          # 'word' => @word,
+          # 'definition' => @definition,
         }
       )
     end

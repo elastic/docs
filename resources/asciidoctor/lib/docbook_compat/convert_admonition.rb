@@ -59,11 +59,9 @@ module DocbookCompat
 
       # If creating a defintiion admonition, maintain normal style
       if node.type == 'definition'
-        # title_classes =
-        #   "Definition-#{node.attr 'title_type'} #{node.attr 'title_class'}"
         [
           %(<span class="Definition Definition--#{node.type}">),
-          %(<span class="Definition-word">#{node.attr 'title'}</span>),
+          %(<span class="Definition-word">#{node.attr 'input_word'}</span>),
           '<span class="Definition-defined">',
           node.text,
           '</span>',
