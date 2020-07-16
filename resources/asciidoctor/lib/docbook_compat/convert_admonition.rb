@@ -62,7 +62,8 @@ module DocbookCompat
     # If creating a defintiion admonition, maintain normal style
     def convert_inline_definition_for_real(node)
       [
-        %(<span class="Definition Definition--#{node.type}" aria-describedby="Definition-defined">),
+        %(<span class="Definition Definition--#{node.type}" \
+aria-describedby="Definition-defined">),
         %(<span class="Definition-word">#{node.attr 'input_word'}</span>),
         '<span class="Definition-defined">',
         node.text,

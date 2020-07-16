@@ -19,7 +19,8 @@ RSpec.describe ChangeAdmonition do
     context 'inline form' do
       def expect_definition_popup(word, definition)
         expect(converted).to include <<~HTML.strip
-          <span class="Definition Definition--definition" aria-describedby="Definition-defined">
+          <span class="Definition Definition--definition" \
+          aria-describedby="Definition-defined">
           <span class="Definition-word">#{word}</span>
           <span class="Definition-defined">
           #{definition}
@@ -35,7 +36,7 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_definition_popup(
-            "#{word}", "#{definition}"
+            word.to_s, definition.to_s
           )
         end
       end
@@ -47,7 +48,7 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_definition_popup(
-            "#{word}", "#{definition} , comma"
+            word.to_s, "#{definition} , comma"
           )
         end
       end
@@ -59,7 +60,7 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_definition_popup(
-            "#{word}", ''
+            word.to_s, ''
           )
         end
       end
