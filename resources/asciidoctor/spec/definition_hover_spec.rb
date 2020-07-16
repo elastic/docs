@@ -39,6 +39,18 @@ RSpec.describe ChangeAdmonition do
           )
         end
       end
+      context 'with a comma' do
+        let(:input) do
+          <<~ASCIIDOC
+            Words #{key}:[#{word},"#{definition} , comma"] words.
+          ASCIIDOC
+        end
+        it "renders with Elastic's custom template" do
+          expect_definition_popup(
+            "#{word}", "#{definition} , comma"
+          )
+        end
+      end
       context 'without definition' do
         let(:input) do
           <<~ASCIIDOC
