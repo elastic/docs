@@ -3,8 +3,7 @@
 require 'asciidoctor/extensions'
 
 ##
-# Extension for adding a definition to key terms in the docs
-# Must be used inline. Does not have unique block formatting
+# Extension for adding an inline definition to key terms in the docs
 #
 # Usage
 #
