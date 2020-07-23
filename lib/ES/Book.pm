@@ -103,6 +103,9 @@ sub new {
     die "<branches> must be an array in book <$title>"
         unless ref $branch_list eq 'ARRAY';
 
+    # Each branch can be either a single value, or a mapping of
+    # {<branch_name>: <title>}. Branch titles are used in the version dropdown
+    # and version lists.
     my ( @branches, %branch_titles );
     for (@$branch_list) {
         my ( $branch, $title ) = ref $_ eq 'HASH' ? (%$_) : ( $_, $_ );
