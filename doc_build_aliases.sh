@@ -67,7 +67,7 @@ alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/do
 
 alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/uptime/index.asciidoc --chunk 1'
 
-alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
+alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/index.asciidoc --resource $GIT_HOME/stack-docs/docs --chunk 1'
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
 
