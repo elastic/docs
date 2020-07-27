@@ -2,6 +2,8 @@
 
 require 'net/http'
 
+require_relative 'spec_helper'
+
 RSpec.describe 'building all books' do
   shared_examples 'book basics' do |title, prefix|
     context "for the #{title} book" do
@@ -764,6 +766,29 @@ RSpec.describe 'building all books' do
       expect(outputs[0]).to match(%r{
         Can't\ find\ index\ \[.+/src/not_index.asciidoc\]
       }x)
+    end
+  end
+  context 'when a version is different than a branch' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'src', 'words'
+      repo.switch_to_new_branch 'branch-1.0'
+      repo.switch_to_new_branch '7.8'
+
+      book = src.book 'version-names'
+      book.source repo, 'index.asciidoc'
+      book.branches = [7.8, { 'branch-1.0' => '1.0' }]
+      book.current_branch = '7.8'
+    end
+    it 'includes index file for each version' do
+      expect(dest_file('html/index.html')).to file_exist
+      expect(dest_file('html/version-names/index.html')).to file_exist
+      expect(dest_file('html/version-names/current/index.html')).to file_exist
+      expect(dest_file('html/version-names/7.8/index.html')).to file_exist
+      expect(dest_file('html/version-names/1.0/index.html')).to file_exist
+    end
+    it "doesn't contain index file for branch name" do
+      branch_index_file = 'html/version-names/branch-1.0/index.html'
+      expect(dest_file(branch_index_file)).not_to file_exist
     end
   end
   context 'when asciidoctor fails' do

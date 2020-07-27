@@ -209,7 +209,7 @@ sub build {
     }
     $pm->wait_all_children();
     $self->_copy_branch_to_current if $rebuilding_current_branch;
-    $update_version_toc |= $self->_remove_old_branches;
+    $update_version_toc |= $self->_remove_old_versions;
     if ( $self->is_multi_version ) {
         if ( $update_version_toc ) {
             # We could get away with only doing this if we added or removed
@@ -248,7 +248,7 @@ sub build {
 # failure of the build you must wait on the $pm argument for the children to
 # join the parent process.
 #
-# branch  - The branch being built
+# branch  - The branch being built  ## TODO: Change to `version`
 # pm      - ProcessManager for forking
 # rebuild - if truthy then we rebuild the book regardless of changes.
 # latest  - is this the latest branch of the book?
@@ -257,8 +257,9 @@ sub _build_book {
 #===================================
     my ( $self, $branch, $pm, $rebuild, $latest ) = @_;
 
-    my $raw_branch_dir = $self->{raw_dir}->subdir( $branch );
-    my $branch_dir    = $self->dir->subdir($branch);
+    my $version       = $self->branch_title($branch);
+    my $raw_branch_dir = $self->{raw_dir}->subdir( $version );
+    my $branch_dir    = $self->dir->subdir($version);
     my $source        = $self->source;
     my $index         = $self->index;
     my $section_title = $self->section_title($branch);
@@ -272,7 +273,7 @@ sub _build_book {
         $source->prepare($self->title, $branch);
 
     $pm->start($branch) and return 1;
-    printf(" - %40.40s: Building %s...\n", $self->title, $branch);
+    printf(" - %40.40s: Building %s...\n", $self->title, $version);
     eval {
         if ( $self->single ) {
             build_single(
@@ -323,7 +324,7 @@ sub _build_book {
             );
         }
         $checkout->rmtree;
-        printf(" - %40.40s: Finished %s\n", $self->title, $branch);
+        printf(" - %40.40s: Finished %s\n", $self->title, $version);
 
         1;
     } && $pm->finish;
@@ -334,7 +335,7 @@ sub _build_book {
     my $error = $@;
     die "\nERROR building "
         . $self->title
-        . " branch $branch\n\n"
+        . " version $version\n\n"
         . $source->dump_recent_commits( $self->title, $branch )
         . $error . "\n";
 }
@@ -393,9 +394,10 @@ sub _copy_branch_to_current {
 #===================================
     my ( $self ) = @_;
 
-    my $branch_dir  = $self->{dir}->subdir( $self->current );
+    # TODO: current should be a version, not a branch
+    my $branch_dir  = $self->{dir}->subdir( $self->branch_title( $self->current ) );
     my $current_dir = $self->{dir}->subdir('current');
-    my $raw_branch_dir  = $self->{raw_dir}->subdir( $self->current );
+    my $raw_branch_dir  = $self->{raw_dir}->subdir( $self->branch_title( $self->current ) );
     my $raw_current_dir = $self->{raw_dir}->subdir('current');
 
     $current_dir->rmtree;
@@ -442,17 +444,24 @@ sub _page_header_text {
 }
 
 #===================================
-sub _remove_old_branches {
+# Remove all files for versions that have been removed.
+#
+# Versions are the `branch_title`s of each branch. We also want to keep the `current` version.
+#===================================
+sub _remove_old_versions {
 #===================================
     my $self     = shift;
-    my %branches = map { $_ => 1 } ( @{ $self->branches }, 'current' );
     my $dir      = $self->dir;
 
+    my %versions = map { $self->branch_title($_) => 1 } ( @{ $self->branches } );
+    $versions{'current'} = 1;
     my $removed_any = 0;
+
     for my $child ( $dir->children ) {
         next unless $child->is_dir;
         my $version = $child->basename;
-        next if $branches{$version};
+        # Don't delete any version that is "current" or in the list of branches.
+        next if $versions{$version};
         printf(" - %40.40s: Deleting old branch %s\n", $self->title, $version);
         $child->rmtree;
         $removed_any = 1;

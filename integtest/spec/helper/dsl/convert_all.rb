@@ -31,11 +31,18 @@ module Dsl
       it 'prints that it is updating repositories' do
         expect(out).to include('Updating repositories')
       end
-      it 'prints that it is building all branches of every book' do
-        # TODO: read branches from somewhere when we specify them
+      it 'prints that it is building all versions of every book' do
         books.each_value do |book|
-          expect(out).to include("#{book.title}: Building master...")
-          expect(out).to include("#{book.title}: Finished master")
+          book.branches.each do |branch|
+            version = branch
+            if branch.is_a?(Hash)
+              branch.each do |_k, v|
+                version = v
+              end
+            end
+            expect(out).to include("#{book.title}: Building #{version}...")
+            expect(out).to include("#{book.title}: Finished #{version}")
+          end
         end
       end
       include_examples 'commits changes'
