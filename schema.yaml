@@ -43,18 +43,26 @@ subsection:
 book:
     # Title of the book (used in headers, and in lists of books)
     title: str()
+
     # URL prefix of this book (under https://www.elastic.co/guide/<prefix>),
-    # unless this book is part of a subsection which has its own prefix. Then,
+    # unless this book is part of a subsection which has its own base_dir. Then,
     # the URL is https://www.elastic.co/guide/<base_dir>/<prefix>)
     prefix: str()
+
     # List of all versions of the book being published. If only one branch is
     # listed, there won't be a "other versions" link, or a version dropdown in
     # the table of contents.
-    branches: list(include("version"))
-    # The default
-    current: include("version")
+    # TODO: Change this to "versions".
+    branches: list(include("branch_spec"))
 
-    live: list(include("version"), required=False)
+    # The default version of the book that appears.
+    # TODO: Change this to a "version".
+    current: include("branch")
+
+    # List of branches shown by default in the dropdown (and are still receiving updates)
+    # TODO: Change this to be a list of versions.
+    live: list(include("branch"), required=False)
+
     subject: str()
     tags: str()
     sources: list(include("source"))
@@ -71,10 +79,29 @@ book:
     suppress_migration_warnings: bool(required=False)
 
 ---
-# A version of a book. Since branch names are often `x.y` (which is a number in
-# YAML), `str()` isn't sufficient. `map()` is used when the branch name doesn't
-# match the branch title (for version dropdown lists).
-version: any(str(), num(), map())
+# A branch of a git repository used to build a book. In many places, the branch
+# is used as a synonym for a version. Since branch names are often `x.y` (which
+# is a number in YAML), `str()` isn't sufficient.
+
+# TODO: Use "version" in most places to refer to editions of a book, and
+# restrict "branch" to just being used for git operations.
+branch: any(str(), num())
+
+# A version of a book.
+version: any(str(), num())
+
+# An item that can go in the `branches` list. Each item in the list can be a
+# single branch, or a branch_version_map. For example:
+# - master
+# - 7.9
+# - 7.x
+# - { branch-1.0: v1.0 }
+branch_spec: any(include("branch"), include("version_map"))
+
+# A map with a single key, mapping a branch name to a version name.
+# TODO: Swap the order of this mapping, so we can use `versions` as the primary
+# key, and map the version to a branch name when they aren't the same.
+version_map: map(include("version"), key=include("branch"))
 
 ---
 # A source is a collection of files used when building a book.
@@ -87,7 +114,7 @@ source:
     # change.
     path: str()
     # List of branches which don't depend on this source
-    exclude_branches: list(include("version"), required=False)
+    exclude_branches: list(include("branch"), required=False)
     prefix: str(required=False)
     private: bool(required=False)
     alternatives: include("alternative", required=False)
