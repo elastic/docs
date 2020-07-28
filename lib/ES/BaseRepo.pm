@@ -148,6 +148,10 @@ sub _write_sparse_config {
 #===================================
     my ( $self, $root, $config ) = @_;
 
+    # Remove the leading `:(glob)` used to check for matching files from the
+    # sparse-checkout configuration. 
+    $config =~ s|^:\(glob\)||;
+
     my $dest = $root->subdir( '.git' )->subdir( 'info' )->file( 'sparse-checkout' );
     open(my $sparse, '>', $dest) or dir("Couldn't write sparse config");
     print $sparse $config;
