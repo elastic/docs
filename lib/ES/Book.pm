@@ -190,10 +190,10 @@ sub build {
         $update_version_toc ||= $building;
         $latest = 0;
 
-        my $branch_title = $self->branch_title($branch);
-        if ( $branch eq $self->current ) {
+        my $version = $self->branch_title($branch);
+        if ( $branch eq $self->current ) {  # TODO: when "current" is a version, change this.
             $toc->add_entry(
-                {   title => "$title: $branch_title (current)",
+                {   title => "$title: $version (current)",
                     url   => "current/index.html"
                 }
             );
@@ -201,8 +201,8 @@ sub build {
         }
         else {
             $toc->add_entry(
-                {   title => "$title: $branch_title",
-                    url   => "$branch/index.html"
+                {   title => "$title: $version",
+                    url   => "$version/index.html"
                 }
             );
         }
@@ -262,7 +262,7 @@ sub _build_book {
     my $branch_dir    = $self->dir->subdir($version);
     my $source        = $self->source;
     my $index         = $self->index;
-    my $section_title = $self->section_title($branch);
+    my $section_title = $self->section_title($version);
     my $subject       = $self->subject;
     my $lang          = $self->lang;
 
@@ -280,7 +280,7 @@ sub _build_book {
                 $first_path->file($index),
                 $raw_branch_dir,
                 $branch_dir,
-                version       => $branch,
+                version       => $version,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
                 private       => $self->private( $branch ),
@@ -304,7 +304,7 @@ sub _build_book {
                 $first_path->file($index),
                 $raw_branch_dir,
                 $branch_dir,
-                version       => $branch,
+                version       => $version,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
                 private       => $self->private( $branch ),
@@ -354,11 +354,12 @@ sub _update_title_and_version_drop_downs {
             $removed_any = 1;
             next;
         }
+        my $version = $self->branch_title($b);
 
-        $title .= '<option value="' . $b . '"';
+        $title .= '<option value="' . $version . '"';
         $title .= ' selected'  if $branch eq $b;
-        $title .= '>' . $self->branch_title($b);
-        $title .= ' (current)' if $self->current eq $b;
+        $title .= '>' . $version;
+        $title .= ' (current)' if $self->current eq $b;  # TODO: change when "current" is a version
         $title .= '</option>';
     }
     $title .= '<option value="other">other versions</option>' if $removed_any;
@@ -366,10 +367,12 @@ sub _update_title_and_version_drop_downs {
     if ( $removed_any ) {
         $title .= '<span id="other_versions">other versions: <select>';
         for my $b ( @{ $self->branches } ) {
-            $title .= '<option value="' . $b . '"';
+            my $version = $self->branch_title($b);
+
+            $title .= '<option value="' . $version . '"';
             $title .= ' selected'  if $branch eq $b;
-            $title .= '>' . $self->branch_title($b);
-            $title .= ' (current)' if $self->current eq $b;
+            $title .= '>' . $version;
+            $title .= ' (current)' if $self->current eq $b; # TODO: change when "current" is a version
             $title .= '</option>';
         }
         $title .= '</select>';
@@ -473,10 +476,10 @@ sub _remove_old_versions {
 sub section_title {
 #===================================
     my $self   = shift;
-    my $branch = shift || '';
+    my $version = shift || '';
     my $title  = $self->tags;
     return $title unless $self->is_multi_version;
-    return $title . "/" . $branch;
+    return $title . "/" . $version;
 }
 
 #===================================

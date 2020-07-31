@@ -774,21 +774,50 @@ RSpec.describe 'building all books' do
       repo.switch_to_new_branch 'branch-1.0'
       repo.switch_to_new_branch '7.8'
 
-      book = src.book 'version-names'
+      book = src.book 'Version Names'
       book.source repo, 'index.asciidoc'
-      book.branches = [7.8, { 'branch-1.0' => '1.0' }]
+      # Even though our version numbers often don't include "v", include it here
+      # to make it easier to distinguish the branch name from the version name.
+      book.branches = [7.8, { 'branch-1.0' => 'v1.0' }]
       book.current_branch = '7.8'
     end
+    # TODO: "book basics" doesn't handle the branch=>version syntax
+    # include_examples "book basics", "Version Names", "version-names"
     it 'includes index file for each version' do
       expect(dest_file('html/index.html')).to file_exist
       expect(dest_file('html/version-names/index.html')).to file_exist
       expect(dest_file('html/version-names/current/index.html')).to file_exist
       expect(dest_file('html/version-names/7.8/index.html')).to file_exist
-      expect(dest_file('html/version-names/1.0/index.html')).to file_exist
+      expect(dest_file('html/version-names/v1.0/index.html')).to file_exist
     end
     it "doesn't contain index file for branch name" do
       branch_index_file = 'html/version-names/branch-1.0/index.html'
       expect(dest_file(branch_index_file)).not_to file_exist
+    end
+    page_context 'html/version-names/index.html' do
+      it 'contains the correct version name' do
+        expect(body).to include('Version Names: v1.0')
+        expect(body).to include('<a href="v1.0/index.html"')
+      end
+      it "doesn't contain the branch name" do
+        expect(body).not_to include('branch-1.0')
+      end
+    end
+    page_context 'html/version-names/v1.0/index.html' do
+      it 'uses the version name in the <title>' do
+        expect(head_title).to eq('Title [v1.0] | Elastic')
+      end
+      it "doesn't contain the branch name anywhere" do
+        expect(contents).not_to include('branch-1.0')
+      end
+    end
+    page_context 'html/version-names/current/toc.html' do
+      it 'contains a list item for the version' do
+        expect(contents).to include('<option value="v1.0">v1.0</option>')
+      end
+      it "doesn't contain the branch name anywhere" do
+        expect(contents).not_to include('branch-1.0')
+      end
     end
   end
   context 'when asciidoctor fails' do
