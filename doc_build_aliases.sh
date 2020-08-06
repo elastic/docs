@@ -59,7 +59,7 @@ alias docbldsoold=docbldso
 alias docbldaz='$GIT_HOME/docs/build_docs --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 1'
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 1 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide'
 
 alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/metrics/index.asciidoc --chunk 1'
 
@@ -67,7 +67,7 @@ alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/do
 
 alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/uptime/index.asciidoc --chunk 1'
 
-alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/siem/index.asciidoc --chunk 1'
+alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/index.asciidoc --resource $GIT_HOME/stack-docs/docs --chunk 1'
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
 

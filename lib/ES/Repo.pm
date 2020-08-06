@@ -190,13 +190,14 @@ sub _prepare_sub_dir {
     my $merge_branch = "${resolved_branch}_${subbed_head}_$path";
     $merge_branch =~ s|/|_|g;
     $merge_branch =~ s|\*|splat|g;
+    $merge_branch =~ s|:\(glob\)|_glob_|g;
     $merge_branch =~ s|\.$||g; # Fix funny shaped paths
 
     # Check if we've already merged this path by looking for the merged_branch
     # in the source repo. This is safe because:
     # 1. We prune all branches from the source repo before the build.
     # 2. The merge branch contains the hash of the subbed head.
-    my $already_built = eval { 
+    my $already_built = eval {
         local $ENV{GIT_DIR} = $self->{git_dir};
         run qw(git rev-parse), $merge_branch;
         1;
