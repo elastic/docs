@@ -35,6 +35,7 @@ sub build_chunked {
 #===================================
     my ( $index, $raw_dest, $dest, %opts ) = @_;
 
+    my $single    = 0;
     my $chunk     = $opts{chunk}         || 0;
     my $version   = $opts{version}       || '';
     my $multi     = $opts{multi}         || 0;
@@ -129,7 +130,7 @@ sub build_chunked {
     } or do { $output = $@; $died = 1; };
     _check_build_error( $output, $died, $lenient );
 
-    _customize_title_page( $index, $raw_dest->file('index.html') );
+    _customize_title_page( $index, $raw_dest->file('index.html'), $single );
     extract_toc_from_index( $raw_dest );
     finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
 }
@@ -139,6 +140,7 @@ sub build_single {
 #===================================
     my ( $index, $raw_dest, $dest, %opts ) = @_;
 
+    my $single = 1;
     my $type = $opts{type} || 'book';
     my $toc = $opts{toc} || '';
     my $lenient   = $opts{lenient}       || '';
@@ -240,7 +242,7 @@ sub build_single {
             or die "Couldn't rename <$src> to <index.html>: $!";
     }
 
-    _customize_title_page( $index, $html_file );
+    _customize_title_page( $index, $html_file, $single );
 
     if ( $extra ) {
         my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
@@ -265,7 +267,7 @@ sub build_single {
 #===================================
 sub _customize_title_page {
 #===================================
-    my ( $index, $html_file ) = @_;
+    my ( $index, $html_file, $single ) = @_;
     my $index_basename = $index->basename;
 
     (my $custom_title_page = $index_basename) =~ s/(\.x)?\.a(scii)?doc$/-custom-title-page.html/ || die;
@@ -275,6 +277,8 @@ sub _customize_title_page {
     $extra_title_page = $index->parent->file( $extra_title_page );
 
     if ( -e $custom_title_page ) {
+        die "Using a custom title page is incompatible with --single" if $single;
+
         my $custom_contents = $custom_title_page->slurp( iomode => '<:encoding(UTF-8)' );
         my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
         $contents =~ s|<!--START_TOC-->.*<!--END_TOC-->|$custom_contents|sm or

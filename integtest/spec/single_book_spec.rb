@@ -608,6 +608,21 @@ RSpec.describe 'building a single book' do
       [[section]]
       == Section
     ASCIIDOC
+    context 'built as a single page' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.asciidoc', INDEX_BODY
+        repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.')
+            .single.convert(expect_failure: true)
+      end
+      it 'prints an error message about being incompatible' do
+        expect(outputs[0]).to include(<<~LOG.strip)
+          Using a custom title page is incompatible with --single
+        LOG
+      end
+    end
     context 'multipage' do
       convert_before do |src, dest|
         repo = src.repo 'src'
