@@ -3,6 +3,8 @@
 require 'fileutils'
 require 'net/http'
 
+require_relative 'spec_helper'
+
 RSpec.describe 'building a single book' do
   HEADER = <<~ASCIIDOC
     = Title
@@ -538,7 +540,7 @@ RSpec.describe 'building a single book' do
     include_examples 'README-like console alternatives', 'raw', '.'
   end
 
-  context 'for a book with en -extra-title-page.html file' do
+  context 'for a book with an -extra-title-page.html file' do
     INDEX_BODY = <<~ASCIIDOC
       = Title
 
@@ -587,10 +589,45 @@ RSpec.describe 'building a single book' do
         it 'contains the extra title page' do
           expect(contents).to include("<div>\n<p>extra!</p>\n</div>")
         end
+        it 'still contains the TOC' do
+          expect(contents).to include('START_TOC')
+          expect(contents).to include('<div class="toc">')
+        end
       end
       file_context 'raw/section.html' do
         it "doesn't contain the extra title page" do
           expect(contents).not_to include("<div>\n<p>extra!</p>\n</div>")
+        end
+      end
+    end
+  end
+  context 'for a book with a -custom-title-page.html file' do
+    INDEX_BODY = <<~ASCIIDOC
+      = Title
+
+      [[section]]
+      == Section
+    ASCIIDOC
+    context 'multipage' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', INDEX_BODY
+        repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').convert
+      end
+      file_context 'raw/index.html' do
+        it 'contains the custom header' do
+          expect(contents).to include('<h1>My Custom Header</h1>')
+        end
+        it 'does not contain the table of contents' do
+          expect(contents).not_to include('START_TOC')
+          expect(contents).not_to include('<div class="toc">')
+        end
+      end
+      file_context 'raw/section.html' do
+        it 'does not contain the custom header' do
+          expect(contents).not_to include('My Custom Header')
         end
       end
     end
