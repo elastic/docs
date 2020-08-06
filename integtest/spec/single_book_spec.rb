@@ -646,6 +646,21 @@ RSpec.describe 'building a single book' do
         end
       end
     end
+    context 'and a -extra-title-page.html file' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', INDEX_BODY
+        repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+        repo.write 'index-extra-title-page.html', '<h1>My Extra Header</h1>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').convert(expect_failure: true)
+      end
+      it 'prints an error about both files existing' do
+        expect(outputs[0]).to include(<<~LOG.strip)
+          Cannot have both custom and extra title pages for for the same source file
+        LOG
+      end
+    end
   end
   context 'for a book with page-header.html' do
     context 'single page' do

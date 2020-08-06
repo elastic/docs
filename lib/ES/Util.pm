@@ -278,6 +278,7 @@ sub _customize_title_page {
 
     if ( -e $custom_title_page ) {
         die "Using a custom title page is incompatible with --single" if $single;
+        die "Cannot have both custom and extra title pages for for the same source file" if -e $extra_title_page;
 
         my $custom_contents = $custom_title_page->slurp( iomode => '<:encoding(UTF-8)' );
         my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
