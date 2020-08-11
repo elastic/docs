@@ -657,7 +657,7 @@ RSpec.describe 'building a single book' do
       end
       it 'prints an error about both files existing' do
         expect(outputs[0]).to include(<<~LOG.strip)
-          Cannot have both custom and extra title pages for for the same source file
+          Cannot have both custom and extra title pages for the same source file
         LOG
       end
     end
