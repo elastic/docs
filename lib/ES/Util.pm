@@ -130,8 +130,11 @@ sub build_chunked {
     } or do { $output = $@; $died = 1; };
     _check_build_error( $output, $died, $lenient );
 
-    _customize_title_page( $index, $raw_dest->file('index.html'), $single );
+    # Extract the TOC from the index.html page *before* we (potentially) replace
+    # the TOC on the index.html page with a custom title page.
     extract_toc_from_index( $raw_dest );
+
+    _customize_title_page( $index, $raw_dest->file('index.html'), $single );
     finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
 }
 
