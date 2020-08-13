@@ -861,4 +861,32 @@ RSpec.describe 'building all books' do
       end
     end
   end
+  context 'for a book with a custom index page' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'my-repo', 'placeholder text'
+      repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+      repo.commit 'add custom title page'
+      repo.switch_to_new_branch 'second-branch'
+      book = src.book 'Test'
+      book.source repo, '.'
+      book.branches = ['master', 'second-branch']
+    end
+    file_context 'raw/test/master/index.html' do
+      it 'contains the custom header' do
+        expect(contents).to include('<h1>My Custom Header</h1>')
+      end
+      it 'does not contain the table of contents' do
+        expect(contents).not_to include('START_TOC')
+        expect(contents).not_to include('<div class="toc">')
+      end
+    end
+    file_context 'raw/test/master/toc.html' do
+      it 'contains the table of contents' do
+        # extract_toc_from_index() grabs everything *between* START_TOC and
+        # END_TOC.
+        expect(contents).not_to include('START_TOC')
+        expect(contents).to include('<div class="toc">')
+      end
+    end
+  end
 end
