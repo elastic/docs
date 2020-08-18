@@ -428,7 +428,8 @@ RSpec.describe 'building a single book' do
   context 'for README.asciidoc' do
     convert_single_before_context do |src|
       root = File.expand_path('../../', __dir__)
-      ['cat.jpg', 'example.svg', 'screenshot.png'].each do |img|
+      images = ['cat.jpg', 'chunking-toc.png', 'example.svg', 'screenshot.png']
+      images.each do |img|
         src.cp "#{root}/resources/readme/#{img}", "resources/readme/#{img}"
       end
       src.copy_shared_conf
@@ -492,6 +493,20 @@ RSpec.describe 'building a single book' do
         HTML
       end
     end
+    page_context 'chunking.html' do
+      it 'has the right title' do
+        expect(title).to eq('Controlling chunking')
+      end
+      it 'has the chunking image' do
+        expect(body).to include <<~HTML
+          <div class="imageblock">
+          <div class="content">
+          <img src="resources/readme/chunking-toc.png" alt="TOC screenshot">
+          </div>
+          </div>
+        HTML
+      end
+    end
     # NOTE: There are lots more pages but it probably isn't worth asserting
     # on them too.
     file_context 'snippets/1.console' do
@@ -508,6 +523,7 @@ RSpec.describe 'building a single book' do
       end
     end
     file_context 'resources/readme/cat.jpg'
+    file_context 'resources/readme/chunking-toc.png'
     file_context 'resources/readme/screenshot.png'
   end
 
