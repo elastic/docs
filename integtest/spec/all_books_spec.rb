@@ -889,4 +889,50 @@ RSpec.describe 'building all books' do
       end
     end
   end
+  context 'when there is an x.10 version' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'src', 'placeholder text'
+      repo.switch_to_new_branch '7.9'
+      repo.switch_to_new_branch '7.10-alpha'
+      repo.switch_to_new_branch '7.10'
+      repo.switch_to_new_branch '7.11'
+      repo.switch_to_new_branch '7.x'
+      book = src.book 'Version Tests'
+      book.source repo, 'index.asciidoc'
+      book.branches = ['master', '7.x', '7.11', '7.10', '7.10-alpha', '7.9']
+      book.current_branch = '7.10'
+    end
+    shared_examples 'future version' do
+      it 'contains a "future" header' do
+        expect(body).to include('<div class="page_header">')
+        expect(body).to include('You are looking at preliminary documentation for a future release.')
+      end
+    end
+    shared_examples 'past version' do
+      it 'contains a "past" header' do
+        expect(body).to include('<div class="page_header">')
+        expect(body).to include('A newer version is available.')
+      end
+    end
+    page_context 'html/version-tests/7.10/index.html' do
+      it 'does not contain a header' do
+        expect(body).not_to include('<div class="page_header">')
+      end
+    end
+    page_context 'html/version-tests/master/index.html' do
+      include_examples 'future version'
+    end
+    page_context 'html/version-tests/7.x/index.html' do
+      include_examples 'future version'
+    end
+    page_context 'html/version-tests/7.11/index.html' do
+      include_examples 'future version'
+    end
+    page_context 'html/version-tests/7.9/index.html' do
+      include_examples 'past version'
+    end
+    page_context 'html/version-tests/7.10-alpha/index.html' do
+      include_examples 'past version'
+    end
+  end
 end

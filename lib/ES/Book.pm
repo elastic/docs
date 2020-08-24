@@ -11,6 +11,7 @@ use ES::Source();
 use File::Copy::Recursive qw(fcopy rcopy);
 use ES::Toc();
 use utf8;
+use List::Util qw(first);
 
 our %Page_Header = (
     en => {
@@ -389,7 +390,7 @@ sub _update_title_and_version_drop_downs {
         
         # If a book uses a custom index page, it may not include the TOC. The 
         # substitution below will fail, so we abort early in this case.
-        next unless ($_ == 'index.html' && ($html =~ /ul class="toc"/));
+        next unless ($_ eq 'index.html' && ($html =~ /ul class="toc"/));
 
         my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?\n?<li>/<ul class="toc">${title}<li>/);
         die "couldn't update version" unless $success;
@@ -425,16 +426,15 @@ sub _page_header {
     my $current = $self->current;
     return '' if $current eq $branch;
 
-    my $orig_branch = $branch;
-    if ( $current !~ /-\w/ ) {
-        $current .= '-zzzzzz';
-    }
-    if ( $branch !~ /-\w/ ) {
-        $branch .= '-zzzzzz';
-    }
+    # Find the positions of the branch being built ($branch) and the current
+    # branch ($current) in the list of branches for this book.
+    my @branches = @{$self->branches};
+    my $branchidx = first { $branches[$_] eq $branch } 0..$#branches;
+    my $currentidx = first { $branches[$_] eq $current } 0..$#branches;
 
-    my $key = $branch lt $current ? 'old' : 'new';
-    $key = 'dead' if $key eq 'old' && !grep( /^$orig_branch$/, @{ $self->{live_branches} } );
+    # Old branches are "later" in the list than the current branch;
+    my $key = $branchidx > $currentidx ? 'old' : 'new';
+    $key = 'dead' if $key eq 'old' && !grep( /^$branch$/, @{ $self->{live_branches} } );
 
     return $self->_page_header_text( $key );
 }
