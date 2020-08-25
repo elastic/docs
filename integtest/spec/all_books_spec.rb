@@ -905,7 +905,7 @@ RSpec.describe 'building all books' do
     shared_examples 'future version' do
       it 'contains a "future" header' do
         expect(body).to include('<div class="page_header">')
-        expect(body).to include('You are looking at preliminary documentation for a future release.')
+        expect(body).to include('You are looking at preliminary documentation')
       end
     end
     shared_examples 'past version' do
