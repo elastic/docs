@@ -386,7 +386,7 @@ sub check_kibana_links {
             $links_file = $legacy_path . ".ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
-            $links_file = "src/core/public/doc_links/doc_links_service.ts"
+            $links_file = "src/core/public/doc_links/doc_links_service.ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         };
         die "failed to find kibana links file;\n$@" unless $source;
