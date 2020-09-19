@@ -254,7 +254,6 @@ $(function() {
       right_col.append(data);
       init_toc(LangStrings);
       utils.open_current(location.pathname);
-      rewrite_internal_links();
     }).always(function() {
       init_headers(right_col, LangStrings);
     });
@@ -278,20 +277,6 @@ $(function() {
       || window.location.hash.indexOf('?edit') > -1) {
 
     $('a.edit_me_private').show();
-
-    rewrite_internal_links();
-  }
-
-  function rewrite_internal_links() {
-    // Rewrite the query string of each relative docs link to add an
-    // 'edit' param while preserving any existing parameters.
-    $('a').each(function(index) {
-      if (this.href.startsWith(window.location.origin)) {
-        var params = new URLSearchParams(this.search);
-        params.append('edit', '');
-        this.search = params.toString();
-      }
-    });
   }
 
   // Test comment used to detect unminifed JS in tests
