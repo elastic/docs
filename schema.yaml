@@ -1,0 +1,135 @@
+# Schema for conf.yaml, used by yamale.
+
+include("conf")
+
+---
+conf:
+    # Mapping of repo "slugs" to their URLs. All repos are fetched at the
+    # beginning of a build.
+    repos: map(str(), str())
+
+    # Used as the top-level title for the Table of Contents, and therefore the
+    # entire site.
+    contents_title: str()
+
+    toc_extra: str()
+
+    contents: list(include("section"))
+
+    redirects: list(include("redirect"))
+
+---
+# Top-level section of the guide
+section:
+    title: str()
+    sections: list(any(include("book"), include("subsection")))
+
+---
+subsection:
+    # `title` and `sections` are the same as above.
+    title: str()
+    sections: list(any(include("book"), include("subsection")))
+
+    # Sections other than the top-level sections have some additional options
+    # that apply to books within that sub-section.
+
+    # URL prefix added to all book URLs within this subsection.
+    base_dir: str(required=False)
+    # Just for custom-language sections. TODO: Is this redundant with the `lang`
+    # defined in each book?
+    lang: str(required=False)
+
+---
+book:
+    # Title of the book (used in headers, and in lists of books)
+    title: str()
+
+    # URL prefix of this book (under https://www.elastic.co/guide/<prefix>),
+    # unless this book is part of a subsection which has its own base_dir. Then,
+    # the URL is https://www.elastic.co/guide/<base_dir>/<prefix>)
+    prefix: str()
+
+    # List of all versions of the book being published. If only one branch is
+    # listed, there won't be a "other versions" link, or a version dropdown in
+    # the table of contents.
+    # This list should be in order from "newest" to "oldest". A branch's
+    # position in this list relative to the "current" branch will be used to
+    # determine if a non-current branch is shown as "newer" or "older" than the
+    # "current" branch.
+    # TODO: Change this to "versions".
+    branches: list(include("branch_spec"))
+
+    # The default version of the book that appears.
+    # TODO: Change this to a "version".
+    current: include("branch")
+
+    # List of branches shown by default in the dropdown (and are still receiving updates)
+    # TODO: Change this to be a list of versions.
+    live: list(include("branch"), required=False)
+
+    subject: str()
+    tags: str()
+    sources: list(include("source"))
+    index: str()
+    chunk: int(required=False)
+    noindex: int(required=False)
+    private: int(required=False)
+    single: int(required=False)
+    toc: int(required=False)
+    toc_extra: str(required=False)
+    repo: str(required=False)  # TODO: Remove?
+    respect_edit_url_overrides: bool(required=False)
+    lang: str(required=False)
+    suppress_migration_warnings: bool(required=False)
+
+---
+# A branch of a git repository used to build a book. In many places, the branch
+# is used as a synonym for a version. Since branch names are often `x.y` (which
+# is a number in YAML), `str()` isn't sufficient.
+
+# TODO: Use "version" in most places to refer to editions of a book, and
+# restrict "branch" to just being used for git operations.
+branch: any(str(), num())
+
+# A version of a book.
+version: any(str(), num())
+
+# An item that can go in the `branches` list. Each item in the list can be a
+# single branch, or a branch_version_map. For example:
+# - master
+# - 7.9
+# - 7.x
+# - { branch-1.0: v1.0 }
+branch_spec: any(include("branch"), include("version_map"))
+
+# A map with a single key, mapping a branch name to a version name.
+# TODO: Swap the order of this mapping, so we can use `versions` as the primary
+# key, and map the version to a branch name when they aren't the same.
+version_map: map(include("version"), key=include("branch"))
+
+---
+# A source is a collection of files used when building a book.
+source:
+    # The "slug" for a repo, must be a key in `repos`.
+    repo: str()
+    # Path within the repo for all files used for the build. This is passed to
+    # `git-archive`, so only these files are available. This path is also used
+    # to detect changes, and causes a rebuild when any files on this path
+    # change.
+    path: str()
+    # List of branches which don't depend on this source
+    exclude_branches: list(include("branch"), required=False)
+    prefix: str(required=False)
+    private: bool(required=False)
+    alternatives: include("alternative", required=False)
+    map_branches: map(str(), key=include("version"), required=False)
+
+---
+alternative:
+    source_lang: str()
+    alternative_lang: str()
+
+---
+redirect:
+    prefix: str()
+    redirect: str()

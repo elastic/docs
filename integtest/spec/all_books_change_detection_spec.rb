@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'spec_helper'
+
 ##
 # Assertions about when books are rebuilt based on changes in source
 # repositories or the book's configuration.
@@ -83,7 +85,7 @@ RSpec.describe 'building all books' do
         end,
         before_second_build: before_second_build
       )
-      include_context 'build one book twice'
+      include_examples 'convert all basics'
     end
 
     def self.build_one_book_out_of_one_repo_and_then_out_of_two(
@@ -97,7 +99,7 @@ RSpec.describe 'building all books' do
         end,
         before_second_build: init_second_book_and_customize(before_second_build)
       )
-      include_context 'build one book twice'
+      include_examples 'convert all basics'
     end
 
     def self.init_second_book_and_customize(before_second_build)
@@ -126,7 +128,7 @@ RSpec.describe 'building all books' do
           before_second_build.call src, config
         end
       )
-      include_context 'build one book twice'
+      include_examples 'convert all basics'
     end
 
     def self.init_include(src)
@@ -174,14 +176,6 @@ RSpec.describe 'building all books' do
         end
       )
       include_examples 'build one book then two books'
-    end
-
-    shared_context 'build one book twice' do
-      context 'the first build' do
-        let(:out) { outputs[0] }
-        include_examples 'builds all books'
-      end
-      include_examples 'convert all basics'
     end
 
     shared_examples 'build one book then two books' do

@@ -3,6 +3,8 @@
 require 'fileutils'
 require 'net/http'
 
+require_relative 'spec_helper'
+
 RSpec.describe 'building a single book' do
   HEADER = <<~ASCIIDOC
     = Title
@@ -426,7 +428,8 @@ RSpec.describe 'building a single book' do
   context 'for README.asciidoc' do
     convert_single_before_context do |src|
       root = File.expand_path('../../', __dir__)
-      ['cat.jpg', 'example.svg', 'screenshot.png'].each do |img|
+      images = ['cat.jpg', 'chunking-toc.png', 'example.svg', 'screenshot.png']
+      images.each do |img|
         src.cp "#{root}/resources/readme/#{img}", "resources/readme/#{img}"
       end
       src.copy_shared_conf
@@ -490,6 +493,20 @@ RSpec.describe 'building a single book' do
         HTML
       end
     end
+    page_context 'chunking.html' do
+      it 'has the right title' do
+        expect(title).to eq('Controlling chunking')
+      end
+      it 'has the chunking image' do
+        expect(body).to include <<~HTML
+          <div class="imageblock">
+          <div class="content">
+          <img src="resources/readme/chunking-toc.png" alt="TOC screenshot">
+          </div>
+          </div>
+        HTML
+      end
+    end
     # NOTE: There are lots more pages but it probably isn't worth asserting
     # on them too.
     file_context 'snippets/1.console' do
@@ -506,6 +523,7 @@ RSpec.describe 'building a single book' do
       end
     end
     file_context 'resources/readme/cat.jpg'
+    file_context 'resources/readme/chunking-toc.png'
     file_context 'resources/readme/screenshot.png'
   end
 
@@ -538,7 +556,7 @@ RSpec.describe 'building a single book' do
     include_examples 'README-like console alternatives', 'raw', '.'
   end
 
-  context 'for a book with en -extra-title-page.html file' do
+  context 'for a book with an -extra-title-page.html file' do
     INDEX_BODY = <<~ASCIIDOC
       = Title
 
@@ -587,11 +605,76 @@ RSpec.describe 'building a single book' do
         it 'contains the extra title page' do
           expect(contents).to include("<div>\n<p>extra!</p>\n</div>")
         end
+        it 'still contains the TOC' do
+          expect(contents).to include('START_TOC')
+          expect(contents).to include('<div class="toc">')
+        end
       end
       file_context 'raw/section.html' do
         it "doesn't contain the extra title page" do
           expect(contents).not_to include("<div>\n<p>extra!</p>\n</div>")
         end
+      end
+    end
+  end
+  context 'for a book with a -custom-title-page.html file' do
+    INDEX_BODY = <<~ASCIIDOC
+      = Title
+
+      [[section]]
+      == Section
+    ASCIIDOC
+    context 'built as a single page' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.asciidoc', INDEX_BODY
+        repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.')
+            .single.convert(expect_failure: true)
+      end
+      it 'prints an error message about being incompatible' do
+        expect(outputs[0]).to include(<<~LOG.strip)
+          Using a custom title page is incompatible with --single
+        LOG
+      end
+    end
+    context 'multipage' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', INDEX_BODY
+        repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').convert
+      end
+      file_context 'raw/index.html' do
+        it 'contains the custom header' do
+          expect(contents).to include('<h1>My Custom Header</h1>')
+        end
+        it 'does not contain the table of contents' do
+          expect(contents).not_to include('START_TOC')
+          expect(contents).not_to include('<div class="toc">')
+        end
+      end
+      file_context 'raw/section.html' do
+        it 'does not contain the custom header' do
+          expect(contents).not_to include('My Custom Header')
+        end
+      end
+    end
+    context 'and a -extra-title-page.html file' do
+      convert_before do |src, dest|
+        repo = src.repo 'src'
+        from = repo.write 'index.adoc', INDEX_BODY
+        repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+        repo.write 'index-extra-title-page.html', '<h1>My Extra Header</h1>'
+        repo.commit 'commit outstanding'
+        dest.prepare_convert_single(from, '.').convert(expect_failure: true)
+      end
+      it 'prints an error about both files existing' do
+        expect(outputs[0]).to include(<<~LOG.strip)
+          Cannot have both custom and extra title pages for the same source file
+        LOG
       end
     end
   end

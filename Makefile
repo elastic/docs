@@ -5,7 +5,7 @@ check: unit_test integration_test
 
 .PHONY: unit_test
 unit_test: style style_check test_check asciidoctor_check \
-           web_check template_check preview_check
+           web_check template_check preview_check conf_check
 
 .PHONY: style
 style: build_docs
@@ -38,3 +38,7 @@ preview_check:
 .PHONY: integration_test
 integration_test:
 	$(MAKE) -C integtest
+
+.PHONY: conf_check
+conf_check: conf.yaml
+	$(DOCKER) py_test yamale -s schema.yaml conf.yaml --no-strict

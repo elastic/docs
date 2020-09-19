@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'spec_helper'
+
 RSpec.describe 'building all books' do
   describe '--sub_dir' do
     ##
@@ -256,6 +258,20 @@ RSpec.describe 'building all books' do
         include_examples 'log merge', 'docs/index.adoc'
         include_examples 'log merge', 'docs/from_master.adoc'
         include_examples 'log merge', 'docs/from_subbed.adoc'
+        include_examples 'contains the new master and subbed changes'
+      end
+      describe 'when the book uses sources with glob patterns' do
+        def self.setup_book(src, repo)
+          book = src.book 'Test'
+          book.index = 'docs/index.adoc'
+          book.source repo, 'docs/index.adoc'
+          book.source repo, ':(glob)**/from_master.adoc'
+          book.source repo, ':(glob)**/from_subbed.adoc'
+        end
+        convert_with_sub
+        include_examples 'log merge', 'docs/index.adoc'
+        include_examples 'log merge', ':(glob)**/from_master.adoc'
+        include_examples 'log merge', ':(glob)**/from_subbed.adoc'
         include_examples 'contains the new master and subbed changes'
       end
       describe 'when more than one book uses the same source' do

@@ -47,8 +47,9 @@ class Source
   end
 
   ##
-  # Create a new book and return it.
-  def book(title, prefix: title.downcase)
+  # Create a new book and return it. The prefix should default to the title,
+  # lowercased, with whitespace replaced with `-`.
+  def book(title, prefix: title.downcase.gsub(/\s/, '-'))
     @books[title] || (@books[title] = Book.new title, prefix)
   end
 

@@ -97,11 +97,14 @@ RUN rm -rf /var/log/nginx && rm -rf /run/nginx
 
 ##### Everything below this run tests
 FROM base AS py_test
-RUN install_packages python3 python3-pip
+# There's not a published wheel for yamale, so we need setuptools and wheel
+RUN install_packages python3 python3-pip python3-setuptools python3-wheel
 RUN pip3 install \
   beautifulsoup4==4.8.1 \
   lxml==4.4.2 \
-  pycodestyle==2.5.0
+  pycodestyle==2.5.0 \
+  yamale==3.0.1 \
+  pyyaml==5.3.1
 
 FROM node_deps AS node_test
 RUN yarn install --frozen-lockfile

@@ -2,6 +2,8 @@
 
 require 'net/http'
 
+require_relative 'spec_helper'
+
 RSpec.describe 'building all books' do
   shared_examples 'book basics' do |title, prefix|
     context "for the #{title} book" do
@@ -766,6 +768,58 @@ RSpec.describe 'building all books' do
       }x)
     end
   end
+  context 'when a version is different than a branch' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'src', 'words'
+      repo.switch_to_new_branch 'branch-1.0'
+      repo.switch_to_new_branch '7.8'
+
+      book = src.book 'Version Names'
+      book.source repo, 'index.asciidoc'
+      # Even though our version numbers often don't include "v", include it here
+      # to make it easier to distinguish the branch name from the version name.
+      book.branches = [7.8, { 'branch-1.0' => 'v1.0' }]
+      book.current_branch = '7.8'
+    end
+    # TODO: "book basics" doesn't handle the branch=>version syntax
+    # include_examples "book basics", "Version Names", "version-names"
+    it 'includes index file for each version' do
+      expect(dest_file('html/index.html')).to file_exist
+      expect(dest_file('html/version-names/index.html')).to file_exist
+      expect(dest_file('html/version-names/current/index.html')).to file_exist
+      expect(dest_file('html/version-names/7.8/index.html')).to file_exist
+      expect(dest_file('html/version-names/v1.0/index.html')).to file_exist
+    end
+    it "doesn't contain index file for branch name" do
+      branch_index_file = 'html/version-names/branch-1.0/index.html'
+      expect(dest_file(branch_index_file)).not_to file_exist
+    end
+    page_context 'html/version-names/index.html' do
+      it 'contains the correct version name' do
+        expect(body).to include('Version Names: v1.0')
+        expect(body).to include('<a href="v1.0/index.html"')
+      end
+      it "doesn't contain the branch name" do
+        expect(body).not_to include('branch-1.0')
+      end
+    end
+    page_context 'html/version-names/v1.0/index.html' do
+      it 'uses the version name in the <title>' do
+        expect(head_title).to eq('Title [v1.0] | Elastic')
+      end
+      it "doesn't contain the branch name anywhere" do
+        expect(contents).not_to include('branch-1.0')
+      end
+    end
+    page_context 'html/version-names/current/toc.html' do
+      it 'contains a list item for the version' do
+        expect(contents).to include('<option value="v1.0">v1.0</option>')
+      end
+      it "doesn't contain the branch name anywhere" do
+        expect(contents).not_to include('branch-1.0')
+      end
+    end
+  end
   context 'when asciidoctor fails' do
     def self.setup
       convert_before do |src, dest|
@@ -805,6 +859,80 @@ RSpec.describe 'building all books' do
       it 'logs the utf8 line' do
         expect(outputs[0]).to match(/utf8: á \(.+\) <Test>/)
       end
+    end
+  end
+  context 'for a book with a custom index page' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'my-repo', 'placeholder text'
+      repo.write 'index-custom-title-page.html', '<h1>My Custom Header</h1>'
+      repo.commit 'add custom title page'
+      repo.switch_to_new_branch 'second-branch'
+      book = src.book 'Test'
+      book.source repo, '.'
+      book.branches = ['master', 'second-branch']
+    end
+    file_context 'raw/test/master/index.html' do
+      it 'contains the custom header' do
+        expect(contents).to include('<h1>My Custom Header</h1>')
+      end
+      it 'does not contain the table of contents' do
+        expect(contents).not_to include('START_TOC')
+        expect(contents).not_to include('<div class="toc">')
+      end
+    end
+    file_context 'raw/test/master/toc.html' do
+      it 'contains the table of contents' do
+        # extract_toc_from_index() grabs everything *between* START_TOC and
+        # END_TOC.
+        expect(contents).not_to include('START_TOC')
+        expect(contents).to include('<div class="toc">')
+      end
+    end
+  end
+  context 'when there is an x.10 version' do
+    convert_all_before_context do |src|
+      repo = src.repo_with_index 'src', 'placeholder text'
+      repo.switch_to_new_branch '7.9'
+      repo.switch_to_new_branch '7.10-alpha'
+      repo.switch_to_new_branch '7.10'
+      repo.switch_to_new_branch '7.11'
+      repo.switch_to_new_branch '7.x'
+      book = src.book 'Version Tests'
+      book.source repo, 'index.asciidoc'
+      book.branches = ['master', '7.x', '7.11', '7.10', '7.10-alpha', '7.9']
+      book.current_branch = '7.10'
+    end
+    shared_examples 'future version' do
+      it 'contains a "future" header' do
+        expect(body).to include('<div class="page_header">')
+        expect(body).to include('You are looking at preliminary documentation')
+      end
+    end
+    shared_examples 'past version' do
+      it 'contains a "past" header' do
+        expect(body).to include('<div class="page_header">')
+        expect(body).to include('A newer version is available.')
+      end
+    end
+    page_context 'html/version-tests/7.10/index.html' do
+      it 'does not contain a header' do
+        expect(body).not_to include('<div class="page_header">')
+      end
+    end
+    page_context 'html/version-tests/master/index.html' do
+      include_examples 'future version'
+    end
+    page_context 'html/version-tests/7.x/index.html' do
+      include_examples 'future version'
+    end
+    page_context 'html/version-tests/7.11/index.html' do
+      include_examples 'future version'
+    end
+    page_context 'html/version-tests/7.9/index.html' do
+      include_examples 'past version'
+    end
+    page_context 'html/version-tests/7.10-alpha/index.html' do
+      include_examples 'past version'
     end
   end
 end
