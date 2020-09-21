@@ -906,6 +906,7 @@ sub command_line_opts {
         'single',
         'suppress_migration_warnings',
         'toc',
+        'private',
         # Options only compatible with --all
         'all',
         'announce_preview=s',
@@ -959,6 +960,7 @@ sub usage {
                             Suppress warnings about Asciidoctor migration
                             issues. Use this when building "old" branches.
           --toc             Include a TOC at the beginning of the page.
+          --private         Indicate that the github repo is private.
         WARNING: Anything in the `out` dir will be deleted!
 
     Build docs from all repos in conf.yaml:
@@ -1013,6 +1015,7 @@ sub check_opts {
         die('--respect_edit_url_overrides only compatible with --doc') if $Opts->{respect_edit_url_overrides};
         die('--single only compatible with --doc') if $Opts->{single};
         die('--toc only compatible with --doc') if $Opts->{toc};
+        die('--private only compatible with --doc') if $Opts->{private};
     }
     if ( !$Opts->{all} ) {
         die('--keep_hash only compatible with --all') if $Opts->{keep_hash};
