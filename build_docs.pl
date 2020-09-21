@@ -158,6 +158,8 @@ sub _guess_opts {
     my $repo_name = _guess_repo_name( $remote );
     # We couldn't find the top level so lets make a wild guess.
     $toplevel = $index->parent unless $toplevel;
+    printf "Guessed toplevel=[%s] remote=[%s] branch=[%s] repo=[%s]\n", $toplevel, $remote, $branch, $repo_name;
+
     $Opts->{branch} = $branch;
     $Opts->{roots}{ $repo_name } = $toplevel;
     $Opts->{edit_urls}{ $toplevel } = ES::Repo::edit_url_for_url_and_branch(
@@ -198,10 +200,18 @@ sub _pick_best_remote {
     return 0 unless $toplevel;
 
     local $ENV{GIT_DIR} = dir($toplevel)->subdir('.git');
+    my $projectName = dir( $toplevel )->basename;
+
     my $remotes = eval { run qw(git remote -v) } || '';
+
+    # We prefer either an elastic or elasticsearch-cn organization. All
+    # but two books are in elastic but elasticsearch-cn is special.
+    if ($remotes =~ m|\s+(\S+[/:]elastic(?:search-cn)?/$projectName)\.git|) {
+        # Prefer a remote with the same name as the working directory, if it exists
+        return $1;
+    }
     if ($remotes =~ m|\s+(\S+[/:]elastic(?:search-cn)?/\S+)|) {
-        # We prefer either an elastic or elasticsearch-cn organization. All
-        # but two books are in elastic but elasticsearch-cn is special.
+        # Otherwise, take any remote from one of the preferred organizations
         return $1;
     }
     say "Couldn't find an Elastic remote for $toplevel. Generating edit links targeting the first remote instead.";
