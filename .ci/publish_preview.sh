@@ -1,8 +1,7 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
-cd $(git rev-parse --show-toplevel)
+cd "$(git rev-parse --show-toplevel)"
 source ./preview/build.sh
-docker tag $PREVIEW push.$PREVIEW
-docker push push.$PREVIEW
+docker push "$PREVIEW"
