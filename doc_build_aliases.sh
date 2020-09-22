@@ -164,7 +164,7 @@ alias docblderb='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-ruby/do
 
 alias docbldegr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/groovy-api/index.asciidoc'
 
-alias docbldego='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --single'
+alias docbldego='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/go/index.asciidoc --chunk 1'
 
 alias docbldnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-net/docs/index.asciidoc --chunk 1'
 
