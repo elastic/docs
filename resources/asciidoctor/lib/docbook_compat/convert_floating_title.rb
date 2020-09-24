@@ -14,9 +14,8 @@ module DocbookCompat
         xpack_tag(node),
         '</', tag_name, '>',
         # Put the edit link outside the main heading.
-        node.attr('edit_me_link', ''),
-        '</div>'
-      ].compact.join
+        node.attr('edit_me_link', '')
+      ].compact.join + "\n</div>"
     end
   end
 end

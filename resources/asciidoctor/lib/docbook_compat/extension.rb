@@ -55,14 +55,9 @@ module DocbookCompat
     def convert_section(node)
       <<~HTML
         <div class="#{wrapper_class_for node}#{node.role ? " #{node.role}" : ''}">
-        <div class="titlepage">
-          <div>
-            <div class="heading">
-              <h#{hlevel node} class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{xpack_tag node}</h#{hlevel node}>
-              #{node.attr 'edit_me_link', ''}
-            </div>
-          </div>
-        </div>
+        <div class="titlepage"><div><div class="heading">
+        <h#{hlevel node} class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{xpack_tag node}</h#{hlevel node}>#{node.attr 'edit_me_link', ''}
+        </div></div></div>
         #{node.content}
         </div>
       HTML

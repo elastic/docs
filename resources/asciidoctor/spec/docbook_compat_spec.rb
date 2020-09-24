@@ -600,7 +600,7 @@ RSpec.describe DocbookCompat do
         end
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
-            <div class="titlepage"><div><div>
+            <div class="titlepage"><div><div class="heading">
             <h#{hlevel} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{hlevel}>
             </div></div></div>
           HTML
@@ -995,7 +995,7 @@ RSpec.describe DocbookCompat do
         ASCIIDOC
       end
       it 'has the xpack tag' do
-        expect(converted).to include <<~HTML
+        expect(converted).to include <<~HTML.strip
           <span class="xpack">Foo</span><a class="xpack_tag" href="/subscriptions"></a></h4>
         HTML
       end

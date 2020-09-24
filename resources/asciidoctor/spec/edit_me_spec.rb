@@ -39,14 +39,14 @@ RSpec.describe EditMe do
   # define a `shared_examples 'standard document part'` that is appropriate to
   # that context.
   shared_examples 'all standard document parts' do
-    include_examples 'standard document part', 'chapter'
-    include_examples 'standard document part', 'section'
-    include_examples 'standard document part', 'appendix'
-    include_examples 'standard document part', 'glossary'
-    include_examples 'standard document part', 'bibliography'
-    include_examples 'standard document part', 'dedication'
-    include_examples 'standard document part', 'colophon'
-    include_examples 'standard document part', 'float'
+    include_examples 'standard document part', 'chapter', 1
+    include_examples 'standard document part', 'section', 2
+    include_examples 'standard document part', 'appendix', 1
+    include_examples 'standard document part', 'glossary', 1
+    include_examples 'standard document part', 'bibliography', 1
+    include_examples 'standard document part', 'dedication', 1
+    include_examples 'standard document part', 'colophon', 1
+    include_examples 'standard document part', 'float', 3
   end
 
   context 'when edit_urls is configured' do
@@ -70,16 +70,16 @@ RSpec.describe EditMe do
     end
     include_context 'convert without logs'
 
-    shared_examples 'standard document part' do |type|
+    shared_examples 'standard document part' do |type, level|
       context "for a document with #{type}s" do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
-            expect(converted).to include("#{type.capitalize} 1#{link}</")
+            expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
-            expect(converted).to include("#{type.capitalize} 2#{link}</")
+            expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
           end
         end
         context "that doesn't override edit_url" do
@@ -112,15 +112,15 @@ RSpec.describe EditMe do
               }
             end
             it 'adds a link to the enclosing chapter' do
-              expect(converted).to include(">Chapter#{stdin_link}</")
+              expect(converted).to include(">Chapter</h1>#{stdin_link}")
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
-              expect(converted).to include("#{type.capitalize} 1#{link}</")
+              expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
             end
             it "adds a link to #{type} 2" do
               link = edit_link 'bar'
-              expect(converted).to include("#{type.capitalize} 2#{link}</")
+              expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
             end
             context 'when overriding to an empty string' do
               let(:input) do
@@ -132,10 +132,10 @@ RSpec.describe EditMe do
                 ASCIIDOC
               end
               it "doesn't add edit links to #{type} 1" do
-                expect(converted).to include("#{type.capitalize} 1</")
+                expect(converted).to include("#{type.capitalize} 1</h#{level}>\n</div>")
               end
               it "doesn't add edit links to #{type} 2" do
-                expect(converted).to include("#{type.capitalize} 2</")
+                expect(converted).to include("#{type.capitalize} 2</h#{level}>\n</div>")
               end
             end
           end
@@ -166,7 +166,7 @@ RSpec.describe EditMe do
       it 'uses the longest match' do
         link = edit_link 'www.example.com/section2'
         expect(converted).to include <<~HTML
-          <h2 class="title"><a id="_section_2"></a>Section 2#{link}</h2>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>#{link}
         HTML
       end
     end
@@ -187,8 +187,8 @@ RSpec.describe EditMe do
         ASCIIDOC
       end
       it "doesn't have an edit me link" do
-        expect(converted).to include <<~HTML
-          <h2 class="title"><a id="_section_2"></a>Section 2</h2>
+        expect(converted).to include <<~HTML.strip
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>\n</div>
         HTML
       end
     end
@@ -220,16 +220,16 @@ RSpec.describe EditMe do
     end
     include_context 'convert without logs'
 
-    shared_examples 'standard document part' do |type|
+    shared_examples 'standard document part' do |type, level|
       context "for a document with #{type}s" do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
-            expect(converted).to include("#{type.capitalize} 1#{link}</")
+            expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
-            expect(converted).to include("#{type.capitalize} 2#{link}</")
+            expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
           end
         end
         context "that doesn't override edit_url" do
@@ -263,15 +263,15 @@ RSpec.describe EditMe do
               }
             end
             it 'adds a link to the enclosing chapter' do
-              expect(converted).to include(">Chapter#{stdin_link}</")
+              expect(converted).to include(">Chapter</h1>#{stdin_link}")
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
-              expect(converted).to include("#{type.capitalize} 1#{link}</")
+              expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
             end
             it "adds a link to #{type} 2" do
               link = edit_link 'bar'
-              expect(converted).to include("#{type.capitalize} 2#{link}</")
+              expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
             end
             context 'when overriding to an empty string' do
               let(:input) do
@@ -283,10 +283,10 @@ RSpec.describe EditMe do
                 ASCIIDOC
               end
               it "doesn't add edit links to #{type} 1" do
-                expect(converted).to include("#{type.capitalize} 1</")
+                expect(converted).to include("#{type.capitalize} 1</h#{level}>\n</div>")
               end
               it "doesn't add edit links to #{type} 2" do
-                expect(converted).to include("#{type.capitalize} 2</")
+                expect(converted).to include("#{type.capitalize} 2</h#{level}>\n</div>")
               end
             end
           end
@@ -320,7 +320,7 @@ RSpec.describe EditMe do
       it 'uses the longest match' do
         link = edit_link 'www.example.com/section2'
         expect(converted).to include <<~HTML
-          <h2 class="title"><a id="_section_2"></a>Section 2#{link}</h2>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>#{link}
         HTML
       end
     end

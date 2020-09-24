@@ -298,7 +298,7 @@ RSpec.describe ElasticCompatPreprocessor do
       it 'skips the block' do
         expect(converted).to eq <<~HTML
           <div class="chapter">
-          <div class="titlepage"><div><div>
+          <div class="titlepage"><div><div class="heading">
           <h1 class="title"><a id="_example"></a>Example</h1>
           </div></div></div>
 
@@ -339,7 +339,7 @@ RSpec.describe ElasticCompatPreprocessor do
       it 'skips the block' do
         expect(converted).to eq <<~HTML
           <div class="chapter">
-          <div class="titlepage"><div><div>
+          <div class="titlepage"><div><div class="heading">
           <h1 class="title"><a id="_example"></a>Example</h1>
           </div></div></div>
 
