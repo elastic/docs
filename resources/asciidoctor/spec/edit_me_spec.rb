@@ -75,11 +75,15 @@ RSpec.describe EditMe do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
-            expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
+            expect(converted).to include <<~HTML.strip
+              #{type.capitalize} 1</h#{level}>#{link}
+            HTML
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
-            expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
+            expect(converted).to include <<~HTML.strip
+              #{type.capitalize} 2</h#{level}>#{link}
+            HTML
           end
         end
         context "that doesn't override edit_url" do
@@ -116,11 +120,15 @@ RSpec.describe EditMe do
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
-              expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
+              expect(converted).to include <<~HTML.strip
+                #{type.capitalize} 1</h#{level}>#{link}
+              HTML
             end
             it "adds a link to #{type} 2" do
               link = edit_link 'bar'
-              expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
+              expect(converted).to include <<~HTML.strip
+                #{type.capitalize} 2</h#{level}>#{link}
+              HTML
             end
             context 'when overriding to an empty string' do
               let(:input) do
@@ -132,10 +140,14 @@ RSpec.describe EditMe do
                 ASCIIDOC
               end
               it "doesn't add edit links to #{type} 1" do
-                expect(converted).to include("#{type.capitalize} 1</h#{level}>\n</div>")
+                expect(converted).to include <<~HTML.strip
+                  #{type.capitalize} 1</h#{level}>\n</div>
+                HTML
               end
               it "doesn't add edit links to #{type} 2" do
-                expect(converted).to include("#{type.capitalize} 2</h#{level}>\n</div>")
+                expect(converted).to include <<~HTML.strip
+                  #{type.capitalize} 2</h#{level}>\n</div>
+                HTML
               end
             end
           end
@@ -225,11 +237,15 @@ RSpec.describe EditMe do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
-            expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
+            expect(converted).to include <<~HTML.strip
+              #{type.capitalize} 1</h#{level}>#{link}
+            HTML
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
-            expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
+            expect(converted).to include <<~HTML.strip
+              #{type.capitalize} 2</h#{level}>#{link}
+            HTML
           end
         end
         context "that doesn't override edit_url" do
@@ -267,11 +283,15 @@ RSpec.describe EditMe do
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
-              expect(converted).to include("#{type.capitalize} 1</h#{level}>#{link}")
+              expect(converted).to include <<~HTML.strip
+                #{type.capitalize} 1</h#{level}>#{link}
+              HTML
             end
             it "adds a link to #{type} 2" do
               link = edit_link 'bar'
-              expect(converted).to include("#{type.capitalize} 2</h#{level}>#{link}")
+              expect(converted).to include <<~HTML.strip
+                #{type.capitalize} 2</h#{level}>#{link}
+              HTML
             end
             context 'when overriding to an empty string' do
               let(:input) do
@@ -283,10 +303,14 @@ RSpec.describe EditMe do
                 ASCIIDOC
               end
               it "doesn't add edit links to #{type} 1" do
-                expect(converted).to include("#{type.capitalize} 1</h#{level}>\n</div>")
+                expect(converted).to include <<~HTML.strip
+                  #{type.capitalize} 1</h#{level}>\n</div>
+                HTML
               end
               it "doesn't add edit links to #{type} 2" do
-                expect(converted).to include("#{type.capitalize} 2</h#{level}>\n</div>")
+                expect(converted).to include <<~HTML.strip
+                  #{type.capitalize} 2</h#{level}>\n</div>
+                HTML
               end
             end
           end
