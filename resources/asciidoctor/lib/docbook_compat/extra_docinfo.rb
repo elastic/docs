@@ -20,7 +20,9 @@ module DocbookCompat
         docbook_compat_meta('DC.type', attributes['dc.type']),
         docbook_compat_meta('DC.subject', attributes['dc.subject']),
         docbook_compat_meta('DC.identifier', attributes['dc.identifier']),
-        docbook_compat_meta('robots', 'noindex,nofollow') if attributes['noindex']
+        if attributes['noindex']
+          docbook_compat_meta('robots', 'noindex,nofollow')
+        end,
       ].compact.join "\n"
     end
 

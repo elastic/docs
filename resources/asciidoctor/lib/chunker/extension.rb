@@ -83,7 +83,9 @@ module Chunker
 
     def page_containing(node)
       page = node
-      page = page.parent while page.context != :section || page.level > @chunk_level
+      while page.context != :section || page.level > @chunk_level
+        page = page.parent
+      end
       page
     end
 

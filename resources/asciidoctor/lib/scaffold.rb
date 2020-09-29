@@ -19,8 +19,9 @@ class TreeProcessorScaffold < Asciidoctor::Extensions::TreeProcessor
   end
 
   def process_blocks(block)
-    block.document.playback_attributes block.attributes unless block.document == block
-
+    unless block.document == block
+      block.document.playback_attributes block.attributes
+    end
     process_block block
     sub_blocks(block).each do |sub_block|
       # sub_block can be nil for definition lists without a definition.
