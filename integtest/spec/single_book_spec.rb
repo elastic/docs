@@ -322,18 +322,24 @@ RSpec.describe 'building a single book' do
         <a class="xpack_tag" href="/subscriptions"></a>
       HTML
     end
-    let(:rx) { %r{<#{h} class="title"><a id="#{id}"></a>(.+?)</#{h}>} }
-    let(:title_tag) do
+    let(:rx) { %r{<#{h} class="title"><a id="#{id}"></a>(.+?)</#{h}>(<a class="edit_me".*</a>)} }
+    let(:heading_match) do
       return unless body
 
-      m = rx.match(body)
-      raise "Can't find title_tag with #{rx} in #{body}" unless m
+      match = rx.match(body)
+      raise "Can't find title_tag with #{rx} in #{body}" unless match
 
-      m[1]
+      match
+    end
+    let(:title_tag) do
+      heading_match[1]
+    end
+    let(:edit_link) do
+      heading_match[2]
     end
     shared_examples 'xpack tag title' do |has_tag|
       it 'contains the edit_me link' do
-        expect(title_tag).to include(edit_me)
+        expect(edit_link).to eq(edit_me)
       end
       if has_tag
         it 'contains the xpack tag' do
@@ -364,7 +370,7 @@ RSpec.describe 'building a single book' do
           include_examples 'xpack tag title', onsection
         end
         context 'the float title' do
-          let(:rx) { %r{<h2><a id="floater"></a>(.+?)</h2>} }
+          let(:rx) { %r{<h2><a id="floater"></a>(.+?)</h2>(<a .*</a>)} }
           include_examples 'xpack tag title', onfloater
         end
       end
