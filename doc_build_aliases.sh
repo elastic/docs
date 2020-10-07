@@ -172,13 +172,15 @@ alias docbldphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-php/doc
 
 alias docbldepl='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/perl/index.asciidoc --single'
 
-alias docbldepy='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/python/index.asciidoc --single'
+alias docbldepy='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-py/docs/guide/index.asciidoc --chunk 1'
+
+alias docblders='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-rs/docs/index.asciidoc --chunk 1'
 
 alias docbldecc='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/community-clients/index.asciidoc --single'
 
 alias docbldesh='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
-alias docbldela='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-eland-docs/docs/en/index.asciidoc --single'
+alias docbldela='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-eland-docs/docs/en/index.asciidoc --chunk 1'
 
 # X-Pack Reference 5.4 to 6.2
 
