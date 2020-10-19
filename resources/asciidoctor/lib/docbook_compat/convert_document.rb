@@ -74,10 +74,10 @@ module DocbookCompat
       id = doc.id || 'id-1'
       result = <<~HTML
         <div>
-        <div><h1 class="title"><a id="#{id}"></a>#{title.main}</h1></div>
+        <div class="heading"><h1 class="title"><a id="#{id}"></a>#{title.main}</h1></div>
       HTML
       result += <<~HTML if title.subtitle?
-        <div><h2 class="subtitle">#{title.subtitle}</h2></div>
+        <div class="heading"><h2 class="subtitle">#{title.subtitle}</h2></div>
       HTML
       result + <<~HTML.strip
         </div>

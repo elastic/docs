@@ -93,7 +93,7 @@ RSpec.describe DocbookCompat do
         expect(converted).to include(<<~HTML)
           <div class="titlepage">
           <div>
-          <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
+          <div class="heading"><h1 class="title"><a id="id-1"></a>Title</h1></div>
           </div>
           <hr>
           </div>
@@ -114,7 +114,7 @@ RSpec.describe DocbookCompat do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
             <div>
-            <div><h1 class="title"><a id="title-id"></a>Title</h1></div>
+            <div class="heading"><h1 class="title"><a id="title-id"></a>Title</h1></div>
             </div>
             <hr>
             </div>
@@ -149,7 +149,7 @@ RSpec.describe DocbookCompat do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
             <div>
-            <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
+            <div class="heading"><h1 class="title"><a id="id-1"></a>Title</h1></div>
             </div>
             <hr>
           HTML
@@ -351,8 +351,8 @@ RSpec.describe DocbookCompat do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
             <div>
-            <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
-            <div><h2 class="subtitle">Subtitle</h2></div>
+            <div class="heading"><h1 class="title"><a id="id-1"></a>Title</h1></div>
+            <div class="heading"><h2 class="subtitle">Subtitle</h2></div>
             </div>
             <hr>
             </div>
@@ -378,7 +378,7 @@ RSpec.describe DocbookCompat do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
             <div>
-            <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
+            <div class="heading"><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
             </div>
             <hr>
             </div>
