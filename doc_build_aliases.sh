@@ -121,7 +121,10 @@ alias docbldfnb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 
 alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
 
-# Ingest management
+# Fleet 
+alias docbldfg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/beats/x-pack/elastic-agent/docs --chunk 1'
+
+# Ingest management 7.8 - 7.9
 alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/beats/x-pack/elastic-agent/docs --chunk 1'
 
 # APM
