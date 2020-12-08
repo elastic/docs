@@ -196,6 +196,8 @@ alias docbldecs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs/docs/index.asciid
 
 alias docbldecsjv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-java/docs/index.asciidoc --chunk 1'
 
+alias docbldecsnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-java/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
+
 # GKE
 alias docbldgke='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/gke-on-prem/index.asciidoc --chunk 1'
 
