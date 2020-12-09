@@ -97,7 +97,7 @@ alias docbldecctl='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecctl/docs/index.as
 alias docbldk8s='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
 
 # Cloud - Terraform provider
-alias docbldtpec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/terraform-provider-ec/docs-elastic/index.asciidoc --chunk 1'
+alias docbldtpec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/terraform-provider-ec/docs-elastic/index.asciidoc --chunk 1 --single'
 
 # Beats
 alias docbldbpr='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/libbeat/docs/index.asciidoc --chunk 1'
