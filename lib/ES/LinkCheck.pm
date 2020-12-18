@@ -96,7 +96,7 @@ sub report {
 
     my @error = "Bad cross-document links:";
     for my $file ( sort keys %$bad ) {
-        push @error, "  $file:";
+        push @error, "  $file contains (broken) links(s) to:";
         push @error, map {"   - $_"} sort keys %{ $bad->{$file} };
     }
     die join "\n", @error, '';
