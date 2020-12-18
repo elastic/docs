@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'spec_helper'
+
 ##
 # Assertions about when books are rebuilt based on changes in source
 # repositories or the book's configuration.
@@ -78,7 +80,7 @@ RSpec.describe 'building all books' do
       end
       it 'logs the bad link' do
         expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
-          /tmp/docsbuild/target_repo/html/test/current/chapter.html:
+          /tmp/docsbuild/target_repo/html/test/current/chapter.html contains broken links to:
            - foo
         LOG
       end
@@ -89,7 +91,7 @@ RSpec.describe 'building all books' do
       end
       it 'logs the bad link' do
         expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
-          Kibana [master]: src/ui/public/documentation_links/documentation_links.js:
+          Kibana [master]: src/ui/public/documentation_links/documentation_links.js contains broken links to:
            - foo
         LOG
       end
@@ -146,7 +148,7 @@ RSpec.describe 'building all books' do
         end
         it 'logs the bad link' do
           expect(outputs[1]).to include(indent(<<~LOG.strip, '  '))
-            /tmp/docsbuild/target_repo/html/test2/current/chapter.html:
+            /tmp/docsbuild/target_repo/html/test2/current/chapter.html contains broken links to:
              - foo
           LOG
         end
