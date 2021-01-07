@@ -74,11 +74,15 @@ alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/in
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
 
-alias docbldees='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-docs/index.asciidoc --chunk=1'
+alias docbldees='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/enterprise-search-docs/index.asciidoc --chunk=1'
 
-alias docbldews='$GIT_HOME/docs/build_docs --doc $GIT_HOME/workplace-search-docs/index.asciidoc --chunk=1'
+alias docbldeas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/app-search-docs/index.asciidoc --chunk=1'
 
-alias docbldas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/app-search-docs/index.asciidoc --chunk=1'
+alias docbldews='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/workplace-search-docs/index.asciidoc --chunk=1'
+
+alias docbldeesp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-python/docs/guide/index.asciidoc'
+
+alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ruby/docs/guide/index.asciidoc'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
