@@ -41,6 +41,7 @@ docbldlsvpr() {
     pushd "$GIT_HOME/logstash-docs" || return
     # Make sure the right branch is checked out
     git checkout versioned_plugin_docs
+    git pull
     popd || return
     "$GIT_HOME/docs/build_docs" --doc "$GIT_HOME/logstash-docs/docs/versioned-plugins/index.asciidoc" --chunk 1 "$@"
 }
