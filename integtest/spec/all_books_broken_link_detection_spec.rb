@@ -6,7 +6,7 @@ require_relative 'spec_helper'
 # Assertions about when books are rebuilt based on changes in source
 # repositories or the book's configuration.
 RSpec.describe 'building all books' do
-  KIBANA_LINKS_FILE = 'src/ui/public/documentation_links/documentation_links.js'
+  KIBANA_LINKS_FILE = 'src/core/public/doc_links/doc_links_service.ts'
   shared_context 'there is a broken link in the docs' do |text, check_links|
     convert_before do |src, dest|
       repo = src.repo_with_index 'repo', text
@@ -25,13 +25,13 @@ RSpec.describe 'building all books' do
     include_context 'there is a broken link in the docs',
                     'link:/guide/foo[]', check_links
   end
-  shared_context 'there is a broken link in kibana' do |check_links|
+  shared_context 'there is a kibana link' do |check_links, url, expect_failure|
     convert_before do |src, dest|
       # Kibana is special and we check links in it with a little magic
       kibana_repo = src.repo 'kibana'
       kibana_repo.write KIBANA_LINKS_FILE, <<~JS
         export const documentationLinks = {
-          foo: `${ELASTIC_WEBSITE_URL}guide/foo`,
+          foo: `#{url}`,
         };
       JS
       kibana_repo.commit 'init'
@@ -44,8 +44,15 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       convert = dest.prepare_convert_all src.conf
       convert.skip_link_check unless check_links
-      convert.convert(expect_failure: check_links)
+      convert.convert(expect_failure: expect_failure)
     end
+  end
+
+  shared_context 'there is a broken link in kibana' do |check_links|
+    # If we check links, we expect failure, and if we don't check links, we
+    # don't expect failure.
+    include_context 'there is a kibana link', check_links,
+                    '${ELASTIC_WEBSITE_URL}guide/foo', check_links
   end
 
   describe 'when broken link detection is disabled' do
@@ -85,14 +92,14 @@ RSpec.describe 'building all books' do
         LOG
       end
     end
-    shared_examples 'there are broken links in kibana' do
+    shared_examples 'there are broken links in kibana' do |url|
       it 'logs there are bad cross document links' do
         expect(outputs[-1]).to include('Bad cross-document links:')
       end
       it 'logs the bad link' do
         expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
-          Kibana [master]: src/ui/public/documentation_links/documentation_links.js contains broken links to:
-           - foo
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - #{url}
         LOG
       end
     end
@@ -118,7 +125,18 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken link in kibana' do
       include_context 'there is a broken link in kibana', true
-      include_examples 'there are broken links in kibana'
+      include_examples 'there are broken links in kibana', 'foo'
+    end
+    describe 'when a link in kibana goes to the website outside the guide' do
+      include_context 'there is a kibana link', true,
+                      '${ELASTIC_WEBSITE_URL}not-part-of-the-guide', false
+      include_examples 'all links are ok'
+    end
+    describe 'when there is a broken Elasticsearch reference link in Kibana' do
+      include_context 'there is a kibana link', true,
+                      '${ELASTICSEARCH_DOCS}missing-page', true
+      include_examples 'there are broken links in kibana',
+                       'en/elasticsearch/reference/master/missing-page'
     end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
@@ -191,7 +209,7 @@ RSpec.describe 'building all books' do
 
           kibana_repo.write KIBANA_LINKS_FILE, <<~JS
             export const documentationLinks = {
-              foo: `${ELASTIC_WEBSITE_URL}guide/foo`,
+              foo: `${ELASTIC_WEBSITE_URL}guide/bar`,
             };
           JS
         end
@@ -227,7 +245,7 @@ RSpec.describe 'building all books' do
                 .sub_dir(src.repo('kibana'), 'master')
                 .convert(expect_failure: true)
           end
-          include_examples 'there are broken links in kibana'
+          include_examples 'there are broken links in kibana', 'bar'
         end
       end
     end
