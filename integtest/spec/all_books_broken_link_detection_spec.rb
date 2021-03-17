@@ -25,7 +25,7 @@ RSpec.describe 'building all books' do
     include_context 'there is a broken link in the docs',
                     'link:/guide/foo[]', check_links
   end
-  shared_context 'there is a link in kibana' do |check_links, url, expect_failure|
+  shared_context 'there is a kibana link' do |check_links, url, expect_failure|
     convert_before do |src, dest|
       # Kibana is special and we check links in it with a little magic
       kibana_repo = src.repo 'kibana'
@@ -49,8 +49,10 @@ RSpec.describe 'building all books' do
   end
 
   shared_context 'there is a broken link in kibana' do |check_links|
-    # If we check links, we expect failure, and if we don't check links, we don't expect failure
-    include_context 'there is a link in kibana', check_links, '${ELASTIC_WEBSITE_URL}guide/foo', check_links
+    # If we check links, we expect failure, and if we don't check links, we
+    # don't expect failure.
+    include_context 'there is a kibana link', check_links,
+                    '${ELASTIC_WEBSITE_URL}guide/foo', check_links
   end
 
   describe 'when broken link detection is disabled' do
@@ -125,13 +127,16 @@ RSpec.describe 'building all books' do
       include_context 'there is a broken link in kibana', true
       include_examples 'there are broken links in kibana', 'foo'
     end
-    describe 'when there is a link in kibana to the website outside the guide' do
-      include_context 'there is a link in kibana', true, '${ELASTIC_WEBSITE_URL}not-part-of-the-guide', false
+    describe 'when a link in kibana goes to the website outside the guide' do
+      include_context 'there is a kibana link', true,
+                      '${ELASTIC_WEBSITE_URL}not-part-of-the-guide', false
       include_examples 'all links are ok'
     end
     describe 'when there is a broken Elasticsearch reference link in Kibana' do
-      include_context 'there is a link in kibana', true, '${ELASTICSEARCH_DOCS}missing-page', true
-      include_examples 'there are broken links in kibana', 'en/elasticsearch/reference/master/missing-page'
+      include_context 'there is a kibana link', true,
+                      '${ELASTICSEARCH_DOCS}missing-page', true
+      include_examples 'there are broken links in kibana',
+                       'en/elasticsearch/reference/master/missing-page'
     end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
