@@ -321,7 +321,7 @@ RSpec.describe 'building all books' do
               # 3. A book at `en/kibana`
               kibana_repo = src.repo_with_index 'kibana', 'words'
               kibana_repo.write(
-                'src/ui/public/documentation_links/documentation_links.ts',
+                'src/core/public/doc_links/doc_links_service.ts',
                 'text but no links actually'
               )
               kibana_repo.commit 'add links file'
