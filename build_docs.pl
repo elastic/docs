@@ -356,12 +356,21 @@ sub check_kibana_links {
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC_.+)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
-                $path
-                    =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$branch/!
-                    || $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
+                # In older versions, the variable `${ELASTIC_DOCS}` referred to
+                # the Elasticsearch Reference Guide. In newer branches, the
+                # variable is called `${ELASTICSEARCH_DOCS}`
+                $path =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$branch/!;
+                $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$branch/!;
+                # Replace the "https://www.elastic.co/guide/" URL prefix so that
+                # it becomes a file path in the built docs.
+                $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
+                # We don't want to check any links to www.elastic.co that aren't
+                # part of the docs.
+                return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}.*/;
+                # Otherwise, return the link to check
                 return ( split /#/, $path );
             }
             return;
