@@ -232,6 +232,16 @@ RSpec.describe CareAdmonition do
     end
     include_examples 'care admonition'
   end
+  context 'cloud' do
+    let(:key) { 'cloud' }
+    let(:admon_class) { 'warning' }
+    let(:default_text) do
+      <<~TEXT.strip
+        This feature is designed for indirect use by {ess-trial}[{ess}], {ece-ref}[{ece}], and {eck-ref}[{eck}]. Direct use is not supported.
+      TEXT
+    end
+    include_examples 'care admonition'
+  end
   context 'dev' do
     let(:key) { 'dev' }
     let(:admon_class) { 'warning' }

@@ -140,6 +140,11 @@ RSpec.describe ElasticCompatPreprocessor do
       let(:name) { 'beta' }
       let(:inline_admon_class) { 'beta' }
     end
+    context 'for cloud' do
+      include_context 'care admonition'
+      let(:name) { 'cloud' }
+      let(:inline_admon_class) { 'cloud' }
+    end
     context 'for dev' do
       include_context 'care admonition'
       let(:name) { 'dev' }

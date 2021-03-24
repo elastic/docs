@@ -3,18 +3,24 @@
 require 'asciidoctor/extensions'
 
 ##
-# Extensions for marking when something as `beta`, `dev`, or `experimental`.
+# Extensions for marking when something as `cloud`, `beta`, `dev`, or
+# `experimental`.
 #
 # Usage
 #
+#   cloud::[]
 #   beta::[]
 #   dev::[]
 #   experimental::[]
+#   Foo cloud:[]
 #   Foo beta:[]
 #   Foo dev:[]
 #   Foo experimental:[]
 #
 class CareAdmonition < Asciidoctor::Extensions::Group
+  CLOUD_DEFAULT_TEXT = <<~TEXT.strip
+    This feature is designed for indirect use by {ess-trial}[{ess}], {ece-ref}[{ece}], and {eck-ref}[{eck}]. Direct use is not supported.
+  TEXT
   BETA_DEFAULT_TEXT = <<~TEXT.strip
     This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
   TEXT
@@ -27,6 +33,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
   def activate(registry)
     [
+      [:cloud, 'cloud', CLOUD_DEFAULT_TEXT],
       [:beta, 'beta', BETA_DEFAULT_TEXT],
       [:dev, 'dev', DEV_DEFAULT_TEXT],
       [:experimental, 'experimental', EXPERIMENTAL_DEFAULT_TEXT],
