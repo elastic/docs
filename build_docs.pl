@@ -360,7 +360,7 @@ sub check_kibana_links {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
-                # the Elasticsearch Reference Guide. In newer branches, the
+                # the Elasticsearch Guide. In newer branches, the
                 # variable is called `${ELASTICSEARCH_DOCS}`
                 $path =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$branch/!;
                 $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$branch/!;
