@@ -14,8 +14,8 @@ export const lang_spec = {
   "Configure the Elastic Cloud Enterprise endpoint URL": {
     "zh_cn": "配置 Elastic Cloud Enterprise endpoint URL"
   },
-  "Copy as cURL": {
-    "zh_cn": "拷贝为 cURL"
+  "Copy as curl": {
+    "zh_cn": "拷贝为 curl"
   },
   "Couldn't automatically copy!": {
     "zh_cn": "无法自动拷贝!"

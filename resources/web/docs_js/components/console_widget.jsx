@@ -35,14 +35,14 @@ export class _ConsoleForm extends Component {
       <label for="url">{props.langStrings(props.url_label)}</label>
       <input id="url" type="text" value={getValueFromState("url")} onInput={linkState(this, getFieldName("url"))} />
 
-      <label for="curl_host">cURL {props.langStrings('host')}</label>
+      <label for="curl_host">curl {props.langStrings('host')}</label>
       <input id="curl_host" type="text" value={getValueFromState("curl_host")} onInput={linkState(this, getFieldName("curl_host"))} />
 
-      <label for="curl_username">cURL {props.langStrings('username')}</label>
+      <label for="curl_username">curl {props.langStrings('username')}</label>
       <input id="curl_username" type="text" value={getValueFromState("curl_user")} onInput={linkState(this, getFieldName("curl_user"))} />
 
       {/* TODO
-      <label for="curl_pw" title={props.langStrings("curl_pw_title")}>cURL {props.langStrings('password')}</label>
+      <label for="curl_pw" title={props.langStrings("curl_pw_title")}>curl {props.langStrings('password')}</label>
       <input id="curl_pw" title={props.langStrings("curl_pw_title")} type="text" value={getValueFromState("curl_password")} onInput={linkState(this, getFieldName("curl_password"))} />
        */}
       <button id="save_url" type="button" onClick={e => props.saveSettings(this.state)}>
@@ -83,7 +83,7 @@ export const ConsoleWidget = props => {
           setting: props.setting,
           addPretty: props.addPretty
         })}>
-        {props.langStrings('Copy as cURL')}
+        {props.langStrings('Copy as curl')}
       </a>
       {props.view_in_text &&
         <a className="view_in_link"

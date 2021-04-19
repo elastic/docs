@@ -70,7 +70,7 @@ function pageWithConsole(name, consoleText, extraTextAssertions) {
 }
 
 describe('console widget', () => {
-  describe('Copy as cURL button', () => {
+  describe('Copy as curl button', () => {
     pageWithConsole('a snippet without a body', 'GET /_cat/health?v', () => {
       test('includes the corrent method', () => {
         expect(document.copied).toMatch(/-X GET/);
