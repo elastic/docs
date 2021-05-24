@@ -139,7 +139,7 @@ alias docbldfnb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
 
 # Fleet user guide
-alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/beats/x-pack/elastic-agent/docs --resource=$GIT_HOME/apm-server/docs --chunk 2'
+alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/apm-server/docs --chunk 2'
 
 # Fleet developer guide
 alias docbldfdg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/fleet-developer/index.asciidoc --chunk 2'
