@@ -169,7 +169,13 @@ def run_build_docs(args):
             extra_name = repo_name.replace('x-pack-', '')
             repo_mount = '/doc/%s-extra/%s' % (extra_name, repo_name)
         else:
-            repo_mount = '/doc/' + repo_name
+            match = re.search(r'(.*)-[0-9]+\.[0-9x]+$', repo_name)
+            if match is None:
+                repo_mount = '/doc/' + repo_name
+            else:
+                # Repo name ends with what looks like a version string (e.g. elasticsearch-7.x)
+                # Mount this under the unversioned project name
+                repo_mount = '/doc/' + match.group(1)
         if repo_root not in mounted_doc_repo_roots:
             if repo_name in mounted_doc_repo_names:
                 raise ArgError("Can't mount two repos with the same " +
