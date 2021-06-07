@@ -352,11 +352,14 @@ sub check_kibana_links {
 # ${baseUrl}guide/en/elasticsearch/reference/${urlVersion}/modules-scripting-expression.html
 # ${ELASTIC_WEBSITE_URL}guide/en/beats/filebeat/${DOC_LINK_VERSION}
 # ${ELASTIC_DOCS}search-aggregations-bucket-datehistogram-aggregation.html
+# ${ELASTICSEARCH_DOCS}update-transform.html
+# ${KIBANA_DOCS}canvas.html`
+# ${PLUGIN_DOCS}repository-s3.html
 
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA.+|PLUGIN.+)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
@@ -364,6 +367,8 @@ sub check_kibana_links {
                 # variable is called `${ELASTICSEARCH_DOCS}`
                 $path =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$branch/!;
                 $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$branch/!;
+                $path =~ s!\$\{KIBANA_DOCS\}!en/kibana/$branch/!;
+                $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$branch/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
