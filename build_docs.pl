@@ -359,7 +359,7 @@ sub check_kibana_links {
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA.+|PLUGIN.+)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
