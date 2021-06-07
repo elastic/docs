@@ -353,7 +353,7 @@ sub check_kibana_links {
 # ${ELASTIC_WEBSITE_URL}guide/en/beats/filebeat/${DOC_LINK_VERSION}
 # ${ELASTIC_DOCS}search-aggregations-bucket-datehistogram-aggregation.html
 # ${ELASTICSEARCH_DOCS}update-transform.html
-# ${KIBANA_DOCS}canvas.html`
+# ${KIBANA_DOCS}canvas.html
 # ${PLUGIN_DOCS}repository-s3.html
 
     my $extractor = sub {
