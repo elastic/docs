@@ -134,9 +134,21 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken Elasticsearch Guide link in Kibana' do
       include_context 'there is a kibana link', true,
-                      '${ELASTICSEARCH_DOCS}missing-page', true
+                      '${ELASTICSEARCH_DOCS}missing-page.html', true
       include_examples 'there are broken links in kibana',
-                       'en/elasticsearch/reference/master/missing-page'
+                       'en/elasticsearch/reference/master/missing-page.html'
+    end
+    describe 'when there is a broken Kibana guide link' do
+      include_context 'there is a kibana link', true,
+                      '${KIBANA_DOCS}not-a-kibana-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/kibana/master/not-a-kibana-page.html'
+    end
+    describe 'when there is a broken ES Plugin link' do
+      include_context 'there is a kibana link', true,
+                      '${PLUGIN_DOCS}not-a-valid-plugin.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/elasticsearch/plugins/master/not-a-valid-plugin.html'
     end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
