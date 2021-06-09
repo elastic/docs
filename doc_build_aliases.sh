@@ -165,6 +165,8 @@ alias docbldamnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-dotnet/do
 
 alias docbldamphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-php/docs/index.asciidoc --chunk 1'
 
+alias docbldamios='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-ios/docs/index.asciidoc --chunk 1'
+
 
 # Definitive Guide
 alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
