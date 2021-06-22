@@ -355,11 +355,12 @@ sub check_kibana_links {
 # ${ELASTICSEARCH_DOCS}update-transform.html
 # ${KIBANA_DOCS}canvas.html
 # ${PLUGIN_DOCS}repository-s3.html
+# ${FLEET_DOCS}fleet-overview.html
 
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
@@ -369,6 +370,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$branch/!;
                 $path =~ s!\$\{KIBANA_DOCS\}!en/kibana/$branch/!;
                 $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$branch/!;
+                $path =~ s!\$\{FLEET_DOCS\}!en/fleet/$branch/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;

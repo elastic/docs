@@ -150,6 +150,12 @@ RSpec.describe 'building all books' do
       include_examples 'there are broken links in kibana',
                        'en/elasticsearch/plugins/master/not-a-valid-plugin.html'
     end
+    describe 'when there is a broken Fleet link' do
+      include_context 'there is a kibana link', true,
+                      '${FLEET_DOCS}not-a-fleet-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/fleet/master/not-a-fleet-page.html'
+    end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
         convert_before do |src, dest|
