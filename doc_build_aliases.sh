@@ -8,7 +8,6 @@
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
 
-
 # Elasticsearch
 alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
 
@@ -54,7 +53,6 @@ alias docbldstkold2='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/e
 
 # Installation and Upgrade Guide 6.7 and earlier
 alias docbldstkold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --chunk 1'
-
 
 # Glossary
 alias docbldgls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs --resource=$GIT_HOME/kibana/docs'
@@ -167,10 +165,8 @@ alias docbldamphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-php/docs/
 
 alias docbldamios='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-ios/docs/index.asciidoc --chunk 1'
 
-
 # Definitive Guide
 alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
-
 
 # Elasticsearch Extras
 alias docbldres='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single --toc'
@@ -248,3 +244,12 @@ alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:el
 
 # Machine learning
 alias docbldml='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/ml/index.asciidoc --resource $GIT_HOME/elasticsearch/docs --chunk 1'
+
+# Serve the docs (workaround for Apple M1 machines)
+docserve() {
+    mkdir -p html_docs/guide/static
+    cp "$GIT_HOME/docs/workaround-static/"* html_docs/guide/static
+    echo "Open a browser to http://127.0.0.1:8000/ to view the docs."
+    echo "Press CTRL-C to quit."
+    python3 -m http.server 8000 -d html_docs
+}
