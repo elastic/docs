@@ -55,7 +55,7 @@ alias docbldstkold2='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/e
 alias docbldstkold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --chunk 1'
 
 # Glossary
-alias docbldgls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs --resource=$GIT_HOME/kibana/docs'
+alias docbldgls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/glossary/index.asciidoc'
 
 # Getting started
 alias docbldgs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/getting-started/index.asciidoc --chunk 1'
