@@ -2,6 +2,7 @@ import AlternativeSwitcher from "./components/alternative_switcher";
 import ConsoleWidget from "./components/console_widget";
 import Modal from "./components/modal";
 import mount from "./components/mount";
+import {switchTabs, setActiveTab, changeTabs} from "./components/tabbed_widget";
 import {Cookies, $} from "./deps";
 import {lang_strings} from "./localization";
 import store from "./store";
@@ -281,3 +282,8 @@ $(function() {
 
   // Test comment used to detect unminifed JS in tests
 });
+
+// Tabbed widgets
+switchTabs();
+setActiveTab();
+changeTabs();
