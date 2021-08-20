@@ -33,7 +33,7 @@ export const switchTabs = () => {
   });
 }
 
-export const setActiveTab = (target) => {
+const setActiveTab = (target) => {
   const parent = target.parentNode;
   const grandparent = parent.parentNode;
   // console.log(grandparent);
@@ -53,7 +53,7 @@ export const setActiveTab = (target) => {
     .removeAttribute("hidden");
 }
 
-export const changeTabs = (e) => {
+const changeTabs = (e) => {
   // get the containing list of the tab that was just clicked
   const tabList = e.target.parentNode;
 
