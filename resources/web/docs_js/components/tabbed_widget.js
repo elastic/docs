@@ -36,7 +36,6 @@ export const switchTabs = () => {
 const setActiveTab = (target) => {
   const parent = target.parentNode;
   const grandparent = parent.parentNode;
-  // console.log(grandparent);
   // Remove all current selected tabs
   parent
     .querySelectorAll('[aria-selected="true"]')
