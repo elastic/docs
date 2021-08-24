@@ -17,6 +17,7 @@ cd $GIT_HOME/docs
 git checkout m1-workaround
 git pull
 cp $GIT_HOME/built-docs/html/static/* workaround-static
+git add workaround-static
 git commit -m "update static files"
 git push
 ```
