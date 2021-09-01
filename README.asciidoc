@@ -656,7 +656,7 @@ endif::[]
 == Shared attributes
 
 To facilitate consistency across the documentation, there are shared attributes
-for common terms and URLs: https://github.com/elastic/docs/blob/master/shared/attributes.asciidoc. 
+for common terms and URLs: https://github.com/elastic/docs/blob/master/shared/attributes.asciidoc.
 There are also attributes related to the versions and branches that are used to
 build our books
 (for example: https://github.com/elastic/docs/blob/master/shared/versions/stack/master.asciidoc).
@@ -1893,3 +1893,82 @@ named for their IDs:
 
 To link to "Section two" from an external
 document, you would use the URL: `section-one.html#section-two`
+
+[[tabbed-widgets]]
+== Tabbed widgets
+
+Improve the usability of your docs by adding tabbed widgets.
+These handy widgets let you conditionally display content based on the selected tab.
+Best of all, tabbed widgets listen to each other – all widgets on the same page and with the same `data-tab-group` will change content when any tab on the page is selected.
+
+How do they work? I'm glad you asked.
+Tabbed widgets use https://docs.asciidoctor.org/asciidoc/latest/pass/pass-block/[HTML passthrough blocks] to pass raw HTML into the build.
+Because of this hack, you must use `include::` statements to render content within a tabbed widget.
+
+Here's an example:
+
+**`widget.asciidoc`**
+
+[source,asciidoc]
+----
+++++
+<div class="tabs" data-tab-group="custom-tab-group-name"> <1>
+  <div role="tablist" aria-label="Human readable name of tab group">
+    <button role="tab"
+            aria-selected="true" <2>
+            aria-controls="cloud-tab-config-agent" <3>
+            id="cloud-config-agent"> <4>
+      Tab #1 title
+    </button>
+    <button role="tab"
+            aria-selected="false"
+            aria-controls="self-managed-tab-config-agent"
+            id="self-managed-config-agent"
+            tabindex="-1"> <5>
+      Tab #2 title
+    </button>
+  </div>
+  <div tabindex="0"
+       role="tabpanel"
+       id="cloud-tab-config-agent"
+       aria-labelledby="cloud-config-agent">
+++++
+
+// You must use a tagged region for Asciidoc content to render. For example:
+// include::content.asciidoc[tag=central-config]
+
+++++
+  </div>
+  <div tabindex="0"
+       role="tabpanel"
+       id="self-managed-tab-config-agent"
+       aria-labelledby="self-managed-config-agent"
+       hidden="">
+++++
+
+// You must use a tagged region for Asciidoc content to render. For example:
+// include::content.asciidoc[tag=reg-config]
+
+++++
+  </div>
+</div>
+++++
+----
+<1> Any tabbed widgets on the same page and with the same name will sync tabs when switched
+<2> Only one tab should have aria-selected set to true. This tab will be selected by default
+<3> The `button.aria-controls` value must match the `div.id` value of its corresponding content bucket
+<4> The `button.id` value must match the `div.aria-labelledby` value of its corresponding content bucket
+<5> All unselected tabs must have a `tabindex` of `-1`
+
+**`content.asciidoc`**
+
+[source,asciidoc]
+----
+// tag::central-config[]
+This is where the content for tab #1 goes.
+// end::central-config[]
+
+// tag::reg-config[]
+This is the content for tab #2 goes.
+// end::reg-config[]
+----
