@@ -156,6 +156,12 @@ RSpec.describe 'building all books' do
       include_examples 'there are broken links in kibana',
                        'en/fleet/master/not-a-fleet-page.html'
     end
+    describe 'when there is a broken APM Get Started link' do
+      include_context 'there is a APM Get Started link', true,
+                      '${APM_GET_STARTED}not-an-apm-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/apm/get-started/master/not-an-apm-page.html'
+    end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
         convert_before do |src, dest|
