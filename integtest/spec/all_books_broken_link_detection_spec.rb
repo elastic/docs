@@ -156,9 +156,9 @@ RSpec.describe 'building all books' do
       include_examples 'there are broken links in kibana',
                        'en/fleet/master/not-a-fleet-page.html'
     end
-    describe 'when there is a broken APM Get Started link' do
+    describe 'when there is a broken APM link' do
       include_context 'there is a kibana link', true,
-                      '${APM_GET_STARTED}not-an-apm-page.html', true
+                      '${APM_DOCS}not-an-apm-page.html', true
       include_examples 'there are broken links in kibana',
                        'en/apm/get-started/master/not-an-apm-page.html'
     end
