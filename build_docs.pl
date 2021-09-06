@@ -372,7 +372,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{KIBANA_DOCS\}!en/kibana/$branch/!;
                 $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$branch/!;
                 $path =~ s!\$\{FLEET_DOCS\}!en/fleet/$branch/!;
-                $path =~ s!\$\{APM_DOCS\}!en/apm/!
+                $path =~ s!\$\{APM_DOCS\}!en/apm/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
