@@ -370,19 +370,28 @@ RSpec.describe 'building a single book' do
       end
     end
 
-    def self.xpack_tag_context(onpart, onchapter, onfloater, onsection)
+    def self.xpack_tag_context(onpart, onchapter, onfloater, onsection,
+                               hideXPack)
       convert_single_before_context do |src|
-        index = xpack_tag_test_asciidoc onpart, onchapter, onfloater, onsection
+        index = xpack_tag_test_asciidoc onpart, onchapter, onfloater, onsection,
+                                        hideXPack
         src.write 'index.asciidoc', index
       end
 
-      include_examples 'part page titles', onpart
-      include_examples 'chapter page titles', onchapter, onfloater, onsection
+      include_examples 'part page titles',
+                       onpart && !hideXPack
+      include_examples 'chapter page titles',
+                       onchapter && !hideXPack,
+                       onfloater && !hideXPack,
+                       onsection && !hideXPack
     end
 
-    def self.xpack_tag_test_asciidoc(onpart, onchapter, onfloater, onsection)
+    def self.xpack_tag_test_asciidoc(onpart, onchapter, onfloater, onsection,
+                                     hideXPack)
       <<~ASCIIDOC
         = Title
+
+        #{hideXPack ? ':hide-xpack-tags: true' : ''}
 
         #{onpart ? '[role="xpack"]' : ''}
         [[part]]
@@ -408,20 +417,27 @@ RSpec.describe 'building a single book' do
       ASCIIDOC
     end
 
-    context 'when the xpack role is on a part' do
-      xpack_tag_context true, false, false, false
+    context 'when not hiding xpack tags' do
+      context 'when the xpack role is on a part' do
+        xpack_tag_context true, false, false, false, false
+      end
+      context 'when the xpack role is on a chapter' do
+        xpack_tag_context false, true, false, false, false
+      end
+      context 'when the xpack role is on a floating title' do
+        xpack_tag_context false, false, true, false, false
+      end
+      context 'when the xpack role is on a section' do
+        xpack_tag_context false, false, false, true, false
+      end
+      context 'when the xpack role is on everything' do
+        xpack_tag_context true, true, true, true, false
+      end
     end
-    context 'when the xpack role is on a chapter' do
-      xpack_tag_context false, true, false, false
-    end
-    context 'when the xpack role is on a floating title' do
-      xpack_tag_context false, false, true, false
-    end
-    context 'when the xpack role is on a section' do
-      xpack_tag_context false, false, false, true
-    end
-    context 'when the xpack role is on everything' do
-      xpack_tag_context true, true, true, true
+    context 'when hiding xpack tags' do
+      context 'when the xpack role is on everything' do
+        xpack_tag_context true, true, true, true, true
+      end
     end
   end
 
