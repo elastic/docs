@@ -371,27 +371,25 @@ RSpec.describe 'building a single book' do
     end
 
     def self.xpack_tag_context(onpart, onchapter, onfloater, onsection,
-                               hideXPack)
+                               hide_xpack)
       convert_single_before_context do |src|
         index = xpack_tag_test_asciidoc onpart, onchapter, onfloater, onsection,
-                                        hideXPack
+                                        hide_xpack
         src.write 'index.asciidoc', index
       end
 
       include_examples 'part page titles',
-                       onpart && !hideXPack
-      include_examples 'chapter page titles',
-                       onchapter && !hideXPack,
-                       onfloater && !hideXPack,
-                       onsection && !hideXPack
+                       onpart && !hide_xpack
+      include_examples 'chapter page titles', onchapter && !hide_xpack,
+                       onfloater && !hide_xpack, onsection && !hide_xpack
     end
 
     def self.xpack_tag_test_asciidoc(onpart, onchapter, onfloater, onsection,
-                                     hideXPack)
+                                     hide_xpack)
       <<~ASCIIDOC
         = Title
 
-        #{hideXPack ? ':hide-xpack-tags: true' : ''}
+        #{hide_xpack ? ':hide-xpack-tags: true' : ''}
 
         #{onpart ? '[role="xpack"]' : ''}
         [[part]]
