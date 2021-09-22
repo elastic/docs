@@ -71,6 +71,7 @@ module DocbookCompat
 
     def xpack_tag(node)
       return unless node.roles.include? 'xpack'
+      return if (node.document.attr 'hide-xpack-tags') == 'true'
 
       '<a class="xpack_tag" href="/subscriptions"></a>'
     end
