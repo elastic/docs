@@ -32,7 +32,7 @@ export function init_headers(right_col, lang_strings) {
       this.href = '#' + this.id;
 
       // Extract on-this-page headers, without embedded links
-      var title_container = $(this).parent('h1,h2,h3').clone();
+      var title_container = $(this).parent('h1,h2,h3,h4').clone();
       if (title_container.length > 0) {
         // Exclude page title
         if (0 < items++) {
