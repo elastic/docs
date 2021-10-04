@@ -179,6 +179,8 @@ alias docbldpls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/pa
 
 alias docbldepi='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
 
+alias docbldjva='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-java/docs/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/java-rest --resource=$GIT_HOME/elasticsearch/client --chunk 1'
+
 alias docbldjvr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
 alias docbldejv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-api/index.asciidoc --chunk 1'
