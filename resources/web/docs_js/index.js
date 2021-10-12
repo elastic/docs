@@ -57,7 +57,7 @@ export function init_headers(right_col, lang_strings) {
             .remove();
           var text = title_container.html();
           const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li id="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const li = '<li class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
