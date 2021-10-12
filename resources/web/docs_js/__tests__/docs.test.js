@@ -205,8 +205,8 @@ describe('On This Page', () => {
     test('similar heading sections should be nested correctly', () => {
       const link1 = jQuery('#this_page a[href="#nrt"]');
       const link2 = jQuery('#this_page a[href="#cluster"]');
-      expect(link1.parent().attr('id')).toEqual('heading-level-0');
-      expect(link2.parent().attr('id')).toEqual('heading-level-0');
+      expect(link1.parent().hasClass('heading-level-0')).toBe(true);
+      expect(link2.parent().hasClass('heading-level-0')).toBe(true);
     });
   });
   describeInitHeaders('for page with four subsections', fourSubsections, () => {
@@ -216,10 +216,10 @@ describe('On This Page', () => {
       const link2 = jQuery('#this_page a[href="#cluster"]');
       const link3 = jQuery('#this_page a[href="#observability"]');
       const link4 = jQuery('#this_page a[href="#apm"]');
-      expect(link1.parent().attr('id')).toEqual('heading-level-0');
-      expect(link2.parent().attr('id')).toEqual('heading-level-0');
-      expect(link3.parent().attr('id')).toEqual('heading-level-1');
-      expect(link4.parent().attr('id')).toEqual('heading-level-0');
+      expect(link1.parent().hasClass('heading-level-0')).toBe(true);
+      expect(link2.parent().hasClass('heading-level-0')).toBe(true);
+      expect(link3.parent().hasClass('heading-level-1')).toBe(true);
+      expect(link4.parent().hasClass('heading-level-0')).toBe(true);
     });
   });
 });
