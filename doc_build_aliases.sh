@@ -145,6 +145,8 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/doc
 alias docbldfdg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/fleet-developer/index.asciidoc --chunk 2'
 
 # APM
+alias docbldapm='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --chunk 2'
+
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
 
 alias docbldamr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
