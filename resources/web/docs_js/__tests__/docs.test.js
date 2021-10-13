@@ -154,6 +154,17 @@ describe('On This Page', () => {
       Cluster
     </h3>
   `;
+  const fourSubsections = dedent `
+    ${twoSubsections}
+    <h4>
+      <a id="observability"></a>
+      Observability
+    </h4>
+    <h3>
+      <a id="apm"></a>
+      APM
+    </h3>
+  `;
 
   describeInitHeaders('for page with just a title', onlyTitle, () => {
     test("doesn't exist", () => {
@@ -190,6 +201,25 @@ describe('On This Page', () => {
       const link = jQuery('#this_page a[href="#cluster"]');
       expect(link).toHaveLength(1);
       expect(link.text().trim()).toEqual('Cluster');
+    });
+    test('similar heading sections should be nested correctly', () => {
+      const link1 = jQuery('#this_page a[href="#nrt"]');
+      const link2 = jQuery('#this_page a[href="#cluster"]');
+      expect(link1.parent().hasClass('heading-level-0')).toBe(true);
+      expect(link2.parent().hasClass('heading-level-0')).toBe(true);
+    });
+  });
+  describeInitHeaders('for page with four subsections', fourSubsections, () => {
+    existsAssertions();
+    test('different heading sections should be nested correctly', () => {
+      const link1 = jQuery('#this_page a[href="#nrt"]');
+      const link2 = jQuery('#this_page a[href="#cluster"]');
+      const link3 = jQuery('#this_page a[href="#observability"]');
+      const link4 = jQuery('#this_page a[href="#apm"]');
+      expect(link1.parent().hasClass('heading-level-0')).toBe(true);
+      expect(link2.parent().hasClass('heading-level-0')).toBe(true);
+      expect(link3.parent().hasClass('heading-level-1')).toBe(true);
+      expect(link4.parent().hasClass('heading-level-0')).toBe(true);
     });
   });
 });
