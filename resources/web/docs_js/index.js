@@ -25,21 +25,40 @@ export function init_headers(right_col, lang_strings) {
   this_page.append('<h2>' + lang_strings('On this page') + '</h2>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
+  var baseHeadingLevel = 0;
 
   $('#guide a[id]:not([href])').each(
-    function() {
+    function(i, el) {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
 
       // Extract on-this-page headers, without embedded links
-      var title_container = $(this).parent('h1,h2,h3').clone();
+      var title_container = $(this).parent('h1,h2,h3,h4').clone();
       if (title_container.length > 0) {
-        // Exclude page title
+        // Assume initial heading is an H1, but adjust if it's not
+        let hLevel = 0;
+        if ($(this).parent().is("h2")){
+          hLevel = 1;
+        } else if ($(this).parent().is("h3")){
+          hLevel = 2;
+        } else if ($(this).parent().is("h4")){
+          hLevel = 3;
+        }
+
+        // Set the base heading level for the page to the title page level + 1
+        // This ensures top level headings aren't nested
+        if (i === 0){
+          baseHeadingLevel = hLevel + 1;
+        }
+
+        // Build list items for all headings except the page title
         if (0 < items++) {
           title_container.find('a,.added,.coming,.deprecated,.experimental')
             .remove();
           var text = title_container.html();
-          ul.append('<li><a href="#' + this.id + '">' + text + '</a></li>');
+          const adjustedLevel = hLevel - baseHeadingLevel;
+          const li = '<li class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          ul.append(li);
         }
       }
     });
