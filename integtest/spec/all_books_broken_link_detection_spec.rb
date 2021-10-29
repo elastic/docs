@@ -93,16 +93,15 @@ RSpec.describe 'building all books' do
       end
     end
     shared_examples 'there are broken links in kibana' do |url|
-      # it 'logs there are bad cross document links' do
-      #   expect(outputs[-1]).to include('Bad cross-document links:')
-      # end
-      # it 'logs the bad link' do
-      #   expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
-      #     Kibana [master]: src/core/public/doc_links/doc_links_service.ts
-      #  contains broken links to:
-      #      - #{url}
-      #   LOG
-      # end
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - #{url}
+        LOG
+      end
     end
     describe 'when all of the links are intact' do
       convert_before do |src, dest|
