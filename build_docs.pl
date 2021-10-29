@@ -330,7 +330,7 @@ sub check_links {
 
     $link_checker->check;
 
-    check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
+    # check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     if ( $link_checker->has_bad ) {
         say $link_checker->report;
     }
