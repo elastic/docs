@@ -418,6 +418,13 @@ sub check_kibana_links {
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
             $links_file = "src/core/public/doc_links/doc_links_service.ts";
+            # @branches is looping through the directories in the output (which
+            # is still `master`), but we need to look in the `main` branch of
+            # the Kibana repo for this file.
+            #
+            # TODO: remove as part of
+            # https://github.com/elastic/docs/issues/2264
+            $branch = "main" if $branch == "master";
             $repo->show_file( $link_check_name, $branch, $links_file );
         };
         die "failed to find kibana links file;\n$@" unless $source;
