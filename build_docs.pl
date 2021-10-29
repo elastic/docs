@@ -363,7 +363,7 @@ sub check_kibana_links {
         return sub {
             # We want all links from the Kibana "main" branch to still go to "master" URLs
             # TODO: remove as part of https://github.com/elastic/docs/issues/2264
-            $branch = "master" if $branch == "main";
+            $branch = "master" if $branch eq "main";
             while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
@@ -424,7 +424,7 @@ sub check_kibana_links {
             #
             # TODO: remove as part of
             # https://github.com/elastic/docs/issues/2264
-            $branch = "main" if $branch == "master";
+            $branch = "main" if $branch eq "master";
             $repo->show_file( $link_check_name, $branch, $links_file );
         };
         die "failed to find kibana links file;\n$@" unless $source;
