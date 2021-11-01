@@ -52,9 +52,9 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
 
       # TODO: remove as part of https://github.com/elastic/docs/issues/2264
-      book.branches = [{"main": "master"}]
-      book.live_branches = ["main"]
-      book.current_branch = "main"
+      book.branches = [{ "main": 'master' }]
+      book.live_branches = ['main']
+      book.current_branch = 'main'
 
       convert = dest.prepare_convert_all src.conf
       convert.skip_link_check unless check_links
@@ -247,9 +247,9 @@ RSpec.describe 'building all books' do
           kibana_book.source kibana_repo, 'index.asciidoc'
 
           # TODO: remove as part of https://github.com/elastic/docs/issues/2264
-          kibana_book.branches = [{"main": "master"}]
-          kibana_book.live_branches = ["main"]
-          kibana_book.current_branch = "main"
+          kibana_book.branches = [{ "main": 'master' }]
+          kibana_book.live_branches = ['main']
+          kibana_book.current_branch = 'main'
 
           repo2 = src.repo_with_index 'repo2', "Also doesn't matter"
 
@@ -260,9 +260,9 @@ RSpec.describe 'building all books' do
           book2.source repo2, 'index.asciidoc'
 
           # TODO: remove as part of https://github.com/elastic/docs/issues/2264
-          book2.branches = [{"main": "master"}]
-          book2.live_branches = ["main"]
-          book2.current_branch = "main"
+          book2.branches = [{ "main": 'master' }]
+          book2.live_branches = ['main']
+          book2.current_branch = 'main'
 
           dest.prepare_convert_all(src.conf).convert
 

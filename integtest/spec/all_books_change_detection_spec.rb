@@ -334,9 +334,9 @@ RSpec.describe 'building all books' do
               kibana_book.source kibana_repo, 'index.asciidoc'
 
               # TODO: remove as part of https://github.com/elastic/docs/issues/2264
-              kibana_book.branches = [{"main": "master"}]
-              kibana_book.live_branches = ["main"]
-              kibana_book.current_branch = "main"
+              kibana_book.branches = [{ "main": 'master' }]
+              kibana_book.live_branches = ['main']
+              kibana_book.current_branch = 'main'
             end
           )
           include_examples 'second build is noop'
