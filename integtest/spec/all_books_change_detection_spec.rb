@@ -320,6 +320,11 @@ RSpec.describe 'building all books' do
               # 2. A special links file in the repo
               # 3. A book at `en/kibana`
               kibana_repo = src.repo_with_index 'kibana', 'words'
+
+              # TODO: remove as part of https://github.com/elastic/docs/issues/2264,
+              # and make "main" the default branch for all repos.
+              kibana_repo.rename_branch 'main'
+
               kibana_repo.write(
                 'src/core/public/doc_links/doc_links_service.ts',
                 'text but no links actually'
@@ -327,6 +332,11 @@ RSpec.describe 'building all books' do
               kibana_repo.commit 'add links file'
               kibana_book = src.book 'Kibana', prefix: 'en/kibana'
               kibana_book.source kibana_repo, 'index.asciidoc'
+
+              # TODO: remove as part of https://github.com/elastic/docs/issues/2264
+              kibana_book.branches = [{"main": "master"}]
+              kibana_book.live_branches = ["main"]
+              kibana_book.current_branch = "main"
             end
           )
           include_examples 'second build is noop'
