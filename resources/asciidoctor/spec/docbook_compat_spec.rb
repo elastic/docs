@@ -592,7 +592,8 @@ RSpec.describe DocbookCompat do
       end
       context 'the header' do
         let(:xpack_tag) do
-          if input.include? '.xpack'
+          if (input.include? '.xpack') &&
+             (!input.include? ':hide-xpack-tags: true')
             '<a class="xpack_tag" href="/subscriptions"></a>'
           else
             ''
@@ -623,6 +624,21 @@ RSpec.describe DocbookCompat do
           ASCIIDOC
         end
         include_examples 'section basics', 'chapter xpack', 1, '_s1', 'S1'
+        context 'with the hide-xpack-tags attribute' do
+          let(:input) do
+            <<~ASCIIDOC
+              :hide-xpack-tags: true
+
+              [.xpack]
+              == Some XPack Feature
+            ASCIIDOC
+          end
+          # Because the block is marked with the `xpack` role, the surrounding
+          # <div> will still have the "xpack" class. But the clickable icon
+          # should be hidden.
+          include_examples 'section basics', 'chapter xpack', 1,
+                           '_some_xpack_feature', 'Some XPack Feature'
+        end
       end
     end
 

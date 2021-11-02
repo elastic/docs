@@ -70,7 +70,7 @@ alias docbldsoold=docbldso
 alias docbldaz='$GIT_HOME/docs/build_docs --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 1 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide'
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide'
 
 alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/metrics/index.asciidoc --chunk 1'
 
@@ -143,6 +143,8 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/doc
 alias docbldfdg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/fleet-developer/index.asciidoc --chunk 2'
 
 # APM
+alias docbldapm='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --chunk 2'
+
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
 
 alias docbldamr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
@@ -174,6 +176,8 @@ alias docbldres='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/re
 alias docbldpls='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/painless/index.asciidoc --chunk 1'
 
 alias docbldepi='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/plugins/index.asciidoc --chunk 2'
+
+alias docbldjva='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-java/docs/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/java-rest --resource=$GIT_HOME/elasticsearch/client --chunk 1'
 
 alias docbldjvr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/java-rest/index.asciidoc --chunk 1'
 
