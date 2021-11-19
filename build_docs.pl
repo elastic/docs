@@ -362,6 +362,8 @@ sub check_kibana_links {
 # ${SECURITY_SOLUTION_DOCS}sec-requirements.html
 # ${STACK_GETTING_STARTED}get-started-elastic-stack.html
 # ${APP_SEARCH_DOCS}authentication.html
+# ${ENTERPRISE_SEARCH_DOCS}authentication.html
+# ${WORKPLACE_SEARCH_DOCS}workplace-search-getting-started.html
 
     my $extractor = sub {
         my $contents = shift;
