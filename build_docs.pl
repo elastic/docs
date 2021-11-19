@@ -361,11 +361,12 @@ sub check_kibana_links {
 # ${STACK_DOCS}upgrading-elastic-stack.html
 # ${SECURITY_SOLUTION_DOCS}sec-requirements.html
 # ${STACK_GETTING_STARTED}get-started-elastic-stack.html
+# ${APP_SEARCH_DOCS}authentication.html
 
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED|APP_SEARCH_DOCS|ENTERPRISE_SEARCH_DOCS|WORKPLACE_SEARCH_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$version/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
@@ -380,6 +381,9 @@ sub check_kibana_links {
                 $path =~ s!\$\{STACK_DOCS\}!en/elastic-stack/$version/!;
                 $path =~ s!\$\{SECURITY_SOLUTION_DOCS\}!en/security/$version/!;
                 $path =~ s!\$\{STACK_GETTING_STARTED\}!en/elastic-stack-get-started/$version/!;
+                $path =~ s!\$\{APP_SEARCH_DOCS\}!en/app-search/$version/!;
+                $path =~ s!\$\{ENTERPRISE_SEARCH_DOCS\}!en/enterprise-search/$version/!;
+                $path =~ s!\$\{WORKPLACE_SEARCH_DOCS\}!en/workplace-search/$version/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
