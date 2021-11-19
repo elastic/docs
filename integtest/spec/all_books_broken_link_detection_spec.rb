@@ -182,6 +182,18 @@ RSpec.describe 'building all books' do
       include_examples 'there are broken links in kibana',
                        'en/elastic-stack/master/not-a-stack-page.html'
     end
+    describe 'when there is a broken Security link' do
+      include_context 'there is a kibana link', true,
+                      '${SECURITY_SOLUTION_DOCS}not-a-security-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/security/master/not-a-security-page.html'
+    end
+    describe 'when there is a broken Stack Getting Started link' do
+      include_context 'there is a kibana link', true,
+                      '${STACK_GETTING_STARTED}not-a-stack-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/elastic-stack-get-started/master/not-a-stack-page.html'
+    end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
         convert_before do |src, dest|
