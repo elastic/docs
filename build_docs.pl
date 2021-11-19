@@ -358,11 +358,12 @@ sub check_kibana_links {
 # ${PLUGIN_DOCS}repository-s3.html
 # ${FLEET_DOCS}fleet-overview.html
 # ${APM_DOCS}overview.html
+# ${STACK_DOCS}upgrading-elastic-stack.html
 
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$version/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
@@ -374,6 +375,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$version/!;
                 $path =~ s!\$\{FLEET_DOCS\}!en/fleet/$version/!;
                 $path =~ s!\$\{APM_DOCS\}!en/apm/!;
+                $path =~ s!\$\{STACK_DOCS\}!en/elastic-stack/$version/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
