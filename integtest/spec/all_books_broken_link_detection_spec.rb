@@ -193,6 +193,7 @@ RSpec.describe 'building all books' do
                       '${STACK_GETTING_STARTED}not-a-page.html', true
       include_examples 'there are broken links in kibana',
                        'en/elastic-stack-get-started/master/not-a-page.html'
+    end
     describe 'when there is a broken App Search link' do
       include_context 'there is a kibana link', true,
                       '${APP_SEARCH_DOCS}not-a-search-page.html', true
