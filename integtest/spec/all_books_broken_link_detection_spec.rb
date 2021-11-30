@@ -36,12 +36,26 @@ RSpec.describe 'building all books' do
       JS
       kibana_repo.commit 'init'
 
+      # TODO: remove as part of https://github.com/elastic/docs/issues/2264,
+      # and make "main" the default branch for all repos.
+      kibana_repo.rename_branch 'main'
+
       # The preview of the book is important here because it is how we detect
       # the versions of kibana to check.
       # TODO: This is probably worth generalizing. Lots of repos reference docs.
       repo = src.repo_with_index 'repo', "Doesn't matter"
+
+      # TODO: remove as part of https://github.com/elastic/docs/issues/2264
+      repo.rename_branch 'main'
+
       book = src.book 'Test', prefix: 'en/kibana'
       book.source repo, 'index.asciidoc'
+
+      # TODO: remove as part of https://github.com/elastic/docs/issues/2264
+      book.branches = [{ "main": 'master' }]
+      book.live_branches = ['main']
+      book.current_branch = 'main'
+
       convert = dest.prepare_convert_all src.conf
       convert.skip_link_check unless check_links
       convert.convert(expect_failure: expect_failure)
@@ -146,9 +160,9 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken ES Plugin link' do
       include_context 'there is a kibana link', true,
-                      '${PLUGIN_DOCS}not-a-valid-plugin.html', true
+                      '${PLUGIN_DOCS}not-valid-plugin.html', true
       include_examples 'there are broken links in kibana',
-                       'en/elasticsearch/plugins/master/not-a-valid-plugin.html'
+                       'en/elasticsearch/plugins/master/not-valid-plugin.html'
     end
     describe 'when there is a broken Fleet link' do
       include_context 'there is a kibana link', true,
@@ -161,6 +175,42 @@ RSpec.describe 'building all books' do
                       '${APM_DOCS}not-an-apm-page.html', true
       include_examples 'there are broken links in kibana',
                        'en/apm/not-an-apm-page.html'
+    end
+    describe 'when there is a broken Stack link' do
+      include_context 'there is a kibana link', true,
+                      '${STACK_DOCS}not-a-stack-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/elastic-stack/master/not-a-stack-page.html'
+    end
+    describe 'when there is a broken Security link' do
+      include_context 'there is a kibana link', true,
+                      '${SECURITY_SOLUTION_DOCS}not-a-security-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/security/master/not-a-security-page.html'
+    end
+    describe 'when there is a broken Stack Getting Started link' do
+      include_context 'there is a kibana link', true,
+                      '${STACK_GETTING_STARTED}not-a-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/elastic-stack-get-started/master/not-a-page.html'
+    end
+    describe 'when there is a broken App Search link' do
+      include_context 'there is a kibana link', true,
+                      '${APP_SEARCH_DOCS}not-a-search-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/app-search/master/not-a-search-page.html'
+    end
+    describe 'when there is a broken Enterprise Search link' do
+      include_context 'there is a kibana link', true,
+                      '${ENTERPRISE_SEARCH_DOCS}not-a-search-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/enterprise-search/master/not-a-search-page.html'
+    end
+    describe 'when there is a broken Workplace Search link' do
+      include_context 'there is a kibana link', true,
+                      '${WORKPLACE_SEARCH_DOCS}not-a-search-page.html', true
+      include_examples 'there are broken links in kibana',
+                       'en/workplace-search/master/not-a-search-page.html'
     end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
@@ -222,13 +272,34 @@ RSpec.describe 'building all books' do
       describe 'when there is a broken link in kibana' do
         def self.setup(src, dest)
           kibana_repo = src.repo_with_index 'kibana', "Doesn't matter"
+
+          # TODO: remove as part of https://github.com/elastic/docs/issues/2264,
+          # and make "main" the default branch for all repos.
+          kibana_repo.rename_branch 'main'
+
           kibana_repo.write KIBANA_LINKS_FILE, 'no links here'
           kibana_repo.commit 'add empty links file'
           kibana_book = src.book 'Kibana', prefix: 'en/kibana'
           kibana_book.source kibana_repo, 'index.asciidoc'
+
+          # TODO: remove as part of https://github.com/elastic/docs/issues/2264
+          kibana_book.branches = [{ "main": 'master' }]
+          kibana_book.live_branches = ['main']
+          kibana_book.current_branch = 'main'
+
           repo2 = src.repo_with_index 'repo2', "Also doesn't matter"
+
+          # TODO: remove as part of https://github.com/elastic/docs/issues/2264
+          repo2.rename_branch 'main'
+
           book2 = src.book 'Test2'
           book2.source repo2, 'index.asciidoc'
+
+          # TODO: remove as part of https://github.com/elastic/docs/issues/2264
+          book2.branches = [{ "main": 'master' }]
+          book2.live_branches = ['main']
+          book2.current_branch = 'main'
+
           dest.prepare_convert_all(src.conf).convert
 
           kibana_repo.write KIBANA_LINKS_FILE, <<~JS
@@ -266,7 +337,7 @@ RSpec.describe 'building all books' do
             setup src, dest
             dest.prepare_convert_all(src.conf)
                 .keep_hash
-                .sub_dir(src.repo('kibana'), 'master')
+                .sub_dir(src.repo('kibana'), 'main')
                 .convert(expect_failure: true)
           end
           include_examples 'there are broken links in kibana', 'bar'

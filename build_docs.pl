@@ -346,6 +346,7 @@ sub check_kibana_links {
     my $build_dir    = shift;
     my $link_checker = shift;
     my $branch;
+    my $version;
 
     say "Checking Kibana links";
 
@@ -357,22 +358,34 @@ sub check_kibana_links {
 # ${PLUGIN_DOCS}repository-s3.html
 # ${FLEET_DOCS}fleet-overview.html
 # ${APM_DOCS}overview.html
+# ${STACK_DOCS}upgrading-elastic-stack.html
+# ${SECURITY_SOLUTION_DOCS}sec-requirements.html
+# ${STACK_GETTING_STARTED}get-started-elastic-stack.html
+# ${APP_SEARCH_DOCS}authentication.html
+# ${ENTERPRISE_SEARCH_DOCS}authentication.html
+# ${WORKPLACE_SEARCH_DOCS}workplace-search-getting-started.html
 
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED|APP_SEARCH_DOCS|ENTERPRISE_SEARCH_DOCS|WORKPLACE_SEARCH_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
-                $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$branch/;
+                $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$version/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
                 # the Elasticsearch Guide. In newer branches, the
                 # variable is called `${ELASTICSEARCH_DOCS}`
-                $path =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$branch/!;
-                $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$branch/!;
-                $path =~ s!\$\{KIBANA_DOCS\}!en/kibana/$branch/!;
-                $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$branch/!;
-                $path =~ s!\$\{FLEET_DOCS\}!en/fleet/$branch/!;
+                $path =~ s!\$\{ELASTIC_DOCS\}!en/elasticsearch/reference/$version/!;
+                $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$version/!;
+                $path =~ s!\$\{KIBANA_DOCS\}!en/kibana/$version/!;
+                $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$version/!;
+                $path =~ s!\$\{FLEET_DOCS\}!en/fleet/$version/!;
                 $path =~ s!\$\{APM_DOCS\}!en/apm/!;
+                $path =~ s!\$\{STACK_DOCS\}!en/elastic-stack/$version/!;
+                $path =~ s!\$\{SECURITY_SOLUTION_DOCS\}!en/security/$version/!;
+                $path =~ s!\$\{STACK_GETTING_STARTED\}!en/elastic-stack-get-started/$version/!;
+                $path =~ s!\$\{APP_SEARCH_DOCS\}!en/app-search/$version/!;
+                $path =~ s!\$\{ENTERPRISE_SEARCH_DOCS\}!en/enterprise-search/$version/!;
+                $path =~ s!\$\{WORKPLACE_SEARCH_DOCS\}!en/workplace-search/$version/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
@@ -391,15 +404,22 @@ sub check_kibana_links {
     my $legacy_path = 'src/legacy/ui/public/documentation_links/documentation_links';
     my $repo     = ES::Repo->get_repo('kibana');
 
-    my @branches = sort map { $_->basename }
+    my @versions = sort map { $_->basename }
         grep { $_->is_dir } $build_dir->subdir('en/kibana')->children;
 
     my $link_check_name = 'link-check-kibana';
 
-    for (@branches) {
-        $branch = $_;
-        next if $branch eq 'current' || $branch =~ /^\d/ && $branch lt 5;
-        say "  Branch $branch";
+    for (@versions) {
+        $version = $_;
+        next if $version eq 'current' || $version =~ /^\d/ && $version lt 5;
+        # @versions is looping through the directories in the output (which
+        # still contains `master`), but we need to look in the `main` branch of
+        # the Kibana repo for this file.
+        #
+        # TODO: remove as part of
+        # https://github.com/elastic/docs/issues/2264
+        $branch = $version eq "master" ? "main" : $version;
+        say "  Branch: $branch, Version: $version";
         my $links_file;
         my $source = eval {
             $links_file = $src_path . ".js";
@@ -420,7 +440,7 @@ sub check_kibana_links {
         die "failed to find kibana links file;\n$@" unless $source;
 
         $link_checker->check_source( $source, $extractor,
-            "Kibana [$branch]: $links_file" );
+            "Kibana [$version]: $links_file" );
 
         # Mark the file that we need for the link check done so we can use
         # --keep_hash with it during some other build.

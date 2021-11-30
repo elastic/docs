@@ -1,3 +1,4 @@
+#!/bin/bash
 # Aliases for building the docs.
 
 # Edit your .bash_profile or .zshrc. Copy the following two lines into the file
@@ -7,7 +8,6 @@
 #    export GIT_HOME="/<fullPathTYourRepos>"
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
-
 
 # Elasticsearch
 alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
@@ -171,10 +171,8 @@ alias docbldamphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-php/docs/
 
 alias docbldamios='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-ios/docs/index.asciidoc --chunk 1'
 
-
 # Definitive Guide
 alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
-
 
 # Elasticsearch Extras
 alias docbldres='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/resiliency/index.asciidoc --single --toc'
