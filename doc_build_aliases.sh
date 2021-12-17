@@ -92,11 +92,17 @@ alias docbldeas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pub
 
 alias docbldews='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/workplace-search-docs/index.asciidoc --chunk=1'
 
-alias docbldeesp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-php/docs/guide/index.asciidoc'
+alias docbldeasj='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/app-search-javascript/index.asciidoc --single'
+
+alias docbldeasn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/app-search-node/index.asciidoc --single'
+
+alias docbldeesphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-php/docs/guide/index.asciidoc'
 
 alias docbldeesp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-python/docs/guide/index.asciidoc'
 
 alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ruby/docs/guide/index.asciidoc'
+
+alias docbldewsn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/workplace-search-node/index.asciidoc --single'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
