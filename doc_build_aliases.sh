@@ -92,6 +92,8 @@ alias docbldeas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pub
 
 alias docbldews='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/workplace-search-docs/index.asciidoc --chunk=1'
 
+alias docbldeesp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-php/docs/guide/index.asciidoc'
+
 alias docbldeesp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-python/docs/guide/index.asciidoc'
 
 alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ruby/docs/guide/index.asciidoc'
