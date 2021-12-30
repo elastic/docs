@@ -155,7 +155,7 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/doc
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
 
 # APM
-alias docbldapm='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --chunk 2'
+alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --resource=$GIT_HOME/apm-aws-lambda --chunk 2 --open'
 
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
 
