@@ -74,14 +74,6 @@ alias docbldsoold=docbldso
 alias docbldaz='$GIT_HOME/docs/build_docs --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide'
-
-alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/metrics/index.asciidoc --chunk 1'
-
-alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/logs/index.asciidoc --chunk 1'
-
-alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/uptime/index.asciidoc --chunk 1'
-
 alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/index.asciidoc --resource $GIT_HOME/stack-docs/docs --chunk 1'
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
@@ -103,6 +95,16 @@ alias docbldeesp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-py
 alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ruby/docs/guide/index.asciidoc'
 
 alias docbldewsn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/workplace-search-node/index.asciidoc --single'
+
+# Observability Guide
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide'
+
+# Observability Legacy
+alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/metrics/index.asciidoc --chunk 1'
+
+alias docbldlog='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/logs/index.asciidoc --chunk 1'
+
+alias docbldup='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/uptime/index.asciidoc --chunk 1'
 
 # Curator
 alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/index.asciidoc'
@@ -154,13 +156,10 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/doc
 # Integrations developer guide
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
 
-# APM
+# APM Guide
 alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --resource=$GIT_HOME/apm-aws-lambda --chunk 2 --open'
 
-alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
-
-alias docbldamr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
-
+# APM Agents
 alias docbldamn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1'
 
 alias docbldamp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-python/docs/index.asciidoc --chunk 1'
@@ -178,6 +177,11 @@ alias docbldamnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-dotnet/do
 alias docbldamphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-php/docs/index.asciidoc --chunk 1'
 
 alias docbldamios='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-ios/docs/index.asciidoc --chunk 1'
+
+# APM Legacy
+alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
+
+alias docbldamr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/index.asciidoc --chunk 1'
 
 # Definitive Guide
 alias docblddg='$GIT_HOME/docs/build_docs --suppress_migration_warnings --doc $GIT_HOME/elasticsearch-definitive-guide/book.asciidoc --chunk 1'
@@ -229,7 +233,6 @@ alias docbldx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/x-pack/docs/en/index.as
 alias docbldecs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs/docs/index.asciidoc --chunk 2'
 
 # ECS logging
-
 alias docbldecslg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging/docs/index.asciidoc --chunk 1'
 
 alias docbldecslrs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-logrus/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
