@@ -140,11 +140,11 @@ alias docbldfnb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 
 alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
 
-# Fleet user guide
+# Fleet and Elastic Agent guide
 alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/apm-server/docs --chunk 2'
 
-# Fleet developer guide
-alias docbldfdg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/fleet-developer/index.asciidoc --chunk 2'
+# Integrations developer guide
+alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
 
 # APM
 alias docbldapm='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --chunk 2'
@@ -210,6 +210,8 @@ alias docbldecc='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/co
 alias docbldesh='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
 alias docbldela='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-eland-docs/docs/en/index.asciidoc --chunk 1'
+
+alias docbldejsl='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-js-legacy/docs/index.asciidoc --chunk 1'
 
 # X-Pack Reference 5.4 to 6.2
 
