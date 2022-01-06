@@ -36,7 +36,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       [:beta, 'beta', BETA_DEFAULT_TEXT],
       [:dev, 'dev', DEV_DEFAULT_TEXT],
       [:experimental, 'experimental', EXPERIMENTAL_DEFAULT_TEXT],
-      [:preview, 'experimental', PREVIEW_DEFAULT_TEXT],
+      [:preview, 'preview', PREVIEW_DEFAULT_TEXT],
     ].each do |(name, role, default_text)|
       registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
       registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
