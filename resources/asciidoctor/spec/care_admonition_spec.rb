@@ -247,7 +247,17 @@ RSpec.describe CareAdmonition do
     let(:admon_class) { 'warning' }
     let(:default_text) do
       <<~TEXT.strip
-        This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+        This functionality is in technical preview and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
+      TEXT
+    end
+    include_examples 'care admonition'
+  end
+  context 'preview' do
+    let(:key) { 'preview' }
+    let(:admon_class) { 'warning' }
+    let(:default_text) do
+      <<~TEXT.strip
+        This functionality is in technical preview and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
       TEXT
     end
     include_examples 'care admonition'

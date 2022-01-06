@@ -22,7 +22,10 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
   TEXT
   EXPERIMENTAL_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+    This functionality is in technical preview and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
+  TEXT
+  PREVIEW_DEFAULT_TEXT = <<~TEXT.strip
+    This functionality is in technical preview and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
   TEXT
 
   def activate(registry)
@@ -30,6 +33,8 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       [:beta, 'beta', BETA_DEFAULT_TEXT],
       [:dev, 'dev', DEV_DEFAULT_TEXT],
       [:experimental, 'experimental', EXPERIMENTAL_DEFAULT_TEXT],
+      [:preview, 'experimental', PREVIEW_DEFAULT_TEXT],
+
     ].each do |(name, role, default_text)|
       registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
       registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
