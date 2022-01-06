@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-
 require 'asciidoctor/extensions'
 
 ##
@@ -17,7 +16,6 @@ require 'asciidoctor/extensions'
 # !! `experimental:[]` is supported as deprecated alternative to `preview:[]`. 
 # !! But please use `preview:[]` instead.
 #
-
 
 class CareAdmonition < Asciidoctor::Extensions::Group
   BETA_DEFAULT_TEXT = <<~TEXT.strip
