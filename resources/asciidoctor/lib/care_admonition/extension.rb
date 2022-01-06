@@ -13,7 +13,7 @@ require 'asciidoctor/extensions'
 #   Foo beta:[]
 #   Foo dev:[]
 #   
-# !! experimental is deprecated, use preview
+# !! `experimental:[]` is supported as deprecated alternative to `preview:[]`. But please use `preview:[]` instead.
 #
 
 
