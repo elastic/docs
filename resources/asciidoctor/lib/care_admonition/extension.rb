@@ -12,8 +12,10 @@ require 'asciidoctor/extensions'
 #   preview::[]
 #   Foo beta:[]
 #   Foo dev:[]
+#   Foo preview:[]
 #   
-# !! `experimental:[]` is supported as deprecated alternative to `preview:[]`. But please use `preview:[]` instead.
+# !! `experimental:[]` is supported as deprecated alternative to `preview:[]`. 
+# !! But please use `preview:[]` instead.
 #
 
 
@@ -23,9 +25,6 @@ class CareAdmonition < Asciidoctor::Extensions::Group
   TEXT
   DEV_DEFAULT_TEXT = <<~TEXT.strip
     This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
-  TEXT
-  EXPERIMENTAL_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is in technical preview and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
   TEXT
   PREVIEW_DEFAULT_TEXT = <<~TEXT.strip
     This functionality is in technical preview and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
