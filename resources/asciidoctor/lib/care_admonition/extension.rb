@@ -14,7 +14,7 @@ require 'asciidoctor/extensions'
 #   Foo dev:[]
 #   Foo preview:[]
 #   
-# !! `experimental:[]` is supported as deprecated alternative to `preview:[]`. 
+# !! `experimental:[]` is supported as a deprecated alternative to `preview:[]`.
 # !! But please use `preview:[]` instead.
 #
 
