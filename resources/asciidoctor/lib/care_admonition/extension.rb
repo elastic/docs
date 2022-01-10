@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'asciidoctor/extensions'
 
 ##
@@ -25,7 +26,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
   TEXT
   PREVIEW_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is in technical preview and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
+    This functionality is in technical preview and may be changed or removed in a future release. Elastic will apply best effort to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
   TEXT
 
   def activate(registry)
