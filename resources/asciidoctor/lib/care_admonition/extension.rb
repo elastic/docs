@@ -3,7 +3,7 @@
 require 'asciidoctor/extensions'
 
 ##
-# Extensions for marking when something as `beta`, `dev`, or technical `preview`.
+# Extensions for marking something as `beta`, `dev`, or technical `preview`.
 #
 # Usage
 #
@@ -13,11 +13,10 @@ require 'asciidoctor/extensions'
 #   Foo beta:[]
 #   Foo dev:[]
 #   Foo preview:[]
-#   
+#
 # !! `experimental:[]` is supported as a deprecated alternative to `preview:[]`.
 # !! But please use `preview:[]` instead.
 #
-
 class CareAdmonition < Asciidoctor::Extensions::Group
   BETA_DEFAULT_TEXT = <<~TEXT.strip
     This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
