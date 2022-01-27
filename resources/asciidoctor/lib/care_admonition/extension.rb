@@ -3,16 +3,19 @@
 require 'asciidoctor/extensions'
 
 ##
-# Extensions for marking when something as `beta`, `dev`, or `experimental`.
+# Extensions for marking something as `beta`, `dev`, or technical `preview`.
 #
 # Usage
 #
 #   beta::[]
 #   dev::[]
-#   experimental::[]
+#   preview::[]
 #   Foo beta:[]
 #   Foo dev:[]
-#   Foo experimental:[]
+#   Foo preview:[]
+#
+# !! `experimental:[]` is supported as a deprecated alternative to `preview:[]`.
+# !! But please use `preview:[]` instead.
 #
 class CareAdmonition < Asciidoctor::Extensions::Group
   BETA_DEFAULT_TEXT = <<~TEXT.strip
@@ -21,15 +24,16 @@ class CareAdmonition < Asciidoctor::Extensions::Group
   DEV_DEFAULT_TEXT = <<~TEXT.strip
     This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
   TEXT
-  EXPERIMENTAL_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is experimental and may be changed or removed completely in a future release. Elastic will take a best effort approach to fix any issues, but experimental features are not subject to the support SLA of official GA features.
+  PREVIEW_DEFAULT_TEXT = <<~TEXT.strip
+    This functionality is in technical preview and may be changed or removed in a future release. Elastic will apply best effort to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
   TEXT
 
   def activate(registry)
     [
       [:beta, 'beta', BETA_DEFAULT_TEXT],
       [:dev, 'dev', DEV_DEFAULT_TEXT],
-      [:experimental, 'experimental', EXPERIMENTAL_DEFAULT_TEXT],
+      [:experimental, 'experimental', PREVIEW_DEFAULT_TEXT],
+      [:preview, 'preview', PREVIEW_DEFAULT_TEXT],
     ].each do |(name, role, default_text)|
       registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
       registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
