@@ -425,9 +425,6 @@ sub check_kibana_links {
             $links_file = "packages/kbn-doc-links/src/get_doc_links.ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
-            $links_file = "src/core/public/doc_links/doc_links_service.ts";
-            $repo->show_file( $link_check_name, $branch, $links_file );
-        } || eval {
             $links_file = $src_path . ".js";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
@@ -438,6 +435,9 @@ sub check_kibana_links {
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
             $links_file = $legacy_path . ".ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
+            $links_file = "src/core/public/doc_links/doc_links_service.ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         };
         die "failed to find kibana links file;\n$@" unless $source;
