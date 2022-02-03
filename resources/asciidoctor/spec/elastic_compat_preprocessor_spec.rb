@@ -148,7 +148,7 @@ RSpec.describe ElasticCompatPreprocessor do
     context 'for experimental' do
       include_context 'care admonition'
       let(:name) { 'experimental' }
-      let(:inline_admon_class) { 'experimental' }
+      let(:inline_admon_class) { 'preview' }
     end
   end
 
