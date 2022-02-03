@@ -422,6 +422,9 @@ sub check_kibana_links {
         say "  Branch: $branch, Version: $version";
         my $links_file;
         my $source = eval {
+            $links_file = "packages/kbn-doc-links/src/get_doc_links.ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
             $links_file = $src_path . ".js";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
