@@ -243,7 +243,7 @@ RSpec.describe CareAdmonition do
     include_examples 'care admonition'
   end
   context 'experimental' do
-    let(:key) { 'experimental' }
+    let(:key) { 'preview' }
     let(:admon_class) { 'warning' }
     let(:default_text) do
       <<~TEXT.strip
