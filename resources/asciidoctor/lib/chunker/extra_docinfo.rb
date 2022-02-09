@@ -24,7 +24,7 @@ module Chunker
         link_rel('up', attributes['up_section']),
         link_rel('prev', attributes['prev_section']),
         link_rel('next', attributes['next_section']),
-        link_rel('canonical', attributes['canonical-url'])
+        link_rel('canonical', attributes['canonical-url']),
       ].compact.join "\n"
     end
 
