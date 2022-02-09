@@ -529,6 +529,38 @@ RSpec.describe Chunker do
           end
         end
       end
+      context 'the section has a canonical link' do
+        let(:input) do
+          <<~ASCIIDOC
+            = Title
+
+            [id="otd",canonical-url="bazbar"]
+            == Outdated
+
+            [[current]]
+            == Current
+
+            Words.
+          ASCIIDOC
+        end
+        file_context 'first subpage', 'otd.html' do
+          let(:next_title) { "Current" }
+          include_examples 'standard page', 'index', 'current'
+          it 'contains a <link rel="canonical" ...> header tag' do
+            expect(contents).to include <<~HTML
+              <link rel="canonical" href="bazbar"/>
+            HTML
+          end
+        end
+        file_context 'second subpage', 'current.html' do
+          let(:prev_title) { "Outdated" }
+          include_examples 'standard page', 'otd', nil
+          it 'does not contains a canonical header tag' do
+            expect(contents).not_to include "canonical"
+            expect(contents).not_to include "bazbar"
+          end
+        end
+      end
     end
     context 'when chunk level is 2' do
       let(:convert_attributes) do
