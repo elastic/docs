@@ -96,6 +96,7 @@ RSpec.describe DocbookCompat do
           <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
           </div>
           <hr>
+          <!--EXTRA-->
           </div>
         HTML
       end
@@ -117,6 +118,7 @@ RSpec.describe DocbookCompat do
             <div><h1 class="title"><a id="title-id"></a>Title</h1></div>
             </div>
             <hr>
+            <!--EXTRA-->
             </div>
           HTML
         end
@@ -152,6 +154,7 @@ RSpec.describe DocbookCompat do
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             </div>
             <hr>
+            <!--EXTRA-->
           HTML
         end
       end
@@ -159,6 +162,7 @@ RSpec.describe DocbookCompat do
         it 'is outside the titlepage' do
           expect(converted).to include(<<~HTML)
             <hr>
+            <!--EXTRA-->
             </div>
             <div id="content">
             <!--START_TOC-->
@@ -355,6 +359,7 @@ RSpec.describe DocbookCompat do
             <div><h2 class="subtitle">Subtitle</h2></div>
             </div>
             <hr>
+            <!--EXTRA-->
             </div>
           HTML
         end
@@ -381,6 +386,7 @@ RSpec.describe DocbookCompat do
             <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
             </div>
             <hr>
+            <!--EXTRA-->
             </div>
           HTML
         end

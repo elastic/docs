@@ -513,6 +513,7 @@ RSpec.describe 'building all books' do
     file_context 'the toc', 'raw/index.html' do
       it 'includes the extra html' do
         expect(contents).to include(<<~HTML)
+          <!--EXTRA-->
           <div id="extra">
           <p>extra html</p>
           </div>
