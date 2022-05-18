@@ -224,7 +224,7 @@ alias docbldecc='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/co
 
 alias docbldesh='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/index.adoc'
 
-alias docbldela='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-eland-docs/docs/en/index.asciidoc --chunk 1'
+alias docbldela='$GIT_HOME/docs/build_docs --doc $GIT_HOME/eland/docs/guide/index.asciidoc --chunk 1'
 
 alias docbldejsl='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch-js-legacy/docs/index.asciidoc --chunk 1'
 
