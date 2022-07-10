@@ -92,6 +92,9 @@ RSpec.describe DocbookCompat do
       it "is wrapped in docbook's funny titlepage" do
         expect(converted).to include(<<~HTML)
           <div class="titlepage">
+          <div class="breadcrumbs" id="title-page-breadcrumb">
+          <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span>
+          </div>
           <div>
           <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
           </div>
@@ -114,6 +117,9 @@ RSpec.describe DocbookCompat do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="title-id"></a>Title</h1></div>
             </div>
@@ -150,6 +156,9 @@ RSpec.describe DocbookCompat do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             </div>
@@ -354,6 +363,9 @@ RSpec.describe DocbookCompat do
         it 'includes the title and subtitle' do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             <div><h2 class="subtitle">Subtitle</h2></div>
@@ -382,6 +394,9 @@ RSpec.describe DocbookCompat do
         it 'includes the title and subtitle' do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
             </div>
