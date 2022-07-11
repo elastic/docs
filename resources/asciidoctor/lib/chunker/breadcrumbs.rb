@@ -25,7 +25,7 @@ module Chunker
           <span class="breadcrumb-link"><a #{link_href parent}>#{parent.title}#{extra}</a></span>
         HTML
         next_links = first_link + <<~HTML.strip
-          <span class="material-symbols-outlined">chevron_right</span>
+          <span class="chevron-right">›</span>
         HTML
         # This prevents a chevron from being placed after the last breadcrumb
         links = first == true ? first_link : next_links
@@ -33,8 +33,7 @@ module Chunker
         first = false
       end
       result << <<~HTML.strip
-        <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span>
-        <span class="material-symbols-outlined">chevron_right</span>
+        <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span><span class="chevron-right">›</span>
       HTML
       result
     end
