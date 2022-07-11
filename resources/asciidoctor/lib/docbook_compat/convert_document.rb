@@ -65,7 +65,7 @@ module DocbookCompat
       header_start = <<~HTML
         <div class="titlepage">
         <div class="breadcrumbs" id="title-page-breadcrumb">
-        <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span>
+        <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
         </div>
         #{docbook_style_title doc, title}
       HTML

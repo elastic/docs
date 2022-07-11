@@ -33,7 +33,7 @@ module Chunker
         first = false
       end
       result << <<~HTML.strip
-        <span class="breadcrumb-link"><a href="/guide/">Docs home</a></span><span class="chevron-right">›</span>
+        <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span><span class="chevron-right">›</span>
       HTML
       result
     end
