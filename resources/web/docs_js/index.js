@@ -19,10 +19,10 @@ import "../../../../../node_modules/details-polyfill";
 // Add support for URLSearchParams Web API in IE
 import "../../../../../node_modules/url-search-params-polyfill";
 
-export function init_headers(right_col, lang_strings) {
+export function init_headers(sticky_content, lang_strings) {
   // Add on-this-page block
-  var this_page = $('<div id="this_page"></div>').prependTo(right_col);
-  this_page.append('<h2>' + lang_strings('On this page') + '</h2>');
+  var this_page = $('<div id="this_page"></div>').prependTo(sticky_content);
+  this_page.append('<p id="otp">' + lang_strings('On this page') + '</p>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
   var baseHeadingLevel = 0;
@@ -57,7 +57,7 @@ export function init_headers(right_col, lang_strings) {
             .remove();
           var text = title_container.html();
           const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const li = '<li id="otp-text" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
@@ -170,6 +170,27 @@ function init_toc(lang_strings) {
     });
 }
 
+function highlight_otp() {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
+
+      if (entry.intersectionRatio > 0){
+        console.log("ir", entry.intersectionRatio)
+        element.classList.add('active');
+      } else {
+        element.classList.remove('active');
+      }
+    })
+  })
+
+  document.querySelectorAll('#guide a[id]').forEach((heading) => {
+    console.log("heading", heading);
+    observer.observe(heading);
+  })
+}
+
 // Main function, runs on DOM ready
 $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
@@ -228,7 +249,9 @@ $(function() {
 
   AlternativeSwitcher(store());
 
-  var right_col = $('#right_col'); // Move rtp container to top right and make visible
+  var sticky_content = $('#sticky_content'); // Move rtp container to top right and make visible
+  var elastic_footer = $('#elastic-footer');
+  var left_col = $('#left_col'); // Move OTP to top left
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
     utils.get_current_page_in_version('current');
@@ -271,11 +294,12 @@ $(function() {
   if (div.length == 0 && $('#guide').find('div.article,div.book').length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = $.get(url, {}, function(data) {
-      right_col.append(data);
+      left_col.append(data);
       init_toc(LangStrings);
       utils.open_current(location.pathname);
     }).always(function() {
-      init_headers(right_col, LangStrings);
+      init_headers(sticky_content, LangStrings);
+      highlight_otp();
     });
   } else {
     init_toc(LangStrings);
