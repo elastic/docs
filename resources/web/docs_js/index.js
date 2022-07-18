@@ -250,7 +250,6 @@ $(function() {
   AlternativeSwitcher(store());
 
   var sticky_content = $('#sticky_content'); // Move rtp container to top right and make visible
-  var elastic_footer = $('#elastic-footer');
   var left_col = $('#left_col'); // Move OTP to top left
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
