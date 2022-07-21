@@ -22,7 +22,7 @@ import "../../../../../node_modules/url-search-params-polyfill";
 export function init_headers(sticky_content, lang_strings) {
   // Add on-this-page block
   var this_page = $('<div id="this_page"></div>').prependTo(sticky_content);
-  this_page.append('<p id="otp">' + lang_strings('On this page') + '</p>');
+  this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
   var baseHeadingLevel = 0;
@@ -57,7 +57,7 @@ export function init_headers(sticky_content, lang_strings) {
             .remove();
           var text = title_container.html();
           const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li id="otp-text" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const li = '<li id="otp-text-' + i + '" class="otp-text heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
@@ -171,16 +171,24 @@ function init_toc(lang_strings) {
 }
 
 function highlight_otp() {
+  let visibileHeadings = []
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const id = entry.target.getAttribute('id');
-      const element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
-
+      let element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
+      let itemId = $(element).parent().attr('id')
       if (entry.intersectionRatio > 0){
-        console.log("ir", entry.intersectionRatio)
-        element.classList.add('active');
+        visibileHeadings.push(itemId);
       } else {
-        element.classList.remove('active');
+        const position = visibileHeadings.indexOf(itemId);
+        visibileHeadings.splice(position, position + 1)
+      }
+      if (visibileHeadings.length > 0) {
+        visibileHeadings.sort()
+        // Remove existing active classes
+        $('a.active').removeClass("active");
+        // Add active class to the first visible heading
+        $('#' + visibileHeadings[0] + ' > a').addClass('active')
       }
     })
   })
