@@ -259,6 +259,8 @@ $(function() {
 
   var sticky_content = $('#sticky_content'); // Move rtp container to top right and make visible
   var left_col = $('#left_col'); // Move OTP to top left
+  var middle_col = $('#middle_col');
+  var right_col = $('#right_col');
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
     utils.get_current_page_in_version('current');
@@ -310,6 +312,9 @@ $(function() {
     });
   } else {
     init_toc(LangStrings);
+    left_col.removeClass().addClass('col-0')
+    middle_col.removeClass().addClass('col-12 col-md-9 guide-section')
+    right_col.removeClass().addClass('col-12 col-md-3 sticky-top h-almost-full')
   }
 
   PR.prettyPrint();
