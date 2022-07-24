@@ -261,6 +261,7 @@ $(function() {
   var left_col = $('#left_col'); // Move OTP to top left
   var middle_col = $('#middle_col');
   var right_col = $('#right_col');
+  var bottom_left_col = $('#bottom_left_col')
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
     utils.get_current_page_in_version('current');
@@ -313,8 +314,9 @@ $(function() {
   } else {
     init_toc(LangStrings);
     left_col.removeClass().addClass('col-0')
-    middle_col.removeClass().addClass('col-12 col-md-9 guide-section')
-    right_col.removeClass().addClass('col-12 col-md-3 sticky-top h-almost-full')
+    bottom_left_col.removeClass().addClass('col-0')
+    middle_col.removeClass().addClass('col-12 col-lg-9 guide-section')
+    right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg')
   }
 
   PR.prettyPrint();
