@@ -64,6 +64,9 @@ module DocbookCompat
       # closing </div>.
       header_start = <<~HTML
         <div class="titlepage">
+        <div class="breadcrumbs" id="title-page-breadcrumb">
+        <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+        </div>
         #{docbook_style_title doc, title}
       HTML
       html.gsub!(%r{<div id="header">\n<h1>.+?</h1>\n}m, header_start) ||
