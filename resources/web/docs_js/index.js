@@ -57,7 +57,7 @@ export function init_headers(sticky_content, lang_strings) {
             .remove();
           var text = title_container.html();
           const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li id="otp-text-' + i + '" class="otp-text heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
