@@ -337,6 +337,18 @@ $(function() {
     $('a.edit_me_private').show();
   }
 
+  // scroll to selected TOC element
+  // if it doesn't exist yet, wait and try again
+  var scrollToSelectedTOC = setInterval(() => {
+    if ($('.current_page').length) {
+      $('.current_page')[0].scrollIntoView({
+        behavior: "auto",
+        block: "center"
+      });
+      clearInterval(scrollToSelectedTOC);
+    }
+ }, 150);
+
   // Test comment used to detect unminifed JS in tests
 });
 
