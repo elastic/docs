@@ -194,7 +194,6 @@ function highlight_otp() {
   })
 
   document.querySelectorAll('#guide a[id]').forEach((heading) => {
-    console.log("heading", heading);
     observer.observe(heading);
   })
 }
