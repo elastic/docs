@@ -175,20 +175,21 @@ function highlight_otp() {
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const id = entry.target.getAttribute('id');
-      let element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
-      let itemId = $(element).parent().attr('id')
+      const element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
+      const itemId = $(element).parent().attr('id')
+      const itemNumber = parseInt(itemId.match(/\d+/)[0], 10);
       if (entry.intersectionRatio > 0){
-        visibileHeadings.push(itemId);
+        visibileHeadings.push(itemNumber);
       } else {
-        const position = visibileHeadings.indexOf(itemId);
-        visibileHeadings.splice(position, position + 1)
+        const position = visibileHeadings.indexOf(itemNumber);
+        visibileHeadings.splice(position, 1)
       }
       if (visibileHeadings.length > 0) {
-        visibileHeadings.sort()
+        visibileHeadings.sort((a, b) => a - b)
         // Remove existing active classes
         $('a.active').removeClass("active");
         // Add active class to the first visible heading
-        $('#' + visibileHeadings[0] + ' > a').addClass('active')
+        $('#otp-text-' + visibileHeadings[0] + ' > a').addClass('active')
       }
     })
   })
