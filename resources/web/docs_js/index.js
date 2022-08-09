@@ -342,10 +342,15 @@ $(function() {
   if($(window).width() >= 769){
     var scrollToSelectedTOC = setInterval(() => {
       if ($('.current_page').length) {
-        $('.current_page')[0].scrollIntoView({
-          behavior: "auto",
-          block: "center"
-        });
+          // Get scrollable element
+          var container = document.querySelector("#left_col");
+          // Get active table of contents element
+          var activeItem = document.querySelector(".current_page")
+          // If the top of the active item is out of view
+          if (container.offsetHeight - 100 <= activeItem.offsetTop) {
+            // Scroll to active item
+            container.scrollTop = activeItem.offsetTop
+          }
         clearInterval(scrollToSelectedTOC);
       }
     }, 150);
