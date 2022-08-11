@@ -718,6 +718,27 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'when a live branch is not in the list of branches' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'repo', 'some text'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.branches = ['master']
+      book.live_branches = ['newer', 'master', 'missing']
+      dest.prepare_convert_all(src.conf).convert(expect_failure: true)
+    end
+    it 'fails with an appropriate error status' do
+      puts outputs
+      expect(statuses[0]).to eq(2)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to include(<<~LOG.strip)
+        Live branch(es) <newer, missing> not in <branches> in book <Test>
+      LOG
+    end
+  end
+
   context 'when run with --announce_preview' do
     target_branch = 'foo_1'
     preview_location = "http://#{target_branch}.docs-preview.app.elstc.co/guide"
