@@ -178,25 +178,30 @@ function init_toc(lang_strings) {
 // If more than one is visible, highlight the heading for the
 // section that is higher on the page.
 function highlight_otp() {
-  let visibileHeadings = []
+  let visibleHeadings = []
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const id = entry.target.getAttribute('id');
       const element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
       const itemId = $(element).parent().attr('id')
-      const itemNumber = parseInt(itemId.match(/\d+/)[0], 10);
-      if (entry.intersectionRatio > 0){
-        visibileHeadings.push(itemNumber);
-      } else {
-        const position = visibileHeadings.indexOf(itemNumber);
-        visibileHeadings.splice(position, 1)
-      }
-      if (visibileHeadings.length > 0) {
-        visibileHeadings.sort((a, b) => a - b)
-        // Remove existing active classes
-        $('a.active').removeClass("active");
-        // Add active class to the first visible heading
-        $('#otp-text-' + visibileHeadings[0] + ' > a').addClass('active')
+      // All heading elements have an `entry` (even the title).
+      // The title does not exist in the OTP, so we must exclude it.
+      // Checking for the existence of `itemId` ensures we don't parse elements that don't exist.
+      if (itemId){
+        const itemNumber = parseInt(itemId.match(/\d+/)[0], 10);
+        if (entry.intersectionRatio > 0){
+          visibleHeadings.push(itemNumber);
+        } else {
+          const position = visibleHeadings.indexOf(itemNumber);
+          visibleHeadings.splice(position, 1)
+        }
+        if (visibleHeadings.length > 0) {
+          visibleHeadings.sort((a, b) => a - b)
+          // Remove existing active classes
+          $('a.active').removeClass("active");
+          // Add active class to the first visible heading
+          $('#otp-text-' + visibleHeadings[0] + ' > a').addClass('active')
+        }
       }
     })
   })
@@ -267,11 +272,11 @@ $(function() {
   // Move rtp container to top right and make visible
   var sticky_content = $('#sticky_content');
   // Left column that contains the TOC
-  var left_col = $('#left_col'); 
+  var left_col = $('#left_col');
   // Middle column that contains the main content
   var middle_col = $('#middle_col');
   // Right column that contains the OTP and demand gen content
-  var right_col = $('#right_col'); 
+  var right_col = $('#right_col');
   // Empty column below TOC on small screens so the demand gen content can be positioned under the main content
   var bottom_left_col = $('#bottom_left_col');
 
