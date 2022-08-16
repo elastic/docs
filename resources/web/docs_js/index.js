@@ -19,6 +19,9 @@ import "../../../../../node_modules/details-polyfill";
 // Add support for URLSearchParams Web API in IE
 import "../../../../../node_modules/url-search-params-polyfill";
 
+// Vocab:
+// TOC = table of contents
+// OTP = on this page
 export function init_headers(sticky_content, lang_strings) {
   // Add on-this-page block
   var this_page = $('<div id="this_page"></div>').prependTo(sticky_content);
@@ -170,6 +173,10 @@ function init_toc(lang_strings) {
     });
 }
 
+// In the OTP, highlight the heading of the section that is
+// currently visible on the page.
+// If more than one is visible, highlight the heading for the
+// section that is higher on the page.
 function highlight_otp() {
   let visibileHeadings = []
   const observer = new IntersectionObserver(entries => {
@@ -257,11 +264,16 @@ $(function() {
 
   AlternativeSwitcher(store());
 
-  var sticky_content = $('#sticky_content'); // Move rtp container to top right and make visible
-  var left_col = $('#left_col'); // Move OTP to top left
+  // Move rtp container to top right and make visible
+  var sticky_content = $('#sticky_content');
+  // Left column that contains the TOC
+  var left_col = $('#left_col'); 
+  // Middle column that contains the main content
   var middle_col = $('#middle_col');
-  var right_col = $('#right_col');
-  var bottom_left_col = $('#bottom_left_col')
+  // Right column that contains the OTP and demand gen content
+  var right_col = $('#right_col'); 
+  // Empty column below TOC on small screens so the demand gen content can be positioned under the main content
+  var bottom_left_col = $('#bottom_left_col');
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
     utils.get_current_page_in_version('current');
@@ -313,10 +325,15 @@ $(function() {
     });
   } else {
     init_toc(LangStrings);
-    left_col.removeClass().addClass('col-0')
-    bottom_left_col.removeClass().addClass('col-0')
-    middle_col.removeClass().addClass('col-12 col-lg-9 guide-section')
-    right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg')
+    // Style book landing page (no main content, just a TOC and demand gen content)
+
+    // Set the width of the left column to zero
+    left_col.removeClass().addClass('col-0');
+    bottom_left_col.removeClass().addClass('col-0');
+    // Set the width of the middle column (containing the TOC) to 9
+    middle_col.removeClass().addClass('col-12 col-lg-9 guide-section');
+    // Set the width of the demand gen content to 3
+    right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
   }
 
   PR.prettyPrint();
@@ -346,7 +363,8 @@ $(function() {
           var container = document.querySelector("#left_col");
           // Get active table of contents element
           var activeItem = document.querySelector(".current_page")
-          // If the top of the active item is out of view
+          // If the top of the active item is out of view (or in the bottom 100px of the visible portion of the TOC)
+          // scroll so the top of the active item is at the top of the visible portion TOC
           if (container.offsetHeight - 100 <= activeItem.offsetTop) {
             // Scroll to active item
             container.scrollTop = activeItem.offsetTop
