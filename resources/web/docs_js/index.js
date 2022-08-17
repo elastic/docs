@@ -19,10 +19,13 @@ import "../../../../../node_modules/details-polyfill";
 // Add support for URLSearchParams Web API in IE
 import "../../../../../node_modules/url-search-params-polyfill";
 
-export function init_headers(right_col, lang_strings) {
+// Vocab:
+// TOC = table of contents
+// OTP = on this page
+export function init_headers(sticky_content, lang_strings) {
   // Add on-this-page block
-  var this_page = $('<div id="this_page"></div>').prependTo(right_col);
-  this_page.append('<h2>' + lang_strings('On this page') + '</h2>');
+  var this_page = $('<div id="this_page"></div>').prependTo(sticky_content);
+  this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
   var baseHeadingLevel = 0;
@@ -57,7 +60,7 @@ export function init_headers(right_col, lang_strings) {
             .remove();
           var text = title_container.html();
           const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
@@ -170,6 +173,44 @@ function init_toc(lang_strings) {
     });
 }
 
+// In the OTP, highlight the heading of the section that is
+// currently visible on the page.
+// If more than one is visible, highlight the heading for the
+// section that is higher on the page.
+function highlight_otp() {
+  let visibleHeadings = []
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
+      const itemId = $(element).parent().attr('id')
+      // All heading elements have an `entry` (even the title).
+      // The title does not exist in the OTP, so we must exclude it.
+      // Checking for the existence of `itemId` ensures we don't parse elements that don't exist.
+      if (itemId){
+        const itemNumber = parseInt(itemId.match(/\d+/)[0], 10);
+        if (entry.intersectionRatio > 0){
+          visibleHeadings.push(itemNumber);
+        } else {
+          const position = visibleHeadings.indexOf(itemNumber);
+          visibleHeadings.splice(position, 1)
+        }
+        if (visibleHeadings.length > 0) {
+          visibleHeadings.sort((a, b) => a - b)
+          // Remove existing active classes
+          $('a.active').removeClass("active");
+          // Add active class to the first visible heading
+          $('#otp-text-' + visibleHeadings[0] + ' > a').addClass('active')
+        }
+      }
+    })
+  })
+
+  document.querySelectorAll('#guide a[id]').forEach((heading) => {
+    observer.observe(heading);
+  })
+}
+
 // Main function, runs on DOM ready
 $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
@@ -228,7 +269,16 @@ $(function() {
 
   AlternativeSwitcher(store());
 
-  var right_col = $('#right_col'); // Move rtp container to top right and make visible
+  // Move rtp container to top right and make visible
+  var sticky_content = $('#sticky_content');
+  // Left column that contains the TOC
+  var left_col = $('#left_col');
+  // Middle column that contains the main content
+  var middle_col = $('#middle_col');
+  // Right column that contains the OTP and demand gen content
+  var right_col = $('#right_col');
+  // Empty column below TOC on small screens so the demand gen content can be positioned under the main content
+  var bottom_left_col = $('#bottom_left_col');
 
   $('.page_header > a[href="../current/index.html"]').click(function() {
     utils.get_current_page_in_version('current');
@@ -271,14 +321,24 @@ $(function() {
   if (div.length == 0 && $('#guide').find('div.article,div.book').length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = $.get(url, {}, function(data) {
-      right_col.append(data);
+      left_col.append(data);
       init_toc(LangStrings);
       utils.open_current(location.pathname);
     }).always(function() {
-      init_headers(right_col, LangStrings);
+      init_headers(sticky_content, LangStrings);
+      highlight_otp();
     });
   } else {
     init_toc(LangStrings);
+    // Style book landing page (no main content, just a TOC and demand gen content)
+
+    // Set the width of the left column to zero
+    left_col.removeClass().addClass('col-0');
+    bottom_left_col.removeClass().addClass('col-0');
+    // Set the width of the middle column (containing the TOC) to 9
+    middle_col.removeClass().addClass('col-12 col-lg-9 guide-section');
+    // Set the width of the demand gen content to 3
+    right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
   }
 
   PR.prettyPrint();
@@ -297,6 +357,26 @@ $(function() {
       || window.location.hash.indexOf('?edit') > -1) {
 
     $('a.edit_me_private').show();
+  }
+
+  // scroll to selected TOC element; if it doesn't exist yet, wait and try again
+  // window.width must match the breakpoint of `.sticky-top-md`
+  if($(window).width() >= 769){
+    var scrollToSelectedTOC = setInterval(() => {
+      if ($('.current_page').length) {
+          // Get scrollable element
+          var container = document.querySelector("#left_col");
+          // Get active table of contents element
+          var activeItem = document.querySelector(".current_page")
+          // If the top of the active item is out of view (or in the bottom 100px of the visible portion of the TOC)
+          // scroll so the top of the active item is at the top of the visible portion TOC
+          if (container.offsetHeight - 100 <= activeItem.offsetTop) {
+            // Scroll to active item
+            container.scrollTop = activeItem.offsetTop
+          }
+        clearInterval(scrollToSelectedTOC);
+      }
+    }, 150);
   }
 
   // Test comment used to detect unminifed JS in tests

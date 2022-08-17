@@ -18,6 +18,7 @@ export function open_current(pathname) {
   var page = pathname.match(/[^\/]+$/)[0];
   var current = $('div.toc a[href="' + page + '"]');
   current.addClass('current_page');
+  current.parent().parent().addClass('current_page_li');
   current.parentsUntil('ul.toc', 'li.collapsible').addClass('show');
 }
 
