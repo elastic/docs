@@ -160,7 +160,7 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/doc
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
 
 # APM Guide
-alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --resource=$GIT_HOME/apm-aws-lambda --chunk 2 --open'
+alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --resource=$GIT_HOME/apm-aws-lambda/ --resource=$GIT_HOME/apm-mutating-webhook/ --chunk 2 --open'
 
 # APM Agents
 alias docbldamn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1 --resource $GIT_HOME/apm-aws-lambda/docs'
