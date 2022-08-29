@@ -32,7 +32,7 @@ alias docbldlsx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 
 alias docbldls=docbldlsx
 
-alias docbldlsk8s='$GIT_HOME/docs/build_docs --doc $GIT_HOME/logstash/docs/k8sdocs/index.asciidoc --chunk 1'
+alias docbldlsk8s='$GIT_HOME/docs/build_docs --doc $GIT_HOME/logstash/docsk8s/index.asciidoc --chunk 1'
 
 # Logstash 6.2 and earlier
 
