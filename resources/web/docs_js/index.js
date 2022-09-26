@@ -212,7 +212,10 @@ function highlight_otp() {
 }
 
 function getUtm() {
-  let qs = new URLSearchParams(window.location.search);
+  const qs = new Proxy(new URLSearchParams(window.location.search), {
+    get: (searchParams, prop) => searchParams.get(prop),
+  })
+
   return {
     'utm_source': qs['utm_source'],
     'utm_medium': qs['utm_medium'],
@@ -407,9 +410,9 @@ $(function() {
 
   window.dataLayer = window.dataLayer || [];
 
-  let titleParams = document.title.split('|')
+  const titleParams = document.title.split('|')
 
-  let pageViewData = {
+  const pageViewData = {
     'event': 'page_view',
     'pagePath': window.location.pathname,
     'pageURL': window.location.href,
