@@ -211,6 +211,32 @@ function highlight_otp() {
   })
 }
 
+function getUtm() {
+  let qs = new URLSearchParams(window.location.search);
+  return {
+    'utm_source': qs['utm_source'],
+    'utm_medium': qs['utm_medium'],
+    'utm_campaign': qs['utm_campaign'],
+    'utm_content': qs['utm_content'],
+    'utm_term': qs['utm_term'],
+    'utm_id': qs['utm_id'],
+  }
+}
+
+function getCookie(cookieName) {
+  let cookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(cookieName + '='));
+  if (cookie == undefined) {
+    return undefined
+  }
+  return cookie.split('=')[1]
+}
+
+function getEuid() {
+  return getCookie('euid')
+}
+
 // Main function, runs on DOM ready
 $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
@@ -378,6 +404,30 @@ $(function() {
       }
     }, 150);
   }
+
+  window.dataLayer = window.dataLayer || [];
+
+  let titleParams = document.title.split('|')
+
+  let pageViewData = {
+    'event': 'page_view',
+    'pagePath': window.location.pathname,
+    'pageURL': window.location.href,
+    'pageTitle': document.title,
+    'pageTemplate': '', // ?
+    'team': 'Docs',
+    'pageCategory': titleParams[titleParams.length - 2].trim(),
+    'hostname': window.location.hostname,
+    'canonicalTag': window.location.protocol + '//' + window.location.hostname + window.location.pathname,
+    'euid': getEuid(),
+    // 'userId': '', // TBD
+    // 'hashedIP': '', // TBD
+    'userAgent': window.navigator.userAgent,
+    ...getUtm()
+  };
+  console.log(pageViewData);
+
+  dataLayer.push(pageViewData);
 
   // Test comment used to detect unminifed JS in tests
 });
