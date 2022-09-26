@@ -428,8 +428,6 @@ $(function() {
     'userAgent': window.navigator.userAgent,
     ...getUtm()
   };
-  console.log(pageViewData);
-
   dataLayer.push(pageViewData);
 
   // Test comment used to detect unminifed JS in tests
