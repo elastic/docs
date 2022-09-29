@@ -364,6 +364,7 @@ sub check_kibana_links {
 # ${APP_SEARCH_DOCS}authentication.html
 # ${ENTERPRISE_SEARCH_DOCS}authentication.html
 # ${WORKPLACE_SEARCH_DOCS}workplace-search-getting-started.html
+# ${MACHINE_LEARNING_DOCS}machine-learning-intro.html
 
     my $extractor = sub {
         my $contents = shift;
@@ -386,6 +387,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{APP_SEARCH_DOCS\}!en/app-search/$version/!;
                 $path =~ s!\$\{ENTERPRISE_SEARCH_DOCS\}!en/enterprise-search/$version/!;
                 $path =~ s!\$\{WORKPLACE_SEARCH_DOCS\}!en/workplace-search/$version/!;
+                $path =~ s!\$\{MACHINE_LEARNING_DOCS\}!en/machine-learning/$version/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
