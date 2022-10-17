@@ -117,6 +117,22 @@ sub new {
     die "Current branch <$current> is not in <branches> in book <$title>"
         unless $branch_titles{$current};
 
+    my $live_branches = $args{live};
+    # If `live` is defined, check if there are any specified branches that
+    # aren't in the list of branches being built.
+    my @difference;
+    foreach my $item (@$live_branches) {
+        push @difference, $item unless grep { $item eq $_ } @branches;
+    }
+
+    # print "Branches: ", join(", ", @branches), "\n";
+    # print "Live: ", join(", ", @$live_branches), "\n";
+    # print "Difference: ", join(", ", @difference), "\n";
+
+    my $missing = join ", ", @difference;
+    die "Live branch(es) <$missing> not in <branches> in book <$title>"
+        if $difference[0];
+
     my $tags = $args{tags}
         or die "No <tags> specified for book <$title>";
 

@@ -32,6 +32,8 @@ alias docbldlsx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 
 alias docbldls=docbldlsx
 
+alias docbldlsk8s='$GIT_HOME/docs/build_docs --doc $GIT_HOME/logstash/docsk8s/index.asciidoc --chunk 1'
+
 # Logstash 6.2 and earlier
 
 alias docbldlsold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/logstash/docs/index.x.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --resource=$GIT_HOME/logstash-extra/x-pack-logstash/docs/ --chunk 1'
@@ -160,7 +162,7 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/doc
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
 
 # APM Guide
-alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --resource=$GIT_HOME/apm-aws-lambda --chunk 2 --open'
+alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --chunk 2 --open'
 
 # APM Agents
 alias docbldamn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1 --resource $GIT_HOME/apm-aws-lambda/docs'
@@ -180,6 +182,10 @@ alias docbldamnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-dotnet/do
 alias docbldamphp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-php/docs/index.asciidoc --chunk 1'
 
 alias docbldamios='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-ios/docs/index.asciidoc --chunk 1'
+
+alias docbldaws='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-aws-lambda/docs/index.asciidoc --chunk 1'
+
+alias docbldamw='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-mutating-webhook/docs/index.asciidoc --chunk 1'
 
 # APM Legacy
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
