@@ -423,8 +423,8 @@ $(function() {
     'hostname': window.location.hostname,
     'canonicalTag': window.location.protocol + '//' + window.location.hostname + window.location.pathname,
     'euid': getEuid(),
-    // 'userId': '', // TBD
-    // 'hashedIP': '', // TBD
+    'userId': getCookie('userId'),
+    'hashedIP': getCookie('hashedIp'),
     'userAgent': window.navigator.userAgent,
     ...getUtm()
   };
