@@ -168,6 +168,8 @@ alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/do
 alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --chunk 2 --open'
 
 # APM Agents
+alias docbldama='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-android/docs/index.asciidoc --chunk 1'
+
 alias docbldamn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-nodejs/docs/index.asciidoc --chunk 1 --resource $GIT_HOME/apm-aws-lambda/docs'
 
 alias docbldamp='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-python/docs/index.asciidoc --chunk 1 --resource $GIT_HOME/apm-aws-lambda/docs'
