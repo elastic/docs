@@ -11,6 +11,7 @@ require_relative 'edit_me/extension'
 require_relative 'elastic_compat_tree_processor/extension'
 require_relative 'elastic_compat_preprocessor/extension'
 require_relative 'elastic_include_tagged/extension'
+require_relative 'glob_include_processor/extension'
 require_relative 'lang_override/extension'
 require_relative 'open_in_widget/extension'
 require_relative 'relativize_link/extension'
@@ -38,5 +39,6 @@ Asciidoctor::Extensions.register do
   # Everything after this must come after ElasticCompatTreeProcessor
   # or they won't see the right tree.
   include_processor ElasticIncludeTagged
+  include_processor GlobIncludeProcessor
 end
 Asciidoctor::Extensions.register AlternativeLanguageLookup
