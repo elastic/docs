@@ -31,7 +31,6 @@ module DocbookCompat
         elastic_compat_meta('is_current_product_version', current_version),
 
         # Not working
-        elastic_compat_meta('content', 'this is blank for now'),
         elastic_compat_meta('thumbnail_image', 'this is blank for now'),
       ]
     end
