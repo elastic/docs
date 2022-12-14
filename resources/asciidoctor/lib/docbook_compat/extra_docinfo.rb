@@ -64,7 +64,7 @@ module DocbookCompat
     end
 
     def current_version
-      attributes['source_branch'] == attributes['current'] ? 100 : 0
+      attributes['source_branch'].to_s == attributes['current'].to_s ? 100 : 0
     end
   end
 end

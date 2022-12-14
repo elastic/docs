@@ -44,7 +44,6 @@ sub build_chunked {
     my $edit_urls = $opts{edit_urls};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
-    my $prefix    = $opts{prefix}        || '';
     my $current   = $opts{current}       || '';
     my $private   = $opts{private}       || '';
     my $resources = $opts{resource}      || [];
@@ -122,8 +121,7 @@ sub build_chunked {
             '-a' => 'dc.type=Learn/Docs/' . $section,
             '-a' => 'dc.subject=' . $subject,
             '-a' => 'dc.identifier=' . $version,
-            '-a' => 'dc.prefix=' . $prefix,
-            '-a' => 'dc.current=' . $current,
+            '-a' => 'current=' . $current,
             $multi ? ( '-a' => "title-extra= [$version]" ) : (),
             $noindex ? ('-a' => 'noindex') : (),
             $page_header ? ('-a' => "page-header=$page_header") : (),
@@ -158,7 +156,6 @@ sub build_single {
     my $edit_urls = $opts{edit_urls};
     my $section   = $opts{section_title} || '';
     my $subject   = $opts{subject}       || '';
-    my $prefix    = $opts{prefix}        || '';
     my $current   = $opts{current}       || '';
     my $private   = $opts{private}       || '';
     my $noindex   = $opts{noindex}       || '';
@@ -229,8 +226,7 @@ sub build_single {
             '-a' => 'dc.type=Learn/Docs/' . $section,
             '-a' => 'dc.subject=' . $subject,
             '-a' => 'dc.identifier=' . $version,
-            '-a' => 'dc.prefix=' . $prefix,
-            '-a' => 'dc.current=' . $current,
+            '-a' => 'current=' . $current,
             $multi ? ( '-a' => "title-extra= [$version]" ) : (),
             $noindex ? ('-a' => 'noindex') : (),
             $page_header ? ('-a' => "page-header=$page_header") : (),
