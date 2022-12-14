@@ -18,11 +18,14 @@ module DocbookCompat
     def extra_docbook_compat_head
 
       # Allows :meta-product-name: to overwrite the product name
-      product_name = attributes['meta-product-name'] ? (attributes['meta-product-name']) : (attributes['dc.subject'])
+      product_name = attributes['meta-product-name'] ?
+        attributes['meta-product-name'] :
+        attributes['dc.subject']
       # Uses docdir attr to match final portion of string after `en/`
-      website_area = attributes['docdir'].scan(/(?<=en\/).*/i)[0].to_s
-      # Assigns the arbitrary value of 100 if the branch being built is "current"
-      current_version_val = attributes['source_branch'] == attributes['current'] ? (100) : (0)
+      website_area = attributes['docdir'].scan(%r{(?<=en\/).*}i)[0].to_s
+      # Assigns the arbitrary value of 100 if the branch built is "current"
+      current_version_val =
+        attributes['source_branch'] == attributes['current'] ? 100 : 0
       # Keeping this for now but will remove later
       # current_version_val = attributes['is-current-version'] ? (100) : (0)
 
@@ -34,8 +37,8 @@ module DocbookCompat
         elastic_compat_meta('is_current_product_version', current_version_val),
 
         # Not working
-        elastic_compat_meta('content', "this is blank for now"),
-        elastic_compat_meta('thumbnail_image', "this is blank for now"),
+        elastic_compat_meta('content', 'this is blank for now'),
+        elastic_compat_meta('thumbnail_image', 'this is blank for now'),
 
         # Legacy docbook meta
         docbook_compat_meta('DC.type', attributes['dc.type']),
@@ -50,6 +53,7 @@ module DocbookCompat
     def docbook_compat_meta(name, content)
       %(<meta name="#{name}" content="#{content}"/>)
     end
+
     def elastic_compat_meta(name, content)
       %(<meta class="elastic" name="#{name}" content="#{content}"/>)
     end
