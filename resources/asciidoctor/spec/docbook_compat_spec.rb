@@ -27,6 +27,7 @@ RSpec.describe DocbookCompat do
         'dc.type' => 'FooType',
         'dc.subject' => 'BarSubject',
         'dc.identifier' => 'BazIdentifier',
+        'docdir' => '/doc/observability-docs/docs/en/observability',
       }
     end
     let(:input) do
@@ -52,6 +53,26 @@ RSpec.describe DocbookCompat do
     it "doesn't declare a generator" do
       expect(converted).not_to include('name="generator"')
     end
+    it 'has an elastic meta content tag' do
+      expect(converted).to include(<<~HTML)
+        <meta class="elastic" name="content" content="observability"/>
+      HTML
+    end
+    it 'has an elastic meta product_name tag' do
+      expect(converted).to include(<<~HTML)
+        <meta class="elastic" name="product_name" content="BarSubject"/>
+      HTML
+    end
+    it 'has an elastic meta product_version tag' do
+      expect(converted).to include(<<~HTML)
+        <meta class="elastic" name="product_version" content="BazIdentifier"/>
+      HTML
+    end
+    it 'has an elastic meta website_area tag' do
+      expect(converted).to include(<<~HTML)
+        <meta class="elastic" name="website_area" content="documentation"/>
+      HTML
+    end
     it 'has DC.type' do
       expect(converted).to include(<<~HTML)
         <meta name="DC.type" content="FooType"/>
@@ -74,7 +95,10 @@ RSpec.describe DocbookCompat do
     end
     context 'the title' do
       it 'includes Elastic' do
-        expect(converted).to include('<title>Title | Elastic</title>')
+        expect(converted).to include(<<~HTML)
+          <title>Title | Elastic</title>
+          <meta class="elastic" name="content" content="Title">
+        HTML
       end
     end
     context 'the body' do
@@ -356,7 +380,10 @@ RSpec.describe DocbookCompat do
       end
       context 'the title' do
         it "doesn't include the subtitle" do
-          expect(converted).to include('<title>Title | Elastic</title>')
+          expect(converted).to include(<<~HTML)
+            <title>Title | Elastic</title>
+            <meta class="elastic" name="content" content="Title">
+          HTML
         end
       end
       context 'the header' do
@@ -387,7 +414,10 @@ RSpec.describe DocbookCompat do
       end
       context 'the title' do
         it 'only includes the text of the title' do
-          expect(converted).to include('<title>foo | Elastic</title>')
+          expect(converted).to include(<<~HTML)
+            <title>foo | Elastic</title>
+            <meta class="elastic" name="content" content="foo">
+          HTML
         end
       end
       context 'the header' do
@@ -596,7 +626,10 @@ RSpec.describe DocbookCompat do
       end
       context 'the title' do
         it 'includes Elastic' do
-          expect(converted).to include('<title>Title [fooo] | Elastic</title>')
+          expect(converted).to include(<<~HTML)
+            <title>Title [fooo] | Elastic</title>
+            <meta class="elastic" name="content" content="Title [fooo]">
+          HTML
         end
       end
     end

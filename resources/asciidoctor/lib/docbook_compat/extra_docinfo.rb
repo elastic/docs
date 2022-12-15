@@ -24,14 +24,11 @@ module DocbookCompat
 
     def extra_elastic_head
       [
-        # Working
-        elastic_compat_meta('website_area', website_area),
+        # Elastic meta
+        elastic_compat_meta('content', page_title),
         elastic_compat_meta('product_version', attributes['dc.identifier']),
         elastic_compat_meta('product_name', product_name),
-        elastic_compat_meta('is_current_product_version', current_version),
-
-        # Not working
-        elastic_compat_meta('thumbnail_image', 'this is blank for now'),
+        elastic_compat_meta('website_area', 'documentation'),
       ]
     end
 
@@ -59,12 +56,8 @@ module DocbookCompat
       attributes['meta-product-name'] || attributes['dc.subject']
     end
 
-    def website_area
+    def page_title
       attributes['docdir'].scan(%r{(?<=en\/).*}i)[0].to_s
-    end
-
-    def current_version
-      attributes['source_branch'].to_s == attributes['current'].to_s ? 100 : 0
     end
   end
 end
