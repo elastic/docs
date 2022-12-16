@@ -25,7 +25,6 @@ module DocbookCompat
     def extra_elastic_head
       [
         # Elastic meta
-        elastic_compat_meta('content', page_title),
         elastic_compat_meta('product_version', attributes['dc.identifier']),
         elastic_compat_meta('product_name', product_name),
         elastic_compat_meta('website_area', 'documentation'),
