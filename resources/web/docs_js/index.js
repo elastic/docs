@@ -309,7 +309,8 @@ $(function() {
   // Empty column below TOC on small screens so the demand gen content can be positioned under the main content
   var bottom_left_col = $('#bottom_left_col');
 
-  $('.page_header > a[href="../current/index.html"]').click(function() {
+  $('.page_header > a[href="../current/index.html"]').click(function(e) {
+    e.preventDefault();
     utils.get_current_page_in_version('current');
   });
 
