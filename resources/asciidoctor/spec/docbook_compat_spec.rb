@@ -53,11 +53,6 @@ RSpec.describe DocbookCompat do
     it "doesn't declare a generator" do
       expect(converted).not_to include('name="generator"')
     end
-    it 'has an elastic meta content tag' do
-      expect(converted).to include(<<~HTML)
-        <meta class="elastic" name="content" content="observability"/>
-      HTML
-    end
     it 'has an elastic meta product_name tag' do
       expect(converted).to include(<<~HTML)
         <meta class="elastic" name="product_name" content="BarSubject"/>
