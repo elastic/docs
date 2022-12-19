@@ -311,7 +311,9 @@ $(function() {
 
   $('.page_header > a[href="../current/index.html"]').click(function(e) {
     e.preventDefault();
-    utils.get_current_page_in_version('current');
+    utils.get_current_page_in_version('current').fail(function() {
+      location.href = "../current/index.html"
+    });
   });
 
   // Enable Sense widget
