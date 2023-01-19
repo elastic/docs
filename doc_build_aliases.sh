@@ -122,7 +122,11 @@ alias docbldess=docbldec
 # Cloud - Elastic Cloud Enterprise
 alias docbldece='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cloud-enterprise/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud-assets/docs --chunk 2'
 
+# Cloud - Heroku
 alias docbldech='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/heroku/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --resource=$GIT_HOME/cloud/docs/saas --chunk 1'
+
+# Cloud - Fully Managed
+alias docbldcfm='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/cfm/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared-cfm --resource=$GIT_HOME/cloud/docs/cfm --chunk 1'
 
 # Cloud - Elastic Cloud on Kubernetes
 alias docbldeck='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud-on-k8s/docs/index.asciidoc --chunk 1'
