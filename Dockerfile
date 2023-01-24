@@ -51,7 +51,7 @@ FROM base AS node_deps
 COPY .docker/apt/keys/yarn.gpg /
 RUN apt-key add /yarn.gpg
 COPY .docker/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/
-RUN install_packages yarn=1.21.1-1
+RUN install_packages yarn
 COPY package.json /
 COPY yarn.lock /
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
