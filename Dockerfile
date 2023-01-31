@@ -16,7 +16,7 @@ FROM bitnami/minideb:buster AS base
 RUN install_packages apt-transport-https gnupg2 ca-certificates
 COPY .docker/apt/keys/nodesource.gpg /
 RUN apt-key add /nodesource.gpg
-COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
+COPY --chmod=644 .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages \
   build-essential python2 \
     # needed for compiling native modules on ARM
