@@ -9,11 +9,14 @@ module Chunker
     include Link
 
     def generate_breadcrumbs(doc, section)
+      chev = <<~HTML.strip
+        <span class="chevron-right">›</span>
+      HTML
       result = ['<div class="breadcrumbs">']
       result += generate_breadcrumb_links(section).reverse
       result << '</div>'
       if result[2].to_s.include? 'APM'
-        result[2] = generate_apm_breadcrumbs(doc)
+        result[2] = chev + generate_apm_breadcrumbs(doc, section)
       end
       if result[2].to_s.include? 'ECS Logging'
         result.insert(2, generate_ecslogging_breadcrumbs)
@@ -21,7 +24,8 @@ module Chunker
       Asciidoctor::Block.new doc, :pass, source: result.join("\n")
     end
 
-    def generate_apm_breadcrumbs(doc)
+    def generate_apm_breadcrumbs(doc, section)
+      parent = section
       title = doc.title
       short = title.sub(/APM /, '')
       <<~HTML.strip
@@ -33,7 +37,7 @@ module Chunker
               <ul>
                 <li class="dropdown-category">APM</li>
                 <ul>
-                  <li><a id="guide" href="http://localhost:8000/guide/index.html">User Guide</a></li>
+                  <li><a id="guide" href="https://www.elastic.co/guide/en/apm/guide/current/index.html">User Guide</a></li>
                 </ul>
                 <li class="dropdown-category">APM agents</li>
                 <ul>
@@ -56,7 +60,6 @@ module Chunker
               </ul>
           </div>
         </div>
-        <span class="chevron-right">›</span>
       HTML
     end
 
@@ -78,29 +81,25 @@ module Chunker
                 <a href="https://www.elastic.co/guide/en/ecs-logging/python/current/index.html">Python</a></br>
             </div>
           </div>
-        <span class="chevron-right">›</span>
       HTML
     end
 
     def generate_breadcrumb_links(section)
       result = []
       parent = section
-      first = true
       while (parent = parent.parent)
         extra = parent.context == :document ? parent.attr('title-extra') : ''
-        first_link = <<~HTML.strip
+        link = <<~HTML.strip
           <span class="breadcrumb-link"><a #{link_href parent}>#{parent.title}#{extra}</a></span>
         HTML
-        next_links = first_link + <<~HTML.strip
+        chev = <<~HTML.strip
           <span class="chevron-right">›</span>
         HTML
-        # This prevents a chevron from being placed after the last breadcrumb
-        links = first == true ? first_link : next_links
+        links = chev + link
         result << links
-        first = false
       end
       result << <<~HTML.strip
-        <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span><span class="chevron-right">›</span>
+        <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
       HTML
       result
     end
