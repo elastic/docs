@@ -242,6 +242,29 @@ function getEuid() {
 
 // Main function, runs on DOM ready
 $(function() {
+
+  if ($('#related-products')) {
+    const dropDownAnchor = $('#related-products > .dropdown-anchor')
+    const dropDownContent = $('#related-products > .dropdown-content')
+    dropDownAnchor.click(function(e) {
+      e.preventDefault();
+      dropDownContent.toggleClass('show')
+    });
+    $(document).mouseup(function(e) {
+      if (
+        dropDownContent.hasClass("show")
+        && !dropDownAnchor.is(e.target)
+        && !dropDownContent.is(e.target)
+        && dropDownContent.has(e.target).length === 0
+      ) {
+        dropDownContent.removeClass("show")
+      }
+    })
+    const currentBookTitle = dropDownAnchor.text()
+    const activeItem = dropDownContent.find("li:contains('" + currentBookTitle + "')").find('a')
+    activeItem.css("font-weight", "700")
+  }
+
   var lang = $('section#guide[lang]').attr('lang') || 'en';
 
   const default_kibana_url  = 'http://localhost:5601',

@@ -13,7 +13,7 @@ module Chunker
       result += generate_breadcrumb_links(section).reverse
       result << '</div>'
       if result[2].to_s.include? 'APM'
-        result.insert(2, generate_apm_breadcrumbs)
+        result[2] = generate_apm_breadcrumbs(doc)
       end
       if result[2].to_s.include? 'ECS Logging'
         result.insert(2, generate_ecslogging_breadcrumbs)
@@ -21,30 +21,41 @@ module Chunker
       Asciidoctor::Block.new doc, :pass, source: result.join("\n")
     end
 
-    def generate_apm_breadcrumbs
+    def generate_apm_breadcrumbs(doc)
+      title = doc.title
+      short = title.sub(/APM /, '')
       <<~HTML.strip
         <span class="breadcrumb-link">
-          <div class="dropdown">
-            <span>APM ▾</span>
-              <div class="dropdown-content">
-                <strong>APM</strong></br>
-                <a href="https://www.elastic.co/guide/en/apm/guide/current/index.html">APM Guide</a></br>
-                <strong>APM agents</strong></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/android/current/index.html">Android agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/go/current/index.html">Go agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/swift/current/index.html">iOS agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/java/current/index.html">Java agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/dotnet/current/index.html">.NET agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/nodejs/current/index.html">Node.js agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/php/current/index.html">PHP agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/python/current/index.html">Python agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/ruby/current/index.html">Ruby agent</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/agent/rum-js/current/index.html">RUM Agent</a></br>
-                <strong>APM extensions</strong></br>
-                <a href="https://www.elastic.co/guide/en/apm/lambda/current/index.html">AWS Lambda extension</a></br>
-                <a href="https://www.elastic.co/guide/en/apm/attacher/current/index.html">APM attacher</a>
-            </div>
+          <div id="related-products" class="dropdown">
+            <div class="related-products-title">APM:</div>
+            <div class="dropdown-anchor">#{short}<span class="dropdown-icon"></span></div>
+            <div class="dropdown-content">
+              <ul>
+                <li class="dropdown-category">APM</li>
+                <ul>
+                  <li><a id="guide" href="http://localhost:8000/guide/index.html">User Guide</a></li>
+                </ul>
+                <li class="dropdown-category">APM agents</li>
+                <ul>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/android/current/index.html">Android Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/go/current/index.html">Go Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/swift/current/index.html">iOS Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/java/current/index.html">Java Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/dotnet/current/index.html">.NET Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/nodejs/current/index.html">Node.js Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/php/current/index.html">PHP Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/python/current/index.html">Python Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/ruby/current/index.html">Ruby Agent Reference</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/agent/rum-js/current/index.html">Real User Monitoring JavaScript Agent Reference</a></li>
+                </ul>
+                <li class="dropdown-category">APM extensions</li>
+                <ul>
+                  <li><a href="https://www.elastic.co/guide/en/apm/lambda/current/index.html">Monitoring AWS Lambda Functions</a></li>
+                  <li><a href="https://www.elastic.co/guide/en/apm/attacher/current/index.html">Attacher</a></li>
+                </ul>
+              </ul>
           </div>
+        </div>
         <span class="chevron-right">›</span>
       HTML
     end
