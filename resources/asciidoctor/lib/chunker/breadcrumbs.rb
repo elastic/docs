@@ -57,8 +57,9 @@ module Chunker
                   <li><a href="/guide/en/apm/attacher/current/index.html">Attacher</a></li>
                 </ul>
               </ul>
+            </div>
           </div>
-        </div>
+        </span>
       HTML
     end
 
@@ -66,23 +67,24 @@ module Chunker
       title = doc.title
       short = title.sub(/ECS Logging /, '')
       <<~HTML.strip
-      <span class="breadcrumb-link">
-      <div id="related-products" class="dropdown">
-        <div class="related-products-title">ECS Logging:</div>
-        <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
-        <div class="dropdown-content">
-          <ul>
-            <li><a href="/guide/en/ecs-logging/overview/current/index.html">Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/go-logrus/current/index.html">Go (Logrus) Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/go-zap/current/index.html">Go (zap) Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/java/current/index.html">Java Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/dotnet/current/index.html">.NET Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/nodejs/current/index.html">Node.js Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/ruby/current/index.html">Ruby Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/php/current/index.html">PHP Reference</a></li>
-            <li><a href="/guide/en/ecs-logging/python/current/index.html">Python Reference</a></li>
-        </div>
-      </div>
+        <span class="breadcrumb-link">
+          <div id="related-products" class="dropdown">
+            <div class="related-products-title">ECS Logging:</div>
+            <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
+            <div class="dropdown-content">
+              <ul>
+                <li><a href="/guide/en/ecs-logging/overview/current/index.html">Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/go-logrus/current/index.html">Go (Logrus) Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/go-zap/current/index.html">Go (zap) Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/java/current/index.html">Java Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/dotnet/current/index.html">.NET Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/nodejs/current/index.html">Node.js Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/ruby/current/index.html">Ruby Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/php/current/index.html">PHP Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/python/current/index.html">Python Reference</a></li>
+            </div>
+          </div>
+        </span>
       HTML
     end
 
