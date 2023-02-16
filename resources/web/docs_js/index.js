@@ -242,6 +242,7 @@ function getEuid() {
 
 // Main function, runs on DOM ready
 $(function() {
+
   var lang = $('section#guide[lang]').attr('lang') || 'en';
 
   const default_kibana_url  = 'http://localhost:5601',
@@ -297,6 +298,47 @@ $(function() {
   mount($('body'), Modal);
 
   AlternativeSwitcher(store());
+
+  // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)
+  // handle interaction with the dropdown
+  if ($('#related-products')) {
+    // Select-type element used to reveal options
+    const dropDownAnchor = $('#related-products > .dropdown-anchor')
+    // Popover-type element containing options
+    const dropDownContent = $('#related-products > .dropdown-content')
+    // Toggle the visibility of the popover on click
+    dropDownAnchor.click(function (e) {
+      e.preventDefault();
+      dropDownContent.toggleClass('show')
+    });
+    // Toggle the visibility of the popover on enter
+    dropDownAnchor.keypress(function (e) {
+      if (e.which == 13) {
+        dropDownContent.toggleClass('show')
+      }
+    });
+    // Close the popover when clicking outside it
+    $(document).mouseup(function(e) {
+      if (
+        dropDownContent.hasClass("show")
+        && !dropDownAnchor.is(e.target)
+        && !dropDownContent.is(e.target)
+        && dropDownContent.has(e.target).length === 0
+      ) {
+        dropDownContent.removeClass("show")
+      }
+    })
+    // Bold the item in the popover that represents
+    // the current book 
+    const currentBookTitle = dropDownAnchor.text() 
+    const items = dropDownContent.find("li")
+    items.each(function(i) {
+      if (items[i].innerText === currentBookTitle) {
+        const link = items[i].children[0]
+        link.style.fontWeight = 700
+      }
+    })
+  }
 
   // Move rtp container to top right and make visible
   var sticky_content = $('#sticky_content');
