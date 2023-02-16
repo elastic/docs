@@ -36,25 +36,25 @@ module Chunker
               <ul>
                 <li class="dropdown-category">APM</li>
                 <ul>
-                  <li><a href="/guide/en/apm/guide/current/index.html">User Guide</a></li>
+                  <li><a href="/guide/en/apm/guide/current/apm-overview.html">User Guide</a></li>
                 </ul>
                 <li class="dropdown-category">APM agents</li>
                 <ul>
-                  <li><a href="/guide/en/apm/agent/android/current/index.html">Android Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/go/current/index.html">Go Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/swift/current/index.html">iOS Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/java/current/index.html">Java Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/dotnet/current/index.html">.NET Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/nodejs/current/index.html">Node.js Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/php/current/index.html">PHP Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/python/current/index.html">Python Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/ruby/current/index.html">Ruby Agent Reference</a></li>
-                  <li><a href="/guide/en/apm/agent/rum-js/current/index.html">Real User Monitoring JavaScript Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/android/current/intro.html">Android Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/go/current/introduction.html">Go Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/swift/current/intro.html">iOS Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/java/current/intro.html">Java Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/dotnet/current/intro.html">.NET Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/nodejs/current/intro.html">Node.js Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/php/current/intro.html">PHP Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/python/current/getting-started.html">Python Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/ruby/current/introduction.html">Ruby Agent Reference</a></li>
+                  <li><a href="/guide/en/apm/agent/rum-js/current/intro.html">Real User Monitoring JavaScript Agent Reference</a></li>
                 </ul>
                 <li class="dropdown-category">APM extensions</li>
                 <ul>
-                  <li><a href="/guide/en/apm/lambda/current/index.html">Monitoring AWS Lambda Functions</a></li>
-                  <li><a href="/guide/en/apm/attacher/current/index.html">Attacher</a></li>
+                  <li><a href="/guide/en/apm/lambda/current/aws-lambda-arch.html">Monitoring AWS Lambda Functions</a></li>
+                  <li><a href="/guide/en/apm/attacher/current/apm-attacher.html">Attacher</a></li>
                 </ul>
               </ul>
             </div>
@@ -73,15 +73,15 @@ module Chunker
             <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
             <div class="dropdown-content">
               <ul>
-                <li><a href="/guide/en/ecs-logging/overview/current/index.html">Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/go-logrus/current/index.html">Go (Logrus) Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/go-zap/current/index.html">Go (zap) Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/java/current/index.html">Java Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/dotnet/current/index.html">.NET Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/nodejs/current/index.html">Node.js Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/ruby/current/index.html">Ruby Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/php/current/index.html">PHP Reference</a></li>
-                <li><a href="/guide/en/ecs-logging/python/current/index.html">Python Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/overview/current/intro.html">Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/go-logrus/current/intro.html">Go (Logrus) Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/go-zap/current/intro.html">Go (zap) Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/java/current/intro.html">Java Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/dotnet/current/intro.html">.NET Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/nodejs/current/intro.html">Node.js Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/ruby/current/intro.html">Ruby Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/php/current/intro.html">PHP Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/python/current/intro.html">Python Reference</a></li>
             </div>
           </div>
         </span>
