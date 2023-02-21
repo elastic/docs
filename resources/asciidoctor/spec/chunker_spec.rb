@@ -501,9 +501,10 @@ RSpec.describe Chunker do
           include_examples 'standard page', 'index', nil
           include_examples 'subpage'
           it 'contains the correct title' do
-            expect(contents).to include(
-              '<title>Section: With subtitle | Title | Elastic</title>'
-            )
+            expect(contents).to include(<<~HTML.strip)
+              <title>Section: With subtitle | Title | Elastic</title>
+              <meta class="elastic" name="content" content="Section: With subtitle | Title">
+            HTML
           end
           it 'contains the heading' do
             expect(contents).to include(
