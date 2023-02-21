@@ -137,7 +137,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
-          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="unknown/edit/master/index.asciidoc">edit</a>
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="unknown/edit/master/index.asciidoc"></a>
         HTML
       end
     end
@@ -317,7 +317,7 @@ RSpec.describe 'building a single book' do
   context 'regarding the xpack tag' do
     let(:edit_me) do
       <<~HTML.strip
-        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/docs/edit/master/index.asciidoc">edit</a>
+        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/docs/edit/master/index.asciidoc"></a>
       HTML
     end
     let(:xpack_tag) do

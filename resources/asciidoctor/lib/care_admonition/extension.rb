@@ -30,13 +30,13 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
   def activate(registry)
     [
-      [:beta, 'beta', BETA_DEFAULT_TEXT],
-      [:dev, 'dev', DEV_DEFAULT_TEXT],
-      [:experimental, 'preview', PREVIEW_DEFAULT_TEXT],
-      [:preview, 'preview', PREVIEW_DEFAULT_TEXT],
-    ].each do |(name, role, default_text)|
+      [:beta, 'Beta', BETA_DEFAULT_TEXT, ' stage-beta'],
+      [:dev, 'In development', DEV_DEFAULT_TEXT , ' stage-dev'],
+      [:experimental, 'Technical preview', PREVIEW_DEFAULT_TEXT, ' stage-preview'],
+      [:preview, 'Technical preview', PREVIEW_DEFAULT_TEXT, ' stage-preview'],
+    ].each do |(name, role, default_text, title_class)|
       registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
-      registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
+      registry.inline_macro ChangeAdmonitionInline.new(role, default_text, title_class), name
     end
   end
 
@@ -83,7 +83,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       Asciidoctor::Block.new(
         parent, :admonition, source: text, attributes: {
           'role' => @role,
-          'name' => 'warning',
+          'name' => 'beaker',
           'style' => 'warning',
         }
       )
@@ -97,10 +97,11 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     name_positional_attributes :text
     format :short
 
-    def initialize(role, default_text)
+    def initialize(role, default_text, extra_title_class)
       super(nil)
       @role = role
       @default_text = default_text
+      @extra_title_class = extra_title_class
     end
 
     def process(parent, _target, attrs)
@@ -109,7 +110,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       Asciidoctor::Inline.new(
         parent, :admonition, text, type: @role, attributes: {
           'title_type' => 'title',
-          'title_class' => 'u-mono',
+          'title_class' => "#{@extra_title_class}",
           'title' => @role,
         }
       )

@@ -80,7 +80,7 @@ RSpec.describe ChangeAdmonition do
       def expect_inline_admonition(version, text)
         expect(converted).to include <<~HTML.strip
           <span class="Admonishment Admonishment--change">
-          [<span class="Admonishment-version u-mono#{extra_class}">#{version}</span>]
+          <span class="Admonishment-version #{extra_class}">#{version}</span>
           <span class="Admonishment-detail">
           #{text}
           </span>
@@ -192,21 +192,21 @@ RSpec.describe ChangeAdmonition do
     let(:key) { 'added' }
     let(:admon_class) { 'note' }
     let(:message) { 'Added' }
-    let(:extra_class) { '' }
+    let(:extra_class) { ' version-added' }
     include_examples 'change admonition'
   end
   context 'coming' do
     let(:key) { 'coming' }
     let(:admon_class) { 'note' }
     let(:message) { 'Coming' }
-    let(:extra_class) { '' }
+    let(:extra_class) { ' version-coming' }
     include_examples 'change admonition'
   end
   context 'deprecated' do
     let(:key) { 'deprecated' }
     let(:admon_class) { 'warning' }
     let(:message) { 'Deprecated' }
-    let(:extra_class) { ' u-strikethrough' }
+    let(:extra_class) { ' version-added' }
     include_examples 'change admonition'
   end
 end

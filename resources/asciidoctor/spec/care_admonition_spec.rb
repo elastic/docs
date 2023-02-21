@@ -126,7 +126,7 @@ RSpec.describe CareAdmonition do
       def expect_inline_admonition(text)
         expect(converted).to include <<~HTML.strip
           <span class="Admonishment Admonishment--#{key}">
-          [<span class="Admonishment-title u-mono">#{key}</span>]
+          <span class="Admonishment-title">#{key}</span>
           <span class="Admonishment-detail">
           #{text}
           </span>

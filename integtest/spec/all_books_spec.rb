@@ -279,7 +279,7 @@ RSpec.describe 'building all books' do
     end
     let(:edit_me) do
       <<~HTML.strip
-        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
+        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}"></a>
       HTML
     end
     context "when respect_edit_url_overrides isn't specified" do
@@ -684,7 +684,7 @@ RSpec.describe 'building all books' do
       let(:edit_url) { "#{repo.root}/edit/0.10/index.asciidoc" }
       it 'contains an edit_me link' do
         expect(body).to include <<~HTML.strip
-          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}"></a>
         HTML
       end
     end
@@ -722,7 +722,7 @@ RSpec.describe 'building all books' do
       let(:edit_url) { "#{repo.root}/edit/0.9_oldbutlive/index.asciidoc" }
       it 'contains an edit_me link' do
         expect(body).to include <<~HTML.strip
-          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}"></a>
         HTML
       end
     end

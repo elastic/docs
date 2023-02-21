@@ -14,7 +14,7 @@ module Chunker
 
     def generate_breadcrumbs(doc, section)
       chev = <<~HTML.strip
-        <span class="chevron-right">›</span>
+        <span class="chevron-right">/</span>
       HTML
       result = ['<div class="breadcrumbs">']
       result += generate_breadcrumb_links(section, chev).reverse

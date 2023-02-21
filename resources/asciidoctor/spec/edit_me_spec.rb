@@ -60,7 +60,7 @@ RSpec.describe EditMe do
     def edit_link(url)
       attrs = 'class="edit_me" rel="nofollow" ' \
               'title="Edit this page on GitHub" href="' + url + '"'
-      "<a #{attrs}>edit</a>"
+      "<a #{attrs}></a>"
     end
     let(:stdin_link) do
       edit_link 'www.example.com/stdin'
@@ -210,7 +210,7 @@ RSpec.describe EditMe do
     def edit_link(url)
       attrs = 'class="edit_me edit_me_private" rel="nofollow" ' \
         'title="Editing on GitHub is available to Elastic" href="' + url + '"'
-      "<a #{attrs}>edit</a>"
+      "<a #{attrs}></a>"
     end
     let(:stdin_link) do
       edit_link 'www.example.com/stdin'

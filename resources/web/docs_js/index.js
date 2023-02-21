@@ -13,6 +13,7 @@ import "./prettify/lang-console";
 import "../lib/prettify/lang-esql";
 import "../lib/prettify/lang-sql";
 import "../lib/prettify/lang-yaml";
+import items from "../temp/config.js"
 
 // Add support for <details> in IE and the like
 import "../../../../../node_modules/details-polyfill";
@@ -122,6 +123,7 @@ function init_kibana_widgets() {
 
 function init_toc(lang_strings) {
   var title = $('#book_title');
+  $('div.toc').attr('id', 'current-toc');
 
   // Make li elements in toc collapsible
   $('div.toc li ul').each(function() {
@@ -302,6 +304,11 @@ $(function() {
 
   AlternativeSwitcher(store());
 
+
+  $('.breadcrumbs').after(`<div class="date-edited">Last updated: Apr 4th, 2023</div>`)
+  $('h1').after(`<div class="description">Description to be written</div>`)
+  
+
   // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)
   // handle interaction with the dropdown
   if ($('#related-products')) {
@@ -342,6 +349,27 @@ $(function() {
       }
     })
   }
+
+  
+  const allHeadings = $('#content').find('h1, h2, h3, h4, h5, h6')
+  let allLevels = []
+  allHeadings.each(function(index) {
+    if (index === 0) return
+    if (!allLevels.includes($(this).prop('nodeName'))) allLevels.push($(this).prop('nodeName'))
+  })
+
+  allHeadings.each(function(index) {
+    const currentHeading = $(this)
+    const contents = currentHeading.prop('innerHTML')
+    if (index === 0) {
+      currentHeading.replaceWith(`<h1>${contents}</h1>`);
+    } else {
+      if ($(this).prop('nodeName') === allLevels[0]) $(this).replaceWith(`<h2>${contents}</h2>`);
+      if ($(this).prop('nodeName') === allLevels[1]) $(this).replaceWith(`<h3>${contents}</h3>`);
+      if ($(this).prop('nodeName') === allLevels[2]) $(this).replaceWith(`<h4>${contents}</h4>`);
+    }
+    // attrs[attr.nodeName] = attr.nodeValue;
+  })
 
   // Move rtp container to top right and make visible
   var sticky_content = $('#sticky_content');
@@ -417,6 +445,42 @@ $(function() {
     // Set the width of the demand gen content to 3
     right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
   }
+
+  const sections = items.map(item => {
+    let isActive = item.label === "Observability"
+    let subItems = item.items
+    if (subItems) {
+      subItems = item.items.map(subItem => {
+        isActive = subItem.label === "Observability"
+        return (
+          isActive
+          ? `<li><span id="active-book">${subItem.label}</span></li>`
+          : `<li><a href="${subItem.link}">${subItem.label}</a></li>`
+        )
+      })
+    }
+    return (
+      subItems
+      ? `<li>${item.label}<ul>${subItems.join('')}</ul></li>`
+      : `<li><a href="${item.link}">${item.label}</a></li>`
+    )
+  })
+  
+  
+
+  $('#cross-book-nav').prepend(`<div class="book-name">Global nav</div><ul style="margin-top:20px">${sections.join('')}</ul>`)
+
+  $('#book_title').click(function() {
+    $('#cross-book-nav').show()
+    $("#cross-book-nav").animate({ "left": "+=270px" }, 400 );
+    $("#current-toc").animate({ "left": "+=270px" }, 400 );
+    
+    $('#active-book').click(function() {
+      $("#cross-book-nav").animate({ "left": "-=270px" }, 400 );
+      $("#current-toc").animate({ "left": "-=270px" }, 400 );
+      // $('#cross-book-nav').hide()
+    })
+  })
 
   PR.prettyPrint();
 

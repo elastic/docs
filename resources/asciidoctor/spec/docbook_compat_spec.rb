@@ -1115,7 +1115,7 @@ RSpec.describe DocbookCompat do
             <div class="calloutlist">
             <table border="0" summary="Callout list">
             <tr>
-            <td align="left" valign="top" width="5%">
+            <td align="left" valign="top" width="24px">
             <p><a href="#CO1-1"><i class="conum" data-value="1"></i></a></p>
             </td>
             <td align="left" valign="top">

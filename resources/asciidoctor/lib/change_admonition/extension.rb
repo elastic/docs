@@ -17,9 +17,9 @@ require 'asciidoctor/extensions'
 #
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [
-    [:added, 'added', 'note', 'Added in', nil],
-    [:coming, 'changed', 'note', 'Coming in', nil],
-    [:deprecated, 'deleted', 'warning', 'Deprecated in', ' u-strikethrough'],
+    [:added, 'added', 'note', 'Added in', ' version-added'],
+    [:coming, 'changed', 'note', 'Coming in', ' version-coming'],
+    [:deprecated, 'deleted', 'warning', 'Deprecated in', ' version-deprecated'],
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
@@ -77,7 +77,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       Asciidoctor::Inline.new(
         parent, :admonition, message, type: 'change', attributes: {
           'title_type' => 'version',
-          'title_class' => "u-mono#{@extra_title_class}",
+          'title_class' => "#{@extra_title_class}",
           'title' => version,
         }
       )

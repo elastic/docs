@@ -68,7 +68,7 @@ module DocbookCompat
 
     def convert_colist_item_head(item, index)
       [
-        '<td align="left" valign="top" width="5%">',
+        '<td align="left" valign="top" width="24px">',
         "<p>#{convert_colist_item_coids item, index}</p>",
         '</td>',
       ]
