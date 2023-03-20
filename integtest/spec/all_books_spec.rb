@@ -513,6 +513,7 @@ RSpec.describe 'building all books' do
     file_context 'the toc', 'raw/index.html' do
       it 'includes the extra html' do
         expect(contents).to include(<<~HTML)
+          <!--EXTRA-->
           <div id="extra">
           <p>extra html</p>
           </div>
@@ -714,6 +715,27 @@ RSpec.describe 'building all books' do
       it "doesn't contain an edit_me link" do
         expect(body).not_to include('class="edit_me"')
       end
+    end
+  end
+
+  context 'when a live branch is not in the list of branches' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'repo', 'some text'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.branches = ['master']
+      book.live_branches = ['newer', 'master', 'missing']
+      dest.prepare_convert_all(src.conf).convert(expect_failure: true)
+    end
+    it 'fails with an appropriate error status' do
+      puts outputs
+      expect(statuses[0]).to eq(2)
+    end
+    it 'logs the missing file' do
+      expect(outputs[0]).to include(<<~LOG.strip)
+        Live branch(es) <newer, missing> not in <branches> in book <Test>
+      LOG
     end
   end
 

@@ -132,6 +132,7 @@ module Chunker
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
       attrs['noheader'] = true
       attrs['title-separator'] = ''
+      attrs['canonical-url'] = section.attributes['canonical-url']
       attrs.merge! find_related(section)
       attrs
     end

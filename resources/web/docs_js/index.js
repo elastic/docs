@@ -2,6 +2,7 @@ import AlternativeSwitcher from "./components/alternative_switcher";
 import ConsoleWidget from "./components/console_widget";
 import Modal from "./components/modal";
 import mount from "./components/mount";
+import {switchTabs} from "./components/tabbed_widget";
 import {Cookies, $} from "./deps";
 import {lang_strings} from "./localization";
 import store from "./store";
@@ -18,27 +19,49 @@ import "../../../../../node_modules/details-polyfill";
 // Add support for URLSearchParams Web API in IE
 import "../../../../../node_modules/url-search-params-polyfill";
 
-export function init_headers(right_col, lang_strings) {
+// Vocab:
+// TOC = table of contents
+// OTP = on this page
+export function init_headers(sticky_content, lang_strings) {
   // Add on-this-page block
-  var this_page = $('<div id="this_page"></div>').prependTo(right_col);
-  this_page.append('<h2>' + lang_strings('On this page') + '</h2>');
+  var this_page = $('<div id="this_page"></div>').prependTo(sticky_content);
+  this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
+  var baseHeadingLevel = 0;
 
   $('#guide a[id]:not([href])').each(
-    function() {
+    function(i, el) {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
 
       // Extract on-this-page headers, without embedded links
-      var title_container = $(this).parent('h1,h2,h3').clone();
+      var title_container = $(this).parent('h1,h2,h3,h4').clone();
       if (title_container.length > 0) {
-        // Exclude page title
+        // Assume initial heading is an H1, but adjust if it's not
+        let hLevel = 0;
+        if ($(this).parent().is("h2")){
+          hLevel = 1;
+        } else if ($(this).parent().is("h3")){
+          hLevel = 2;
+        } else if ($(this).parent().is("h4")){
+          hLevel = 3;
+        }
+
+        // Set the base heading level for the page to the title page level + 1
+        // This ensures top level headings aren't nested
+        if (i === 0){
+          baseHeadingLevel = hLevel + 1;
+        }
+
+        // Build list items for all headings except the page title
         if (0 < items++) {
           title_container.find('a,.added,.coming,.deprecated,.experimental')
             .remove();
           var text = title_container.html();
-          ul.append('<li><a href="#' + this.id + '">' + text + '</a></li>');
+          const adjustedLevel = hLevel - baseHeadingLevel;
+          const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          ul.append(li);
         }
       }
     });
@@ -150,8 +173,76 @@ function init_toc(lang_strings) {
     });
 }
 
+// In the OTP, highlight the heading of the section that is
+// currently visible on the page.
+// If more than one is visible, highlight the heading for the
+// section that is higher on the page.
+function highlight_otp() {
+  let visibleHeadings = []
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute('id');
+      const element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
+      const itemId = $(element).parent().attr('id')
+      // All heading elements have an `entry` (even the title).
+      // The title does not exist in the OTP, so we must exclude it.
+      // Checking for the existence of `itemId` ensures we don't parse elements that don't exist.
+      if (itemId){
+        const itemNumber = parseInt(itemId.match(/\d+/)[0], 10);
+        if (entry.intersectionRatio > 0){
+          visibleHeadings.push(itemNumber);
+        } else {
+          const position = visibleHeadings.indexOf(itemNumber);
+          visibleHeadings.splice(position, 1)
+        }
+        if (visibleHeadings.length > 0) {
+          visibleHeadings.sort((a, b) => a - b)
+          // Remove existing active classes
+          $('a.active').removeClass("active");
+          // Add active class to the first visible heading
+          $('#otp-text-' + visibleHeadings[0] + ' > a').addClass('active')
+        }
+      }
+    })
+  })
+
+  document.querySelectorAll('#guide a[id]').forEach((heading) => {
+    observer.observe(heading);
+  })
+}
+
+function getUtm() {
+  const qs = new Proxy(new URLSearchParams(window.location.search), {
+    get: (searchParams, prop) => searchParams.get(prop),
+  })
+
+  return {
+    'utm_source': qs['utm_source'],
+    'utm_medium': qs['utm_medium'],
+    'utm_campaign': qs['utm_campaign'],
+    'utm_content': qs['utm_content'],
+    'utm_term': qs['utm_term'],
+    'utm_id': qs['utm_id'],
+  }
+}
+
+function getCookie(cookieName) {
+  let cookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(cookieName + '='));
+  if (cookie == undefined) {
+    return undefined
+  }
+  return cookie.split('=')[1]
+}
+
+function getEuid() {
+  return getCookie('euid')
+}
+
 // Main function, runs on DOM ready
 $(function() {
+
   var lang = $('section#guide[lang]').attr('lang') || 'en';
 
   const default_kibana_url  = 'http://localhost:5601',
@@ -208,10 +299,63 @@ $(function() {
 
   AlternativeSwitcher(store());
 
-  var right_col = $('#right_col'); // Move rtp container to top right and make visible
+  // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)
+  // handle interaction with the dropdown
+  if ($('#related-products')) {
+    // Select-type element used to reveal options
+    const dropDownAnchor = $('#related-products > .dropdown-anchor')
+    // Popover-type element containing options
+    const dropDownContent = $('#related-products > .dropdown-content')
+    // Toggle the visibility of the popover on click
+    dropDownAnchor.click(function (e) {
+      e.preventDefault();
+      dropDownContent.toggleClass('show')
+    });
+    // Toggle the visibility of the popover on enter
+    dropDownAnchor.keypress(function (e) {
+      if (e.which == 13) {
+        dropDownContent.toggleClass('show')
+      }
+    });
+    // Close the popover when clicking outside it
+    $(document).mouseup(function(e) {
+      if (
+        dropDownContent.hasClass("show")
+        && !dropDownAnchor.is(e.target)
+        && !dropDownContent.is(e.target)
+        && dropDownContent.has(e.target).length === 0
+      ) {
+        dropDownContent.removeClass("show")
+      }
+    })
+    // Bold the item in the popover that represents
+    // the current book 
+    const currentBookTitle = dropDownAnchor.text() 
+    const items = dropDownContent.find("li")
+    items.each(function(i) {
+      if (items[i].innerText === currentBookTitle) {
+        const link = items[i].children[0]
+        link.style.fontWeight = 700
+      }
+    })
+  }
 
-  $('.page_header > a[href="../current/index.html"]').click(function() {
-    utils.get_current_page_in_version('current');
+  // Move rtp container to top right and make visible
+  var sticky_content = $('#sticky_content');
+  // Left column that contains the TOC
+  var left_col = $('#left_col');
+  // Middle column that contains the main content
+  var middle_col = $('#middle_col');
+  // Right column that contains the OTP and demand gen content
+  var right_col = $('#right_col');
+  // Empty column below TOC on small screens so the demand gen content can be positioned under the main content
+  var bottom_left_col = $('#bottom_left_col');
+
+  $('.page_header > a[href="../current/index.html"]').click(function(e) {
+    e.preventDefault();
+    utils.get_current_page_in_version('current').fail(function() {
+      location.href = "../current/index.html"
+    });
   });
 
   // Enable Sense widget
@@ -251,14 +395,24 @@ $(function() {
   if (div.length == 0 && $('#guide').find('div.article,div.book').length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = $.get(url, {}, function(data) {
-      right_col.append(data);
+      left_col.append(data);
       init_toc(LangStrings);
       utils.open_current(location.pathname);
     }).always(function() {
-      init_headers(right_col, LangStrings);
+      init_headers(sticky_content, LangStrings);
+      highlight_otp();
     });
   } else {
     init_toc(LangStrings);
+    // Style book landing page (no main content, just a TOC and demand gen content)
+
+    // Set the width of the left column to zero
+    left_col.removeClass().addClass('col-0');
+    bottom_left_col.removeClass().addClass('col-0');
+    // Set the width of the middle column (containing the TOC) to 9
+    middle_col.removeClass().addClass('col-12 col-lg-9 guide-section');
+    // Set the width of the demand gen content to 3
+    right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
   }
 
   PR.prettyPrint();
@@ -279,5 +433,50 @@ $(function() {
     $('a.edit_me_private').show();
   }
 
+  // scroll to selected TOC element; if it doesn't exist yet, wait and try again
+  // window.width must match the breakpoint of `.sticky-top-md`
+  if($(window).width() >= 769){
+    var scrollToSelectedTOC = setInterval(() => {
+      if ($('.current_page').length) {
+          // Get scrollable element
+          var container = document.querySelector("#left_col");
+          // Get active table of contents element
+          var activeItem = document.querySelector(".current_page")
+          // If the top of the active item is out of view (or in the bottom 100px of the visible portion of the TOC)
+          // scroll so the top of the active item is at the top of the visible portion TOC
+          if (container.offsetHeight - 100 <= activeItem.offsetTop) {
+            // Scroll to active item
+            container.scrollTop = activeItem.offsetTop
+          }
+        clearInterval(scrollToSelectedTOC);
+      }
+    }, 150);
+  }
+
+  window.dataLayer = window.dataLayer || [];
+
+  const titleParams = document.title.split('|')
+
+  const pageViewData = {
+    'event': 'page_view',
+    'pagePath': window.location.pathname,
+    'pageURL': window.location.href,
+    'pageTitle': document.title,
+    'pageTemplate': '', // ?
+    'team': 'Docs',
+    'pageCategory': titleParams[titleParams.length - 2].trim(),
+    'hostname': window.location.hostname,
+    'canonicalTag': window.location.protocol + '//' + window.location.hostname + window.location.pathname,
+    'euid': getEuid(),
+    'userId': getCookie('userId'),
+    'hashedIP': getCookie('hashedIp'),
+    'userAgent': window.navigator.userAgent,
+    ...getUtm()
+  };
+  dataLayer.push(pageViewData);
+
   // Test comment used to detect unminifed JS in tests
 });
+
+// Tabbed widgets
+switchTabs();

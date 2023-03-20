@@ -250,7 +250,7 @@ sub build_single {
 
     if ( $extra ) {
         my $contents = $html_file->slurp( iomode => '<:encoding(UTF-8)' );
-        $contents =~ s{<div class="(article|book)"}{<div id="extra">\n$extra\n</div>\n<div class="$1"} or
+        $contents =~ s{<!--EXTRA-->}{<!--EXTRA-->\n<div id="extra">\n$extra\n</div>} or
             die "Couldn't add toc_extra to $contents";
         $html_file->spew( iomode => '>:utf8', $contents );
     }

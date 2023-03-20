@@ -27,6 +27,7 @@ RSpec.describe DocbookCompat do
         'dc.type' => 'FooType',
         'dc.subject' => 'BarSubject',
         'dc.identifier' => 'BazIdentifier',
+        'docdir' => '/doc/observability-docs/docs/en/observability',
       }
     end
     let(:input) do
@@ -52,6 +53,21 @@ RSpec.describe DocbookCompat do
     it "doesn't declare a generator" do
       expect(converted).not_to include('name="generator"')
     end
+    it 'has an elastic meta product_name tag' do
+      expect(converted).to include(<<~HTML)
+        <meta class="elastic" name="product_name" content="BarSubject"/>
+      HTML
+    end
+    it 'has an elastic meta product_version tag' do
+      expect(converted).to include(<<~HTML)
+        <meta class="elastic" name="product_version" content="BazIdentifier"/>
+      HTML
+    end
+    it 'has an elastic meta website_area tag' do
+      expect(converted).to include(<<~HTML)
+        <meta class="elastic" name="website_area" content="documentation"/>
+      HTML
+    end
     it 'has DC.type' do
       expect(converted).to include(<<~HTML)
         <meta name="DC.type" content="FooType"/>
@@ -74,7 +90,10 @@ RSpec.describe DocbookCompat do
     end
     context 'the title' do
       it 'includes Elastic' do
-        expect(converted).to include('<title>Title | Elastic</title>')
+        expect(converted).to include(<<~HTML)
+          <title>Title | Elastic</title>
+          <meta class="elastic" name="content" content="Title">
+        HTML
       end
     end
     context 'the body' do
@@ -92,10 +111,14 @@ RSpec.describe DocbookCompat do
       it "is wrapped in docbook's funny titlepage" do
         expect(converted).to include(<<~HTML)
           <div class="titlepage">
+          <div class="breadcrumbs" id="title-page-breadcrumb">
+          <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+          </div>
           <div>
           <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
           </div>
           <hr>
+          <!--EXTRA-->
           </div>
         HTML
       end
@@ -113,10 +136,14 @@ RSpec.describe DocbookCompat do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="title-id"></a>Title</h1></div>
             </div>
             <hr>
+            <!--EXTRA-->
             </div>
           HTML
         end
@@ -148,10 +175,14 @@ RSpec.describe DocbookCompat do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             </div>
             <hr>
+            <!--EXTRA-->
           HTML
         end
       end
@@ -159,6 +190,7 @@ RSpec.describe DocbookCompat do
         it 'is outside the titlepage' do
           expect(converted).to include(<<~HTML)
             <hr>
+            <!--EXTRA-->
             </div>
             <div id="content">
             <!--START_TOC-->
@@ -343,18 +375,25 @@ RSpec.describe DocbookCompat do
       end
       context 'the title' do
         it "doesn't include the subtitle" do
-          expect(converted).to include('<title>Title | Elastic</title>')
+          expect(converted).to include(<<~HTML)
+            <title>Title | Elastic</title>
+            <meta class="elastic" name="content" content="Title">
+          HTML
         end
       end
       context 'the header' do
         it 'includes the title and subtitle' do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             <div><h2 class="subtitle">Subtitle</h2></div>
             </div>
             <hr>
+            <!--EXTRA-->
             </div>
           HTML
         end
@@ -370,17 +409,24 @@ RSpec.describe DocbookCompat do
       end
       context 'the title' do
         it 'only includes the text of the title' do
-          expect(converted).to include('<title>foo | Elastic</title>')
+          expect(converted).to include(<<~HTML)
+            <title>foo | Elastic</title>
+            <meta class="elastic" name="content" content="foo">
+          HTML
         end
       end
       context 'the header' do
         it 'includes the title and subtitle' do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div class="breadcrumbs" id="title-page-breadcrumb">
+            <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+            </div>
             <div>
             <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
             </div>
             <hr>
+            <!--EXTRA-->
             </div>
           HTML
         end
@@ -575,7 +621,10 @@ RSpec.describe DocbookCompat do
       end
       context 'the title' do
         it 'includes Elastic' do
-          expect(converted).to include('<title>Title [fooo] | Elastic</title>')
+          expect(converted).to include(<<~HTML)
+            <title>Title [fooo] | Elastic</title>
+            <meta class="elastic" name="content" content="Title [fooo]">
+          HTML
         end
       end
     end
@@ -592,7 +641,8 @@ RSpec.describe DocbookCompat do
       end
       context 'the header' do
         let(:xpack_tag) do
-          if input.include? '.xpack'
+          if (input.include? '.xpack') &&
+             (!input.include? ':hide-xpack-tags: true')
             '<a class="xpack_tag" href="/subscriptions"></a>'
           else
             ''
@@ -623,6 +673,21 @@ RSpec.describe DocbookCompat do
           ASCIIDOC
         end
         include_examples 'section basics', 'chapter xpack', 1, '_s1', 'S1'
+        context 'with the hide-xpack-tags attribute' do
+          let(:input) do
+            <<~ASCIIDOC
+              :hide-xpack-tags: true
+
+              [.xpack]
+              == Some XPack Feature
+            ASCIIDOC
+          end
+          # Because the block is marked with the `xpack` role, the surrounding
+          # <div> will still have the "xpack" class. But the clickable icon
+          # should be hidden.
+          include_examples 'section basics', 'chapter xpack', 1,
+                           '_some_xpack_feature', 'Some XPack Feature'
+        end
       end
     end
 

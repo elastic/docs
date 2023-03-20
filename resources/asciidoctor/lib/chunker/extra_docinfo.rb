@@ -24,17 +24,22 @@ module Chunker
         link_rel('up', attributes['up_section']),
         link_rel('prev', attributes['prev_section']),
         link_rel('next', attributes['next_section']),
+        link_rel('canonical', attributes['canonical-url']),
       ].compact.join "\n"
     end
 
     def link_rel(rel, related)
       return unless related
 
-      extra = related.context == :document ? related.attr('title-extra') : ''
-      title = "#{strip_tags(link_text(related))}#{extra}"
-      # We're in an attribute so escape quotes too!
-      title = title.gsub '"', '&quot;'
-      %(<link rel="#{rel}" #{link_href related} title="#{title}"/>)
+      if related.is_a?(String)
+        %(<link rel="#{rel}" href="#{related}"/>)
+      else
+        extra = related.context == :document ? related.attr('title-extra') : ''
+        title = "#{strip_tags(link_text(related))}#{extra}"
+        # We're in an attribute so escape quotes too!
+        title = title.gsub '"', '&quot;'
+        %(<link rel="#{rel}" #{link_href related} title="#{title}"/>)
+      end
     end
   end
 end

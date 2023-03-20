@@ -21,7 +21,7 @@ on any other website without explicit permission.
 
 You'll need the following installed:
 
-* Python (Python 3 preferred, but Python 2 will probably be fine)
+* Python 3
 * Docker
 
 [discrete]
@@ -70,7 +70,7 @@ generate the HTML version of the docs:
 [source,bash]
 ----------------------------
 cd path/to/your/repo
-~/path/to/docs/repo/build_docs --doc path/to/index.asciidoc
+~/path/to/docs/repo/build_docs --doc /full/path/to/index.asciidoc
 ----------------------------
 
 Each Elastic project may need its own documentation book build command.
@@ -656,7 +656,7 @@ endif::[]
 == Shared attributes
 
 To facilitate consistency across the documentation, there are shared attributes
-for common terms and URLs: https://github.com/elastic/docs/blob/master/shared/attributes.asciidoc. 
+for common terms and URLs: https://github.com/elastic/docs/blob/master/shared/attributes.asciidoc.
 There are also attributes related to the versions and branches that are used to
 build our books
 (for example: https://github.com/elastic/docs/blob/master/shared/versions/stack/master.asciidoc).
@@ -1534,9 +1534,9 @@ deprecated::[0.90.4,Replace by `foo.baz`. See <<new-section>>]
 Text about old functionality...
 
 [[experimental]]
-== Beta, Dev, and Experimental
+== Beta, Dev, and Preview (experimental)
 
-APIs or parameters that are in beta, in development, or experimental can be
+APIs or parameters that are in beta, in development, or in technical preview (formerly experimental) can be
 marked as such, using markup similar to that used in <<changes>>.
 
 In the block format, you have the option of adding a related GitHub issue link.
@@ -1624,22 +1624,30 @@ This param is in development and may change in the future.
 
 === Using the `experimental` admonition
 
+Experimental language is deprecated.
+
+We decided on the much less raw sounding "technical preview".
+
+See below.
+
+=== Using the technical `preview` admonition
+
 [source,asciidoc]
 ----
 [[new-feature]]
-=== New experimental feature
+=== New feature in technical preview
 
-experimental::[]
+preview::[]
 
-experimental::[https://github.com/elastic/docs/issues/505]
+preview::[https://github.com/elastic/docs/issues/505]
 
-experimental::[{issue}505]
+preview::[{issue}505]
 
-experimental::["Custom text goes here."]
+preview::["Custom text goes here."]
 
-experimental::["Custom text goes here.",https://github.com/elastic/docs/issues/505]
+preview::["Custom text goes here.",https://github.com/elastic/docs/issues/505]
 
-experimental::["Custom text goes here.",{issue}505]
+preview::["Custom text goes here.",{issue}505]
 
 Text about new feature...
 
@@ -1647,18 +1655,18 @@ Text about new feature...
 === Established feature
 
 This feature has been around for a while, but we're adding
-a new experimental parameter:
+a new preview parameter:
 
 `established_param`::
 This param has been around for ages and won't change.
 
 `experimental_param`::
-experimental:[]
-This param is experimental and may change in the future.
+preview:[]
+This param is in technical preview and may change in the future.
 
 `experimental_param`::
-experimental:["Custom text goes here."]
-This param is experimental and may change in the future.
+preview:["Custom text goes here."]
+This param is in technical preview and may change in the future.
 ----
 
 [[images]]
@@ -1893,3 +1901,82 @@ named for their IDs:
 
 To link to "Section two" from an external
 document, you would use the URL: `section-one.html#section-two`
+
+[[tabbed-widgets]]
+== Tabbed widgets
+
+Improve the usability of your docs by adding tabbed widgets.
+These handy widgets let you conditionally display content based on the selected tab.
+Best of all, tabbed widgets listen to each other – all widgets on the same page and with the same `data-tab-group` will change content when any tab on the page is selected.
+
+How do they work? I'm glad you asked.
+Tabbed widgets use https://docs.asciidoctor.org/asciidoc/latest/pass/pass-block/[HTML passthrough blocks] to pass raw HTML into the build.
+Because of this hack, you must use `include::` statements to render content within a tabbed widget.
+
+Here's an example:
+
+**`widget.asciidoc`**
+
+[source,asciidoc]
+----
+++++
+<div class="tabs" data-tab-group="custom-tab-group-name"> <1>
+  <div role="tablist" aria-label="Human readable name of tab group">
+    <button role="tab"
+            aria-selected="true" <2>
+            aria-controls="cloud-tab-config-agent" <3>
+            id="cloud-config-agent"> <4>
+      Tab #1 title
+    </button>
+    <button role="tab"
+            aria-selected="false"
+            aria-controls="self-managed-tab-config-agent"
+            id="self-managed-config-agent"
+            tabindex="-1"> <5>
+      Tab #2 title
+    </button>
+  </div>
+  <div tabindex="0"
+       role="tabpanel"
+       id="cloud-tab-config-agent"
+       aria-labelledby="cloud-config-agent">
+++++
+
+// You must use a tagged region for Asciidoc content to render. For example:
+// include::content.asciidoc[tag=central-config]
+
+++++
+  </div>
+  <div tabindex="0"
+       role="tabpanel"
+       id="self-managed-tab-config-agent"
+       aria-labelledby="self-managed-config-agent"
+       hidden="">
+++++
+
+// You must use a tagged region for Asciidoc content to render. For example:
+// include::content.asciidoc[tag=reg-config]
+
+++++
+  </div>
+</div>
+++++
+----
+<1> Any tabbed widgets on the same page and with the same name will sync tabs when switched
+<2> Only one tab should have aria-selected set to true. This tab will be selected by default
+<3> The `button.aria-controls` value must match the `div.id` value of its corresponding content bucket
+<4> The `button.id` value must match the `div.aria-labelledby` value of its corresponding content bucket
+<5> All unselected tabs must have a `tabindex` of `-1`
+
+**`content.asciidoc`**
+
+[source,asciidoc]
+----
+// tag::central-config[]
+This is where the content for tab #1 goes.
+// end::central-config[]
+
+// tag::reg-config[]
+This is the content for tab #2 goes.
+// end::reg-config[]
+----

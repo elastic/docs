@@ -1,7 +1,7 @@
 include ../common.mk
 
 .PHONY: check
-check: rspec style
+check: style rspec
 
 .PHONY: style
 style: pycodestyle rubocop

@@ -100,6 +100,14 @@ class Repo
   end
 
   ##
+  # Rename the current branch
+  def rename_branch(new_branch)
+    Dir.chdir @root do
+      sh "git branch -m #{new_branch}"
+    end
+  end
+
+  ##
   # The hash of the last commit.
   def short_hash
     Dir.chdir @root do

@@ -117,6 +117,22 @@ sub new {
     die "Current branch <$current> is not in <branches> in book <$title>"
         unless $branch_titles{$current};
 
+    my $live_branches = $args{live};
+    # If `live` is defined, check if there are any specified branches that
+    # aren't in the list of branches being built.
+    my @difference;
+    foreach my $item (@$live_branches) {
+        push @difference, $item unless grep { $item eq $_ } @branches;
+    }
+
+    # print "Branches: ", join(", ", @branches), "\n";
+    # print "Live: ", join(", ", @$live_branches), "\n";
+    # print "Difference: ", join(", ", @difference), "\n";
+
+    my $missing = join ", ", @difference;
+    die "Live branch(es) <$missing> not in <branches> in book <$title>"
+        if $difference[0];
+
     my $tags = $args{tags}
         or die "No <tags> specified for book <$title>";
 
@@ -218,11 +234,13 @@ sub build {
             # that information right now.
             $toc->write( $self->{raw_dir}, $dir, $self->{temp_dir} );
             for ( @{ $self->branches } ) {
-                $self->_update_title_and_version_drop_downs( $dir->subdir( $_ ), $_ );
+                my $version = $self->branch_title($_);
+                $self->_update_title_and_version_drop_downs( $dir->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
             for ( @{ $self->branches } ) {
-                $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( $_ ), $_ );
+                my $version = $self->branch_title($_);
+                $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( 'current' ) , $self->current );
         }
@@ -259,8 +277,8 @@ sub _build_book {
     my ( $self, $branch, $pm, $rebuild, $latest ) = @_;
 
     my $version       = $self->branch_title($branch);
-    my $raw_branch_dir = $self->{raw_dir}->subdir( $version );
-    my $branch_dir    = $self->dir->subdir($version);
+    my $raw_version_dir = $self->{raw_dir}->subdir( $version );
+    my $version_dir    = $self->dir->subdir($version);
     my $source        = $self->source;
     my $index         = $self->index;
     my $section_title = $self->section_title($version);
@@ -279,8 +297,8 @@ sub _build_book {
         if ( $self->single ) {
             build_single(
                 $first_path->file($index),
-                $raw_branch_dir,
-                $branch_dir,
+                $raw_version_dir,
+                $version_dir,
                 version       => $version,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
@@ -303,8 +321,8 @@ sub _build_book {
         else {
             build_chunked(
                 $first_path->file($index),
-                $raw_branch_dir,
-                $branch_dir,
+                $raw_version_dir,
+                $version_dir,
                 version       => $version,
                 lang          => $lang,
                 edit_urls     => $edit_urls,
@@ -344,7 +362,7 @@ sub _build_book {
 #===================================
 sub _update_title_and_version_drop_downs {
 #===================================
-    my ( $self, $branch_dir, $branch ) = @_;
+    my ( $self, $version_dir, $branch ) = @_;
 
     my $title = '<li id="book_title"><span>' . $self->title . ': ';
     $title .= '<select id="live_versions">';
@@ -380,15 +398,15 @@ sub _update_title_and_version_drop_downs {
     }
     $title .= '</span></li>';
     for ( 'toc.html', 'index.html' ) {
-        my $file = $branch_dir->file($_);
+        my $file = $version_dir->file($_);
         # Ignore missing files because the books haven't been built yet. This
         # can happen after a new branch is added to the config and then we use
         # --keep_hash to prevent building new books, like for PR tests.
         next unless -e $file;
 
         my $html = $file->slurp( iomode => "<:encoding(UTF-8)" );
-        
-        # If a book uses a custom index page, it may not include the TOC. The 
+
+        # If a book uses a custom index page, it may not include the TOC. The
         # substitution below will fail, so we abort early in this case.
         next unless ($_ == 'index.html' && ($html =~ /ul class="toc"/));
 
@@ -404,17 +422,17 @@ sub _copy_branch_to_current {
     my ( $self ) = @_;
 
     # TODO: current should be a version, not a branch
-    my $branch_dir  = $self->{dir}->subdir( $self->branch_title( $self->current ) );
+    my $version_dir  = $self->{dir}->subdir( $self->branch_title( $self->current ) );
     my $current_dir = $self->{dir}->subdir('current');
-    my $raw_branch_dir  = $self->{raw_dir}->subdir( $self->branch_title( $self->current ) );
+    my $raw_version_dir  = $self->{raw_dir}->subdir( $self->branch_title( $self->current ) );
     my $raw_current_dir = $self->{raw_dir}->subdir('current');
 
     $current_dir->rmtree;
-    rcopy( $branch_dir, $current_dir )
-        or die "Couldn't copy <$branch_dir> to <$current_dir>: $!";
+    rcopy( $version_dir, $current_dir )
+        or die "Couldn't copy <$version_dir> to <$current_dir>: $!";
     $raw_current_dir->rmtree;
-    rcopy( $raw_branch_dir, $raw_current_dir )
-        or die "Couldn't copy <$raw_branch_dir> to <$raw_current_dir>: $!";
+    rcopy( $raw_version_dir, $raw_current_dir )
+        or die "Couldn't copy <$raw_version_dir> to <$raw_current_dir>: $!";
 }
 
 #===================================

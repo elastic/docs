@@ -38,8 +38,11 @@ module DocbookCompat
 
     def munge_head(title_extra, title, html)
       html.gsub!(
-        %r{<title>.+?</title>}m,
-        "<title>#{strip_tags title.main}#{title_extra} | Elastic</title>"
+        %r{<title>.+?</title>}m, <<~HTML
+          <title>#{strip_tags title.main}#{title_extra} | Elastic</title>
+          <meta class=\"elastic\" name=\"content\" \
+          content=\"#{strip_tags title.main}#{title_extra}\">
+        HTML
       ) || raise("Couldn't munge <title> in #{html}")
       munge_meta html
     end
@@ -64,6 +67,9 @@ module DocbookCompat
       # closing </div>.
       header_start = <<~HTML
         <div class="titlepage">
+        <div class="breadcrumbs" id="title-page-breadcrumb">
+        <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+        </div>
         #{docbook_style_title doc, title}
       HTML
       html.gsub!(%r{<div id="header">\n<h1>.+?</h1>\n}m, header_start) ||
@@ -82,6 +88,7 @@ module DocbookCompat
       result + <<~HTML.strip
         </div>
         <hr>
+        <!--EXTRA-->
       HTML
     end
 
