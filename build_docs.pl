@@ -448,6 +448,11 @@ sub check_elasticsearch_links {
 
     say "Checking Elasticsearch links";
 
+    # Grab URLs from the JSON file. This is lame, but we sort of need to parse
+    # using regexes because that's what the rest of the infrastructure expects.
+    # So we grab all quoted strings that contain `html`. This *should* be fine
+    # for a while because the keys in the file are all in SHOUTING_SNAKE_CASE
+    # so even if one contains "html" it'll contain "HTML" which doesn't match.
     my $extractor = sub {
         my $contents = shift;
         return sub {
@@ -470,6 +475,7 @@ sub check_elasticsearch_links {
 
     for (@versions) {
         $version = $_;
+        # check versions after 8.6
         next if $version eq 'current' || $version =~ /^(\d+)\.(\d+)/ && ($1 lt 8 || ($1 eq 8 && $2 lt 7));
         # @versions is looping through the directories in the output (which
         # still contains `master`), but we need to look in the `main` branch of
