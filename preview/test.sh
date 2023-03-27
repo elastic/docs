@@ -5,19 +5,22 @@
 # have integration tests for this in integtest/spec/preview_spec.rb which are
 # much faster because they don't use real data but this is useful too.
 
-set -e
+set -euxo pipefail
 
-cd $(git rev-parse --show-toplevel)
+cd "$(git rev-parse --show-toplevel)"
 ../infra/ansible/roles/git_fetch_reference/files/git-fetch-reference.sh git@github.com:elastic/built-docs.git
+# shellcheck source=build.sh
 source preview/build.sh
-id=$(docker run --rm \
-          --publish 8000:8000/tcp \
-          -v $HOME/.git-references:/root/.git-references \
-          -d \
-          $PREVIEW \
-          /docs_build/build_docs.pl --in_standard_docker \
-              --preview --reference /root/.git-references \
-              --target_repo https://github.com/elastic/built-docs.git)
+id=$(
+    docker run --rm \
+        --publish 8000:8000/tcp \
+        -v "$HOME/.git-references:/root/.git-references" \
+        -d \
+        docker.elastic.co/docs/preview:latest \
+        /docs_build/build_docs.pl --in_standard_docker \
+        --preview --reference /root/.git-references \
+        --target_repo https://github.com/elastic/built-docs.git
+)
 echo "Started the preview. Some useful commands:"
 echo "   docker kill $id"
 echo "   docker logs -tf $id"
