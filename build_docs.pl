@@ -331,6 +331,7 @@ sub check_links {
     $link_checker->check;
 
     check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
+    check_elasticsearch_links( $build_dir, $link_checker ) if exists $Conf->{repos}{elasticsearch};
     if ( $link_checker->has_bad ) {
         say $link_checker->report;
     }
@@ -349,22 +350,6 @@ sub check_kibana_links {
     my $version;
 
     say "Checking Kibana links";
-
-# ${baseUrl}guide/en/elasticsearch/reference/${urlVersion}/modules-scripting-expression.html
-# ${ELASTIC_WEBSITE_URL}guide/en/beats/filebeat/${DOC_LINK_VERSION}
-# ${ELASTIC_DOCS}search-aggregations-bucket-datehistogram-aggregation.html
-# ${ELASTICSEARCH_DOCS}update-transform.html
-# ${KIBANA_DOCS}canvas.html
-# ${PLUGIN_DOCS}repository-s3.html
-# ${FLEET_DOCS}fleet-overview.html
-# ${APM_DOCS}overview.html
-# ${STACK_DOCS}upgrading-elastic-stack.html
-# ${SECURITY_SOLUTION_DOCS}sec-requirements.html
-# ${STACK_GETTING_STARTED}get-started-elastic-stack.html
-# ${APP_SEARCH_DOCS}authentication.html
-# ${ENTERPRISE_SEARCH_DOCS}authentication.html
-# ${WORKPLACE_SEARCH_DOCS}workplace-search-getting-started.html
-# ${MACHINE_LEARNING_DOCS}machine-learning-intro.html
 
     my $extractor = sub {
         my $contents = shift;
@@ -452,6 +437,65 @@ sub check_kibana_links {
         $repo->mark_done( $link_check_name, $branch, $links_file, 0 );
     }
 }
+
+#===================================
+sub check_elasticsearch_links {
+#===================================
+    my $build_dir    = shift;
+    my $link_checker = shift;
+    my $branch;
+    my $version;
+
+    say "Checking Elasticsearch links";
+
+    # Grab URLs from the JSON file. This is lame, but we sort of need to parse
+    # using regexes because that's what the rest of the infrastructure expects.
+    # So we grab all quoted strings that contain `html`. This *should* be fine
+    # for a while because the keys in the file are all in SHOUTING_SNAKE_CASE
+    # so even if one contains "html" it'll contain "HTML" which doesn't match.
+    my $extractor = sub {
+        my $contents = shift;
+        return sub {
+            while ( $contents =~ m!"([^"\#]+)(?:\#([^"]+))?"!g ) {
+                my $path = $1;
+                next unless $path =~ m!html!;
+                return "en/elasticsearch/reference/$version/$path";
+            }
+            return;
+        };
+    };
+
+    my $src_path = 'server/src/main/resources/org/elasticsearch/common/reference-docs-links.json';
+    my $repo     = ES::Repo->get_repo('elasticsearch');
+
+    my @versions = sort map { $_->basename }
+        grep { $_->is_dir } $build_dir->subdir('en/elasticsearch/reference')->children;
+
+    my $link_check_name = 'link-check-elasticsearch';
+
+    for (@versions) {
+        $version = $_;
+        # check versions after 8.6
+        next if $version eq 'current' || $version =~ /^(\d+)\.(\d+)/ && ($1 lt 8 || ($1 eq 8 && $2 lt 7));
+        # @versions is looping through the directories in the output (which
+        # still contains `master`), but we need to look in the `main` branch of
+        # the ES repo for this file.
+        #
+        # TODO: remove as part of
+        # https://github.com/elastic/docs/issues/2264
+        $branch = $version eq "master" ? "main" : $version;
+        say "  Branch: $branch, Version: $version";
+        my $source = $repo->show_file( $link_check_name, $branch, $src_path );
+
+        $link_checker->check_source( $source, $extractor,
+            "Elasticsearch [$version]: $src_path" );
+
+        # Mark the file that we need for the link check done so we can use
+        # --keep_hash with it during some other build.
+        $repo->mark_done( $link_check_name, $branch, $src_path, 0 );
+    }
+}
+
 
 #===================================
 sub build_entries {
