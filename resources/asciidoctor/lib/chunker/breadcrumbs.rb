@@ -15,11 +15,21 @@ module Chunker
       result = ['<div class="breadcrumbs">']
       result += generate_breadcrumb_links(section, chev).reverse
       result << '</div>'
+
       if result[2].to_s.include? 'APM'
         result[2] = chev + generate_apm_breadcrumbs(doc)
       end
       if result[2].to_s.include? 'ECS Logging'
         result[2] = chev + generate_ecslogging_breadcrumbs(doc)
+      end
+      if result[2].to_s.include? 'Enterprise Search'
+        result[2] = chev + generate_enterprise_search_breadcrumbs(doc)
+      end
+      if result[2].to_s.include? 'App Search'
+        result[2] = chev + generate_app_search_breadcrumbs(doc)
+      end
+      if result[2].to_s.include? 'Workplace Search'
+        result[2] = chev + generate_workplace_search_breadcrumbs(doc)
       end
       Asciidoctor::Block.new doc, :pass, source: result.join("\n")
     end
@@ -82,6 +92,93 @@ module Chunker
                 <li><a href="/guide/en/ecs-logging/ruby/current/intro.html">Ruby Reference</a></li>
                 <li><a href="/guide/en/ecs-logging/php/current/intro.html">PHP Reference</a></li>
                 <li><a href="/guide/en/ecs-logging/python/current/intro.html">Python Reference</a></li>
+            </div>
+          </div>
+        </span>
+      HTML
+    end
+
+    def generate_enterprise_search_breadcrumbs(doc)
+      title = doc.title
+      short = title.sub(/ documentation/, '')
+      <<~HTML.strip
+        <span class="breadcrumb-link">
+          <div id="related-products" class="dropdown">
+            <div class="related-products-title"></div>
+            <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
+            <div class="dropdown-content">
+              <ul>
+                <li class="dropdown-category">Enterprise Search</li>
+                <ul>
+                <li><a href="/guide/en/enterprise-search/current/index.html">Enterprise Search</a></li>
+                <li><a href="/guide/en/app-search/current/index.html" target="_blank">App Search</a></li>
+                <li><a href="/guide/en/workplace-search/current/index.html" target="_blank">Workplace Search</a></li>
+                </ul>
+                <ul>
+                <li class="dropdown-category">Programming language clients</li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/enterprise-search-node/current/index.html" target="_blank">Node.js client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/php/current/index.html" target="_blank">PHP client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/python/current/index.html" target="_blank">Python client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/ruby/current/index.html" target="_blank">Ruby client</a></li>
+                </ul>
+            </div>
+          </div>
+        </span>
+      HTML
+    end
+
+    def generate_app_search_breadcrumbs(doc)
+      title = doc.title
+      short = title.sub(/ documentation/, '')
+      <<~HTML.strip
+        <span class="breadcrumb-link">
+          <div id="related-products" class="dropdown">
+            <div class="related-products-title"></div>
+            <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
+            <div class="dropdown-content">
+              <ul>
+                <li class="dropdown-category">Enterprise Search guides</li>
+                <ul>
+                <li><a href="/guide/en/enterprise-search/current/index.html">Enterprise Search</a></li>
+                <li><a href="/guide/en/app-search/current/index.html" target="_blank">App Search</a></li>
+                <li><a href="/guide/en/workplace-search/current/index.html" target="_blank">Workplace Search</a></li>
+                </ul>
+                <ul>
+                <li class="dropdown-category">Programming language clients</li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/enterprise-search-node/current/index.html" target="_blank">Node.js client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/php/current/index.html" target="_blank">PHP client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/python/current/index.html" target="_blank">Python client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/ruby/current/index.html" target="_blank">Ruby client</a></li>
+                </ul>
+            </div>
+          </div>
+        </span>
+      HTML
+    end
+
+    def generate_workplace_search_breadcrumbs(doc)
+      title = doc.title
+      short = title.gsub(/ documentation/, '')
+      <<~HTML.strip
+        <span class="breadcrumb-link">
+          <div id="related-products" class="dropdown">
+            <div class="related-products-title"></div>
+            <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
+            <div class="dropdown-content">
+              <ul>
+                <li class="dropdown-category">Enterprise Search guides</li>
+                <ul>
+                <li><a href="/guide/en/enterprise-search/current/index.html">Enterprise Search</a></li>
+                <li><a href="/guide/en/app-search/current/index.html" target="_blank">App Search</a></li>
+                <li><a href="/guide/en/workplace-search/current/index.html" target="_blank">Workplace Search</a></li>
+                </ul>
+                <ul>
+                <li class="dropdown-category">Programming language clients</li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/enterprise-search-node/current/index.html" target="_blank">Node.js client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/php/current/index.html" target="_blank">PHP client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/python/current/index.html" target="_blank">Python client</a></li>
+                <li><a href="https://www.elastic.co/guide/en/enterprise-search-clients/ruby/current/index.html" target="_blank">Ruby client</a></li>
+                </ul>
             </div>
           </div>
         </span>
