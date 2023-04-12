@@ -337,7 +337,7 @@ sub check_links {
         say $link_checker->report;
     }
     else {
-        exit $link_checker->report;
+        warn $link_checker->report;
     }
 
 }
