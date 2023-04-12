@@ -98,7 +98,7 @@ sub report {
         push @error, "  $file contains broken links to:";
         push @error, map {"   - $_"} sort keys %{ $bad->{$file} };
     }
-    warn join "\n", @error, '';
+    exit join "\n", @error, '';
 
 }
 
