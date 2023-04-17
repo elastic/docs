@@ -14,7 +14,7 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       convert = dest.prepare_convert_all src.conf
       convert.skip_link_check unless check_links
-      # Do not expect failures when there are broken links
+      # Do not expect failures when there are broken
       convert.convert(expect_failure: false)
     end
   end
@@ -234,7 +234,7 @@ RSpec.describe 'building all books' do
           dest.prepare_convert_all(src.conf)
               .keep_hash
               .sub_dir(repo2, 'master')
-              .convert(expect_failure: true)
+              .convert(expect_failure: false)
         end
         it 'logs there are bad cross document links' do
           expect(outputs[1]).to include('Bad cross-document links:')
@@ -339,7 +339,7 @@ RSpec.describe 'building all books' do
             dest.prepare_convert_all(src.conf)
                 .keep_hash
                 .sub_dir(src.repo('kibana'), 'main')
-                .convert(expect_failure: true)
+                .convert(expect_failure: false)
           end
           include_examples 'there are broken links in kibana', 'bar'
         end
