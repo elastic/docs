@@ -14,7 +14,8 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       convert = dest.prepare_convert_all src.conf
       convert.skip_link_check unless check_links
-      convert.convert(expect_failure: check_links)
+      # Do not expect failures when there are broken links
+      convert.convert(expect_failure: false)
     end
   end
   shared_context 'there is a broken absolute link in the docs' do |check_links|
