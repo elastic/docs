@@ -14,7 +14,7 @@ RSpec.describe 'building all books' do
       book.source repo, 'index.asciidoc'
       convert = dest.prepare_convert_all src.conf
       convert.skip_link_check unless check_links
-      # Do not expect failures when there are broken
+      # Do not expect failures when there are broken links
       convert.convert(expect_failure: false)
     end
   end
@@ -67,7 +67,7 @@ RSpec.describe 'building all books' do
     # If we check links, we expect failure, and if we don't check links, we
     # don't expect failure.
     include_context 'there is a kibana link', check_links,
-                    '${ELASTIC_WEBSITE_URL}guide/foo', check_links
+                    '${ELASTIC_WEBSITE_URL}guide/foo', false
   end
 
   describe 'when broken link detection is disabled' do
@@ -149,67 +149,67 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken Elasticsearch Guide link in Kibana' do
       include_context 'there is a kibana link', true,
-                      '${ELASTICSEARCH_DOCS}missing-page.html', true
+                      '${ELASTICSEARCH_DOCS}missing-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/elasticsearch/reference/master/missing-page.html'
     end
     describe 'when there is a broken Kibana guide link' do
       include_context 'there is a kibana link', true,
-                      '${KIBANA_DOCS}not-a-kibana-page.html', true
+                      '${KIBANA_DOCS}not-a-kibana-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/kibana/master/not-a-kibana-page.html'
     end
     describe 'when there is a broken ES Plugin link' do
       include_context 'there is a kibana link', true,
-                      '${PLUGIN_DOCS}not-valid-plugin.html', true
+                      '${PLUGIN_DOCS}not-valid-plugin.html', false
       include_examples 'there are broken links in kibana',
                        'en/elasticsearch/plugins/master/not-valid-plugin.html'
     end
     describe 'when there is a broken Fleet link' do
       include_context 'there is a kibana link', true,
-                      '${FLEET_DOCS}not-a-fleet-page.html', true
+                      '${FLEET_DOCS}not-a-fleet-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/fleet/master/not-a-fleet-page.html'
     end
     describe 'when there is a broken APM link' do
       include_context 'there is a kibana link', true,
-                      '${APM_DOCS}not-an-apm-page.html', true
+                      '${APM_DOCS}not-an-apm-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/apm/not-an-apm-page.html'
     end
     describe 'when there is a broken Stack link' do
       include_context 'there is a kibana link', true,
-                      '${STACK_DOCS}not-a-stack-page.html', true
+                      '${STACK_DOCS}not-a-stack-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/elastic-stack/master/not-a-stack-page.html'
     end
     describe 'when there is a broken Security link' do
       include_context 'there is a kibana link', true,
-                      '${SECURITY_SOLUTION_DOCS}not-a-security-page.html', true
+                      '${SECURITY_SOLUTION_DOCS}not-a-security-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/security/master/not-a-security-page.html'
     end
     describe 'when there is a broken Stack Getting Started link' do
       include_context 'there is a kibana link', true,
-                      '${STACK_GETTING_STARTED}not-a-page.html', true
+                      '${STACK_GETTING_STARTED}not-a-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/elastic-stack-get-started/master/not-a-page.html'
     end
     describe 'when there is a broken App Search link' do
       include_context 'there is a kibana link', true,
-                      '${APP_SEARCH_DOCS}not-a-search-page.html', true
+                      '${APP_SEARCH_DOCS}not-a-search-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/app-search/master/not-a-search-page.html'
     end
     describe 'when there is a broken Enterprise Search link' do
       include_context 'there is a kibana link', true,
-                      '${ENTERPRISE_SEARCH_DOCS}not-a-search-page.html', true
+                      '${ENTERPRISE_SEARCH_DOCS}not-a-search-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/enterprise-search/master/not-a-search-page.html'
     end
     describe 'when there is a broken Workplace Search link' do
       include_context 'there is a kibana link', true,
-                      '${WORKPLACE_SEARCH_DOCS}not-a-search-page.html', true
+                      '${WORKPLACE_SEARCH_DOCS}not-a-search-page.html', false
       include_examples 'there are broken links in kibana',
                        'en/workplace-search/master/not-a-search-page.html'
     end
