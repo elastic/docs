@@ -14,12 +14,12 @@ module Chunker
       body = nav_body doc
       @header = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
         <div class="navheader">
-        #{body}
+        
         </div>
       HTML
       @footer = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
         <div class="navfooter">
-        #{body}
+        
         </div>
       HTML
     end

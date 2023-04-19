@@ -35,26 +35,30 @@ sub build_chunked {
 #===================================
     my ( $index, $raw_dest, $dest, %opts ) = @_;
 
-    my $single    = 0;
-    my $chunk     = $opts{chunk}         || 0;
-    my $version   = $opts{version}       || '';
-    my $multi     = $opts{multi}         || 0;
-    my $lenient   = $opts{lenient}       || '';
-    my $lang      = $opts{lang}          || 'en';
-    my $edit_urls = $opts{edit_urls};
-    my $section   = $opts{section_title} || '';
-    my $subject   = $opts{subject}       || '';
-    my $private   = $opts{private}       || '';
-    my $resources = $opts{resource}      || [];
-    my $noindex   = $opts{noindex}       || '';
+    my $single      = 0;
+    my $chunk       = $opts{chunk}         || 0;
+    my $version     = $opts{version}       || '';
+    my $multi       = $opts{multi}         || 0;
+    my $lenient     = $opts{lenient}       || '';
+    my $lang        = $opts{lang}          || 'en';
+    my $edit_urls   = $opts{edit_urls};
+    my $section     = $opts{section_title} || '';
+    my $subject     = $opts{subject}       || '';
+    my $collection  = $opts{collection}    || '';
+    my $group       = $opts{group}         || '';
+    my $book_id     = $opts{book_id}       || '';
+    my $current     = $opts{current}       || '';
+    my $private     = $opts{private}       || '';
+    my $resources   = $opts{resource}      || [];
+    my $noindex     = $opts{noindex}       || '';
     my $page_header = custom_header($index) || $opts{page_header} || '';
-    my $latest    = $opts{latest};
+    my $latest      = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
-    my $branch = $opts{branch};
-    my $roots = $opts{roots};
-    my $relativize = $opts{relativize};
+    my $branch      = $opts{branch};
+    my $roots       = $opts{roots};
+    my $relativize  = $opts{relativize};
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -119,6 +123,10 @@ sub build_chunked {
             # Add some metadata
             '-a' => 'dc.type=Learn/Docs/' . $section,
             '-a' => 'dc.subject=' . $subject,
+            '-a' => 'dc.collection=' . $collection,
+            '-a' => 'dc.group=' . $group,
+            '-a' => 'dc.book_id=' . $book_id,
+            '-a' => 'dc.current=' . $current,
             '-a' => 'dc.identifier=' . $version,
             $multi ? ( '-a' => "title-extra= [$version]" ) : (),
             $noindex ? ('-a' => 'noindex') : (),
@@ -133,9 +141,12 @@ sub build_chunked {
 
     # Extract the TOC from the index.html page *before* we (potentially) replace
     # the TOC on the index.html page with a custom title page.
-    extract_toc_from_index( $raw_dest );
+    extract_toc_from_index( $raw_dest, %$Opts );
+    
+    my $contents = $raw_dest->file('index.html')->slurp( iomode => '<:encoding(UTF-8)' );
+    $contents =~ s|<!--START_TOC-->.*<!--END_TOC-->|<div></div>|sm;
+    $raw_dest->file('index.html')->spew( iomode => '>:utf8', $contents );
 
-    _customize_title_page( $index, $raw_dest->file('index.html'), $single );
     finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
 }
 
@@ -144,28 +155,32 @@ sub build_single {
 #===================================
     my ( $index, $raw_dest, $dest, %opts ) = @_;
 
-    my $single = 1;
-    my $type = $opts{type} || 'book';
-    my $toc = $opts{toc} || '';
-    my $lenient   = $opts{lenient}       || '';
-    my $version   = $opts{version}       || '';
-    my $multi     = $opts{multi}         || 0;
-    my $lang      = $opts{lang}          || 'en';
-    my $edit_urls = $opts{edit_urls};
-    my $section   = $opts{section_title} || '';
-    my $subject   = $opts{subject}       || '';
-    my $private   = $opts{private}       || '';
-    my $noindex   = $opts{noindex}       || '';
-    my $resources = $opts{resource}      || [];
+    my $single      = 1;
+    my $type        = $opts{type} || 'book';
+    my $toc         = $opts{toc} || '';
+    my $lenient     = $opts{lenient}       || '';
+    my $version     = $opts{version}       || '';
+    my $multi       = $opts{multi}         || 0;
+    my $lang        = $opts{lang}          || 'en';
+    my $edit_urls   = $opts{edit_urls};
+    my $section     = $opts{section_title} || '';
+    my $subject     = $opts{subject}       || '';
+    my $collection  = $opts{collection}    || '';
+    my $group       = $opts{group}         || '';
+    my $book_id     = $opts{book_id}       || '';
+    my $current     = $opts{current}       || '';
+    my $private     = $opts{private}       || '';
+    my $noindex     = $opts{noindex}       || '';
+    my $resources   = $opts{resource}      || [];
     my $page_header = custom_header($index) || $opts{page_header} || '';
-    my $latest    = $opts{latest};
+    my $latest      = $opts{latest};
     my $respect_edit_url_overrides = $opts{respect_edit_url_overrides} || '';
     my $alternatives = $opts{alternatives} || [];
     my $alternatives_summary = $raw_dest->file('alternatives_summary.json');
-    my $branch = $opts{branch};
-    my $roots = $opts{roots};
-    my $relativize = $opts{relativize};
-    my $extra = $opts{extra} || 0;
+    my $branch      = $opts{branch};
+    my $roots       = $opts{roots};
+    my $relativize  = $opts{relativize};
+    my $extra       = $opts{extra} || 0;
 
     die "Can't find index [$index]" unless -f $index;
 
@@ -222,6 +237,10 @@ sub build_single {
             # Add some metadata
             '-a' => 'dc.type=Learn/Docs/' . $section,
             '-a' => 'dc.subject=' . $subject,
+            '-a' => 'dc.collection=' . $collection,
+            '-a' => 'dc.group=' . $group,
+            '-a' => 'dc.book_id=' . $book_id,
+            '-a' => 'dc.current=' . $current,
             '-a' => 'dc.identifier=' . $version,
             $multi ? ( '-a' => "title-extra= [$version]" ) : (),
             $noindex ? ('-a' => 'noindex') : (),

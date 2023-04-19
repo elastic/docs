@@ -139,6 +139,14 @@ sub new {
     my $subject = $args{subject}
         or die "No <subject> specified for book <$title>";
 
+    my $collection = $args{collection}
+        or die "No <collection> specified for book <$title>";
+
+    my $group = $args{group} || '';
+
+    my $book_id = $args{book_id}
+        or die "No <book_id> specified for book <$title>";
+
     my $lang = $args{lang} || 'en';
 
     my $respect_edit_url_overrides = 0;
@@ -170,6 +178,9 @@ sub new {
         current       => $current,
         tags          => $tags,
         subject       => $subject,
+        collection    => $collection,
+        group         => $group,
+        book_id       => $book_id,
         private       => $args{private} || '',
         noindex       => $args{noindex} || '',
         lang          => $lang,
@@ -283,6 +294,10 @@ sub _build_book {
     my $index         = $self->index;
     my $section_title = $self->section_title($version);
     my $subject       = $self->subject;
+    my $collection    = $self->collection;
+    my $group         = $self->group;
+    my $book_id       = $self->book_id;
+    my $current       = $self->current;
     my $lang          = $self->lang;
 
     return 0 unless $rebuild ||
@@ -308,6 +323,10 @@ sub _build_book {
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 subject       => $subject,
+                collection    => $collection,
+                group         => $group,
+                book_id       => $book_id,
+                current       => $current,
                 toc           => $self->toc,
                 resource      => [$checkout],
                 latest        => $latest,
@@ -333,6 +352,10 @@ sub _build_book {
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 subject       => $subject,
+                collection    => $collection,
+                group         => $group,
+                book_id       => $book_id,
+                current       => $current,
                 resource      => [$checkout],
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
@@ -539,6 +562,9 @@ sub current          { shift->{current} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
+sub collection       { shift->{collection} }
+sub group            { shift->{group} }
+sub book_id          { shift->{book_id} }
 sub source           { shift->{source} }
 sub lang             { shift->{lang} }
 #===================================

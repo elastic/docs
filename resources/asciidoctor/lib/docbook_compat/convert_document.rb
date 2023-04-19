@@ -87,7 +87,6 @@ module DocbookCompat
       HTML
       result + <<~HTML.strip
         </div>
-        <hr>
         <!--EXTRA-->
       HTML
     end
