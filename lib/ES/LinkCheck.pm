@@ -1,9 +1,8 @@
 package ES::LinkCheck;
-
 use strict;
 use warnings;
 use v5.10;
-use ES::Util qw(run);
+use ES::Util qw(run $Opts);
 
 our $Link_Re = qr{
     (?:https?://(?:www.)?elastic.co|[\s"])/guide/
@@ -88,6 +87,7 @@ sub _link_extractor {
 #===================================
 sub report {
 #===================================
+    my ( $warnonly ) = @_;
     my $self = shift;
     my $bad  = $self->bad;
     return "All cross-document links OK"
@@ -98,8 +98,12 @@ sub report {
         push @error, "  $file contains broken links to:";
         push @error, map {"   - $_"} sort keys %{ $bad->{$file} };
     }
-    warn join "\n", @error, '';
-
+    if ($warnonly)  {
+      return join "\n", @error, '';
+    }
+    else {
+      die join "\n", @error, '';
+    }
 }
 
 #===================================
@@ -143,5 +147,3 @@ sub seen    { shift->{seen} }
 sub bad     { shift->{bad} }
 sub has_bad { !keys %{ shift->bad } }
 #===================================
-
-1
