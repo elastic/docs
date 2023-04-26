@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 module Chunker
-    ##
-    # methods for generating breadcrumbs for Obs docs books
+  ##
+  # methods for generating breadcrumbs for Obs docs books
   module ObsBreadcrumbs
     def generate_apm_breadcrumbs(doc)
-        title = doc.title
-        short = title.sub(/APM /, '')
-        <<~HTML.strip
+      title = doc.title
+      short = title.sub(/APM /, '')
+      <<~HTML.strip
         <span class="breadcrumb-link">
           <div id="related-products" class="dropdown">
           <div class="related-products-title">APM:</div>
@@ -39,33 +39,33 @@ module Chunker
           </ul>
           </div>
           </div>
-        HTML
-      end
-
-      def generate_ecslogging_breadcrumbs(doc)
-        title = doc.title
-        short = title.sub(/ECS Logging /, '')
-        <<~HTML.strip
-          <span class="breadcrumb-link">
-            <div id="related-products" class="dropdown">
-              <div class="related-products-title">ECS Logging:</div>
-              <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
-              <div class="dropdown-content">
-                <ul>
-                  <li><a href="/guide/en/ecs-logging/overview/current/intro.html">Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/go-logrus/current/intro.html">Go (Logrus) Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/go-zap/current/intro.html">Go (zap) Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/java/current/intro.html">Java Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/dotnet/current/intro.html">.NET Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/nodejs/current/intro.html">Node.js Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/ruby/current/intro.html">Ruby Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/php/current/intro.html">PHP Reference</a></li>
-                  <li><a href="/guide/en/ecs-logging/python/current/intro.html">Python Reference</a></li>
-                </ul>
-              </div>
-            </div>
-          </span>
-        HTML
-      end
+      HTML
     end
+
+    def generate_ecslogging_breadcrumbs(doc)
+      title = doc.title
+      short = title.sub(/ECS Logging /, '')
+      <<~HTML.strip
+        <span class="breadcrumb-link">
+          <div id="related-products" class="dropdown">
+            <div class="related-products-title">ECS Logging:</div>
+            <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
+            <div class="dropdown-content">
+              <ul>
+                <li><a href="/guide/en/ecs-logging/overview/current/intro.html">Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/go-logrus/current/intro.html">Go (Logrus) Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/go-zap/current/intro.html">Go (zap) Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/java/current/intro.html">Java Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/dotnet/current/intro.html">.NET Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/nodejs/current/intro.html">Node.js Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/ruby/current/intro.html">Ruby Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/php/current/intro.html">PHP Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/python/current/intro.html">Python Reference</a></li>
+              </ul>
+            </div>
+          </div>
+        </span>
+      HTML
+    end
+  end
 end
