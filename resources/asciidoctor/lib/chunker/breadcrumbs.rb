@@ -9,8 +9,8 @@ module Chunker
   # Builds the "breadcrumbs" at the top of the page.
   module Breadcrumbs
     include Link
-    include Search_breadcrumbs
-    include Obs_breadcrumbs
+    include Search_Breadcrumbs
+    include Obs_Breadcrumbs
 
     def generate_breadcrumbs(doc, section)
       chev = <<~HTML.strip
@@ -31,7 +31,7 @@ module Chunker
         'ECS Logging' => 'generate_ecslogging_breadcrumbs',
         'Enterprise Search' => 'generate_search_breadcrumbs',
         'App Search' => 'generate_search_breadcrumbs',
-        'Workplace Search' => 'generate_search_breadcrumbs'
+        'Workplace Search' => 'generate_search_breadcrumbs',
       }
 
       cases.each do |c, method|

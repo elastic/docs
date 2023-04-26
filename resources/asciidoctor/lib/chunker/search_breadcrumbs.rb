@@ -1,12 +1,13 @@
 # frozen_string_literal: true
+
 module Chunker
-##
-# methods for generating breadcrumbs for Enterprise Search book
-  module Search_breadcrumbs
+  ##
+  # methods for generating breadcrumbs for Enterprise Search book
+  module Search_Breadcrumbs
     def generate_search_breadcrumbs(doc, _search_type)
-        title = doc.title
-        short = title.sub(/ documentation/, '')
-        books = {
+      title = doc.title
+      short = title.sub(/ documentation/, '')
+      books = {
           'Enterprise Search' => '/guide/en/enterprise-search/current/index.html',
           'App Search' => '/guide/en/app-search/current/index.html',
           'Workplace Search' => '/guide/en/workplace-search/current/index.html',
@@ -37,6 +38,6 @@ module Chunker
             </div>
           </span>
         HTML
-      end
     end
-    end
+end
+end
