@@ -3,12 +3,12 @@
 module Chunker
     ##
     # methods for generating breadcrumbs for Obs docs books
-    module ObsBreadcrumbs
-      def generate_apm_breadcrumbs(doc)
+  module ObsBreadcrumbs
+    def generate_apm_breadcrumbs(doc)
         title = doc.title
         short = title.sub(/APM /, '')
         <<~HTML.strip
-          <span class="breadcrumb-link">
+        <span class="breadcrumb-link">
           <div id="related-products" class="dropdown">
           <div class="related-products-title">APM:</div>
           <div class="dropdown-anchor" tabindex="0">#{short}<span class="dropdown-icon"></span></div>
@@ -39,7 +39,7 @@ module Chunker
           </ul>
           </div>
           </div>
-          HTML
+        HTML
       end
 
       def generate_ecslogging_breadcrumbs(doc)

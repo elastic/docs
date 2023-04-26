@@ -37,7 +37,7 @@ module Chunker
       cases.each do |c, method|
         next unless result[2].to_s.include?(c)
 
-        if method == 'generate_search_breadcrumbs'
+        result = if method == 'generate_search_breadcrumbs'
           result[2] = chev + send(method, doc, c)
         else
           result[2] = chev + send(method, doc)
