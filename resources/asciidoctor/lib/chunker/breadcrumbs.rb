@@ -35,7 +35,7 @@ module Chunker
       }
 
       cases.each do |c, method|
-        if result[2].to_s.include?(c)
+        next unless result[2].to_s.include?(c)
           if method == 'generate_search_breadcrumbs'
             result[2] = chev + send(method, doc, c)
           else
@@ -44,7 +44,7 @@ module Chunker
           break
         end
       end
-    end
+
 
     def generate_breadcrumb_links(section, chev)
       result = []
@@ -56,7 +56,7 @@ module Chunker
         HTML
         links = chev + link
         result << links
-      end
+    end
       result << <<~HTML.strip
         <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
       HTML

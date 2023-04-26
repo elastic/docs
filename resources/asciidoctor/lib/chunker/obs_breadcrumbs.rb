@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Chunker
-    ##
-    # methods for generating breadcrumbs for Obs docs books
+  ##
+  # methods for generating breadcrumbs for Obs docs books
   module Obs_Breadcrumbs
     def generate_apm_breadcrumbs(doc)
         title = doc.title
