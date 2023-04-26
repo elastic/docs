@@ -68,3 +68,4 @@ module Chunker
         HTML
     end
 end
+end
