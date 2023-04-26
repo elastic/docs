@@ -9,8 +9,8 @@ module Chunker
   # Builds the "breadcrumbs" at the top of the page.
   module Breadcrumbs
     include Link
-    include Search_Breadcrumbs
-    include Obs_Breadcrumbs
+    include SearchBreadcrumbs
+    include ObsBreadcrumbs
 
     def generate_breadcrumbs(doc, section)
       chev = <<~HTML.strip
@@ -36,15 +36,15 @@ module Chunker
 
       cases.each do |c, method|
         next unless result[2].to_s.include?(c)
-          if method == 'generate_search_breadcrumbs'
-            result[2] = chev + send(method, doc, c)
-          else
-            result[2] = chev + send(method, doc)
-          end
-          break
-        end
-      end
 
+        if method == 'generate_search_breadcrumbs'
+          result[2] = chev + send(method, doc, c)
+        else
+          result[2] = chev + send(method, doc)
+        end
+        break
+      end
+    end
 
     def generate_breadcrumb_links(section, chev)
       result = []
@@ -56,7 +56,7 @@ module Chunker
         HTML
         links = chev + link
         result << links
-    end
+      end
       result << <<~HTML.strip
         <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
       HTML
