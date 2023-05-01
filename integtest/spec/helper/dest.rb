@@ -235,11 +235,6 @@ class Dest
       self
     end
 
-    def warn_link_check
-      @cmd += ['--warnlinkcheck']
-      self
-    end
-
     def keep_hash
       @cmd += ['--keep_hash']
       self
