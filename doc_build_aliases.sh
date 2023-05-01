@@ -18,7 +18,7 @@ alias docbldes=docbldesx
 alias docbldesf='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elastic-serverless-forwarder/docs/en/index.asciidoc --chunk 2'
 
 # Amazon Kinesis Firehose
-alias docbldakf='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/aws-firehose-index.asciidoc --chunk 1'
+alias docbldakf='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/aws-firehose/index.asciidoc --chunk 1'
 
 # Elasticsearch 6.2 and earlier
 
