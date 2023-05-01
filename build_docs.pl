@@ -1129,4 +1129,7 @@ sub check_opts {
         die('--reference only compatible with --all or --preview') if $Opts->{reference};
         die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
     }
+    if ($Opts->{skiplinkcheck} && $Opts->{warnlinkcheck} ) {
+        die('--warnlinkcheck is incompatible with --skiplinkcheck');
+    }
 }
