@@ -104,7 +104,7 @@ sub report {
         push @error, "  $file contains broken links to:";
         push @error, map {"   - $_"} sort keys %{ $bad->{$file} };
       }
-      die join "\n", @error, '';
+      return join "\n", @error, '';
     }
     if (keys %$warn) {
       my @warning = "Bad master links:";
