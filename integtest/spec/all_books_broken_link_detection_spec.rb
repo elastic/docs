@@ -118,10 +118,10 @@ RSpec.describe 'building all books' do
       it 'logs there are master links' do
         expect(outputs[-1]).to include('Bad master links')
       end
-      it 'logs the bad link' do
+      it 'logs the bad link to master' do
         expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
           /tmp/docsbuild/target_repo/html/test/current/chapter.html contains broken links to:
-           - foo
+           - master/foo
         LOG
       end
     end
@@ -181,7 +181,8 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken link in kibana to master' do
       include_context 'there is a broken link in kibana to master', true, false
-      include_examples 'there are broken links in kibana to master', 'foo'
+      include_examples 'there are broken links in kibana to master',
+                       'master/foo'
     end
     describe 'when a link in kibana goes to the website outside the guide' do
       include_context 'there is a kibana link', true,
@@ -214,8 +215,8 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken APM link' do
       include_context 'there is a kibana link', true,
-                      '${APM_DOCS}not-an-apm-page.html', false
-      include_examples 'there are broken links in kibana to master',
+                      '${APM_DOCS}not-an-apm-page.html', true
+      include_examples 'there are broken links in kibana',
                        'en/apm/not-an-apm-page.html'
     end
     describe 'when there is a broken Stack link' do
