@@ -333,16 +333,19 @@ sub check_links {
     check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     # Comment out due to build errors
     # check_elasticsearch_links( $build_dir, $link_checker ) if exists $Conf->{repos}{elasticsearch};
-    if ( $link_checker->has_bad || $Opts->{warnlinkcheck}) {
+    if ( $Opts->{warnlinkcheck} || ($link_checker->has_bad && !$link_checker->has_warn)) {
+        #If --warnlinkcheck was specified or there are neither failing links nor warning links... don't die
         say $link_checker->report;
     }
     else {
-      if ( $Opts->{warnlinkcheck} ){
-        say $link_checker->report;
-      }
-      else {
-        die $link_checker->report;
-      }
+        if (!$link_checker->has_bad) {
+        # If --warnlinkcheck was not specified and there are failing links... die
+          die $link_checker->report;
+        }
+        else {
+        # If --warnlinkcheck was not specified and there are no failing links but there are warning links... don't die
+          say $link_checker->report;
+        }
     }
 }
 

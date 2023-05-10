@@ -1,8 +1,9 @@
 package ES::LinkCheck;
+
 use strict;
 use warnings;
 use v5.10;
-use ES::Util qw(run $Opts);
+use ES::Util qw(run);
 
 our $Link_Re = qr{
     (?:https?://(?:www.)?elastic.co|[\s"])/guide/
@@ -15,7 +16,7 @@ sub new {
 #===================================
     my $class = shift;
     my $root = shift or die "No root dir specified";
-    bless { root => $root, seen => {}, bad => {} }, $class;
+    bless { root => $root, seen => {}, bad => {}, warn => {} }, $class;
 }
 
 #===================================
@@ -37,7 +38,7 @@ sub check {
                 if $item->basename =~ /\.html$/;
         }
     );
-    return $self->has_bad;
+    return ($self->has_bad, $self->has_warn);
 
 }
 
@@ -62,7 +63,12 @@ sub check_source {
     while ( my ( $path, $fragment ) = $link_it->() ) {
         my $dest = $self->root->file($path);
         unless ( $self->_file_exists( $dest, $path ) ) {
-            $self->add_bad( $file_descr, $path );
+            if ($path =~ /master/) {
+              $self->add_warn( $file_descr, $path );
+            }
+            else {
+              $self->add_bad( $file_descr, $path );
+            }
             next;
         }
         next unless $fragment;
@@ -87,22 +93,26 @@ sub _link_extractor {
 #===================================
 sub report {
 #===================================
-    my ( $warnonly ) = @_;
     my $self = shift;
     my $bad  = $self->bad;
+    my $warn  = $self->warn;
     return "All cross-document links OK"
-        unless keys %$bad;
-
-    my @error = "Bad cross-document links:";
-    for my $file ( sort keys %$bad ) {
+        unless ( keys %$bad || keys %$warn );
+    if (keys %$bad) {
+      my @error = "Bad cross-document links:";
+      for my $file ( sort keys %$bad ) {
         push @error, "  $file contains broken links to:";
         push @error, map {"   - $_"} sort keys %{ $bad->{$file} };
-    }
-    if ($warnonly)  {
-      return join "\n", @error, '';
-    }
-    else {
+      }
       die join "\n", @error, '';
+    }
+    if (keys %$warn) {
+      my @warning = "Bad master links:";
+      for my $file ( sort keys %$warn ) {
+        push @warning, "  $file contains broken links to:";
+        push @warning, map {"   - $_"} sort keys %{ $warn->{$file} };
+      }
+      return join "\n", @warning, '';
     }
 }
 
@@ -142,8 +152,19 @@ sub add_bad {
 }
 
 #===================================
+sub add_warn {
+#===================================
+    my ( $self, $file, $id ) = @_;
+    $self->warn->{$file}{$id} = 1;
+}
+
+#===================================
 sub root    { shift->{root} }
 sub seen    { shift->{seen} }
 sub bad     { shift->{bad} }
 sub has_bad { !keys %{ shift->bad } }
+sub warn     { shift->{warn} }
+sub has_warn { !keys %{ shift->warn } }
 #===================================
+
+1
