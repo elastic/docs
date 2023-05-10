@@ -7,25 +7,33 @@ require_relative 'spec_helper'
 # repositories or the book's configuration.
 RSpec.describe 'building all books' do
   KIBANA_LINKS_FILE = 'src/core/public/doc_links/doc_links_service.ts'
-  shared_context 'there is a broken link in the docs' do |text, check_links|
+  shared_context 'there is a broken link' do |text, check, fail|
     convert_before do |src, dest|
       repo = src.repo_with_index 'repo', text
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
       convert = dest.prepare_convert_all src.conf
-      convert.skip_link_check unless check_links
-      convert.convert(expect_failure: check_links)
+      convert.skip_link_check unless check
+      convert.convert(expect_failure: fail)
     end
   end
-  shared_context 'there is a broken absolute link in the docs' do |check_links|
-    include_context 'there is a broken link in the docs',
-                    'https://www.elastic.co/guide/foo', check_links
+  shared_context 'there is a broken absolute link' do |check, fail|
+    include_context 'there is a broken link',
+                    'https://www.elastic.co/guide/foo', check, fail
   end
-  shared_context 'there is a broken relative link in the docs' do |check_links|
-    include_context 'there is a broken link in the docs',
-                    'link:/guide/foo[]', check_links
+  shared_context 'there is a broken relative link' do |check, fail|
+    include_context 'there is a broken link',
+                    'link:/guide/foo[]', check, fail
   end
-  shared_context 'there is a kibana link' do |check_links, url, expect_failure|
+  shared_context 'there is a broken absolute link to master' do |check, fail|
+    include_context 'there is a broken link',
+                    'https://www.elastic.co/guide/master/foo', check, fail
+  end
+  shared_context 'there is a broken relative link to master' do |check, fail|
+    include_context 'there is a broken link',
+                    'link:/guide/master/foo[]', check, fail
+  end
+  shared_context 'there is a kibana link' do |check, url, fail|
     convert_before do |src, dest|
       # Kibana is special and we check links in it with a little magic
       kibana_repo = src.repo 'kibana'
@@ -57,33 +65,33 @@ RSpec.describe 'building all books' do
       book.current_branch = 'main'
 
       convert = dest.prepare_convert_all src.conf
-      convert.skip_link_check unless check_links
-      convert.convert(expect_failure: expect_failure)
+      convert.skip_link_check unless check
+      convert.convert(expect_failure: fail)
     end
   end
-
-  shared_context 'there is a broken link in kibana' do |check_links|
-    # If we check links, we expect failure, and if we don't check links, we
-    # don't expect failure.
-    include_context 'there is a kibana link', check_links,
-                    '${ELASTIC_WEBSITE_URL}guide/foo', check_links
+  shared_context 'there is a broken link in kibana' do |check, fail|
+    include_context 'there is a kibana link', check,
+                    '${ELASTIC_WEBSITE_URL}guide/foo', fail
   end
-
+  shared_context 'there is a broken link in kibana to master' do |check, fail|
+    include_context 'there is a kibana link', check,
+                    '${ELASTIC_WEBSITE_URL}guide/master/foo', fail
+  end
   describe 'when broken link detection is disabled' do
-    describe 'when there is a broken absolute link in the docs' do
-      include_context 'there is a broken absolute link in the docs', false
+    describe 'when there is a broken absolute link' do
+      include_context 'there is a broken absolute link', false, false
       it 'logs that it skipped link checking' do
         expect(outputs[0]).to include('Skipped Checking links')
       end
     end
-    describe 'when there is a broken relative link in the docs' do
-      include_context 'there is a broken relative link in the docs', false
+    describe 'when there is a broken relative link' do
+      include_context 'there is a broken relative link', false, false
       it 'logs that it skipped link checking' do
         expect(outputs[0]).to include('Skipped Checking links')
       end
     end
     describe 'when there is a broken link in kibana' do
-      include_context 'there is a broken link in kibana', false
+      include_context 'there is a broken link in kibana', false, false
       it 'logs that it skipped link checking' do
         expect(outputs[0]).to include('Skipped Checking links')
       end
@@ -95,7 +103,7 @@ RSpec.describe 'building all books' do
         expect(outputs[-1]).to include('All cross-document links OK')
       end
     end
-    shared_examples 'there are broken links in the docs' do
+    shared_examples 'there are broken links' do
       it 'logs there are bad cross document links' do
         expect(outputs[-1]).to include('Bad cross-document links:')
       end
@@ -106,9 +114,31 @@ RSpec.describe 'building all books' do
         LOG
       end
     end
+    shared_examples 'there are broken links to master' do
+      it 'logs there are master links' do
+        expect(outputs[-1]).to include('Bad master links')
+      end
+      it 'logs the bad link to master' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          /tmp/docsbuild/target_repo/html/test/current/chapter.html contains broken links to:
+           - master/foo
+        LOG
+      end
+    end
     shared_examples 'there are broken links in kibana' do |url|
       it 'logs there are bad cross document links' do
         expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - #{url}
+        LOG
+      end
+    end
+    shared_examples 'there are broken links in kibana to master' do |url|
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad master links:')
       end
       it 'logs the bad link' do
         expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
@@ -129,17 +159,30 @@ RSpec.describe 'building all books' do
       end
       include_examples 'all links are ok'
     end
-    describe 'when there is a broken absolute link in the docs' do
-      include_context 'there is a broken absolute link in the docs', true
-      include_examples 'there are broken links in the docs'
+    describe 'when there is a broken absolute link' do
+      include_context 'there is a broken absolute link', true, true
+      include_examples 'there are broken links'
     end
-    describe 'when there is a broken relative link in the docs' do
-      include_context 'there is a broken relative link in the docs', true
-      include_examples 'there are broken links in the docs'
+    describe 'when there is a broken relative link' do
+      include_context 'there is a broken relative link', true, true
+      include_examples 'there are broken links'
+    end
+    describe 'when there is a broken absolute link to master' do
+      include_context 'there is a broken absolute link to master', true, false
+      include_examples 'there are broken links to master'
+    end
+    describe 'when there is a broken relative link to master' do
+      include_context 'there is a broken relative link to master', true, false
+      include_examples 'there are broken links to master'
     end
     describe 'when there is a broken link in kibana' do
-      include_context 'there is a broken link in kibana', true
+      include_context 'there is a broken link in kibana', true, true
       include_examples 'there are broken links in kibana', 'foo'
+    end
+    describe 'when there is a broken link in kibana to master' do
+      include_context 'there is a broken link in kibana to master', true, false
+      include_examples 'there are broken links in kibana to master',
+                       'master/foo'
     end
     describe 'when a link in kibana goes to the website outside the guide' do
       include_context 'there is a kibana link', true,
@@ -148,26 +191,26 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken Elasticsearch Guide link in Kibana' do
       include_context 'there is a kibana link', true,
-                      '${ELASTICSEARCH_DOCS}missing-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${ELASTICSEARCH_DOCS}missing-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/elasticsearch/reference/master/missing-page.html'
     end
     describe 'when there is a broken Kibana guide link' do
       include_context 'there is a kibana link', true,
-                      '${KIBANA_DOCS}not-a-kibana-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${KIBANA_DOCS}not-a-kibana-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/kibana/master/not-a-kibana-page.html'
     end
     describe 'when there is a broken ES Plugin link' do
       include_context 'there is a kibana link', true,
-                      '${PLUGIN_DOCS}not-valid-plugin.html', true
-      include_examples 'there are broken links in kibana',
+                      '${PLUGIN_DOCS}not-valid-plugin.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/elasticsearch/plugins/master/not-valid-plugin.html'
     end
     describe 'when there is a broken Fleet link' do
       include_context 'there is a kibana link', true,
-                      '${FLEET_DOCS}not-a-fleet-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${FLEET_DOCS}not-a-fleet-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/fleet/master/not-a-fleet-page.html'
     end
     describe 'when there is a broken APM link' do
@@ -178,38 +221,38 @@ RSpec.describe 'building all books' do
     end
     describe 'when there is a broken Stack link' do
       include_context 'there is a kibana link', true,
-                      '${STACK_DOCS}not-a-stack-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${STACK_DOCS}not-a-stack-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/elastic-stack/master/not-a-stack-page.html'
     end
     describe 'when there is a broken Security link' do
       include_context 'there is a kibana link', true,
-                      '${SECURITY_SOLUTION_DOCS}not-a-security-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${SECURITY_SOLUTION_DOCS}not-a-security-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/security/master/not-a-security-page.html'
     end
     describe 'when there is a broken Stack Getting Started link' do
       include_context 'there is a kibana link', true,
-                      '${STACK_GETTING_STARTED}not-a-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${STACK_GETTING_STARTED}not-a-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/elastic-stack-get-started/master/not-a-page.html'
     end
     describe 'when there is a broken App Search link' do
       include_context 'there is a kibana link', true,
-                      '${APP_SEARCH_DOCS}not-a-search-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${APP_SEARCH_DOCS}not-a-search-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/app-search/master/not-a-search-page.html'
     end
     describe 'when there is a broken Enterprise Search link' do
       include_context 'there is a kibana link', true,
-                      '${ENTERPRISE_SEARCH_DOCS}not-a-search-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${ENTERPRISE_SEARCH_DOCS}not-a-search-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/enterprise-search/master/not-a-search-page.html'
     end
     describe 'when there is a broken Workplace Search link' do
       include_context 'there is a kibana link', true,
-                      '${WORKPLACE_SEARCH_DOCS}not-a-search-page.html', true
-      include_examples 'there are broken links in kibana',
+                      '${WORKPLACE_SEARCH_DOCS}not-a-search-page.html', false
+      include_examples 'there are broken links in kibana to master',
                        'en/workplace-search/master/not-a-search-page.html'
     end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
