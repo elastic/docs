@@ -333,7 +333,7 @@ sub check_links {
     check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     # Comment out due to build errors
     # check_elasticsearch_links( $build_dir, $link_checker ) if exists $Conf->{repos}{elasticsearch};
-    if ( $link_checker->has_bad ) {
+    if ( $link_checker->has_bad || $Opts->{warnlinkcheck}) {
         say $link_checker->report;
     }
     else {
@@ -1128,5 +1128,8 @@ sub check_opts {
     if ( !$Opts->{all} && !$Opts->{preview} ) {
         die('--reference only compatible with --all or --preview') if $Opts->{reference};
         die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
+    }
+    if ($Opts->{skiplinkcheck} && $Opts->{warnlinkcheck} ) {
+        die('--warnlinkcheck is incompatible with --skiplinkcheck');
     }
 }
