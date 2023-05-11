@@ -1,7 +1,5 @@
 export const switchTabs = () => {
-  
-  document.addEventListener("readystatechange", () => {
-   if (document.readyState === "interactive") {
+  document.addEventListener("DOMContentLoaded", () => {
     const tabs = document.querySelectorAll('[role="tab"]');
     const tabList = document.querySelector('[role="tablist"]');
     // Add a click event handler to each tab
@@ -32,7 +30,6 @@ export const switchTabs = () => {
         tabs[tabFocus].focus();
       }
     });
-   }
   });
 }
 
