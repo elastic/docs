@@ -107,7 +107,10 @@ alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ru
 
 alias docbldewsn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/workplace-search-node/index.asciidoc --single'
 
-# Observability Guide
+# Observability Guide 8.8 and later
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/ingest-docs/docs'
+
+# Observability Guide 8.7 and earlier
 alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/ingest-docs/docs'
 
 # Observability Legacy
