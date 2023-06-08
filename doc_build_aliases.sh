@@ -89,6 +89,8 @@ alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/in
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
 
+alias docbldesre='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/esre-docs/index.asciidoc --chunk=1'
+
 alias docbldees='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/enterprise-search-docs/index.asciidoc --chunk=1'
 
 alias docbldeas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/app-search-docs/index.asciidoc --chunk=1'
