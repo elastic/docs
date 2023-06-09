@@ -2320,6 +2320,51 @@ RSpec.describe DocbookCompat do
         HTML
       end
     end
+    context 'with role shorthand' do
+      let(:input) do
+        <<~ASCIIDOC
+          [.role]
+          |===
+          |Col 1 | Col 2
+          |===
+        ASCIIDOC
+      end
+      it 'has the class' do
+        expect(converted).to include <<~HTML
+          <table border="1" cellpadding="4px" class="role">
+        HTML
+      end
+    end
+    context 'with roles shorthand' do
+      let(:input) do
+        <<~ASCIIDOC
+          [.role1.role2]
+          |===
+          |Col 1 | Col 2
+          |===
+        ASCIIDOC
+      end
+      it 'has the classes' do
+        expect(converted).to include <<~HTML
+          <table border="1" cellpadding="4px" class="role1 role2">
+        HTML
+      end
+    end
+    context 'with role attribute' do
+      let(:input) do
+        <<~ASCIIDOC
+          [role=role]
+          |===
+          |Col 1 | Col 2
+          |===
+        ASCIIDOC
+      end
+      it 'has the class' do
+        expect(converted).to include <<~HTML
+          <table border="1" cellpadding="4px" class="role">
+        HTML
+      end
+    end
     context 'with colspan' do
       let(:input) do
         <<~ASCIIDOC

@@ -53,6 +53,7 @@ module DocbookCompat
         %( border="#{border}" cellpadding="4px"),
         node.title ? %( summary="#{strip_tags node.title}") : nil,
         (width = node.attr 'width') ? %( width="#{width}") : nil,
+        node.role ? %( class="#{node.role}") : nil,
         '>',
       ].compact.join
     end
