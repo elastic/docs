@@ -89,6 +89,8 @@ alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/in
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
 
+alias docbldesre='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/esre-docs/index.asciidoc --chunk=1'
+
 alias docbldees='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/enterprise-search-docs/index.asciidoc --chunk=1'
 
 alias docbldeas='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/app-search-docs/index.asciidoc --chunk=1'
@@ -107,7 +109,10 @@ alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ru
 
 alias docbldewsn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/workplace-search-node/index.asciidoc --single'
 
-# Observability Guide
+# Observability Guide 8.8 and later
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/ingest-docs/docs'
+
+# Observability Guide 8.7 and earlier
 alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/kibana/docs --resource=$GIT_HOME/ingest-docs/docs'
 
 # Observability Legacy
