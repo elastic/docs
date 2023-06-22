@@ -17,8 +17,8 @@ const alternativePrettyName = rawName => {
   }
 };
 
-const AlternativeChoice = ({name: name}) => {
-  return <option value={name}>{alternativePrettyName(name)}</option>;
+const AlternativeChoice = ({name: name, disabled: disabled}) => {
+  return <option value={name} disabled={disabled}>{alternativePrettyName(name)}</option>;
 };
 
 export class _AlternativePicker extends Component {
@@ -49,7 +49,8 @@ export class _AlternativePicker extends Component {
     items.push(<AlternativeChoice name='console'/>);
     for (const name of Object.keys(consoleAlternatives)) {
       sawChoice |= name === consoleAlternative;
-      items.push(<AlternativeChoice name={name} />);
+      let disabled = this.props.langs ? !this.props.langs.includes(name) : false;
+      items.push(<AlternativeChoice name={name} disabled={disabled} />);
     }
 
     /* If value isn't in the list then *make* it and we'll render our standard
