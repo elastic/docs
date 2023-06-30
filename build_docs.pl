@@ -330,8 +330,7 @@ sub check_links {
 
     $link_checker->check;
 
-    # Temporarily pause Kibana link checks. See https://github.com/elastic/kibana/pull/160535
-    # check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
+    check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     # Comment out due to build errors
     # check_elasticsearch_links( $build_dir, $link_checker ) if exists $Conf->{repos}{elasticsearch};
     if ( $link_checker->has_bad || $Opts->{warnlinkcheck}) {
@@ -379,7 +378,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
                 # We don't want to check any links to www.elastic.co that aren't
                 # part of the docs.
-                return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}.*/;
+                return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL|ELASTIC_GITHUB)\}.*/;
                 # Otherwise, return the link to check
                 return ( split /#/, $path );
             }
