@@ -330,8 +330,7 @@ sub check_links {
 
     $link_checker->check;
 
-    # Temporarily pause Kibana link checks. See https://github.com/elastic/kibana/pull/160535
-    # check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
+    check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
     # Comment out due to build errors
     # check_elasticsearch_links( $build_dir, $link_checker ) if exists $Conf->{repos}{elasticsearch};
     if ( $link_checker->has_bad || $Opts->{warnlinkcheck}) {
