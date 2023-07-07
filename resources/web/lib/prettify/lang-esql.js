@@ -28,7 +28,7 @@ PR['registerLangHandler'](
         ],
         [
          [PR['PR_COMMENT'], /^(?:\/\/[^\r\n]*|\/\*[\s\S]*?(?:\*\/|$))/],
-         [PR['PR_KEYWORD'], /^(?:AND|OR|BY|DISSECT|DROP|EVAL|FROM|GROK|LIKE|LIMIT|MV_EXPAND|NOT|PROJECT|RENAME|RLIKE|ROW|SHOW|SORT|STATS|WHERE)(?=[^\w-]|$)/i, null],
+         [PR['PR_KEYWORD'], /^(?:AND|OR|BY|DISSECT|DROP|EVAL|FROM|GROK|KEEP|LIKE|LIMIT|MV_EXPAND|NOT|RENAME|RLIKE|ROW|SHOW|SORT|STATS|WHERE)(?=[^\w-]|$)/i, null],
          [PR['PR_LITERAL'], /^[+-]?(?:\.\d+|\d+(?:\.\d*)?)/i],
          [PR['PR_PLAIN'], /^[a-z_][\w-]*/i],
         ]),
