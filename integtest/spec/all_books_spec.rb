@@ -602,16 +602,58 @@ RSpec.describe 'building all books' do
   context 'when the book has "live" branches' do
     convert_all_before_context do |src|
       repo = src.repo_with_index 'repo', 'test'
+      repo.switch_to_new_branch '0.10'
       repo.switch_to_new_branch '0.9_oldbutlive'
       repo.switch_to_new_branch '0.8_nonlive'
 
       book = src.book 'Test'
       book.source repo, 'index.asciidoc'
-      book.branches = ['master', '0.9_oldbutlive', '0.8_nonlive']
-      book.live_branches = ['master', '0.9_oldbutlive']
+      book.branches = ['master', '0.10', '0.9_oldbutlive', '0.8_nonlive']
+      book.live_branches = ['0.10', '0.9_oldbutlive']
+      book.current_branch = '0.10'
     end
     let(:repo) { @src.repo 'repo' }
-    page_context 'the current branch', 'html/test/master/index.html' do
+    page_context 'the master branch',
+                 'html/test/master/index.html' do
+      it 'contains the noindex flag' do
+        expect(contents).to include(<<~HTML.strip)
+          <meta name="robots" content="noindex,nofollow"/>
+        HTML
+      end
+      context 'the live versions drop down' do
+        it 'contains only the live branches' do
+          expect(body).to include(<<~HTML.strip)
+            <select id="live_versions"><option value="master" selected>master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
+          HTML
+        end
+      end
+      context 'the other versions drop down' do
+        it 'contains all branches' do
+          expect(body).to include(<<~HTML.strip)
+            <span id="other_versions">other versions: <select><option value="master" selected>master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+          HTML
+        end
+      end
+      it 'includes the prelim docs header' do
+        expect(body).to include <<~HTML
+          <div class="page_header">
+          You are looking at preliminary documentation for a future release.
+          Not what you want? See the
+          <a href="../current/index.html">current release documentation</a>.
+          </div>
+        HTML
+      end
+    end
+    page_context "the master branch's chap",
+                 'html/test/master/chapter.html' do
+      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+      it 'contains an edit_me link' do
+        expect(body).to include <<~HTML.strip
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
+        HTML
+      end
+    end
+    page_context 'the current branch', 'html/test/0.10/index.html' do
       it "doesn't contain the noindex flag" do
         expect(contents).not_to include(<<~HTML.strip)
           <meta name="robots" content="noindex,nofollow"/>
@@ -620,14 +662,14 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains only the live branches' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="master" selected>master (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="0.10" selected>0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
           HTML
         end
       end
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master" selected>master (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10" selected>0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
           HTML
         end
       end
@@ -635,8 +677,9 @@ RSpec.describe 'building all books' do
         expect(body).not_to include 'class="page_header"'
       end
     end
-    page_context "the live branch's chapter", 'html/test/master/chapter.html' do
-      let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
+    page_context "the current branch's chap",
+                 'html/test/0.10/chapter.html' do
+      let(:edit_url) { "#{repo.root}/edit/0.10/index.asciidoc" }
       it 'contains an edit_me link' do
         expect(body).to include <<~HTML.strip
           <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
@@ -652,14 +695,14 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains only the live branches' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="master">master (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="other">other versions</option></select>
           HTML
         end
       end
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master">master (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
           HTML
         end
       end
@@ -691,13 +734,16 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains the deprecated branch' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="master">master (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option></select>
+            <select id="live_versions"><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option><option value="other">other versions</option>
           HTML
         end
       end
-      it "it doesn't contain the other versions drop down" do
-        # *because* there aren't any versions filtered from the list
-        expect(body).not_to include 'id="other_versions"'
+      context 'the other versions drop down' do
+        it 'contains all branches' do
+          expect(body).to include(<<~HTML.strip)
+            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option></select>
+          HTML
+        end
       end
       it 'includes the "dead" version header' do
         expect(body).to include <<~HTML
