@@ -53,6 +53,37 @@ describe(_AlternativePicker, () => {
     });
   });
 
+  describe("when console alternative snippets are missing", () => {
+    const picker = render(<_AlternativePicker
+      consoleAlternative="console"
+      alternatives={{
+        console: {
+          js: {},
+          csharp: {},
+        }
+      }}
+      langs={["js"]}/>);
+    const select = picker.childNodes[0];
+
+    test("disables the missing options", () => {
+      expect(picker).toStrictEqual(render(
+        <div class="AlternativePicker u-space-between">
+          <select class="AlternativePicker-select">
+            <option value="console">Console</option>
+            <option value="js">JavaScript</option>
+            <option value="csharp" disabled>C#</option>
+          </select>
+          <div class="AlternativePicker-warning" />
+          {null}
+        </div>
+      ));
+    });
+
+    test("selects the consoleAlternative from the props", () => {
+      expect(select.value).toBe("console");
+    });
+  });
+
   describe("when the console alternative isn't in the options", () => {
     const picker = render(<_AlternativePicker
       consoleAlternative="bort"

@@ -75,7 +75,8 @@ export function init_console_widgets() {
   $('div.console_widget').each(function() {
     const div         = $(this),
           snippet     = div.attr('data-snippet'),
-          consoleText = div.prev().text() + '\n';
+          consoleText = div.prev().text() + '\n',
+          langs       = div.attr("class").split(" ").filter(c => c.startsWith("has-")).map(function(string) { return string.substring(4) });
 
     return mount(div, ConsoleWidget, {setting: "console",
                                       url_label: 'Enter the URL of the Console editor',
@@ -83,7 +84,8 @@ export function init_console_widgets() {
                                       configure_text: 'Configure Console URL',
                                       addPretty: true,
                                       consoleText,
-                                      snippet});
+                                      snippet,
+                                      langs});
   });
 }
 
