@@ -68,9 +68,11 @@ RSpec.describe 'building all books' do
       has_license 'Bootstrap', 'The MIT License (MIT)'
       has_license 'Inter', 'SIL OPEN FONT LICENSE'
       has_license 'Noto Sans Japanese', 'SIL OPEN FONT LICENSE'
+      has_license 'Roboto Mono', 'APACHE LICENSE'
     end
     file_context 'html/static/Inter-Medium.5d08e0ba.woff2'
     file_context 'html/static/NotoSansJP-Black.df80409c.woff2'
+    file_context 'html/static/roboto-mono-latin-400-normal.b1632429.woff2'
     file_context 'html/sitemap.xml' do
       it 'has an entry for the chapter' do
         expect(contents).to include(<<~XML)
