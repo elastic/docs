@@ -28,7 +28,7 @@ our @EXPORT_OK = qw(
     build_web_resources
 );
 
-our $Opts = { procs => 3, lang => 'en' };
+our $Opts = { procs => 5, lang => 'en' };
 
 #===================================
 sub build_chunked {
