@@ -290,9 +290,11 @@ sub build_all {
     }
     else {
         say "Building docs";
-        build_entries(
-            $raw_build_dir, $build_dir, $temp_dir, $toc, $tracker, @$contents
-        );
+
+        # Filter branches based on "live" configuration
+        my @live_branches = grep { $_->{live} } map { $_->{branches} } @$contents;
+
+        build_entries($raw_build_dir, $build_dir, $temp_dir, $toc, $tracker, @live_branches);
 
         say "Writing main TOC";
         $toc->write( $raw_build_dir, $build_dir, $temp_dir, 0 );
