@@ -38,6 +38,7 @@ sub build_chunked {
     my $single    = 0;
     my $chunk     = $opts{chunk}         || 0;
     my $version   = $opts{version}       || '';
+    my $collection   = $opts{collection}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lenient   = $opts{lenient}       || '';
     my $lang      = $opts{lang}          || 'en';
@@ -120,6 +121,7 @@ sub build_chunked {
             '-a' => 'dc.type=Learn/Docs/' . $section,
             '-a' => 'dc.subject=' . $subject,
             '-a' => 'dc.identifier=' . $version,
+            '-a' => 'dc.collection=' . $collection,
             $multi ? ( '-a' => "title-extra= [$version]" ) : (),
             $noindex ? ('-a' => 'noindex') : (),
             $page_header ? ('-a' => "page-header=$page_header") : (),
@@ -149,6 +151,7 @@ sub build_single {
     my $toc = $opts{toc} || '';
     my $lenient   = $opts{lenient}       || '';
     my $version   = $opts{version}       || '';
+    my $collection   = $opts{collection}       || '';
     my $multi     = $opts{multi}         || 0;
     my $lang      = $opts{lang}          || 'en';
     my $edit_urls = $opts{edit_urls};
@@ -223,6 +226,7 @@ sub build_single {
             '-a' => 'dc.type=Learn/Docs/' . $section,
             '-a' => 'dc.subject=' . $subject,
             '-a' => 'dc.identifier=' . $version,
+            '-a' => 'dc.collection=' . $collection,
             $multi ? ( '-a' => "title-extra= [$version]" ) : (),
             $noindex ? ('-a' => 'noindex') : (),
             $page_header ? ('-a' => "page-header=$page_header") : (),

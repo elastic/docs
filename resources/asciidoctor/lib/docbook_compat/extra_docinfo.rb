@@ -36,6 +36,7 @@ module DocbookCompat
         # Legacy docbook meta
         docbook_compat_meta('DC.type', attributes['dc.type']),
         docbook_compat_meta('DC.subject', attributes['dc.subject']),
+        docbook_compat_meta('DC.collection', attributes['dc.collection']),
         docbook_compat_meta('DC.identifier', attributes['dc.identifier']),
         if attributes['noindex']
           docbook_compat_meta('robots', 'noindex,nofollow')
@@ -53,6 +54,10 @@ module DocbookCompat
 
     def product_name
       attributes['meta-product-name'] || attributes['dc.subject']
+    end
+
+    def collection_name
+      attributes['collection-name'] || attributes['dc.collection']
     end
 
     def page_title
