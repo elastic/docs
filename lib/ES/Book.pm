@@ -139,8 +139,10 @@ sub new {
     my $subject = $args{subject}
         or die "No <subject> specified for book <$title>";
 
-    my $collection = $args{collection}
-        or die "No <collection> specified for book <$title>";
+    my $collection = $args{collection} || '';
+    
+    # my $collection = $args{collection}
+    #     or die "No <collection> specified for book <$title>";
 
     my $lang = $args{lang} || 'en';
 
@@ -173,7 +175,7 @@ sub new {
         current       => $current,
         tags          => $tags,
         subject       => $subject,
-        collection    => $collection,
+        collection    => $collection  || '',
         private       => $args{private} || '',
         noindex       => $args{noindex} || '',
         lang          => $lang,
@@ -287,7 +289,7 @@ sub _build_book {
     my $index         = $self->index;
     my $section_title = $self->section_title($version);
     my $subject       = $self->subject;
-    my $collection    = $self->collection;
+    my $collection    = $self->collection || '';
     my $lang          = $self->lang;
 
     return 0 unless $rebuild ||
@@ -313,7 +315,7 @@ sub _build_book {
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 subject       => $subject,
-                collection    => $collection,
+                collection    => $collection  || '',
                 toc           => $self->toc,
                 resource      => [$checkout],
                 latest        => $latest,
@@ -339,7 +341,7 @@ sub _build_book {
                 page_header   => $self->_page_header($branch),
                 section_title => $section_title,
                 subject       => $subject,
-                collection    => $collection,
+                collection    => $collection  || '',
                 resource      => [$checkout],
                 latest        => $latest,
                 respect_edit_url_overrides => $self->{respect_edit_url_overrides},
