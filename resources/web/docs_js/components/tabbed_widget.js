@@ -1,5 +1,5 @@
 export const switchTabs = () => {
-  window.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", () => {
     const tabs = document.querySelectorAll('[role="tab"]');
     const tabList = document.querySelector('[role="tablist"]');
     // Add a click event handler to each tab

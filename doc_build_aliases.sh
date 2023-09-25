@@ -14,6 +14,12 @@ alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/re
 
 alias docbldes=docbldesx
 
+# Elasticsearch Serverless Forwarder
+alias docbldesf='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elastic-serverless-forwarder/docs/en/index.asciidoc --chunk 2'
+
+# Amazon Kinesis Firehose
+alias docbldakf='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/aws-firehose/index.asciidoc --chunk 1'
+
 # Elasticsearch 6.2 and earlier
 
 alias docbldesold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.x.asciidoc --resource=$GIT_HOME/elasticsearch-extra/x-pack-elasticsearch/docs/ --chunk 1'
@@ -79,9 +85,11 @@ alias docbldsoold=docbldso
 alias docbldaz='$GIT_HOME/docs/build_docs --doc $GIT_HOME/azure-marketplace/docs/index.asciidoc --chunk 1'
 
 # Solutions
-alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/index.asciidoc --resource $GIT_HOME/stack-docs/docs --resource=$GIT_HOME/kibana/docs --chunk 1'
+alias docbldsec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/security-docs/docs/index.asciidoc --resource $GIT_HOME/stack-docs/docs --chunk 1'
 
 alias docbldepd='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/endpoint/index.asciidoc --chunk 1'
+
+alias docbldesre='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/esre-docs/index.asciidoc --chunk=1'
 
 alias docbldees='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/enterprise-search-docs/index.asciidoc --chunk=1'
 
@@ -101,8 +109,11 @@ alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ru
 
 alias docbldewsn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/workplace-search-node/index.asciidoc --single'
 
-# Observability Guide
-alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/kibana/docs'
+# Observability Guide 8.8 and later
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/ingest-docs/docs'
+
+# Observability Guide 8.7 and earlier
+alias docbldobold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/ingest-docs/docs'
 
 # Observability Legacy
 alias docbldmet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/metrics/index.asciidoc --chunk 1'
@@ -160,13 +171,13 @@ alias docbldfnb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
 
 # Fleet and Elastic Agent guide
-alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/apm-server/docs --chunk 2'
+alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/apm-server/docs --resource=$GIT_HOME/observability-docs/docs --chunk 2'
 
 # Integrations developer guide
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
 
 # APM Guide
-alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --chunk 2 --open'
+alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --resource=$GIT_HOME/ingest-docs/ --chunk 2 --open'
 
 # APM Agents
 alias docbldama='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-android/docs/index.asciidoc --chunk 1'

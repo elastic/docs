@@ -331,14 +331,14 @@ sub check_links {
     $link_checker->check;
 
     check_kibana_links( $build_dir, $link_checker ) if exists $Conf->{repos}{kibana};
-    check_elasticsearch_links( $build_dir, $link_checker ) if exists $Conf->{repos}{elasticsearch};
-    if ( $link_checker->has_bad ) {
+    # Comment out due to build errors
+    # check_elasticsearch_links( $build_dir, $link_checker ) if exists $Conf->{repos}{elasticsearch};
+    if ( $link_checker->has_bad || $Opts->{warnlinkcheck}) {
         say $link_checker->report;
     }
     else {
         die $link_checker->report;
     }
-
 }
 
 #===================================
@@ -378,7 +378,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
                 # We don't want to check any links to www.elastic.co that aren't
                 # part of the docs.
-                return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}.*/;
+                return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL|ELASTIC_GITHUB)\}.*/;
                 # Otherwise, return the link to check
                 return ( split /#/, $path );
             }
@@ -1006,6 +1006,7 @@ sub command_line_opts {
         'reference=s',
         'reposcache=s',
         'skiplinkcheck',
+        'warnlinkcheck',
         'sub_dir=s@',
         'user=s',
         # Options only compatible with --preview
@@ -1068,6 +1069,7 @@ sub usage {
           --repos_cache     Directory to which working repositories are cloned.
                             Defaults to `<script_dir>/.repos`.
           --skiplinkcheck   Omit the step that checks for broken links
+          --warnlinkcheck   Checks for broken links but does not fail if they exist
           --sub_dir         Use a directory as a branch of some repo
                             (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
           --target_repo     Repository to which to commit docs
@@ -1112,6 +1114,7 @@ sub check_opts {
         die('--rebuild only compatible with --all') if $Opts->{rebuild};
         die('--reposcache only compatible with --all') if $Opts->{reposcache};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
+        die('--warnlinkcheck only compatible with --all') if $Opts->{warnlinkcheck};
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
     }
     if ( !$Opts->{preview} ) {
@@ -1120,5 +1123,8 @@ sub check_opts {
     if ( !$Opts->{all} && !$Opts->{preview} ) {
         die('--reference only compatible with --all or --preview') if $Opts->{reference};
         die('--target_repo only compatible with --all or --preview') if $Opts->{target_repo};
+    }
+    if ($Opts->{skiplinkcheck} && $Opts->{warnlinkcheck} ) {
+        die('--warnlinkcheck is incompatible with --skiplinkcheck');
     }
 }

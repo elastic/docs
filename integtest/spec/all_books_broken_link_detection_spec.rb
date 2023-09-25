@@ -146,6 +146,11 @@ RSpec.describe 'building all books' do
                       '${ELASTIC_WEBSITE_URL}not-part-of-the-guide', false
       include_examples 'all links are ok'
     end
+    describe 'when a link in kibana goes to an Elastic GitHub URL' do
+      include_context 'there is a kibana link', true,
+                      '${ELASTIC_GITHUB}kibana/issues/new/choose', false
+      include_examples 'all links are ok'
+    end
     describe 'when there is a broken Elasticsearch Guide link in Kibana' do
       include_context 'there is a kibana link', true,
                       '${ELASTICSEARCH_DOCS}missing-page.html', true

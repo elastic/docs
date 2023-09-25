@@ -74,7 +74,7 @@ export const ConsoleForm = connect((state, props) =>
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
   return <div className="u-space-between">
-    <AlternativePicker />
+    <AlternativePicker langs={props.langs} />
     <div className="u-space-between">
       <a className="sense_widget copy_as_curl"
         onClick={e => props.copyAsCurl({

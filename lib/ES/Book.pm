@@ -519,6 +519,7 @@ sub private {
 #===================================
     my ( $self, $branch ) = @_;
     return 1 if $self->{private};
+    return 0 if $branch =~ /^(master|main)$/;
     return 0 if grep( /^$branch$/, @{ $self->{live_branches} } );
     return 1;
 }

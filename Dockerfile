@@ -100,7 +100,7 @@ RUN rm -rf /var/log/nginx && rm -rf /run/nginx
 ##### Everything below this run tests
 FROM base AS py_test
 # There's not a published wheel for yamale, so we need setuptools and wheel
-RUN install_packages python3 python3-pip python3-setuptools python3-wheel
+RUN install_packages python3 python3-pip python3-setuptools python3-wheel python3-dev libxml2-dev libxslt-dev zlib1g-dev
 RUN pip3 install \
   beautifulsoup4==4.8.1 \
   lxml==4.4.2 \
