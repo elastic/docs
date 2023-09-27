@@ -32,6 +32,10 @@ export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 #  warnlinkcheck_opt="--warnlinkcheck"
 #fi
 
+git clone \
+  --reference /opt/git-mirrors/elastic-docs \
+  git@github.com:elastic/docs.git .docs
+
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
 
