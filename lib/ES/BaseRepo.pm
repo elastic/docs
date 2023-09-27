@@ -22,7 +22,8 @@ sub new {
         $reference_subdir =~ s|/$||;
         $reference_subdir =~ s|:*/*\.git$||;
         $reference_subdir =~ s/.*[\/:]//g;
-        $reference_dir = $args{reference}->subdir("$reference_subdir.git");
+        #$reference_dir = $args{reference}->subdir("$reference_subdir.git");
+        $reference_dir = $args{reference}->subdir("elastic-$reference_subdir.git");
     }
 
     return bless {
