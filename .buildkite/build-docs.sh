@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
-set +x
+set -x
 
 # Configure the git author and committer information
 export GIT_AUTHOR_NAME='Buildkite CI'
@@ -31,11 +31,16 @@ export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 #if [[ "${ghprbCommentBody}" == *warnlinkcheck* ]]; then
 #  warnlinkcheck_opt="--warnlinkcheck"
 #fi
+docker images
 
 git clone \
   --reference /opt/git-mirrors/elastic-docs \
   git@github.com:elastic/docs.git .docs
 
+ls -lart
+
+
+ls -lart /opt/git-mirrors/
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
 
