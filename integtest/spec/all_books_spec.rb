@@ -787,6 +787,29 @@ RSpec.describe 'building all books' do
     end
   end
 
+  context 'when run with --build_live_only' do
+    convert_before do |src, dest|
+      repo = src.repo_with_index 'repo', 'some text'
+      repo.switch_to_new_branch 'foo'
+      repo.switch_to_new_branch 'bar'
+
+      book = src.book 'Test'
+      book.source repo, 'index.asciidoc'
+      book.branches = ['master', 'foo', 'bar']
+      book.live_branches = ['foo']
+      dest.prepare_convert_all(src.conf)
+          .build_live_only
+          .convert
+    end
+    it 'builds the live branch' do
+      expect(outputs[0]).to include('Test: Building foo...')
+    end
+    it 'does not build non-live branches' do
+      expect(outputs[0]).not_to include('Test: Building master...')
+      expect(outputs[0]).not_to include('Test: Building bar...')
+    end
+  end
+
   context 'when run with --announce_preview' do
     target_branch = 'foo_1'
     preview_location = "http://#{target_branch}.docs-preview.app.elstc.co/guide"

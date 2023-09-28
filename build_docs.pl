@@ -1007,6 +1007,7 @@ sub command_line_opts {
         'reposcache=s',
         'skiplinkcheck',
         'warnlinkcheck',
+        'build_live_only',
         'sub_dir=s@',
         'user=s',
         # Options only compatible with --preview
@@ -1070,6 +1071,7 @@ sub usage {
                             Defaults to `<script_dir>/.repos`.
           --skiplinkcheck   Omit the step that checks for broken links
           --warnlinkcheck   Checks for broken links but does not fail if they exist
+          --build_live_only Only build `live` branches
           --sub_dir         Use a directory as a branch of some repo
                             (eg --sub_dir elasticsearch:master:~/Code/elasticsearch)
           --target_repo     Repository to which to commit docs
@@ -1115,6 +1117,7 @@ sub check_opts {
         die('--reposcache only compatible with --all') if $Opts->{reposcache};
         die('--skiplinkcheck only compatible with --all') if $Opts->{skiplinkcheck};
         die('--warnlinkcheck only compatible with --all') if $Opts->{warnlinkcheck};
+        die('--build_live_only only compatible with --all') if $Opts->{build_live_only};
         die('--sub_dir only compatible with --all') if $Opts->{sub_dir};
     }
     if ( !$Opts->{preview} ) {

@@ -245,6 +245,11 @@ class Dest
       self
     end
 
+    def build_live_only
+      @cmd += ['--build_live_only']
+      self
+    end
+
     def uses_preview
       false
     end

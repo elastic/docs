@@ -166,6 +166,7 @@ sub new {
         index         => $index,
         branches      => \@branches,
         live_branches => $args{live} || \@branches,
+        live_branches_only => $args{live} || [],
         branch_titles => \%branch_titles,
         current       => $current,
         tags          => $tags,
@@ -202,7 +203,11 @@ sub build {
     my $latest = !$self->{suppress_migration_warnings};
     my $update_version_toc = 0;
     my $rebuilding_current_branch = 0;
+    my $build_live_only = $Opts->{build_live_only} || 0;
     for my $branch ( @{ $self->branches } ) {
+        if ($build_live_only && !$self->is_live_branch($branch)) {
+            next;
+        }
         my $building = $self->_build_book( $branch, $pm, $rebuild, $latest );
         $update_version_toc ||= $building;
         $latest = 0;
@@ -467,6 +472,14 @@ sub _page_header_text {
         . $self->lang
         . " and phrase: $phrase";
 
+}
+
+#===================================
+sub is_live_branch {
+#===================================
+    my ($self, $branch) = @_;
+    my $live_branches_only = $self->{live_branches_only};
+    return grep { $_ eq $branch } @$live_branches_only;
 }
 
 #===================================
