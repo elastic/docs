@@ -42,11 +42,11 @@ fi
 # When running on a branch or on main
 if [[ "${BUILDKITE_PULL_REQUEST}" == "false" ]]; then
   # temporary pushing to a branch different than main until ready to switchover
-  build_args+= " --target_branch docs_bk_rollout"
+  build_args+=" --target_branch docs_bk_rollout"
 else
-  build_args+= " --target_branch docs_bk_${BUILDKITE_PULL_REQUEST}"
-  build_args+= " --announce_preview https://docs_bk_${BUILDKITE_PULL_REQUEST}.docs-preview.app.elstc.co/diff"
-  rebuild_opt= " --rebuild"
+  build_args+=" --target_branch docs_bk_${BUILDKITE_PULL_REQUEST}"
+  build_args+=" --announce_preview https://docs_bk_${BUILDKITE_PULL_REQUEST}.docs-preview.app.elstc.co/diff"
+  rebuild_opt=" --rebuild"
 fi
 
 # The docs build can use the ssh agent's authentication socket
