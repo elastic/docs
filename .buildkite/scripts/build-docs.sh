@@ -34,11 +34,6 @@ if [[ "${ALLOW_BROKEN_LINKS}" == 'true' ]]; then
   warnlinkcheck_opt="--warnlinkcheck"
 fi
 
-#git clone \
-#  --reference /opt/git-mirrors/elastic-docs \
-#  git@github.com:elastic/docs.git .docs
-
-
 # When running on a branch or on main
 if [[ "${BUILDKITE_PULL_REQUEST}" == "false" ]]; then
   # temporary pushing to a branch different than main until ready to switchover
@@ -57,5 +52,5 @@ ssh-agent bash -c "
     --target_repo git@github.com:elastic/built-docs \
     $build_args \
     $rebuild_opt $skiplinkcheck_opt $warnlinkcheck_opt \
-    --reference /opt/git-mirrors/"
-# --push
+    --reference /opt/git-mirrors/ \
+    --push"
