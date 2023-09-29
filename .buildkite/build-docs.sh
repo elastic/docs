@@ -14,6 +14,7 @@ build_args=""
 rebuild_opt=""
 skiplinkcheck_opt=""
 warnlinkcheck_opt=""
+
 # From https://github.com/elastic/infra/blob/master/ci/jjb/elasticsearch-ci/defs/elastic-docs/pull-requests.yml#L110
 # Per https://github.com/elastic/docs/issues/1821, always rebuild all
 # books for PRs to the docs repo, for now.
