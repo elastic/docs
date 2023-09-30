@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
-set -x
+set +x
 
 # Configure the git author and committer information
 export GIT_AUTHOR_NAME='Buildkite CI'
@@ -51,7 +51,7 @@ for repo in elastic-*;do
     ln -s $repo ${repo:8}.git
 done
 cd -
-ls -lart opt/git-mirrors/
+ls -lart /opt/git-mirrors/
 
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
