@@ -43,6 +43,16 @@ else
   build_args+=" --announce_preview https://docs_bk_${BUILDKITE_PULL_REQUEST}.docs-preview.app.elstc.co/diff"
 fi
 
+
+## Temporary hack to test the symlink on reference repos
+cd /opt/git-mirrors/
+for repo in elastic-*;do
+    echo $repo
+    ln -s $repo ${repo:8}.git
+done
+cd -
+ls -lart opt/git-mirrors/
+
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
 ssh-agent bash -c "
