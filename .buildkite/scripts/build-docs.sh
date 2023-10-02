@@ -15,6 +15,14 @@ rebuild_opt=""
 skiplinkcheck_opt=""
 warnlinkcheck_opt=""
 
+printenv
+export REBUILD="$(buildkite-agent meta-data get REBUILD --default false)"
+export ALLOW_BROKEN_LINKS="$(buildkite-agent meta-data get ALLOW_BROKEN_LINKS --default false)"
+echo "------"
+printenv
+
+exit
+
 # From https://github.com/elastic/infra/blob/master/ci/jjb/elasticsearch-ci/defs/elastic-docs/pull-requests.yml#L110
 # Per https://github.com/elastic/docs/issues/1821, always rebuild all
 # books for PRs to the docs repo, for now.
