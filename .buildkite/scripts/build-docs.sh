@@ -13,15 +13,6 @@ export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 build_args=""
 rebuild_opt=""
 skiplinkcheck_opt=""
-warnlinkcheck_opt=""
-
-printenv
-export REBUILD="$(buildkite-agent meta-data get REBUILD --default false)"
-export ALLOW_BROKEN_LINKS="$(buildkite-agent meta-data get ALLOW_BROKEN_LINKS --default false)"
-echo "------"
-printenv
-
-exit
 
 # From https://github.com/elastic/infra/blob/master/ci/jjb/elasticsearch-ci/defs/elastic-docs/pull-requests.yml#L110
 # Per https://github.com/elastic/docs/issues/1821, always rebuild all
@@ -38,10 +29,9 @@ if [[ "${SKIP_LINK_CHECK}" == 'true' ]]; then
   skiplinkcheck_opt="--skiplinkcheck"
 fi
 
-if [[ "${ALLOW_BROKEN_LINKS}" == 'true' ]]; then
-  warnlinkcheck_opt="--warnlinkcheck"
-fi
-
+echo $rebuild_opt
+echo $skiplinkcheck_opt
+exit
 # When running on a branch or on main
 if [[ "${BUILDKITE_PULL_REQUEST}" == "false" ]]; then
   # temporary pushing to staging instead of master until the migration is over
@@ -68,6 +58,6 @@ ssh-agent bash -c "
   ./build_docs --all \
     --target_repo git@github.com:elastic/built-docs \
     $build_args \
-    $rebuild_opt $skiplinkcheck_opt $warnlinkcheck_opt \
+    $rebuild_opt $skiplinkcheck_opt \
     --reference /opt/git-mirrors/ \
     --push"
