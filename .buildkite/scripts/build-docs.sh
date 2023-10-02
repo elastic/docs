@@ -29,9 +29,6 @@ if [[ "${ALLOW_BROKEN_LINKS}" == 'true' ]]; then
   skiplinkcheck_opt="--skiplinkcheck"
 fi
 
-echo $rebuild_opt
-echo $skiplinkcheck_opt
-exit
 # When running on a branch or on main
 if [[ "${BUILDKITE_PULL_REQUEST}" == "false" ]]; then
   # temporary pushing to staging instead of master until the migration is over
