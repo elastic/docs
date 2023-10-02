@@ -25,7 +25,7 @@ if [[ "${REBUILD}" == 'true' ]]; then
   rebuild_opt="--rebuild"
 fi
 
-if [[ "${SKIP_LINK_CHECK}" == 'true' ]]; then
+if [[ "${ALLOW_BROKEN_LINKS}" == 'true' ]]; then
   skiplinkcheck_opt="--skiplinkcheck"
 fi
 
