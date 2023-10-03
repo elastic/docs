@@ -51,9 +51,8 @@ ls -lart /opt/git-mirrors/
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
 
-echo $build_args
-echo $rebuild_opt
-echo $skiplinkcheck_opt
+echo "LS LA MIRRORS"
+echo ls -la /opt/git-mirrors/
 exit 0
 
 ssh-agent bash -c "
