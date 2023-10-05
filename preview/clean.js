@@ -26,7 +26,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   }
 
   const show_heads = () => {
-    return exec_git(['show-ref', '--heads'], {cwd: local_path});
+    return exec_git(['show-ref', '--heads'], { cwd: local_path });
   }
 
   const heads_to_prs = (heads) => {
@@ -72,28 +72,28 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
     }
   }
 
-  const prAge = async function(pr) {
+  const prAge = async function (pr) {
     return parseInt(await exec_git(
       [
         "show", "--pretty=%ad", "--no-notes", "--no-patch", "--date=unix",
         pr.branch
       ],
-      {cwd: local_path}
+      { cwd: local_path }
     ));
   }
 
-  const deleteBranch = async function(pr) {
+  const deleteBranch = async function (pr) {
     if (pr.branch === 'master' || pr.branch === 'staging') {
       // Just for super double ultra paranoia.
       throw "Can't delete master!";
     }
     await exec_git(
       ['push', 'origin', '--delete', pr.branch],
-      {cwd: local_path}
+      { cwd: local_path }
     );
   }
 
-  const is_pr_closed = function(pr) {
+  const is_pr_closed = function (pr) {
     return new Promise((resolve, reject) => {
       const body = {
         query: `
@@ -188,7 +188,7 @@ function exec_git(opts, env = {}) {
   return new Promise((resolve, reject) => {
     child_process.execFile('git', opts, env, (err, stdout, stderr) => {
       if (err) {
-        reject(dedent `
+        reject(dedent`
           err [${err}] running [git ${opts.join(' ')}] in ${JSON.stringify(env)}:
           ${stderr}
         `);
