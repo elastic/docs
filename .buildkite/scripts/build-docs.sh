@@ -45,7 +45,7 @@ fi
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
 
-ssh-agent bash -c "
+echo ssh-agent bash -c "
   ssh-add &&
   ./build_docs --all \
     --target_repo git@github.com:elastic/built-docs \
