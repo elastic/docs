@@ -10,7 +10,7 @@
 #
 
 # Elasticsearch
-alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --resource=$GIT_HOME/elasticsearch/x-pack/docs/ --chunk 1'
+alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --chunk 1'
 
 alias docbldes=docbldesx
 
