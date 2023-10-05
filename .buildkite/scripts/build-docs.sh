@@ -12,7 +12,7 @@ export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 
 build_args=""
 rebuild_opt=""
-skiplinkcheck_opt=""
+broken_links_opt=""
 
 # From https://github.com/elastic/infra/blob/master/ci/jjb/elasticsearch-ci/defs/elastic-docs/pull-requests.yml#L110
 # Per https://github.com/elastic/docs/issues/1821, always rebuild all
@@ -25,8 +25,12 @@ if [[ "${REBUILD}" == 'true' ]]; then
   rebuild_opt="--rebuild"
 fi
 
-if [[ "${ALLOW_BROKEN_LINKS}" == 'true' ]]; then
-  skiplinkcheck_opt="--skiplinkcheck"
+if [[ "${BROKEN_LINKS}" == 'skip' ]]; then
+  broken_links_opt="--skiplinkcheck"
+fi
+
+if [[ "${BROKEN_LINKS}" == 'warn' ]]; then
+  broken_links_opt="--warnlinkcheck"
 fi
 
 # When running on a branch or on main
@@ -40,11 +44,12 @@ fi
 
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
+
 ssh-agent bash -c "
   ssh-add &&
   ./build_docs --all \
     --target_repo git@github.com:elastic/built-docs \
     $build_args \
-    $rebuild_opt $skiplinkcheck_opt \
+    $rebuild_opt $broken_links_opt \
     --reference /opt/git-mirrors/ \
     --push"
