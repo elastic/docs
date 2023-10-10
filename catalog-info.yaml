@@ -26,3 +26,44 @@ spec:
           access_level: MANAGE_BUILD_AND_READ
         everyone:
           access_level: READ_ONLY
+
+# Declare daily preview cleaner
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: buildkite-preview-cleaner
+  description: Daily Preview Cleaner
+  links:
+    - title: Pipeline
+      url: https://buildkite.com/elastic/preview-cleaner
+
+spec:
+  type: buildkite-pipeline
+  owner: group:docs
+  system: buildkite
+  implementation:
+    apiVersion: buildkite.elastic.dev/v1
+    kind: Pipeline
+    metadata:
+      name: preview-cleaner
+    spec:
+      repository: elastic/docs
+      pipeline_file: ".buildkite/preview_cleaner_pipeline.yml"
+      env:
+        ELASTIC_SLACK_NOTIFICATIONS_ENABLED: "true"
+        SLACK_NOTIFICATIONS_CHANNEL: "#docs-builds"
+        SLACK_NOTIFICATIONS_ALL_BRANCHES: "false"
+        SLACK_NOTIFICATIONS_ON_SUCCESS: "false"
+      provider_settings:
+        trigger_mode: none
+      schedules:
+        Daily Run:
+          branch: "master"
+          cronline: "0 6 * * *"
+          message: "Runs daily preview cleaning."
+      teams:
+        ci-docs-migration-taskforce:
+          access_level: MANAGE_BUILD_AND_READ
+        everyone:
+          access_level: READ_ONLY
