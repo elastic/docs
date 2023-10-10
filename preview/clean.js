@@ -57,9 +57,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   const cleanup_closed_prs = async prs => {
     const now = Date.now() / 1000;
     for (let pr of prs) {
-      console.log("PR : %o", pr);
       const url = `https://www.github.com/elastic/${pr.repo}/pull/${pr.number}`;
-      console.log(url);
       const age = await prAge(pr);
       const days = (now - age) / 24 / 60 / 60;
       if (days > EXPIRE_DAYS) {
@@ -96,7 +94,6 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   }
 
   const is_pr_closed = function (pr) {
-    console.log("Query if PR closed on $repo - $number");
     return new Promise((resolve, reject) => {
       const body = {
         query: `
