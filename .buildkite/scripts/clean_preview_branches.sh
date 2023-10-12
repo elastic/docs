@@ -3,8 +3,7 @@
 set -eo pipefail
 
 set +x
-GITHUB_TOKEN=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
-export GITHUB_TOKEN
+export GITHUB_TOKEN=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
 set -x
 
 export REPO=git@github.com:elastic/built-docs.git
