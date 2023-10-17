@@ -31,38 +31,40 @@ export function init_headers(sticky_content, lang_strings) {
   var items = 0;
   var baseHeadingLevel = 0;
 
-  $('#guide a[id]:not([href])').each(
+  $('main.euiPageInner').find('h1,h2,h3,h4').each(
     function(i, el) {
+      const link = $(this).find('a')[0]
       // Make headers into real links for permalinks
-      this.href = '#' + this.id;
+      if (link) {
+        link.href = '#' + link.id;
+        // Extract on-this-page headers, without embedded links
+        var title_container = $(link).parent('h1,h2,h3,h4').clone();
+        if (title_container.length > 0) {
+          // Assume initial heading is an H1, but adjust if it's not
+          let hLevel = 0;
+          if ($(link).parent().is("h2")){
+            hLevel = 1;
+          } else if ($(link).parent().is("h3")){
+            hLevel = 2;
+          } else if ($(link).parent().is("h4")){
+            hLevel = 3;
+          }
 
-      // Extract on-this-page headers, without embedded links
-      var title_container = $(this).parent('h1,h2,h3,h4').clone();
-      if (title_container.length > 0) {
-        // Assume initial heading is an H1, but adjust if it's not
-        let hLevel = 0;
-        if ($(this).parent().is("h2")){
-          hLevel = 1;
-        } else if ($(this).parent().is("h3")){
-          hLevel = 2;
-        } else if ($(this).parent().is("h4")){
-          hLevel = 3;
-        }
+          // Set the base heading level for the page to the title page level + 1
+          // This ensures top level headings aren't nested
+          if (i === 0){
+            baseHeadingLevel = hLevel + 1;
+          }
 
-        // Set the base heading level for the page to the title page level + 1
-        // This ensures top level headings aren't nested
-        if (i === 0){
-          baseHeadingLevel = hLevel + 1;
-        }
-
-        // Build list items for all headings except the page title
-        if (0 < items++) {
-          title_container.find('a,.added,.coming,.deprecated,.experimental')
-            .remove();
-          var text = title_container.html();
-          const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
-          ul.append(li);
+          // Build list items for all headings except the page title
+          if (0 < items++) {
+            title_container.find('a,.added,.coming,.deprecated,.experimental')
+              .remove();
+            var text = title_container.html();
+            const adjustedLevel = hLevel - baseHeadingLevel;
+            const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + link.id + '">' + text + '</a></li>';
+            ul.append(li);
+          }
         }
       }
     });
@@ -290,7 +292,7 @@ $(function() {
 
   AlternativeSwitcher(store());
   
-  const allHeadings = $('#content').find('h1, h2, h3, h4, h5, h6')
+  const allHeadings = $('main').find('h1, h2, h3, h4, h5, h6')
   let allLevels = []
   allHeadings.each(function(index) {
     if (index === 0) return
@@ -338,7 +340,7 @@ $(function() {
   var div = $('div.toc');
 
   // Fetch toc.html unless there is already a .toc on the page
-  if (div.length == 0) {
+  if (div.length === 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     $.get(url, {}, function(data) {
       left_col.append(data);
@@ -350,11 +352,23 @@ $(function() {
       }
       init_toc(LangStrings);
       utils.open_current(location.pathname);
+    }).fail(function() {
+      // Set the width of the left column to zero
+      left_col.removeClass().addClass('col-0');
+      bottom_left_col.removeClass().addClass('col-0');
+      const sidebar = $('.docChrome__sidebar.euiPageSidebar-sticky-m')[0]
+      $(sidebar).attr('style', 'display:none')
+      // Set the width of the middle column (containing the TOC) to 9
+      middle_col.removeClass().addClass('guide-section');
+      // Set the width of the demand gen content to 3
+      right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
     }).always(function() {
       init_headers(sticky_content, LangStrings);
       highlight_otp();
     });
   } else {
+    init_headers(sticky_content, LangStrings);
+    highlight_otp();
     init_toc(LangStrings);
     // Set the width of the left column to zero
     left_col.removeClass().addClass('col-0');
@@ -364,6 +378,29 @@ $(function() {
     // Set the width of the demand gen content to 3
     right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
   }
+
+  /** Temporary hack for custom landing pages that include TOC */
+  const landingPage = $('#landing-page')
+  if (landingPage.length) {
+    window.addEventListener("DOMContentLoaded", (event) => {
+      const left_col = document.getElementById("left_col")
+      left_col.classList.remove("col-12", "col-md-4", "col-lg-3", "h-almost-full-md", "sticky-top-md")
+    
+      const right_col = document.getElementById("right_col")
+      right_col.classList.add('d-none')
+    
+      const middle_col = document.getElementById("middle_col")
+      middle_col.classList.remove("col-lg-9", "col-md-8")
+    
+      const mainContent = document.getElementsByClassName("euiFlexGroup euiFlexGroup-responsive-xl-flexStart-stretch-row")
+      mainContent[0].classList.remove("euiFlexGroup", "euiFlexGroup-responsive-xl-flexStart-stretch-row")
+    
+      // const toc = middle_col.getElementsByClassName("toc")[0]
+      // toc.remove()
+      // left_col.appendChild(toc);
+    });
+  }
+  
 
   // Enable Sense widget
   init_sense_widgets();
