@@ -4,7 +4,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: buildkite-pipeline-docs
-  description: Build the docs
+  description: Build and Publish the docs
   links:
     - title: Pipeline
       url: https://buildkite.com/elastic/docs-build
@@ -20,7 +20,10 @@ spec:
       name: docs / build
     spec:
       repository: elastic/docs
-      pipeline_file: ".buildkite/pipeline.yml"
+      pipeline_file: ".buildkite/build_pipeline.yml"
+      branch_configuration: master
+      provider_settings:
+        build_pull_requests: false
       teams:
         docs-build-guild:
           access_level: MANAGE_BUILD_AND_READ
@@ -36,6 +39,41 @@ spec:
         SLACK_NOTIFICATIONS_ALL_BRANCHES: "false"
         SLACK_NOTIFICATIONS_ON_SUCCESS: "false"
 
+---
+# yaml-language-server: $schema=https://gist.githubusercontent.com/elasticmachine/988b80dae436cafea07d9a4a460a011d/raw/rre.schema.json
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: buildkite-pipeline-docs-pr
+  description: Build the docs on pull requests to the `elastic/docs` and products docs repositories.
+  links:
+    - title: Pipeline
+      url: https://buildkite.com/elastic/docs-build-pr
+
+spec:
+  type: buildkite-pipeline
+  owner: group:docs
+  system: buildkite
+  implementation:
+    apiVersion: buildkite.elastic.dev/v1
+    kind: Pipeline
+    metadata:
+      name: docs / build-pr
+    spec:
+      repository: elastic/docs
+      pipeline_file: ".buildkite/build_pr_pipeline.yml"
+      skip_intermediate_builds: false
+      provider_settings:
+        trigger_mode: none # triggered via webhook and the buildkite-pr-bot
+      teams:
+        docs-build-guild:
+          access_level: MANAGE_BUILD_AND_READ
+        ci-docs-migration-taskforce:
+          access_level: MANAGE_BUILD_AND_READ
+        docs:
+          access_level: BUILD_AND_READ
+        everyone:
+          access_level: READ_ONLY
 # Declare daily preview cleaner
 ---
 apiVersion: backstage.io/v1alpha1
@@ -81,13 +119,13 @@ spec:
         everyone:
           access_level: READ_ONLY
 
-# Declare test execution on PR and merge to main
+# Declare test execution on PR and merge to master
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: buildkite-pipeline-docs-test
-  description: PR and Merge-to-Main Test
+  description: Run tests on PR and merges
   links:
     - title: Pipeline
       url: https://buildkite.com/elastic/docs-test
@@ -100,11 +138,11 @@ spec:
     apiVersion: buildkite.elastic.dev/v1
     kind: Pipeline
     metadata:
-      name: docs-test
+      name: docs / test
     spec:
-      branch_configuration: "main"
+      branch_configuration: master
       repository: elastic/docs
-      pipeline_file: ".buildkite/pr_main_mr_test.yml"
+      pipeline_file: ".buildkite/test_pipeline.yml"
       teams:
         docs-build-guild:
           access_level: MANAGE_BUILD_AND_READ
