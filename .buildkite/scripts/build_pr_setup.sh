@@ -14,7 +14,7 @@ if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHU
 fi
 
 gitHubToken=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
-
+exit 1
 githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_OWNER}/${GITHUB_PR_REPO}/statuses/${GITHUB_PR_TRIGGERED_SHA}"
 data='{"state":"pending","target_url":"'$BUILDKITE_BUILD_URL'","description":"Build started.","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
 echo "Setting buildkite/docs commit status to pending"
