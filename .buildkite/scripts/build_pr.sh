@@ -2,17 +2,15 @@
 set -euo pipefail
 set +x
 
-# Configure the git author and committer information
-export GIT_AUTHOR_NAME='Buildkite CI'
-export GIT_AUTHOR_EMAIL='buildkite@elasticsearch-ci.elastic.co'
-export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
-export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
-
 # This script should only be invoked by the Buildkite PR bot
 if [ -z ${GITHUB_PR_BRANCH+set} ] || [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ -z ${GITHUB_PR_NUMBER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ];then
   echo "One of the following env. variable GITHUB_PR_BRANCH, GITHUB_PR_TARGET_BRANCH, GITHUB_PR_NUMBER, GITHUB_PR_BASE_REPO is missing - exiting."
   exit 1
 fi
+
+# Set some metadata for build filtering capabilities
+# https://buildkite.com/elastic/docs-build-pr/builds?meta_data[repo_pr]=tech-content_123
+buildkite-agent meta-data set "repo_pr" "${GITHUB_PR_BASE_REPO}_${GITHUB_PR_NUMBER}"
 
 rebuild_opt=""
 build_args=""
@@ -65,14 +63,14 @@ fi
 
 # Set the target branch and preview options
 TARGET_BRANCH="${GITHUB_PR_BASE_REPO}_bk_${GITHUB_PR_NUMBER}"
-PREVIEW_URL="https://${TARGET_BRANCH}.docs-preview.app.elstc.co/diff"
+PREVIEW_URL="https://${TARGET_BRANCH}.docs-preview.app.elstc.co"
 
 build_cmd="./build_docs --all --keep_hash \
     --target_repo git@github.com:elastic/built-docs \
     --reference /opt/git-mirrors/ \
     --target_branch ${TARGET_BRANCH} \
     --push \
-    --announce_preview ${PREVIEW_URL} \
+    --announce_preview ${PREVIEW_URL}/diff \
     ${rebuild_opt} \
     ${build_args}"
 
@@ -80,10 +78,14 @@ echo "The following build command will be used"
 echo $build_cmd
 
 # Kick off the build
-#ssh-agent bash -c "ssh-add && $build_cmd"
+ssh-agent bash -c "ssh-add && $build_cmd"
 
 buildkite-agent annotate \
     --style "success" \
     --context 'docs-info' \
      --append \
     "<br>Preview url: ${PREVIEW_URL}"
+
+buildkite-agent meta-data set pr_comment:doc-preview:head " * Documentation preview
+   - 📚 [HTML diff](${PREVIEW_URL}/diff)
+   - 📙 [Preview](${PREVIEW_URL})"
