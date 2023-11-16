@@ -9,7 +9,7 @@ fi
 
 gitHubToken=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
 
-if [ $$(buildkite-agent step get "outcome" --step "build-pr") == "passed" ]; then
+if [ $(buildkite-agent step get "outcome" --step "build-pr") == "passed" ]; then
   status_state="success"
 else
   status_state="failure"
