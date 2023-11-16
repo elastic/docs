@@ -2,12 +2,6 @@
 
 set -euo pipefail
 
-# Configure the git author and committer information
-export GIT_AUTHOR_NAME='Buildkite CI'
-export GIT_AUTHOR_EMAIL='docs-status+buildkite@elastic.co'
-export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
-export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
-
 # The reminder of this hook should only be invoked for builds triggered by the Buildkite PR bot
 if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
   exit 0
