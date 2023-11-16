@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-echo "debug"
+
 # This hook should only be invoked for builds triggered by the Buildkite PR bot
 if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
   exit 0
 fi
-echo "running now"
+
 gitHubToken=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
 
-if [ -n "$BUILDKITE_COMMAND_EXIT_STATUS" ] && [ "$BUILDKITE_COMMAND_EXIT_STATUS" -eq "0" ];then
+if [ $$(buildkite-agent step get "outcome" --step "build-pr") == "passed" ]; then
   status_state="success"
 else
   status_state="failure"
