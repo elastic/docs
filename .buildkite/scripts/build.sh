@@ -5,7 +5,7 @@ set +x
 
 # Configure the git author and committer information
 export GIT_AUTHOR_NAME='Buildkite CI'
-export GIT_AUTHOR_EMAIL='buildkite@elasticsearch-ci.elastic.co'
+export GIT_AUTHOR_EMAIL='docs-status+buildkite@elastic.co'
 export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
 export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 
