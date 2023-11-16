@@ -3,13 +3,6 @@
 set -euo pipefail
 set +x
 
-# Configure the git author and committer information
-export GIT_AUTHOR_NAME='Buildkite CI'
-export GIT_AUTHOR_EMAIL='buildkite@elasticsearch-ci.elastic.co'
-export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
-export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
-
-
 build_args=""
 rebuild_opt=""
 broken_links_opt=""
