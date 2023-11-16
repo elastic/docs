@@ -8,6 +8,12 @@ if [ -z ${GITHUB_PR_BRANCH+set} ] || [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ 
   exit 1
 fi
 
+# Configure the git author and committer information
+export GIT_AUTHOR_NAME='Buildkite CI'
+export GIT_AUTHOR_EMAIL='docs-status+buildkite@elastic.co'
+export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
+export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
+
 # Set some metadata for build filtering capabilities
 # https://buildkite.com/elastic/docs-build-pr/builds?meta_data[repo_pr]=tech-content_123
 buildkite-agent meta-data set "repo_pr" "${GITHUB_PR_BASE_REPO}_${GITHUB_PR_NUMBER}"
