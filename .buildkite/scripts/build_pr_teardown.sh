@@ -6,7 +6,7 @@ set -euo pipefail
 if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
   exit 0
 fi
-
+exit 1
 gitHubToken=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
 
 if [ $(buildkite-agent step get "outcome" --step "build-pr") == "passed" ]; then
