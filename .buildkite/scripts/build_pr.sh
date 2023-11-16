@@ -79,6 +79,7 @@ echo $build_cmd
 
 # Kick off the build
 #ssh-agent bash -c "ssh-add && $build_cmd"
+sleep 360
 
 buildkite-agent annotate \
     --style "success" \
