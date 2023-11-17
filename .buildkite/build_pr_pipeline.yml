@@ -1,7 +1,7 @@
 steps:
   - key: "build-pr-setup"
     label: "setup"
-    command: ".buildkite/scripts/build_pr_setup.sh"
+    command: ".buildkite/scripts/build_pr_commit_status.sh pending"
   - key: "build-pr"
     label: ":hammer: Build docs PR"
     command: ".buildkite/scripts/build_pr.sh"
@@ -11,8 +11,13 @@ steps:
     agents:
       provider: "gcp"
       image: family/docs-ubuntu-2204
-  - command: ".buildkite/scripts/build_pr_teardown.sh || true"
+  - key: "teardown"
     label: "teardown"
+    command: |
+      if [ $(buildkite-agent step get "outcome" --step "build-pr") == "passed" ]; then
+        .buildkite/scripts/build_pr_commit_status.sh success
+      else
+        .buildkite/scripts/build_pr_commit_status.sh failure
+      fi
     depends_on:
       - step: "build-pr"
-        allow_failure: true
