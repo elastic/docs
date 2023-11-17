@@ -7,16 +7,24 @@ if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHU
   exit 0
 fi
 
+status_state=$1
+description=''
+
+case $status_state in
+    pending)
+      description='Build started';;
+    success|failure|error)
+      description='Build finished';;
+    *)
+      echo "Invalid state $status_state"
+      exit 1;;
+esac
+
 gitHubToken=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
 
-if [ $(buildkite-agent step get "outcome" --step "build-pr") == "passed" ]; then
-  status_state="success"
-else
-  status_state="failure"
-fi
-
 githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_OWNER}/${GITHUB_PR_REPO}/statuses/${GITHUB_PR_TRIGGERED_SHA}"
-data='{"state":"'$status_state'","target_url":"'$BUILDKITE_BUILD_URL'","description":"Build finished.","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
+data='{"state":"'$status_state'","target_url":"'$BUILDKITE_BUILD_URL'","description":"'$description'","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
+
 echo "Setting buildkite/docs commit status to ${status_state}"
 curl -s -L \
   -X POST \
