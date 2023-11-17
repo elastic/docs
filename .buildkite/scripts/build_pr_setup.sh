@@ -2,6 +2,19 @@
 
 set -euo pipefail
 
+echo "The value is $MY_SECRET"
+
+state=$(buildkite-agent step get "state" --step "build-pr-setup")
+echo "State of build-pr-setup is $state"
+
+state=$(buildkite-agent step get "outcome" --step "build-pr-setup")
+echo "outcome of build-pr-setup is $state"
+
+state=$(buildkite-agent step get "state" --step "build-pr")
+echo "State is $state"
+
+state=$(buildkite-agent step get "outcome" --step "build-pr")
+echo "outcome of build-pr is $state"
 # Configure the git author and committer information
 export GIT_AUTHOR_NAME='Buildkite CI'
 export GIT_AUTHOR_EMAIL='buildkite@elastic.co'
