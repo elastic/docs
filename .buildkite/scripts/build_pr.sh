@@ -62,10 +62,10 @@ else
   # We don't have to do anything else in this case.
 
   # Per https://github.com/elastic/docs/issues/1821, always rebuild all
-   # books for PRs to the docs repo, for now.
-   # When https://github.com/elastic/docs/issues/1823 is fixed, this
-   # should be removed and the original behavior restored.
-   rebuild_opt=" --rebuild"
+  # books for PRs to the docs repo, for now.
+  # When https://github.com/elastic/docs/issues/1823 is fixed, this
+  # should be removed and the original behavior restored.
+  rebuild_opt=" --rebuild"
 fi
 
 
@@ -74,13 +74,13 @@ TARGET_BRANCH="${GITHUB_PR_BASE_REPO}_bk_${GITHUB_PR_NUMBER}"
 PREVIEW_URL="https://${TARGET_BRANCH}.docs-preview.app.elstc.co"
 
 build_cmd="./build_docs --all --keep_hash \
-    --target_repo git@github.com:elastic/built-docs \
-    --reference /opt/git-mirrors/ \
-    --target_branch ${TARGET_BRANCH} \
-    --push \
-    --announce_preview ${PREVIEW_URL}/diff \
-    ${rebuild_opt} \
-    ${build_args}"
+  --target_repo git@github.com:elastic/built-docs \
+  --reference /opt/git-mirrors/ \
+  --target_branch ${TARGET_BRANCH} \
+  --push \
+  --announce_preview ${PREVIEW_URL}/diff \
+  ${rebuild_opt} \
+  ${build_args}"
 
 echo "The following build command will be used"
 echo $build_cmd
@@ -89,10 +89,10 @@ echo $build_cmd
 ssh-agent bash -c "ssh-add && $build_cmd"
 
 buildkite-agent annotate \
-    --style "success" \
-    --context 'docs-info' \
-     --append \
-    "<br>Preview url: ${PREVIEW_URL}"
+  --style "success" \
+  --context 'docs-info' \
+  --append \
+  "<br>Preview url: ${PREVIEW_URL}"
 
 buildkite-agent meta-data set pr_comment:doc-preview:head " * Documentation preview
    - 📚 [HTML diff](${PREVIEW_URL}/diff)
