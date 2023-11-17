@@ -7,12 +7,6 @@ if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHU
   exit 0
 fi
 
-
-if [ $# -lt 2 ]; then
-  echo "Usage: $0 <state> <description>"
-  exit 1
-fi
-
 status_state=$1
 description=''
 
