@@ -15,7 +15,9 @@ export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
 export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 
 # Set some metadata for build filtering capabilities
+# https://buildkite.com/elastic/docs-build-pr/builds?meta_data[repo]=tech-content
 # https://buildkite.com/elastic/docs-build-pr/builds?meta_data[repo_pr]=tech-content_123
+buildkite-agent meta-data set "repo" "${GITHUB_PR_BASE_REPO}"
 buildkite-agent meta-data set "repo_pr" "${GITHUB_PR_BASE_REPO}_${GITHUB_PR_NUMBER}"
 
 rebuild_opt=""
