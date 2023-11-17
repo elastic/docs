@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# The reminder of this hook should only be invoked for builds triggered by the Buildkite PR bot
+# The remainder of this hook should only be invoked for builds triggered by the Buildkite PR bot
 if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
   exit 0
 fi
