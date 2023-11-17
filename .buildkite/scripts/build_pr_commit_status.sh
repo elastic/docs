@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-echo $DOCKER_USERNAME
+printenv
 
 # This hook should only be invoked for builds triggered by the Buildkite PR bot
 if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
