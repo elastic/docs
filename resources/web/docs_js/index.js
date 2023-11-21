@@ -1,5 +1,6 @@
 import AlternativeSwitcher from "./components/alternative_switcher";
 import ConsoleWidget from "./components/console_widget";
+import FeedbackModal from './components/feedback_modal';
 import FeedbackWidget from './components/feedback_widget';
 import Modal from "./components/modal";
 import mount from "./components/mount";
@@ -92,6 +93,11 @@ export function init_console_widgets() {
 
 export function init_feedback_widget() {
   mount($('#feedbackWidgetContainer'), FeedbackWidget);
+  $('.feedbackButton').click(function () {
+    const isLiked = $(this).hasClass('feedbackLiked');
+    $(this).addClass('isPressed');
+    mount($('#feedbackModalContainer'), FeedbackModal, { isLiked: isLiked });
+  });
 }
 
 export function init_sense_widgets() {
@@ -337,8 +343,8 @@ $(function() {
       }
     })
     // Bold the item in the popover that represents
-    // the current book 
-    const currentBookTitle = dropDownAnchor.text() 
+    // the current book
+    const currentBookTitle = dropDownAnchor.text()
     const items = dropDownContent.find("li")
     items.each(function(i) {
       if (items[i].innerText === currentBookTitle) {
