@@ -40,6 +40,7 @@ export default class FeedbackModal extends Component {
       body: JSON.stringify({
         comment: this.state.comment,
         feedback: this.props.isLiked ? 'liked' : 'disliked',
+        url: window.location.href,
       }),
     })
       .then((response) => response.json())
