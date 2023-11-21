@@ -65,7 +65,7 @@ else
   # books for PRs to the docs repo, for now.
   # When https://github.com/elastic/docs/issues/1823 is fixed, this
   # should be removed and the original behavior restored.
-  rebuild_opt=" --rebuild"
+  rebuild_opt=" --rebuild --procs 16"
 fi
 
 
