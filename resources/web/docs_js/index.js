@@ -1,5 +1,6 @@
 import AlternativeSwitcher from "./components/alternative_switcher";
 import ConsoleWidget from "./components/console_widget";
+import FeedbackWidget from './components/feedback_widget';
 import Modal from "./components/modal";
 import mount from "./components/mount";
 import {switchTabs} from "./components/tabbed_widget";
@@ -87,6 +88,10 @@ export function init_console_widgets() {
                                       snippet,
                                       langs});
   });
+}
+
+export function init_feedback_widget() {
+  mount($('#feedbackWidgetContainer'), FeedbackWidget);
 }
 
 export function init_sense_widgets() {
@@ -365,6 +370,7 @@ $(function() {
   init_sense_widgets();
   init_console_widgets();
   init_kibana_widgets();
+  init_feedback_widget();
   $("div.ess_widget").each(function() {
     const div         = $(this),
           snippet     = div.attr('data-snippet'),
