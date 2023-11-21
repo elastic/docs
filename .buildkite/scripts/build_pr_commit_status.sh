@@ -23,7 +23,7 @@ esac
 githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_OWNER}/${GITHUB_PR_REPO}/statuses/${GITHUB_PR_TRIGGERED_SHA}"
 data='{"state":"'$status_state'","target_url":"'$BUILDKITE_BUILD_URL'","description":"'$description'","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
 
-echo "Setting buildkite/docs commit status to ${status_state}"
+echo "Setting buildkite/${BUILDKITE_PIPELINE_SLUG} commit status to ${status_state}"
 curl -s -L \
   -X POST \
   -H "Accept: application/vnd.github+json" \
