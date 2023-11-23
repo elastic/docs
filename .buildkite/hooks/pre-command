@@ -22,14 +22,15 @@ function retry {
     return 0
 }
 
+export BUILD_PR_MACHINE_TYPE="n2-standard-4"
+
 # Secrets must be redacted
 # https://buildkite.com/docs/pipelines/managing-log-output#redacted-environment-variables
 if [[ "$BUILDKITE_PIPELINE_SLUG" == "docs-build-pr" ]];then
     export GITHUB_TOKEN=$(retry 5 vault kv get -field=value secret/ci/elastic-docs/docs_preview_cleaner)
+
     if [[ ${GITHUB_PR_BASE_REPO:="unset"} == "docs" ]]; then
-        # Docs PR require a full rebuilt - so let's boost the builds so they don't take 2 hours
+        # Docs PR require a full rebuild - so let's boost the builds so they don't take 2 hours
         export BUILD_PR_MACHINE_TYPE="n2-highcpu-32"
-    else
-        export BUILD_PR_MACHINE_TYPE="n2-standard-4"
     fi
 fi
