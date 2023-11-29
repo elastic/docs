@@ -1,0 +1,42 @@
+name: 'docs-preview'
+description: 'Add docs-preview comment in the given repository.'
+inputs:
+  repo:
+    description: 'the name of the repository'
+    required: true
+  pr:
+    description: 'the pull-request'
+    required: true
+  github-token:
+    description: 'The GitHub access token.'
+    required: true
+  guide-crumb:
+    description: 'the name of the project'
+    required: false
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/github-script@v7
+      env:
+        REPO: ${{ inputs.repo }}
+        PR: ${{ inputs.pr }}
+        GUIDE_CRUMB: ${{ inputs.guide-crumb }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const { REPO, PR, GUIDE_CRUMB } = process.env
+
+          const comment = `A documentation preview will be available soon.
+          Help us out by validating the Buildkite preview and reporting issues [here](https://github.com/elastic/docs/issues/new?labels=buildkite-migration,bug).
+
+            - 📚 HTML diff: [Buildkite](https://${REPO}_bk_${PR}.docs-preview.app.elstc.co/diff)  - [Jenkins](https://${REPO}_${PR}.docs-preview.app.elstc.co/diff)
+            - 📙 Guide: [Buildkite](https://${REPO}_bk_${PR}.docs-preview.app.elstc.co/${GUIDE_CRUMB})  -  [Jenkins](https://${REPO}_${PR}.docs-preview.app.elstc.co/${GUIDE_CRUMB})
+            - 🧪 [Buildkite vs Jenkins diff](https://github.com/elastic/built-docs/compare/${REPO}_bk_${PR}..${REPO}_${PR})`;
+
+          github.rest.issues.createComment({
+            issue_number: PR,
+            owner: 'elastic',
+            repo: REPO,
+            body: comment,
+          });
