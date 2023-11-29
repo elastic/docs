@@ -30,7 +30,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repo: ${{ github.event.repository.name }}
-          guide-crumb: 'guide/en/observability/master/index.html'
+          preview-path: 'guide/en/observability/master/index.html'
           pr: ${{ github.event.pull_request.number }}
           
 ```
@@ -41,9 +41,9 @@ jobs:
 
 Following inputs can be used as `step.with` keys
 
-| Name              | Type    | Default                     | Description                             |
-|-------------------|---------|-----------------------------|-----------------------------------------|
-| `guide-crumb`     | String  |                             | The URL crumb to append to base doc url |
-| `repo`            | String  |                             | The GitHub repository name without org  |
-| `github-token`    | String  |                             | The GitHub token                        |
-| `pr`              | String  |                             | The GitHub PR                           | 
+| Name              | Type    | Description                                    |
+|-------------------|---------|------------------------------------------------|
+| `preview-path`    | String  | Path to append to base doc url in preview link |
+| `repo`            | String  | The GitHub repository name without org         |
+| `github-token`    | String  | The GitHub token                               |
+| `pr`              | String  | The GitHub PR number                           |
