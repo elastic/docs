@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # This hook should only be invoked for builds triggered by the Buildkite PR bot
-if [ -z ${GITHUB_PR_OWNER+set} ] || [ -z ${GITHUB_PR_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
+if [ -z ${GITHUB_PR_BASE_OWNER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
   exit 0
 fi
 
@@ -20,10 +20,10 @@ case $status_state in
       exit 1;;
 esac
 
-githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_OWNER}/${GITHUB_PR_REPO}/statuses/${GITHUB_PR_TRIGGERED_SHA}"
+githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_BASE_OWNER}/${GITHUB_PR_BASE_REPO}/statuses/${GITHUB_PR_TRIGGERED_SHA}"
 data='{"state":"'$status_state'","target_url":"'$BUILDKITE_BUILD_URL'","description":"'$description'","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
 
-echo "Setting buildkite/${BUILDKITE_PIPELINE_SLUG} commit status to ${status_state}"
+echo "Setting commit status: buildkite/${BUILDKITE_PIPELINE_SLUG} - ${status_state}"
 curl -s -L \
   -X POST \
   -H "Accept: application/vnd.github+json" \
