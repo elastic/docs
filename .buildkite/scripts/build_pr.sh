@@ -29,9 +29,8 @@ if [[ ${GITHUB_PR_COMMENT_VAR_REBUILD_OPT:="unset"} == "rebuild" ]];then
   rebuild_opt=" --rebuild"
 elif [[ ${GITHUB_PR_COMMENT_VAR_SKIP_OPT:="unset"} == "skiplinkcheck" ]];then
   build_args+=" --skiplinkcheck"
-  if [[ ${GITHUB_PR_COMMENT_VAR_WARN_OPT:="unset"} == "warnlinkcheck" ]];then
-    build_args+=" --warnlinkcheck"
-  fi
+elif [[ ${GITHUB_PR_COMMENT_VAR_WARN_OPT:="unset"} == "warnlinkcheck" ]];then
+  build_args+=" --warnlinkcheck"
 fi
 
 buildkite-agent \
