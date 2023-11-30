@@ -9,7 +9,7 @@ if [ -z ${GITHUB_PR_NUMBER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ];then
 fi
 
 running_builds_url="https://api.buildkite.com/v2/organizations/elastic/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds"
-running_builds_url+="?branch=${BUILDKITE_PIPELINE_DEFAULT_BRANCH}&state[]=scheduled&state[]=running"
+running_builds_url+="?branch=${BUILDKITE_BRANCH}&state[]=scheduled&state[]=running"
 jq_filter="map(select(any(.meta_data; .repo_pr == \"${GITHUB_PR_BASE_REPO}_${GITHUB_PR_NUMBER}\"))) | .[] .number"
 
 for bn in $(curl -sH "Authorization: Bearer ${BUILDKITE_API_TOKEN}" $running_builds_url | jq -c "${jq_filter}"); do
