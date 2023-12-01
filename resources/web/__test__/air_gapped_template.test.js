@@ -53,8 +53,14 @@ describe("air_gapped_template.html", () => {
      */
     let staticResources;
     beforeAll(async () => {
-      staticResources = (await readdir("static")).map(e => `/${e}`);
+      staticResources = (await readdir('static')).map((e) => `/${e}`)
+      /**
+       * Remove marketing fonts from the list of links. This is only needed for PR previews
+       * and is not linked to from the docs.
+       */
+      staticResources = staticResources.filter((e) => e !== '/static-res')
     });
+
     /**
      * Links outside of the docs that are required and therefore ok.
      */
