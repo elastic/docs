@@ -20,10 +20,8 @@ fi
 
 if [[ "${BROKEN_LINKS}" == 'skiplinkcheck' ]]; then
   broken_links_opt="--skiplinkcheck"
-else
-  if [[ "${BROKEN_LINKS}" == 'warnlinkcheck' ]]; then
-    broken_links_opt="--warnlinkcheck"
-  fi
+elif [[ "${BROKEN_LINKS}" == 'warnlinkcheck' ]]; then
+  broken_links_opt="--warnlinkcheck"
 fi
 
 if [[ "${BUILDKITE_BRANCH}" == "master" ]]; then
