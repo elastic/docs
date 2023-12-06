@@ -8,11 +8,7 @@ GITHUB_PR_NUMBER=${GITHUB_PR_NUMBER:="391"}
 GITHUB_PR_BASE_REPO=${GITHUB_PR_BASE_REPO:="tech-content"}
 
 echo $GITHUB_PR_BRANCH $GITHUB_PR_TARGET_BRANCH $GITHUB_PR_NUMBER $GITHUB_PR_BASE_REPO
-pwd
-mkdir ../product_repo
-cd ../product_repo
-pwd
-exit 0
+#
 # This script should only be invoked by the Buildkite PR bot
 if [ -z ${GITHUB_PR_BRANCH+set} ] || [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ -z ${GITHUB_PR_NUMBER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ];then
   echo "One of the following env. variable GITHUB_PR_BRANCH, GITHUB_PR_TARGET_BRANCH, GITHUB_PR_NUMBER, GITHUB_PR_BASE_REPO is missing - exiting."
@@ -59,14 +55,14 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   echo "Cloning the ${GITHUB_PR_BASE_REPO} PR locally"
 
   git clone --reference /opt/git-mirrors/elastic-$GITHUB_PR_BASE_REPO \
-    git@github.com:elastic/$GITHUB_PR_BASE_REPO.git ./product-repo
+    git@github.com:elastic/$GITHUB_PR_BASE_REPO.git ../product-repo
 
-  cd ./product-repo &&
+  cd ../product-repo &&
       git fetch origin pull/$GITHUB_PR_NUMBER/head:$GITHUB_PR_BRANCH &&
       git switch $GITHUB_PR_BRANCH &&
       cd ..
 
-  build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:./product-repo"
+  build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:../product-repo"
 else
   # Buildkite PR bot for the `elastic/docs` repo is configured to checkout the PR directly into the workspace
   # We don't have to do anything else in this case.
