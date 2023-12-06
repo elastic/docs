@@ -27,6 +27,7 @@ export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 buildkite-agent meta-data set "repo" "${GITHUB_PR_BASE_REPO}"
 buildkite-agent meta-data set "repo_pr" "${GITHUB_PR_BASE_REPO}_${GITHUB_PR_NUMBER}"
 
+docs_builder_exec="./build_docs"
 rebuild_opt=""
 build_args=""
 TARGET_BRANCH=""
@@ -46,7 +47,6 @@ buildkite-agent \
     --context 'docs-info' \
     "Triggered by a doc change in elastic/$GITHUB_PR_BASE_REPO PR: [#$GITHUB_PR_NUMBER](https://github.com/elastic/$GITHUB_PR_BASE_REPO/pull/$GITHUB_PR_NUMBER)"
 
-
 if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   # Buildkite PR bot for repositories other than the `elastic/docs` repo are configured to
   # always checkout the master branch of the `elastic/docs` repo (where the build logic resides).
@@ -59,10 +59,12 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
   pushd ../product-repo &&
       git fetch origin pull/$GITHUB_PR_NUMBER/head:$GITHUB_PR_BRANCH &&
-      git switch $GITHUB_PR_BRANCH &&
-      popd
+      git switch $GITHUB_PR_BRANCH
 
-  build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:../product-repo"
+  build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:$(pwd)"
+  mv ../docs-build-pr .docs
+  docs_builder_exec="./.docs/build_docs"
+
 else
   # Buildkite PR bot for the `elastic/docs` repo is configured to checkout the PR directly into the workspace
   # We don't have to do anything else in this case.
@@ -79,7 +81,7 @@ fi
 TARGET_BRANCH="${GITHUB_PR_BASE_REPO}_bk_${GITHUB_PR_NUMBER}"
 PREVIEW_URL="https://${TARGET_BRANCH}.docs-preview.app.elstc.co"
 
-build_cmd="./build_docs --all --keep_hash \
+build_cmd="${docs_builder_exec} --all --keep_hash \
   --target_repo git@github.com:elastic/built-docs \
   --reference /opt/git-mirrors/ \
   --target_branch ${TARGET_BRANCH} \
