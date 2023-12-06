@@ -57,10 +57,10 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   git clone --reference /opt/git-mirrors/elastic-$GITHUB_PR_BASE_REPO \
     git@github.com:elastic/$GITHUB_PR_BASE_REPO.git ../product-repo
 
-  cd ../product-repo &&
+  pushd ../product-repo &&
       git fetch origin pull/$GITHUB_PR_NUMBER/head:$GITHUB_PR_BRANCH &&
       git switch $GITHUB_PR_BRANCH &&
-      cd ..
+      popd
 
   build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:../product-repo"
 else
