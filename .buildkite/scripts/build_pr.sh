@@ -7,9 +7,6 @@ GITHUB_PR_TARGET_BRANCH="${PR_TARGET_BRANCH:=main}"
 GITHUB_PR_NUMBER="${PR_NUMBER:=4392}"
 GITHUB_PR_BASE_REPO="${PR_BASE_REPO:=security-docs}"
 
-echo $GITHUB_PR_BRANCH $GITHUB_PR_TARGET_BRANCH $GITHUB_PR_NUMBER $GITHUB_PR_BASE_REPO
-exit 0
-
 # This script should only be invoked by the Buildkite PR bot
 if [ -z ${GITHUB_PR_BRANCH+set} ] || [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ -z ${GITHUB_PR_NUMBER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ];then
   echo "One of the following env. variable GITHUB_PR_BRANCH, GITHUB_PR_TARGET_BRANCH, GITHUB_PR_NUMBER, GITHUB_PR_BASE_REPO is missing - exiting."
