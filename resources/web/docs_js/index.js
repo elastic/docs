@@ -49,6 +49,9 @@ export function init_landing_page() {
   $lastDocsLinkSection.find('h3').on('click', function() {
     $lastDocsLinkSection.toggleClass('hidden');
   });
+
+  // Move "need help" section to the bottom of the page
+  $('#bottomContent').insertAfter($lastDocsLinkSection).show();
 }
 
 // Vocab:
