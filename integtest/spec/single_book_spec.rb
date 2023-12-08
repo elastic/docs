@@ -39,7 +39,7 @@ RSpec.describe 'building a single book' do
         end
         it 'has a link to the js' do
           expect(contents).to include(<<~HTML)
-            <script type="text/javascript" src="/guide/static/docs.jsdocs.js?cache=1702073099948"></script>
+            <script type="text/javascript" src="/guide/static/docs.js"></script>
           HTML
         end
         it 'has the right language' do
