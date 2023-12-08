@@ -22,6 +22,38 @@ import "../../../../../node_modules/details-polyfill";
 // Add support for URLSearchParams Web API in IE
 import "../../../../../node_modules/url-search-params-polyfill";
 
+export function init_landing_page() {
+  // Because of the nature of the injected links, we need to adjust the layout to
+  // Fit into two columns on the landing page.
+
+  // Select all top-level h3 elements within the #content div
+  $('.docs-landing div#content > h3').each(function() {
+    var $siblingDiv = $(this).next('div.ulist.itemizedlist');
+
+    // Wrap the h3 and its sibling div in a div with class docs-link-section
+    $(this).add($siblingDiv).wrapAll('<div class="docs-link-section"></div>');
+  });
+
+  // Select the last .docs-link-section
+  var $lastDocsLinkSection = $('.docs-link-section:last');
+
+  // Remove it from its current position
+  $lastDocsLinkSection.detach();
+
+  // Append it outside of the div#content element
+  $lastDocsLinkSection.addClass('legacy-docs hidden').insertAfter('div#content');
+
+  $lastDocsLinkSection.find('h3').append('<span class="toggle-icon">&#9660;</span>');
+
+  // Click handler to toggle visibility
+  $lastDocsLinkSection.find('h3').on('click', function() {
+    $lastDocsLinkSection.toggleClass('hidden');
+  });
+
+  // Move "need help" section to the bottom of the page
+  $('#bottomContent').insertAfter($lastDocsLinkSection).show();
+}
+
 // Vocab:
 // TOC = table of contents
 // OTP = on this page
@@ -377,6 +409,7 @@ $(function() {
   init_console_widgets();
   init_kibana_widgets();
   init_feedback_widget();
+  init_landing_page();
   $("div.ess_widget").each(function() {
     const div         = $(this),
           snippet     = div.attr('data-snippet'),
