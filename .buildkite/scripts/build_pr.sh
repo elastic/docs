@@ -72,7 +72,7 @@ fi
 TARGET_BRANCH="${GITHUB_PR_BASE_REPO}_bk_${GITHUB_PR_NUMBER}"
 PREVIEW_URL="https://${TARGET_BRANCH}.docs-preview.app.elstc.co"
 
-build_cmd="./build_docs --all --keep_hash \
+build_cmd="./build_docs --all \
   --target_repo git@github.com:elastic/built-docs \
   --reference /opt/git-mirrors/ \
   --target_branch ${TARGET_BRANCH} \
