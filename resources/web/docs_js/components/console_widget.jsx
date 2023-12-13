@@ -73,6 +73,17 @@ export const ConsoleForm = connect((state, props) =>
 // ConsoleWidget isn't quite the right name for this any more....
 export const ConsoleWidget = props => {
   const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
+
+  // Simple function to display a modal/tooltip
+  const showHelp = () => {
+    alert('1. When code examples are available for different programming languages, use the toggle in the lower left-hand corner.\n\n' +
+          '2. To copy a code snippet: \n\n' +
+          '- Select "Copy as curl" to copy the code in curl format. \n' +
+          '- Select "View in Console" to load the example into your Kibana Console.\n\n' +
+          '3. Use the gear icon in the lower right-hand corner to configure your Elasticsearch host URL, username and Kibana Console URL.\n\nThis ensures the code examples target your Elasticsearch instance.\n\n')
+};
+
+
   return <div className="u-space-between">
     <AlternativePicker langs={props.langs} />
     <div className="u-space-between">
@@ -91,6 +102,11 @@ export const ConsoleWidget = props => {
           title={props.langStrings(props.view_in_text)}
           href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
       }
+      
+<a className="sense_widget copy_as_curl" onClick={showHelp} style={{ textDecoration: 'none' }}>
+  <strong>ℹ️</strong>
+</a>
+
       <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
     </div>
   </div>
