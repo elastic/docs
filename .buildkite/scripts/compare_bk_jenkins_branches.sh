@@ -69,11 +69,10 @@ retVal=$?
 
 if [ $retVal -eq 0 ]; then
   buildkite-agent annotate --append --style 'warning' --context 'branch-comparison' '<br><span class="red">Branches differ</span>'
-  buildkite-agent meta-data set BRANCH_COMPARISON_OUTPUT "[$BUILDKITE_BRANCH..$JENKINS_BRANCH](https://github.com/elastic/built-docs/compare/$BUILDKITE_BRANCH..$JENKINS_BRANCH) seem to differ"
+  buildkite-agent meta-data set "bk-jenkins-branch-comparison" "different"
   echo $diff_out
-  exit 2
 else
   buildkite-agent annotate --append --style 'success' --context 'branch-comparison' '<br><span class="green">Branches are identical</span>'
-  buildkite-agent meta-data set BRANCH_COMPARISON_OUTPUT "[$BUILDKITE_BRANCH..$JENKINS_BRANCH](https://github.com/elastic/built-docs/compare/$BUILDKITE_BRANCH..$JENKINS_BRANCH) are identical"
+  buildkite-agent meta-data set "bk-jenkins-branch-comparison" "identical"
 fi
 
