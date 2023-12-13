@@ -27,6 +27,7 @@ if [ $bk -ne 0 ]; then
         --append \
         --context 'branch-comparison' \
         "No branches produced - aborting"
+    buildkite-agent meta-data set "bk-jenkins-branch-comparison" "skipping-no-branches"
     exit 0
 fi
 
@@ -41,6 +42,7 @@ if [ $jen -ne 0 ]; then
         --append \
         --context 'branch-comparison' \
         "[Jenkins branch](https://github.com/elastic/built-docs/tree/$JENKINS_BRANCH) not found in time - aborting"
+    buildkite-agent meta-data set "bk-jenkins-branch-comparison" "skipping-missing-jenkins-branch"
     exit 0
 fi
 
@@ -60,6 +62,7 @@ branches_age_diff=`expr $bk - $jen`
 echo "Branches age difference (s) is $branches_age_diff"
 if [ "$branches_age_diff" -gt 1800 ]; then
     buildkite-agent annotate --append --context 'branch-comparison' "<br>Jenkins and Buildkite branches are more than 30 minutes apart - skipping comparison"
+    buildkite-agent meta-data set "bk-jenkins-branch-comparison" "skipping-age-difference"
     exit 0
 fi
 
