@@ -103,7 +103,7 @@ export const ConsoleWidget = props => {
           href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
       }
       
-<a className="sense_widget copy_as_curl" onClick={showHelp} style={{ textDecoration: 'none' }}>
+<a className="help_info" onClick={showHelp} style={{ textDecoration: 'none' }}>
   <strong>ℹ️</strong>
 </a>
 
