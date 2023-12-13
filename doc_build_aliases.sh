@@ -202,7 +202,7 @@ alias docbldamios='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-ios/docs/
 
 alias docbldaws='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-aws-lambda/docs/index.asciidoc --chunk 1'
 
-alias docbldamw='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-mutating-webhook/docs/index.asciidoc --chunk 1'
+alias docbldamw='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-k8s-attacher/docs/index.asciidoc --chunk 1'
 
 # APM Legacy
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
