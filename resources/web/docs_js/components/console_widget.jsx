@@ -102,8 +102,8 @@ export const ConsoleWidget = props => {
           href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
       }
       
-<a className="help_info" onClick={showHelp} style={{ textDecoration: 'none', marginRight : '10px'}}>
-  <strong>ℹ️</strong>
+<a className="help_info" onClick={showHelp} style={{ textDecoration: 'none'}}>
+  ℹ️
 </a>
 
       <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
