@@ -76,11 +76,10 @@ export const ConsoleWidget = props => {
 
   // Simple function to display a modal/tooltip
   const showHelp = () => {
-    alert('1. Use the toggle in the lower left-hand corner to change programming language.\n\n' +
-          '2. To copy a code snippet: \n\n' +
-          '- Select "Copy as curl" to copy the code in curl format. \n' +
-          '- Select "View in Console" to load the example into your Kibana Console.\n\n' +
-          '3. Use the gear icon (⚙) in the lower right-hand corner to configure your Elasticsearch host URL, username and Kibana Console URL.\n\nThis ensures the code examples target your Elasticsearch instance.\n\n')
+    alert('1. Use the toggle in the lower left-hand corner to change client languages.\n' +
+          '2. - Select "Copy as curl" to copy the code in curl format.\n' +
+          '    - Select "View in Console" to load example in Kibana Console.\n' +
+          '3. Use the gear icon (⚙) in the lower right-hand corner to configure your Elasticsearch host URL, username and Kibana Console URL.This ensures the code examples target your Elasticsearch instance.\n\n')
 };
 
 
@@ -103,7 +102,7 @@ export const ConsoleWidget = props => {
           href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
       }
       
-<a className="help_info" onClick={showHelp}>
+<a className="help_info" onClick={showHelp} style={{ textDecoration: 'none', marginRight : '10px'}}>
   <strong>ℹ️</strong>
 </a>
 
