@@ -76,13 +76,14 @@ export const ConsoleWidget = props => {
 
   // Simple function to display a modal/tooltip
   const showHelp = () => {
-    alert('1. To change the client language, use the dropdown.\n' +
-          '2. To copy the code in curl format, click "Copy as curl".\n' +
-          '3. To open the example in Kibana Console:
-                a. Click the gear icon (⚙) in the lower right-hand corner to configure your Elasticsearch host URL, username, and Kibana Console  URL. This ensures the code examples target your Elasticsearch instance.
-                b. Click "View in Console".\n' +
+    alert('1. To change the client language, use the dropdown.\n\n' +
+          '2. To copy the code in curl format:\n' +
+          '- Use the gear icon (⚙) to set Elasticsearch URL and username\n' +
+          '- Click "Copy as curl".\n\n' +
+          '3. To open the example in Kibana Console:\n'+
+                '- Use the gear icon (⚙) to set Kibana Console URL.\n' +
+                '- Click "View in Console".')
 };
-
 
   return <div className="u-space-between">
     <AlternativePicker langs={props.langs} />
