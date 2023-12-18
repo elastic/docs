@@ -81,8 +81,8 @@ export const ConsoleWidget = props => {
           '- Use the gear icon (⚙) to set Elasticsearch URL and username\n' +
           '- Click "Copy as curl".\n\n' +
           '3. To open the example in Kibana Console:\n'+
-                '- Use the gear icon (⚙) to set Kibana Console URL.\n' +
-                '- Click "View in Console".')
+          '- Use the gear icon (⚙) to set Kibana Console URL.\n' +
+          '- Click "View in Console".')
 };
 
   return <div className="u-space-between">
