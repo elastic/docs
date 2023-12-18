@@ -78,11 +78,11 @@ export const ConsoleWidget = props => {
   const showHelp = () => {
     alert('1. To change the client language, use the dropdown.\n\n' +
           '2. To copy the code in curl format:\n' +
-          '- Use the gear icon (⚙) to set Elasticsearch URL and username\n' +
-          '- Click "Copy as curl".\n\n' +
+          '  - Use gear icon (⚙) to set Elasticsearch URL + username.\n' +
+          '  - Click "Copy as curl".\n\n' +
           '3. To open the example in Kibana Console:\n'+
-          '- Use the gear icon (⚙) to set Kibana Console URL.\n' +
-          '- Click "View in Console".')
+          '  - Use gear icon (⚙) to set Kibana Console URL.\n' +
+          '  - Click "View in Console".')
 };
 
   return <div className="u-space-between">
