@@ -16,7 +16,7 @@ module Chunker
           <ul>
           <li class="dropdown-category">APM</li>
           <ul>
-          <li><a href="/guide/en/observability/current/apm.html">Observability › APM</a></li>
+          <li><a href="/guide/en/observability/master/apm.html">Observability › APM</a></li>
           </ul>
           <li class="dropdown-category">APM agents</li>
           <ul>
