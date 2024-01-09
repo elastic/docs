@@ -86,7 +86,7 @@ echo "The following build command will be used"
 echo $build_cmd
 
 # Kick off the build
-echo ssh-agent bash -c "ssh-add && $build_cmd"
+ssh-agent bash -c "ssh-add && $build_cmd"
 
 buildkite-agent annotate \
   --style "success" \
