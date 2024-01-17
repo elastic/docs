@@ -110,7 +110,7 @@ alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ru
 alias docbldewsn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/workplace-search-node/index.asciidoc --single'
 
 # Observability Guide 8.8 and later
-alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/ingest-docs/docs'
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 3 --resource $GIT_HOME/apm-server --resource=$GIT_HOME/ingest-docs/docs'
 
 # Observability Guide 8.7 and earlier
 alias docbldobold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/ingest-docs/docs'
@@ -176,8 +176,8 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/in
 # Integrations developer guide
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
 
-# APM Guide
-alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/integrations-index.asciidoc --resource=$GIT_HOME/observability-docs/ --resource=$GIT_HOME/ingest-docs/ --chunk 2 --open'
+# APM Guide (7.16-8.11)
+alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/observability/docs/en/apm-server/integrations-index.asciidoc --resource=$GIT_HOME/apm-server/ --resource=$GIT_HOME/ingest-docs/ --chunk 2 --open'
 
 # APM Agents
 alias docbldama='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-android/docs/index.asciidoc --chunk 1'

@@ -16,7 +16,7 @@ module Chunker
           <ul>
           <li class="dropdown-category">APM</li>
           <ul>
-          <li><a href="/guide/en/apm/guide/current/apm-overview.html">User Guide</a></li>
+          <li><a href="/guide/en/observability/current/apm.html">Observability › APM</a></li>
           </ul>
           <li class="dropdown-category">APM agents</li>
           <ul>
@@ -33,7 +33,7 @@ module Chunker
           </ul>
           <li class="dropdown-category">APM extensions</li>
           <ul>
-          <li><a href="/guide/en/apm/lambda/current/aws-lambda-arch.html">Monitoring AWS Lambda Functions</a></li>
+          <li><a href="/guide/en/apm/lambda/current/aws-lambda-arch.html">AWS Lambda extension</a></li>
           <li><a href="/guide/en/apm/attacher/current/apm-attacher.html">Attacher</a></li>
           </ul>
           </ul>
