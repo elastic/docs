@@ -51,7 +51,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
     git@github.com:elastic/$GITHUB_PR_BASE_REPO.git ./product-repo
 
   cd ./product-repo &&
-      git fetch origin pull/$GITHUB_PR_NUMBER/head:$GITHUB_PR_BRANCH &&
+      git fetch --update-head-ok origin pull/$GITHUB_PR_NUMBER/head:$GITHUB_PR_BRANCH &&
       git switch $GITHUB_PR_BRANCH &&
       cd ..
   # For product repos - context in https://github.com/elastic/docs/commit/5b06c2dc1f50208fcf6025eaed6d5c4e81200330
