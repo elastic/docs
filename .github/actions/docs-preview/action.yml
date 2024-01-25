@@ -1,0 +1,57 @@
+name: 'docs-preview'
+description: 'Add docs-preview comment in the given repository.'
+inputs:
+  repo:
+    description: 'the name of the repository'
+    required: true
+  pr:
+    description: 'the pull-request'
+    required: true
+  github-token:
+    description: 'The GitHub access token.'
+    required: true
+  preview-path:
+    description: 'Path to append to base doc url in preview link'
+    required: false
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/github-script@v7
+      env:
+        REPO: ${{ inputs.repo }}
+        PR: ${{ inputs.pr }}
+        PREVIEW_PATH: ${{ inputs.preview-path }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const { REPO, PR, PREVIEW_PATH } = process.env
+
+          const comment = `A documentation preview will be available soon.<br>
+          Help us out by validating the Buildkite preview and reporting issues [here](https://github.com/elastic/docs/issues/new?labels=buildkite-migration,bug).
+          Please also be sure to **double check all images to ensure they are correct** in the preview.
+
+          - 🔨 Buildkite [builds](https://buildkite.com/elastic/docs-build-pr/builds?meta_data[repo_pr]=${REPO}_${PR})
+          - 📚 HTML diff: [Buildkite](https://${REPO}_bk_${PR}.docs-preview.app.elstc.co/diff)  - [Jenkins](https://${REPO}_${PR}.docs-preview.app.elstc.co/diff)
+          - 📙 Preview: [Buildkite](https://${REPO}_bk_${PR}.docs-preview.app.elstc.co/${PREVIEW_PATH})  -  [Jenkins](https://${REPO}_${PR}.docs-preview.app.elstc.co/${PREVIEW_PATH})
+          - 🧪 [Buildkite vs Jenkins diff](https://github.com/elastic/built-docs/compare/${REPO}_bk_${PR}..${REPO}_${PR})
+
+
+          <details>
+          <summary>Request a new doc build by commenting</summary>
+
+          * Rebuild this PR: \`run docs-build\`
+          * Rebuild this PR and all Elastic docs: \`run docs-build rebuild\`
+
+          <sub>\`run docs-build\` is much faster than \`run docs-build rebuild\`. A \`rebuild\` should only be needed in rare situations. </sub>
+
+          <sub>If your PR continues to fail for an unknown reason, the doc build pipeline may be broken. Elastic employees can check the pipeline status [here](https://buildkite.com/elastic/docs-build).</sub>
+          </details>
+          `;
+
+          github.rest.issues.createComment({
+            issue_number: PR,
+            owner: 'elastic',
+            repo: REPO,
+            body: comment,
+          });
