@@ -4,33 +4,41 @@ steps:
     fields:
       - select: "Rebuild?"
         key: "REBUILD"
-        default: false
+        default: "rebuild"
         required: false
         options:
           - label: "no"
-            value: false
+            value: ""
           - label: "yes"
-            value: true
+            value: "rebuild"
         hint: "Should all books be rebuilt, regardless of what has changed? Build once with this set to true after every release."
       - select: "How should broken links be handled?"
         key: "BROKEN_LINKS"
-        default: false
+        default: ""
         required: false
         options:
           - label: "Continue without warning"
-            value: "skip"
+            value: "skiplinkcheck"
           - label: "Continue, but log a warning"
-            value: "warn"
+            value: "warnlinkcheck"
           - label: "Fail the build"
-            value: false
+            value: ""
         hint: "Should we ignore checking broken links? Should we allow to run the build without failing if there's a broken link? Ignoring broken links is dangerous not just because bad links will leak into the public site but because subsequent builds and pull requests that do not fix the links fail."
   - wait
   - label: ":white_check_mark: Build docs"
     command: |
-      export REBUILD="$(buildkite-agent meta-data get REBUILD --default false)"
-      export BROKEN_LINKS="$(buildkite-agent meta-data get BROKEN_LINKS --default false)"
-      bash .buildkite/scripts/build-docs.sh
-    branches: "master"
+      export REBUILD="$(buildkite-agent meta-data get REBUILD --default 'rebuild' --log-level fatal)"
+      export BROKEN_LINKS="$(buildkite-agent meta-data get BROKEN_LINKS --default '' --log-level fatal)"
+      bash .buildkite/scripts/build.sh
+    agents:
+      provider: "gcp"
+      image: family/docs-ubuntu-2204
+      machineType: ${BUILD_MACHINE_TYPE}
+  - wait
+  - key: "branch-comparison"
+    label: "Compare branches"
+    command: |
+      .buildkite/scripts/compare_bk_jenkins_branches.sh staging master
     agents:
       provider: "gcp"
       image: family/docs-ubuntu-2204

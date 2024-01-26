@@ -408,6 +408,7 @@ sub _resolve_branch {
 
     $branch = $self->_last_commit(@_);
     die "--keep_hash can't build on top of --sub_dir" if $branch eq 'local';
+    # If the build fails, this message can indicate that there are duplicate entries in the conf.yaml
     return $branch;
 }
 

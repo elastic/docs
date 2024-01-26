@@ -1,5 +1,7 @@
 import AlternativeSwitcher from "./components/alternative_switcher";
 import ConsoleWidget from "./components/console_widget";
+import FeedbackModal from './components/feedback_modal';
+import FeedbackWidget from './components/feedback_widget';
 import Modal from "./components/modal";
 import mount from "./components/mount";
 import {switchTabs} from "./components/tabbed_widget";
@@ -19,6 +21,38 @@ import "../../../../../node_modules/details-polyfill";
 
 // Add support for URLSearchParams Web API in IE
 import "../../../../../node_modules/url-search-params-polyfill";
+
+export function init_landing_page() {
+  // Because of the nature of the injected links, we need to adjust the layout to
+  // Fit into two columns on the landing page.
+
+  // Select all top-level h3 elements within the #content div
+  $('.docs-landing div#content > h3').each(function() {
+    var $siblingDiv = $(this).next('div.ulist.itemizedlist');
+
+    // Wrap the h3 and its sibling div in a div with class docs-link-section
+    $(this).add($siblingDiv).wrapAll('<div class="docs-link-section"></div>');
+  });
+
+  // Select the last .docs-link-section
+  var $lastDocsLinkSection = $('.docs-link-section:last');
+
+  // Remove it from its current position
+  $lastDocsLinkSection.detach();
+
+  // Append it outside of the div#content element
+  $lastDocsLinkSection.addClass('legacy-docs hidden').insertAfter('div#content');
+
+  $lastDocsLinkSection.find('h3').append('<span class="toggle-icon">&#9660;</span>');
+
+  // Click handler to toggle visibility
+  $lastDocsLinkSection.find('h3').on('click', function() {
+    $lastDocsLinkSection.toggleClass('hidden');
+  });
+
+  // Move "need help" section to the bottom of the page
+  $('#bottomContent').insertAfter($lastDocsLinkSection).show();
+}
 
 // Vocab:
 // TOC = table of contents
@@ -88,6 +122,15 @@ export function init_console_widgets() {
                                       consoleText,
                                       snippet,
                                       langs});
+  });
+}
+
+export function init_feedback_widget() {
+  mount($('#feedbackWidgetContainer'), FeedbackWidget);
+  $('.feedbackButton').click(function () {
+    const isLiked = $(this).hasClass('feedbackLiked');
+    $(this).addClass('isPressed');
+    mount($('#feedbackModalContainer'), FeedbackModal, { isLiked: isLiked });
   });
 }
 
@@ -291,7 +334,7 @@ $(function() {
   mount($('body'), Modal);
 
   AlternativeSwitcher(store());
-  
+
   const allHeadings = $('main').find('h1, h2, h3, h4, h5, h6')
   let allLevels = []
   allHeadings.each(function(index) {
@@ -310,6 +353,46 @@ $(function() {
       if ($(this).prop('nodeName') === allLevels[2]) $(this).replaceWith(`<h4>${contents}</h4>`);
     }
   })
+  // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)
+  // handle interaction with the dropdown
+  if ($('#related-products')) {
+    // Select-type element used to reveal options
+    const dropDownAnchor = $('#related-products > .dropdown-anchor')
+    // Popover-type element containing options
+    const dropDownContent = $('#related-products > .dropdown-content')
+    // Toggle the visibility of the popover on click
+    dropDownAnchor.click(function (e) {
+      e.preventDefault();
+      dropDownContent.toggleClass('show')
+    });
+    // Toggle the visibility of the popover on enter
+    dropDownAnchor.keypress(function (e) {
+      if (e.which == 13) {
+        dropDownContent.toggleClass('show')
+      }
+    });
+    // Close the popover when clicking outside it
+    $(document).mouseup(function(e) {
+      if (
+        dropDownContent.hasClass("show")
+        && !dropDownAnchor.is(e.target)
+        && !dropDownContent.is(e.target)
+        && dropDownContent.has(e.target).length === 0
+      ) {
+        dropDownContent.removeClass("show")
+      }
+    })
+    // Bold the item in the popover that represents
+    // the current book
+    const currentBookTitle = dropDownAnchor.text()
+    const items = dropDownContent.find("li")
+    items.each(function(i) {
+      if (items[i].innerText === currentBookTitle) {
+        const link = items[i].children[0]
+        link.style.fontWeight = 700
+      }
+    })
+  }
 
   // Move rtp container to top right and make visible
   var sticky_content = $('#sticky_content');
@@ -385,27 +468,29 @@ $(function() {
     window.addEventListener("DOMContentLoaded", (event) => {
       const left_col = document.getElementById("left_col")
       left_col.classList.remove("col-12", "col-md-4", "col-lg-3", "h-almost-full-md", "sticky-top-md")
-    
+
       const right_col = document.getElementById("right_col")
       right_col.classList.add('d-none')
-    
+
       const middle_col = document.getElementById("middle_col")
       middle_col.classList.remove("col-lg-9", "col-md-8")
-    
+
       const mainContent = document.getElementsByClassName("euiFlexGroup euiFlexGroup-responsive-xl-flexStart-stretch-row")
       mainContent[0].classList.remove("euiFlexGroup", "euiFlexGroup-responsive-xl-flexStart-stretch-row")
-    
+
       // const toc = middle_col.getElementsByClassName("toc")[0]
       // toc.remove()
       // left_col.appendChild(toc);
     });
   }
-  
+
 
   // Enable Sense widget
   init_sense_widgets();
   init_console_widgets();
   init_kibana_widgets();
+  init_feedback_widget();
+  init_landing_page();
 
   $("div.ess_widget").each(function() {
     const div         = $(this),

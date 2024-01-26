@@ -288,7 +288,7 @@ RSpec.describe 'building a single book' do
       it 'includes the experimental text' do
         expect(body).to include(
           'This functionality is in technical preview and may be changed or '\
-          'removed in a future release. Elastic will apply best effort to fix '\
+          'removed in a future release. Elastic will work to fix '\
           'any issues, but features in technical preview are not subject to '\
           'the support SLA of official GA features.'
         )
