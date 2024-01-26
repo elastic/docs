@@ -4,7 +4,6 @@ set -euo pipefail
 
 # This hook should only be invoked for builds triggered by the Buildkite PR bot
 if [ -z ${GITHUB_PR_BASE_OWNER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ] || [ -z ${GITHUB_PR_TRIGGERED_SHA+set} ];then
-  echo "Build not triggered via Buildkite PR bot - skipping setting status check"
   exit 0
 fi
 
