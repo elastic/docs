@@ -26,7 +26,7 @@ jobs:
   doc-preview:
     runs-on: ubuntu-latest
     steps:
-      - uses: elastic/docs/.github/actions/docs-preview@current
+      - uses: elastic/docs/.github/actions/docs-preview@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repo: ${{ github.event.repository.name }}
