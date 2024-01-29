@@ -1,10 +1,5 @@
 #!/bin/bash
-
 set -eo pipefail
-
-set +x
-export GITHUB_TOKEN=$(vault read -field=value secret/ci/elastic-docs/docs_preview_cleaner)
-set -x
 
 export REPO=git@github.com:elastic/built-docs.git
 export IMAGE=docker.elastic.co/docs/build:latest
