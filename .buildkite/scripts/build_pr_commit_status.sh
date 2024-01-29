@@ -27,7 +27,7 @@ echo "Setting commit status: buildkite/${BUILDKITE_PIPELINE_SLUG} - ${status_sta
 curl -s -L \
   -X POST \
   -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ${VAULT_GITHUB_TOKEN}" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   "${githubPublishStatus}" \
   -d "${data}"
