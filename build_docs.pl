@@ -364,6 +364,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$version/!;
                 $path =~ s!\$\{KIBANA_DOCS\}!en/kibana/$version/!;
                 $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$version/!;
+                $path =~ s!\$\{OBSERVABILITY_DOCS\}!en/observability/$version/!;
                 $path =~ s!\$\{FLEET_DOCS\}!en/fleet/$version/!;
                 $path =~ s!\$\{APM_DOCS\}!en/apm/!;
                 $path =~ s!\$\{STACK_DOCS\}!en/elastic-stack/$version/!;
