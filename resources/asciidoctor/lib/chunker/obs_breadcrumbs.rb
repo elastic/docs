@@ -55,6 +55,7 @@ module Chunker
                 <li><a href="/guide/en/ecs-logging/overview/current/intro.html">Reference</a></li>
                 <li><a href="/guide/en/ecs-logging/go-logrus/current/intro.html">Go (Logrus) Reference</a></li>
                 <li><a href="/guide/en/ecs-logging/go-zap/current/intro.html">Go (zap) Reference</a></li>
+                <li><a href="/guide/en/ecs-logging/go-zerolog/current/intro.html">Go (zerolog) Reference</a></li>
                 <li><a href="/guide/en/ecs-logging/java/current/intro.html">Java Reference</a></li>
                 <li><a href="/guide/en/ecs-logging/dotnet/current/intro.html">.NET Reference</a></li>
                 <li><a href="/guide/en/ecs-logging/nodejs/current/intro.html">Node.js Reference</a></li>
