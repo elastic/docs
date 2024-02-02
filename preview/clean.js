@@ -96,7 +96,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   }
 
   const is_pr_closed = function (pr) {
-    console.log("Checking " + pr.repo + "-" + pr.number);
+    console.info(`Checking status of https://github.com/elastic/${pr.repo}/pull/${pr.number}`);
     return new Promise((resolve, reject) => {
       const body = {
         query: `
@@ -137,7 +137,6 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
             try {
               const parsed = JSON.parse(data);
               const repo = parsed.data.repository;
-              console.log(repo);
               if (repo && repo.pullRequest) {
                 closed = repo.pullRequest.closed;
               } else {
