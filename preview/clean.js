@@ -138,7 +138,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
               const parsed = JSON.parse(data);
               const repo = parsed.data.repository;
               console.log(repo);
-              if (repo) {
+              if (repo && repo.pullRequest) {
                 closed = repo.pullRequest.closed;
               } else {
                 console.warn(pr.branch,
