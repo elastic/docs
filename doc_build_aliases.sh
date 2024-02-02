@@ -265,6 +265,8 @@ alias docbldecslrs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-log
 
 alias docbldecszap='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-zap/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 
+alias docbldecszro='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-zerolog/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
+
 alias docbldecsjv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-java/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 
 alias docbldecsnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-dotnet/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
