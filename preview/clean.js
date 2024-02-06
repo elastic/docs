@@ -37,7 +37,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
         if (found) {
           acc.push({
             branch: found[1],
-            // Temporary hack during the Buildkite migration that breaks the <repo>_<PR> convention, 
+            // Temporary hack during the Buildkite migration that breaks the <repo>_<PR> convention,
             // and introduces the <repo>_BK_<PR> convention - see https://github.com/elastic/docs-projects/issues/134
             repo: found[2].includes('_bk') ? found[2].replace('_bk', '') : found[2],
             number: Number(found[3]),
@@ -96,6 +96,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   }
 
   const is_pr_closed = function (pr) {
+    console.info(`Checking status of https://github.com/elastic/${pr.repo}/pull/${pr.number}`);
     return new Promise((resolve, reject) => {
       const body = {
         query: `
