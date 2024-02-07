@@ -56,7 +56,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
   # For some repos, if the change did not touch the ./docs folder, we can skip the build altogher - check this here
   # add a case statement
-  case "${GITHUB_PR_BASE_REPO}" IN
+  case "${GITHUB_PR_BASE_REPO}" in
     cloud|cloud-on-k8s|curator|ecctl|ecs|ecs-dotnet|ecs-logging|ecs-logging-go-logrus|ecs-logging-go-zap|ecs-logging-go-zerolog|ecs-logging-java|ecs-logging-nodejs|ecs-logging-php|ecs-logging-python|ecs-logging-ruby|eland|elastic-serverless-forwarder|elasticsearch-hadoop|elasticsearch-js|elasticsearch-php|elasticsearch-py|elasticsearch-rs|elasticsearch-ruby|enterprise-search-php|enterprise-search-python|enterprise-search-ruby|ingest-docs|logstash|security-docs|x-pack)
 
       has_changes=0
