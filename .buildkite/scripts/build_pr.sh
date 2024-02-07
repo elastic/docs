@@ -73,7 +73,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
 
   popd
-
+  exit 0
   # For product repos - context in https://github.com/elastic/docs/commit/5b06c2dc1f50208fcf6025eaed6d5c4e81200330
   build_args+=" --keep_hash"
   build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:./product-repo"
