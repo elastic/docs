@@ -70,7 +70,7 @@ fi
 
 
 # Set the target branch and preview options
-TARGET_BRANCH="${GITHUB_PR_BASE_REPO}_${GITHUB_PR_NUMBER}"
+TARGET_BRANCH="${GITHUB_PR_BASE_REPO}_bk_${GITHUB_PR_NUMBER}"
 PREVIEW_URL="https://${TARGET_BRANCH}.docs-preview.app.elstc.co"
 
 build_cmd="./build_docs --all \
