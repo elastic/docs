@@ -50,10 +50,30 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   git clone --reference /opt/git-mirrors/elastic-$GITHUB_PR_BASE_REPO \
     git@github.com:elastic/$GITHUB_PR_BASE_REPO.git ./product-repo
 
-  cd ./product-repo &&
-      git fetch origin pull/$GITHUB_PR_NUMBER/head:pr_$GITHUB_PR_NUMBER &&
-      git switch pr_$GITHUB_PR_NUMBER &&
-      cd ..
+  pushd ./product-repo
+  git fetch origin pull/$GITHUB_PR_NUMBER/head:pr_$GITHUB_PR_NUMBER
+  git switch pr_$GITHUB_PR_NUMBER
+
+  # For some repos, if the change did not touch the ./docs folder, we can skip the build altogher - check this here
+  # add a case statement
+  case "${GITHUB_PR_BASE_REPO}" IN
+    cloud|cloud-on-k8s|curator|ecctl|ecs|ecs-dotnet|ecs-logging|ecs-logging-go-logrus|ecs-logging-go-zap|ecs-logging-go-zerolog|ecs-logging-java|ecs-logging-nodejs|ecs-logging-php|ecs-logging-python|ecs-logging-ruby|eland|elastic-serverless-forwarder|elasticsearch-hadoop|elasticsearch-js|elasticsearch-php|elasticsearch-py|elasticsearch-rs|elasticsearch-ruby|enterprise-search-php|enterprise-search-python|enterprise-search-ruby|ingest-docs|logstash|security-docs|x-pack)
+
+      has_changes=0
+      git diff --quiet HEAD $GITHUB_PR_TARGET_BRANCH -- ./docs || has_changes=$?
+      if [ $has_changes -eq 0 ]; then
+        echo "${GITHUB_PR_BASE_REPO} has been configured to skip changes that do not touch the ./docs folder - this seems to be the case for this PR, so we're skipping the build"
+        exit 0
+      fi
+      ;;
+  *)
+      echo "${GITHUB_PR_BASE_REPO} has been configured to build every PRs - carrying on with the build"
+      ;;
+  esac
+
+
+  popd
+
   # For product repos - context in https://github.com/elastic/docs/commit/5b06c2dc1f50208fcf6025eaed6d5c4e81200330
   build_args+=" --keep_hash"
   build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:./product-repo"
