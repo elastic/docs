@@ -59,8 +59,10 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   case "${GITHUB_PR_BASE_REPO}" in
     cloud|cloud-on-k8s|curator|ecctl|ecs|ecs-dotnet|ecs-logging|ecs-logging-go-logrus|ecs-logging-go-zap|ecs-logging-go-zerolog|ecs-logging-java|ecs-logging-nodejs|ecs-logging-php|ecs-logging-python|ecs-logging-ruby|eland|elastic-serverless-forwarder|elasticsearch-hadoop|elasticsearch-js|elasticsearch-php|elasticsearch-py|elasticsearch-rs|elasticsearch-ruby|enterprise-search-php|enterprise-search-python|enterprise-search-ruby|ingest-docs|logstash|security-docs|x-pack)
 
-      has_changes=0
-      git diff --quiet HEAD $GITHUB_PR_TARGET_BRANCH -- ./docs || has_changes=$?
+      set +e
+      git diff --quiet HEAD $GITHUB_PR_TARGET_BRANCH -- ./docs
+      has_changes=$?
+      set -e
       if [ $has_changes -eq 0 ]; then
         echo "${GITHUB_PR_BASE_REPO} has been configured to skip changes that do not touch the ./docs folder - this seems to be the case for this PR, so we're skipping the build"
         exit 0
