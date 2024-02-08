@@ -4,7 +4,7 @@ steps:
     fields:
       - select: "Rebuild?"
         key: "REBUILD"
-        default: "rebuild"
+        default: ""
         required: false
         options:
           - label: "no"
@@ -27,13 +27,15 @@ steps:
   - wait
   - label: ":white_check_mark: Build docs"
     command: |
-      export REBUILD="$(buildkite-agent meta-data get REBUILD --default 'rebuild' --log-level fatal)"
+      export REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
       export BROKEN_LINKS="$(buildkite-agent meta-data get BROKEN_LINKS --default '' --log-level fatal)"
       bash .buildkite/scripts/build.sh
     agents:
       provider: "gcp"
       image: family/docs-ubuntu-2204
       machineType: ${BUILD_MACHINE_TYPE}
+    concurrency_group: build-docs
+    concurrency: 1
 notify:
   - email: "docs-status@elastic.co"
     if: build.state == "failed"
