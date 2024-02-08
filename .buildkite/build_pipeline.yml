@@ -25,6 +25,19 @@ steps:
             value: ""
         hint: "Should we ignore checking broken links? Should we allow to run the build without failing if there's a broken link? Ignoring broken links is dangerous not just because bad links will leak into the public site but because subsequent builds and pull requests that do not fix the links fail."
   - wait
+  - label: "Full rebuild or incremental rebuild?"
+    if: build.source == "schedule"
+    command: |
+      LAST_BUILD_COMMIT=$(buildkite-agent meta get last_build_commit)
+      CURRENT_COMMIT=$(git rev-parse HEAD)
+      if [[ "$CURRENT_COMMIT" != "$LAST_BUILD_COMMIT" ]]; then
+        echo "The docs repo has changed since the last build."
+        export REBUILD="rebuild"
+      else
+        echo "The docs repo has not changed since the last build."
+        export REBUILD=""
+      fi
+  - wait
   - label: ":white_check_mark: Build docs"
     command: |
       export REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
