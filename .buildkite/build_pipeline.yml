@@ -1,6 +1,4 @@
 steps:
-    concurrency_group: docs-build-${BUILDKITE_BRANCH}
-    concurrency: 1
   - input: "Build parameters"
     if: build.source == "ui"
     fields:
@@ -26,10 +24,13 @@ steps:
           - label: "Fail the build"
             value: ""
         hint: "Should we ignore checking broken links? Should we allow to run the build without failing if there's a broken link? Ignoring broken links is dangerous not just because bad links will leak into the public site but because subsequent builds and pull requests that do not fix the links fail."
+    concurrency: 1
+    concurrency_group: docs-build-${BUILDKITE_BRANCH}
   - wait
   - label: "Full rebuild or incremental build?"
     if: build.source == "schedule"
     command: ".buildkite/scripts/compare_commits.sh"
+    concurrency_group: docs-build-${BUILDKITE_BRANCH}
   - label: ":white_check_mark: Build docs"
     command: |
       export REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
@@ -39,6 +40,7 @@ steps:
       provider: "gcp"
       image: family/docs-ubuntu-2204
       machineType: ${BUILD_MACHINE_TYPE}
+    concurrency_group: docs-build-${BUILDKITE_BRANCH}
 notify:
   - email: "docs-status@elastic.co"
     if: build.state == "failed"
