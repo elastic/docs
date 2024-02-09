@@ -3,10 +3,14 @@
 last_build_url="https://api.buildkite.com/v2/organizations/elastic/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?branch=${BUILDKITE_BRANCH}"
 cancel_build_url="https://api.buildkite.com/v2/organizations/elastic/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds/${BUILDKITE_JOB_ID}/cancel"
 
-LAST_BUILD_STATE=$(curl -s -H "Authorization: Bearer ${BUILDKITE_API_TOKEN}" $last_successful_build_url | jq -r '.[1].status')
+# Don't look at this build (it's running now!)
+# Don't look at the last build (it's okay if it's still running!)
+# Look three builds back instead (if this build is still running,
+# it means there's already one in the queue and we can safely cancel this one)
+THIRD_TO_LAST_BUILD_STATE=$(curl -s -H "Authorization: Bearer ${BUILDKITE_API_TOKEN}" $last_successful_build_url | jq -r '.[2].status')
 
-echo "Determining if the last build is currently blocked."
-if [[ "$LAST_BUILD_STATE" == "blocked" ]]; then
+echo "Determining if there are multiple builds waiting."
+if [[ "$THIRD_TO_LAST_BUILD_STATE" == "running" ]]; then
   echo "The pipeline is congested. Canceling this build."
   curl -sX PUT -H "Authorization: Bearer ${BUILDKITE_API_TOKEN}" $cancel_build_url
 else
