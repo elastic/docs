@@ -25,16 +25,28 @@ steps:
   #           value: ""
   #       hint: "Should we ignore checking broken links? Should we allow to run the build without failing if there's a broken link? Ignoring broken links is dangerous not just because bad links will leak into the public site but because subsequent builds and pull requests that do not fix the links fail."
   # - wait
+    # This step is purposefully outside of the concurrency gate
   - label: "Check for queue"
+    key: check-queue
     # if: build.source == "schedule"
     command: ".buildkite/scripts/check_queue.sh"
+  - label: "Start of concurrency gate"
+    key: start-gate
+    depends_on: check-queue
+    command: echo "Start of concurrency gate"
+    concurrency_group: gate/docs-build-${BUILDKITE_BRANCH}
+    concurrency: 1
   - wait
   - label: "Full rebuild or incremental build?"
+    key: build-type
+    depends_on: start-gate
     # if: build.source == "schedule"
     command: ".buildkite/scripts/compare_commits.sh"
     concurrency: 1
     concurrency_group: docs-build-${BUILDKITE_BRANCH}
   - label: ":white_check_mark: Build docs"
+    key: build-docs
+    depends_on: build-type
     command: |
       export REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
       export BROKEN_LINKS="$(buildkite-agent meta-data get BROKEN_LINKS --default '' --log-level fatal)"
@@ -44,6 +56,11 @@ steps:
       image: family/docs-ubuntu-2204
       machineType: ${BUILD_MACHINE_TYPE}
     concurrency_group: docs-build-${BUILDKITE_BRANCH}
+  - label: "End of concurrency gate"
+    key: end-gate
+    depends_on: build-docs
+    command: echo "End of concurrency gate"
+    concurrency_group: gate/docs-build-${BUILDKITE_BRANCH}
 notify:
   - email: "docs-status@elastic.co"
     if: build.state == "failed"
