@@ -1,32 +1,34 @@
 steps:
-  - input: "Build parameters"
-    if: build.source == "ui"
-    fields:
-      - select: "Rebuild?"
-        key: "REBUILD"
-        default: ""
-        required: false
-        options:
-          - label: "no"
-            value: ""
-          - label: "yes"
-            value: "rebuild"
-        hint: "Should all books be rebuilt, regardless of what has changed? Build once with this set to true after every release."
-      - select: "How should broken links be handled?"
-        key: "BROKEN_LINKS"
-        default: ""
-        required: false
-        options:
-          - label: "Continue without warning"
-            value: "skiplinkcheck"
-          - label: "Continue, but log a warning"
-            value: "warnlinkcheck"
-          - label: "Fail the build"
-            value: ""
-        hint: "Should we ignore checking broken links? Should we allow to run the build without failing if there's a broken link? Ignoring broken links is dangerous not just because bad links will leak into the public site but because subsequent builds and pull requests that do not fix the links fail."
-  - wait
+  # - input: "Build parameters"
+  #   if: build.source == "ui"
+  #   fields:
+  #     - select: "Rebuild?"
+  #       key: "REBUILD"
+  #       default: ""
+  #       required: false
+  #       options:
+  #         - label: "no"
+  #           value: ""
+  #         - label: "yes"
+  #           value: "rebuild"
+  #       hint: "Should all books be rebuilt, regardless of what has changed? Build once with this set to true after every release."
+  #     - select: "How should broken links be handled?"
+  #       key: "BROKEN_LINKS"
+  #       default: ""
+  #       required: false
+  #       options:
+  #         - label: "Continue without warning"
+  #           value: "skiplinkcheck"
+  #         - label: "Continue, but log a warning"
+  #           value: "warnlinkcheck"
+  #         - label: "Fail the build"
+  #           value: ""
+  #       hint: "Should we ignore checking broken links? Should we allow to run the build without failing if there's a broken link? Ignoring broken links is dangerous not just because bad links will leak into the public site but because subsequent builds and pull requests that do not fix the links fail."
+  # - wait
   - label: "Full rebuild or incremental build?"
-    if: build.source == "schedule"
+    # this has to be changed for testing purposes
+    # if: build.source == "schedule"
+    if: build.source == "ui"
     command: |
       LAST_BUILD_COMMIT=$(buildkite-agent meta get last_build_commit)
       CURRENT_COMMIT=$(git rev-parse HEAD)
@@ -40,8 +42,9 @@ steps:
   - wait
   - label: ":white_check_mark: Build docs"
     command: |
-      export REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
-      export BROKEN_LINKS="$(buildkite-agent meta-data get BROKEN_LINKS --default '' --log-level fatal)"
+      echo REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
+      # export REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
+      # export BROKEN_LINKS="$(buildkite-agent meta-data get BROKEN_LINKS --default '' --log-level fatal)"
       bash .buildkite/scripts/build.sh
     agents:
       provider: "gcp"
