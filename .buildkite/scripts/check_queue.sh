@@ -1,7 +1,7 @@
 #!/bin/bash
 
 build_data_url="https://api.buildkite.com/v2/organizations/elastic/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?branch=${BUILDKITE_BRANCH}"
-cancel_build_url="https://api.buildkite.com/v2/organizations/elastic/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds/${BUILDKITE_JOB_ID}/cancel"
+cancel_build_url="https://api.buildkite.com/v2/organizations/elastic/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds/${BUILDKITE_BUILD_NUMBER}/cancel"
 
 # Don't look at this build (it's running now!)
 # Don't look at the last build (it's okay if it's still running!)
