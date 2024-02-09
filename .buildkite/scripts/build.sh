@@ -2,7 +2,8 @@
 
 set -euo pipefail
 set +x
-
+echo "rebuild value: $REBUILD"
+exit 0
 # Configure the git author and committer information
 export GIT_AUTHOR_NAME='Buildkite CI'
 export GIT_AUTHOR_EMAIL='docs-status+buildkite@elastic.co'
