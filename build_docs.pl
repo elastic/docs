@@ -380,8 +380,8 @@ sub check_kibana_links {
                 # We don't want to check any links to www.elastic.co that aren't
                 # part of the docs.
                 $path =~ s/.$//g;
-                # We need to strip the final period off of examples like this: 
-                # refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html.
+                # We need to strip the final period off of URLs like this one: 
+                #      'refer to the https://www.elastic.co/guide/en/fleet/current/fleet-server.html.'
                 return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL|ELASTIC_GITHUB)\}.*/;
                 # Otherwise, return the link to check
                 return ( split /#/, $path );
