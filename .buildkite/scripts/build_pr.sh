@@ -78,6 +78,7 @@ build_cmd="./build_docs --all \
   --reference /opt/git-mirrors/ \
   --target_branch ${TARGET_BRANCH} \
   --push \
+  --verbose \
   --announce_preview ${PREVIEW_URL}/diff \
   ${rebuild_opt} \
   ${build_args}"
