@@ -27,7 +27,7 @@ export function console_regex() {
   // https://github.com/elastic/elasticsearch/blob/master/buildSrc/src/main/groovy/org/elasticsearch/gradle/doc/RestTestsFromSnippetsTask.groovy#L71-L79
   var method = '(GET|PUT|POST|HEAD|OPTIONS|DELETE)';
   var pathAndQuery = '([^\\n]+)';
-  var badBody = 'GET|PUT|POST|HEAD|OPTIONS|DELETE|#';
+  var badBody = 'GET|PUT|POST|PATCH|HEAD|OPTIONS|DELETE|#';
   var body = '((?:\\n(?!$badBody)[^\\n]+)+)'.replace('$badBody', badBody);
   var nonComment = '$method\\s+$pathAndQuery$body?'.replace(
     '$method',
