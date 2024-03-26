@@ -52,6 +52,7 @@ module DocbookCompat
       pre_classes = "programlisting prettyprint lang-#{lang}#{extra_classes}"
       [
         %(<div class="pre_wrapper lang-#{lang}#{extra_classes}">),
+        %(<div class="console_code_copy"></div>),
         %(<pre class="#{pre_classes}">#{node.content || ''}</pre>),
         %(</div>),
       ].join "\n"

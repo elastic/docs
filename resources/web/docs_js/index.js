@@ -437,6 +437,19 @@ $(function() {
     });
   });
 
+  $('div.console_code_copy').each(function () {
+    const $copyButton = $(this);
+    const langText = $copyButton.next().text();
+
+    $copyButton.on('click', function () {
+      utils.copyText(langText, lang_strings);
+      $copyButton.addClass('copied');
+      setTimeout(function () {
+        $copyButton.removeClass('copied')
+      }, 3000);
+    });
+  });
+
   var div = $('div.toc');
 
   // Fetch toc.html unless there is already a .toc on the page
