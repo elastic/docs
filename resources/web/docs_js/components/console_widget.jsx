@@ -81,6 +81,7 @@ export class _TryConsoleSelector extends Component {
         <p>We were unable to detect a running console server.</p>
         <p>
           <a
+            id="try_console_selector_try_cloud_button"
             className="button btn-primary btn-small"
             href="https://cloud.elastic.co/registration"
             target="_blank"
@@ -90,6 +91,7 @@ export class _TryConsoleSelector extends Component {
         </p>
         <p>
           <a
+            id="try_console_selector_install_elasticsearch_button"
             href="https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html"
             target="_blank"
           >
@@ -97,7 +99,11 @@ export class _TryConsoleSelector extends Component {
           </a>
         </p>
         <p>
-          <a href="#" onClick={handleConfigureClick}>
+          <a
+            id="try_console_selector_configure_example_widget_button"
+            href="#"
+            onClick={handleConfigureClick}
+          >
             Configure the example widget
           </a>
         </p>
