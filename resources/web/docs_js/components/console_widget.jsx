@@ -62,6 +62,50 @@ export class _ConsoleForm extends Component {
   }
 }
 
+export class _TryConsoleSelector extends Component {
+  componentWillMount() {
+    const defaultVals = omit(['langStrings', 'saveSettings', 'url_label', 'setting'], this.props);
+    this.setState(defaultVals);
+  }
+
+
+  render(props) {
+    const handleConfigureClick = (e) => {
+      e.preventDefault();
+      props.settingsModalAction();
+    }
+
+    return (
+      <div className="try_console_selector">
+        <h4>Try in Console</h4>
+        <p>We were unable to detect a running console server.</p>
+        <p>
+          <a
+            className="button btn-primary btn-small"
+            href="https://cloud.elastic.co/registration"
+            target="_blank"
+          >
+            Sign up for Elastic Cloud trial
+          </a>
+        </p>
+        <p>
+          <a
+            href="https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html"
+            target="_blank"
+          >
+            Install Elasticsearch and Kibana locally
+          </a>
+        </p>
+        <p>
+          <a href="#" onClick={handleConfigureClick}>
+            Configure the example widget
+          </a>
+        </p>
+      </div>
+    )
+  }
+}
+
 export const ConsoleForm = connect((state, props) =>
   pick(["langStrings",
         `${props.setting}_url`,
@@ -70,30 +114,74 @@ export const ConsoleForm = connect((state, props) =>
         `${props.setting}_curl_password`], state.settings)
 , {saveSettings})(_ConsoleForm);
 
+export const TryConsoleSelector = connect((state, props) =>
+  pick(["langStrings",
+        `${props.setting}_url`,
+        `${props.setting}_curl_host`,
+        `${props.setting}_curl_user`,
+        `${props.setting}_curl_password`], state.settings)
+, {saveSettings})(_TryConsoleSelector);
+
 // ConsoleWidget isn't quite the right name for this any more....
 export const ConsoleWidget = props => {
-  const modalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
-  return <div className="u-space-between">
-    <AlternativePicker langs={props.langs} />
+  const settingsModalAction = () => props.openModal(ConsoleForm, {setting: props.setting, url_label: props.url_label});
+  const openConsoleModal = () =>
+    props.openModal(TryConsoleSelector, { settingsModalAction })
+  const consoleModalAction = (e) => {
+    e.preventDefault();
+    const target = e.target;
+
+    utils.checkServerStatus(target.href)
+      .then((isUp) => {
+        if (isUp) {
+          window.open(target.href)
+        } else {
+          openConsoleModal();
+        }
+      })
+      .catch((_) => {
+        openConsoleModal();
+      });
+  };
+
+  return (
     <div className="u-space-between">
-      <a className="sense_widget copy_as_curl"
-        onClick={e => props.copyAsCurl({
-          isKibana: props.isKibana,
-          consoleText: props.consoleText,
-          setting: props.setting,
-          addPretty: props.addPretty
-        })}>
-        {props.langStrings('Copy as curl')}
-      </a>
-      {props.view_in_text &&
-        <a className="view_in_link"
-          target="console"
-          title={props.langStrings(props.view_in_text)}
-          href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}>{props.langStrings(props.view_in_text)}</a>
-      }
-      <a className="console_settings" onClick={modalAction} title={props.langStrings(props.configure_text)}>&nbsp;</a>
+      <AlternativePicker langs={props.langs} />
+      <div className="u-space-between">
+        <a
+          className="sense_widget copy_as_curl"
+          onClick={(e) =>
+            props.copyAsCurl({
+              isKibana: props.isKibana,
+              consoleText: props.consoleText,
+              setting: props.setting,
+              addPretty: props.addPretty,
+            })
+          }
+        >
+          {props.langStrings('Copy as curl')}
+        </a>
+        {props.view_in_text && (
+          <a
+            className="view_in_link"
+            target="console"
+            onClick={(e) => consoleModalAction(e)}
+            title={props.langStrings(props.view_in_text)}
+            href={`${props[props.setting + "_url"]}?load_from=${props.baseUrl}${props.snippet}`}
+          >
+            {props.langStrings(props.view_in_text)}
+          </a>
+        )}
+        <a
+          className="console_settings"
+          onClick={settingsModalAction}
+          title={props.langStrings(props.configure_text)}
+        >
+          &nbsp;
+        </a>
+      </div>
     </div>
-  </div>
+  )
 }
 
 export default connect(
