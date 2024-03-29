@@ -114,7 +114,7 @@ export function init_console_widgets() {
 
     return mount(div, ConsoleWidget, {setting: "console",
                                       url_label: 'Enter the URL of the Console editor',
-                                      view_in_text: 'View in Console',
+                                      view_in_text: 'Try in Console',
                                       configure_text: 'Configure Console URL',
                                       addPretty: true,
                                       consoleText,
