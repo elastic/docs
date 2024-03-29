@@ -140,3 +140,34 @@ export const getCurlText = ({consoleText,
 
   return curlText;
 }
+
+// Checks the status of a server by sending a request to the given URL. This is
+// intended for use to check the status of the Kibana server, which may be
+// booting up or down. The function returns a promise that resolves to true if
+// the server is up and reachable, and false otherwise.
+export function checkServerStatus(url, timeout = 1000) {
+  const controller = new AbortController()
+  const signal = controller.signal
+
+  // Timeout promise that rejects after a given time
+  const timeoutPromise = new Promise((_, reject) => {
+    const timer = setTimeout(() => {
+      controller.abort() // Abort the fetch request
+      reject(new Error('Request timed out'))
+    }, timeout)
+  })
+
+  const fetchPromise = fetch(url, { signal, mode: 'no-cors' })
+
+  // Race between the fetch promise and the timeout promise
+  return Promise.race([fetchPromise, timeoutPromise])
+    .then((response) => {
+      // Since mode is 'no-cors', we can't directly inspect the response.ok
+      // Assuming no network error occurred, consider it a successful check
+      return true
+    })
+    .catch((error) => {
+      console.error(`Console server not running or unreachable: ${url}`)
+      return false // Either request failed due to network issues, or it timed out
+    })
+}
