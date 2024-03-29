@@ -292,7 +292,8 @@ $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
 
   const default_kibana_url  = 'http://localhost:5601',
-        default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
+        default_base_path   = '/zzz', // Since the original implementation, the base path was added and most users use it.
+        default_console_url = default_kibana_url + default_base_path + '/app/kibana#/dev_tools/console',
         default_sense_url   = default_kibana_url + '/app/sense/',
         default_ess_url     = 'http://localhost:5601', // localhost is wrong, but we'll enhance this later
         default_ece_url     = 'http://localhost:5601',
