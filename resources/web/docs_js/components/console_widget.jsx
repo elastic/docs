@@ -92,7 +92,7 @@ export class _TryConsoleSelector extends Component {
         <p>
           <a
             id="try_console_selector_install_elasticsearch_button"
-            href="https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html"
+            href="https://www.elastic.co/guide/en/elastic-stack/current/installing-elastic-stack.html"
             target="_blank"
           >
             Install Elasticsearch and Kibana locally
