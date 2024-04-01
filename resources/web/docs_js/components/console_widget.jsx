@@ -78,7 +78,7 @@ export class _TryConsoleSelector extends Component {
     return (
       <div className="try_console_selector">
         <h4>Try in Console</h4>
-        <p>We were unable to detect a running console server.</p>
+        <p>We were unable to detect a running Console server.</p>
         <p>
           <a
             id="try_console_selector_try_cloud_button"
