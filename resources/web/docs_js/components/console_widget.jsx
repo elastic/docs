@@ -104,7 +104,7 @@ export class _TryConsoleSelector extends Component {
             href="#"
             onClick={handleConfigureClick}
           >
-            Configure the example widget
+            Configure Console settings
           </a>
         </p>
       </div>
