@@ -31,34 +31,79 @@ export class _ConsoleForm extends Component {
     const getValueFromState = field => state[`${props.setting}_${field}`]
     const getFieldName = field => `${props.setting}_${field}`
 
-    return <form>
-      <label for="url">{props.langStrings(props.url_label)}</label>
-      <input id="url" type="text" value={getValueFromState("url")} onInput={linkState(this, getFieldName("url"))} />
+    return (
+      <form>
+        <label for="url">{props.langStrings(props.url_label)}</label>
+        <input
+          id="url"
+          type="text"
+          value={getValueFromState('url')}
+          onInput={linkState(this, getFieldName('url'))}
+        />
 
-      <label for="curl_host">curl {props.langStrings('host')}</label>
-      <input id="curl_host" type="text" value={getValueFromState("curl_host")} onInput={linkState(this, getFieldName("curl_host"))} />
+        <label for="curl_host">curl {props.langStrings('host')}</label>
+        <input
+          id="curl_host"
+          type="text"
+          value={getValueFromState('curl_host')}
+          onInput={linkState(this, getFieldName('curl_host'))}
+        />
 
-      <label for="curl_username">curl {props.langStrings('username')}</label>
-      <input id="curl_username" type="text" value={getValueFromState("curl_user")} onInput={linkState(this, getFieldName("curl_user"))} />
+        <label for="curl_username">curl {props.langStrings('username')}</label>
+        <input
+          id="curl_username"
+          type="text"
+          value={getValueFromState('curl_user')}
+          onInput={linkState(this, getFieldName('curl_user'))}
+        />
 
-      {/* TODO
+        {/* TODO
       <label for="curl_pw" title={props.langStrings("curl_pw_title")}>curl {props.langStrings('password')}</label>
       <input id="curl_pw" title={props.langStrings("curl_pw_title")} type="text" value={getValueFromState("curl_password")} onInput={linkState(this, getFieldName("curl_password"))} />
        */}
-      <button id="save_url" type="button" onClick={e => props.saveSettings(this.state)}>
-        {props.langStrings("Save")}
-      </button>
+        <button
+          id="save_url"
+          type="button"
+          onClick={(e) => props.saveSettings(this.state)}
+        >
+          {props.langStrings('Save')}
+        </button>
 
-      <button id="reset" onClick={e => this.setState(omit(['langStrings', 'saveSettings', 'url_label', 'setting'], props))} type="button">Reset</button>
-      <p>
-        {props.langStrings('Or install')}
-        {props.setting === "sense_url"
-         ? <a href="https://www.elastic.co/guide/en/sense/current/installing.html">the Sense 2 {props.langStrings('editor')}</a>
-         : <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">Kibana</a>
-        }
-         {props.langStrings('.')}
-      </p>
-    </form>
+        <button
+          id="reset"
+          onClick={(e) =>
+            this.setState(
+              omit(
+                ['langStrings', 'saveSettings', 'url_label', 'setting'],
+                props
+              )
+            )
+          }
+          type="button"
+        >
+          Reset
+        </button>
+        <p className="console_help_text">
+          {props.langStrings('For information on how to set up and run')}
+          {props.setting === 'sense_url' ? (
+            <span>
+              &nbsp;the Sense 2 {props.langStrings('editor')} check&nbsp;
+              <a href="https://www.elastic.co/guide/en/sense/current/installing.html">
+                Installing Sense
+              </a>
+            </span>
+          ) : (
+            <span>
+              &nbsp;Kibana, check&nbsp;
+              <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">
+                Set up
+              </a>
+            </span>
+          )}
+          {props.langStrings('.')}
+        </p>
+      </form>
+    )
   }
 }
 

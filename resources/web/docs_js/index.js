@@ -113,7 +113,7 @@ export function init_console_widgets() {
           langs       = div.attr("class").split(" ").filter(c => c.startsWith("has-")).map(function(string) { return string.substring(4) });
 
     return mount(div, ConsoleWidget, {setting: "console",
-                                      url_label: 'Enter the URL of the Console editor',
+                                      url_label: 'Console URL',
                                       view_in_text: 'Try in Console',
                                       configure_text: 'Configure Console URL',
                                       addPretty: true,
@@ -139,7 +139,7 @@ export function init_sense_widgets() {
           consoleText = div.prev().text() + '\n';
 
     return mount(div, ConsoleWidget, {setting: "sense",
-                                      url_label: 'Enter the URL of the Sense editor',
+                                      url_label: 'Sense URL',
                                       view_in_text: 'View in Sense',
                                       configure_text: 'Configure Sense URL',
                                       addPretty: true,

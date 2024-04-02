@@ -29,11 +29,14 @@ export const lang_spec = {
   "Default Kibana URL": {
     "zh_cn": "默认 Kibana URL"
   },
-  "Enter the URL of the Console editor": {
-    "zh_cn": "输入 Console 编辑器的 URL"
+  "Console URL": {
+    "zh_cn": "Console URL"
   },
-  "Enter the URL of the Sense editor": {
-    "zh_cn": "输入 Sense 编辑器的 URL"
+  "Sense URL": {
+    "zh_cn": "Sense URL"
+  },
+  "For information on how to set up and run": {
+    "zh_cn": "有关如何设置和运行的信息"
   },
   "Enter the URL of Kibana": {
     "zh_cn": "输入 Kibana 的 URL"
