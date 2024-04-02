@@ -131,7 +131,7 @@ export class _TryConsoleSelector extends Component {
             href="https://cloud.elastic.co/registration"
             target="_blank"
           >
-            Start a free Cloud trial
+            Start a free Elastic Cloud trial
           </a>
         </p>
         <p>
