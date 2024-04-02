@@ -113,8 +113,8 @@ export function init_console_widgets() {
           langs       = div.attr("class").split(" ").filter(c => c.startsWith("has-")).map(function(string) { return string.substring(4) });
 
     return mount(div, ConsoleWidget, {setting: "console",
-                                      url_label: 'Enter the URL of the Console editor',
-                                      view_in_text: 'View in Console',
+                                      url_label: 'Console URL',
+                                      view_in_text: 'Try in Console',
                                       configure_text: 'Configure Console URL',
                                       addPretty: true,
                                       consoleText,
@@ -139,7 +139,7 @@ export function init_sense_widgets() {
           consoleText = div.prev().text() + '\n';
 
     return mount(div, ConsoleWidget, {setting: "sense",
-                                      url_label: 'Enter the URL of the Sense editor',
+                                      url_label: 'Sense URL',
                                       view_in_text: 'View in Sense',
                                       configure_text: 'Configure Sense URL',
                                       addPretty: true,
@@ -292,7 +292,8 @@ $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
 
   const default_kibana_url  = 'http://localhost:5601',
-        default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
+        default_base_path   = '/zzz', // Since the original implementation, the base path was added and most users use it.
+        default_console_url = default_kibana_url + default_base_path + '/app/kibana#/dev_tools/console',
         default_sense_url   = default_kibana_url + '/app/sense/',
         default_ess_url     = 'http://localhost:5601', // localhost is wrong, but we'll enhance this later
         default_ece_url     = 'http://localhost:5601',
