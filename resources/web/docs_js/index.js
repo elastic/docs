@@ -114,7 +114,7 @@ export function init_console_widgets() {
 
     return mount(div, ConsoleWidget, {setting: "console",
                                       url_label: 'Console URL',
-                                      view_in_text: 'Try in Console',
+                                      view_in_text: 'Try in Elastic Console',
                                       configure_text: 'Configure Console URL',
                                       addPretty: true,
                                       consoleText,

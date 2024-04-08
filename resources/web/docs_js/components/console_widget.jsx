@@ -33,6 +33,7 @@ export class _ConsoleForm extends Component {
 
     return (
       <form>
+         <p><strong>Want to use the Kibana Console?</strong></p>
         <label for="url">{props.langStrings(props.url_label)}</label>
         <input
           id="url"
@@ -40,8 +41,9 @@ export class _ConsoleForm extends Component {
           value={getValueFromState('url')}
           onInput={linkState(this, getFieldName('url'))}
         />
-
-        <label for="curl_host">curl {props.langStrings('host')}</label>
+        <p></p>
+        <p><strong>Want to use curl? (basic auth)</strong></p>
+        <label for="curl_host">Elasticsearch {props.langStrings('host')}</label>
         <input
           id="curl_host"
           type="text"
@@ -49,7 +51,7 @@ export class _ConsoleForm extends Component {
           onInput={linkState(this, getFieldName('curl_host'))}
         />
 
-        <label for="curl_username">curl {props.langStrings('username')}</label>
+        <label for="curl_username">Elasticsearch {props.langStrings('username')}</label>
         <input
           id="curl_username"
           type="text"
@@ -122,36 +124,37 @@ export class _TryConsoleSelector extends Component {
 
     return (
       <div className="try_console_selector">
-        <h4>Try in Console</h4>
-        <p>We were unable to detect a running Console server.</p>
-        <p>
+        <h4>Set your Kibana Console URL</h4>
+        <p><strong>Console</strong> is Elastic's native API client in the Kibana UI. Go to <strong>Dev Tools > Console</strong>, copy the URL, and
+       <a
+            id="try_console_selector_configure_example_widget_button"
+            href="#"
+            onClick={handleConfigureClick}
+          >
+          {' '} add the setting.
+          </a>
+          </p>
+        <p><em>Don't have an Elastic deployment yet?</em></p>  
+        <div style={{ display: 'flex', justifyContent: 'space-between'}}>
           <a
             id="try_console_selector_try_cloud_button"
             className="button btn-primary btn-small"
             href="https://cloud.elastic.co/registration"
             target="_blank"
           >
-            Start a free Elastic Cloud trial
+            Start free Elastic Cloud trial
           </a>
-        </p>
-        <p>
+        <p> 
           <a
             id="try_console_selector_install_elasticsearch_button"
+            className="button btn-secondary btn-small"
             href="https://www.elastic.co/guide/en/elastic-stack/current/installing-elastic-stack.html"
             target="_blank"
           >
-            Install Elasticsearch and Kibana locally
+             Install Elastic stack locally
           </a>
         </p>
-        <p>
-          <a
-            id="try_console_selector_configure_example_widget_button"
-            href="#"
-            onClick={handleConfigureClick}
-          >
-            Configure Console settings
-          </a>
-        </p>
+        </div>
       </div>
     )
   }
