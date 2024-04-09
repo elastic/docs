@@ -25,4 +25,5 @@ COPY preview /docs_build/preview
 COPY template /docs_build/template
 COPY resources /docs_build/resources
 
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["/docs_build/build_docs.pl", "--in_standard_docker", "--preview"]

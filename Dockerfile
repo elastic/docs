@@ -24,8 +24,10 @@ RUN install_packages \
     # Used both to install dependencies and at run time
   bash less \
     # Just in case you have to shell into the image
-  locales
+  locales \
     # Deal with utf-8 characters properly
+  dumb-init
+    # Reap zombie git gc processes
 RUN echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
