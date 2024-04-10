@@ -454,13 +454,22 @@ sub check_elasticsearch_links {
     # So we grab all quoted strings that contain `html`. This *should* be fine
     # for a while because the keys in the file are all in SHOUTING_SNAKE_CASE
     # so even if one contains "html" it'll contain "HTML" which doesn't match.
-    my $extractor = sub {
+    my $json_extractor = sub {
         my $contents = shift;
         return sub {
             while ( $contents =~ m!"([^"\#]+)(?:\#([^"]+))?"!g ) {
                 my $path = $1;
                 next unless $path =~ m!html!;
                 return "en/elasticsearch/reference/$version/$path";
+            }
+            return;
+        };
+    };
+    my $tabdelim_extractor = sub {
+        my $contents = shift;
+        return sub {
+            while ( $contents =~ m!"[^\t]+\t(.*)"!g ) {
+                return "en/elasticsearch/reference/$version/$1";
             }
             return;
         };
@@ -486,7 +495,19 @@ sub check_elasticsearch_links {
         # https://github.com/elastic/docs/issues/2264
         $branch = $version eq "master" ? "main" : $version;
         say "  Branch: $branch, Version: $version";
-        my $source = $repo->show_file( $link_check_name, $branch, $src_path );
+
+        my $links_file;
+        my $extractor;
+        my $source = eval {
+            $links_file = 'server/src/main/resources/org/elasticsearch/common/reference-docs-links.json';
+            $extractor = $json_extractor;
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
+            $links_file = 'libs/core/src/main/resources/org/elasticsearch/core/reference-docs-links.txt';
+            $extractor = $tabdelim_extractor;
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        };
+        die "failed to find elasticsearch links file;\n$@" unless $source;
 
         $link_checker->check_source( $source, $extractor,
             "Elasticsearch [$version]: $src_path" );
