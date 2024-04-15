@@ -5,7 +5,7 @@
 set -eo pipefail
 
 export IMAGE=docker.elastic.co/docs/preview
-export VERSION=17
+export VERSION=18
 
 cd $(git rev-parse --show-toplevel)
 ./build_docs --docker-build build
