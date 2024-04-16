@@ -33,7 +33,7 @@ export class _ConsoleForm extends Component {
 
     return (
       <form>
-         <p><strong>Want to use the Kibana Console?</strong></p>
+         <p><strong>Dev Tools Console settings</strong></p>
         <label for="url">{props.langStrings(props.url_label)}</label>
         <input
           id="url"
@@ -42,7 +42,7 @@ export class _ConsoleForm extends Component {
           onInput={linkState(this, getFieldName('url'))}
         />
         <p></p>
-        <p><strong>Want to use curl? (basic auth)</strong></p>
+        <p><strong>curl settings (basic auth)</strong></p>
         <label for="curl_host">Elasticsearch {props.langStrings('host')}</label>
         <input
           id="curl_host"
@@ -124,34 +124,33 @@ export class _TryConsoleSelector extends Component {
 
     return (
       <div className="try_console_selector">
-        <h4>Set your Kibana Console URL</h4>
-        <p><strong>Console</strong> is Elastic's native API client in the Kibana UI. Go to <strong>Dev Tools > Console</strong>, copy the URL, and
+        <h4>Try code examples in Elastic</h4>
+        <p>To run code examples in your Dev Tools Console, add your Console URL to  {' '}
        <a
             id="try_console_selector_configure_example_widget_button"
             href="#"
             onClick={handleConfigureClick}
           >
-          {' '} add the setting.
+         the settings.
           </a>
           </p>
-        <p><em>Don't have an Elastic deployment yet?</em></p>  
-        <div style={{ display: 'flex', justifyContent: 'space-between'}}>
+        <p><em>New to Elastic?</em></p>  
+        <div className="try_console_new_to_elastic_buttons">
+
           <a
             id="try_console_selector_try_cloud_button"
             className="button btn-primary btn-small"
             href="https://cloud.elastic.co/registration"
             target="_blank"
           >
-            Start free Elastic Cloud trial
+            Start free Cloud trial
           </a>
         <p> 
           <a
-            id="try_console_selector_install_elasticsearch_button"
-            className="button btn-secondary btn-small"
             href="https://www.elastic.co/guide/en/elastic-stack/current/installing-elastic-stack.html"
             target="_blank"
           >
-             Install Elastic stack locally
+             Install locally
           </a>
         </p>
         </div>
