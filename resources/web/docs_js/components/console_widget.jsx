@@ -41,7 +41,9 @@ export class _ConsoleForm extends Component {
           value={getValueFromState('url')}
           onInput={linkState(this, getFieldName('url'))}
         />
-        <p></p>
+        <p>Learn more about the Dev Tools&nbsp;
+        <a href="https://www.elastic.co/guide/en/kibana/current/console-kibana.html">Console</a>.
+        </p>
         <p><strong>curl settings (basic auth)</strong></p>
         <label for="curl_host">Elasticsearch {props.langStrings('host')}</label>
         <input
@@ -125,14 +127,15 @@ export class _TryConsoleSelector extends Component {
     return (
       <div className="try_console_selector">
         <h4>Try code examples in Elastic</h4>
-        <p>To run code examples in your Dev Tools Console, add your Console URL to  {' '}
+        <p>To run code examples in your Dev Tools Console, add your Console URL to&nbsp;
        <a
             id="try_console_selector_configure_example_widget_button"
             href="#"
             onClick={handleConfigureClick}
           >
-         the settings.
+        the settings
           </a>
+          .
           </p>
         <p><em>New to Elastic?</em></p>  
         <div className="try_console_new_to_elastic_buttons">
