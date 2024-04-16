@@ -33,6 +33,7 @@ export class _ConsoleForm extends Component {
 
     return (
       <form>
+         <p><strong>Dev Tools Console settings</strong></p>
         <label for="url">{props.langStrings(props.url_label)}</label>
         <input
           id="url"
@@ -40,8 +41,11 @@ export class _ConsoleForm extends Component {
           value={getValueFromState('url')}
           onInput={linkState(this, getFieldName('url'))}
         />
-
-        <label for="curl_host">curl {props.langStrings('host')}</label>
+        <p>Learn more about the Dev Tools&nbsp;
+        <a href="https://www.elastic.co/guide/en/kibana/current/console-kibana.html">Console</a>.
+        </p>
+        <p><strong>curl settings (basic auth)</strong></p>
+        <label for="curl_host">Elasticsearch {props.langStrings('host')}</label>
         <input
           id="curl_host"
           type="text"
@@ -49,7 +53,7 @@ export class _ConsoleForm extends Component {
           onInput={linkState(this, getFieldName('curl_host'))}
         />
 
-        <label for="curl_username">curl {props.langStrings('username')}</label>
+        <label for="curl_username">Elasticsearch {props.langStrings('username')}</label>
         <input
           id="curl_username"
           type="text"
@@ -94,7 +98,7 @@ export class _ConsoleForm extends Component {
             </span>
           ) : (
             <span>
-              &nbsp;Kibana, check&nbsp;
+              &nbsp;Kibana, refer to&nbsp;
               <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">
                 Set up
               </a>
@@ -122,36 +126,37 @@ export class _TryConsoleSelector extends Component {
 
     return (
       <div className="try_console_selector">
-        <h4>Try in Console</h4>
-        <p>We were unable to detect a running Console server.</p>
-        <p>
+        <h4>Try code examples in Elastic</h4>
+        <p>To run code examples in your Dev Tools Console, add your Console URL to&nbsp;
+       <a
+            id="try_console_selector_configure_example_widget_button"
+            href="#"
+            onClick={handleConfigureClick}
+          >
+        the settings
+          </a>
+          .
+          </p>
+        <p><em>New to Elastic?</em></p>  
+        <div className="try_console_new_to_elastic_buttons">
+
           <a
             id="try_console_selector_try_cloud_button"
             className="button btn-primary btn-small"
             href="https://cloud.elastic.co/registration"
             target="_blank"
           >
-            Start a free Elastic Cloud trial
+            Start free Cloud trial
           </a>
-        </p>
-        <p>
+        <p> 
           <a
-            id="try_console_selector_install_elasticsearch_button"
             href="https://www.elastic.co/guide/en/elastic-stack/current/installing-elastic-stack.html"
             target="_blank"
           >
-            Install Elasticsearch and Kibana locally
+             Install locally
           </a>
         </p>
-        <p>
-          <a
-            id="try_console_selector_configure_example_widget_button"
-            href="#"
-            onClick={handleConfigureClick}
-          >
-            Configure Console settings
-          </a>
-        </p>
+        </div>
       </div>
     )
   }
