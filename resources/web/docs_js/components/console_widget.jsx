@@ -96,7 +96,7 @@ export class _ConsoleForm extends Component {
             </span>
           ) : (
             <span>
-              &nbsp;Kibana, check&nbsp;
+              &nbsp;Kibana, refer to&nbsp;
               <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">
                 Set up
               </a>
