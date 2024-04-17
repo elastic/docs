@@ -58,7 +58,7 @@ docbldlsvpr() {
 }
 
 # Installation and Upgrade Guide 7.10 and later
-alias docbldstk='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/observability-docs/docs/en/observability --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --resource=$GIT_HOME/security-docs/docs/ --chunk 1'
+alias docbldstk='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/observability-docs/docs/en/observability --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --resource=$GIT_HOME/security-docs/docs/ --chunk 1'
 
 # Installation and Upgrade Guide 7.0 to 7.9
 alias docbldstkold2='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --chunk 1'
@@ -264,6 +264,8 @@ alias docbldecslg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging/docs/in
 alias docbldecslrs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-logrus/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 
 alias docbldecszap='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-zap/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
+
+alias docbldecszro='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-zerolog/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 
 alias docbldecsjv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-java/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 

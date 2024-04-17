@@ -4,7 +4,7 @@ steps:
     fields:
       - select: "Rebuild?"
         key: "REBUILD"
-        default: "rebuild"
+        default: ""
         required: false
         options:
           - label: "no"
@@ -25,23 +25,21 @@ steps:
             value: ""
         hint: "Should we ignore checking broken links? Should we allow to run the build without failing if there's a broken link? Ignoring broken links is dangerous not just because bad links will leak into the public site but because subsequent builds and pull requests that do not fix the links fail."
   - wait
+  - label: "Full rebuild or incremental build?"
+    if: build.source == "schedule"
+    command: ".buildkite/scripts/compare_commits.sh"
   - label: ":white_check_mark: Build docs"
     command: |
-      export REBUILD="$(buildkite-agent meta-data get REBUILD --default 'rebuild' --log-level fatal)"
+      export REBUILD="$(buildkite-agent meta-data get REBUILD --default '' --log-level fatal)"
       export BROKEN_LINKS="$(buildkite-agent meta-data get BROKEN_LINKS --default '' --log-level fatal)"
       bash .buildkite/scripts/build.sh
     agents:
       provider: "gcp"
       image: family/docs-ubuntu-2204
+      diskSizeGb: 150
       machineType: ${BUILD_MACHINE_TYPE}
-  - wait
-  - key: "branch-comparison"
-    label: "Compare branches"
-    command: |
-      .buildkite/scripts/compare_bk_jenkins_branches.sh staging master
-    agents:
-      provider: "gcp"
-      image: family/docs-ubuntu-2204
+    concurrency_group: build-docs-${BUILDKITE_BRANCH}
+    concurrency: 1
 notify:
   - email: "docs-status@elastic.co"
     if: build.state == "failed"

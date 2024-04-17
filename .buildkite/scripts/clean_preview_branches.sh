@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -eo pipefail
 
 export REPO=git@github.com:elastic/built-docs.git

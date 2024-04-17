@@ -25,8 +25,7 @@ elif [[ "${BROKEN_LINKS}" == 'warnlinkcheck' ]]; then
 fi
 
 if [[ "${BUILDKITE_BRANCH}" == "master" ]]; then
-  # temporary pushing to staging instead of master until the migration is over
-  build_args+=" --target_branch staging --push"
+  build_args+=" --push"
 fi
 
 # The docs build can use the ssh agent's authentication socket
