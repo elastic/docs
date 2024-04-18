@@ -59,8 +59,8 @@ export function init_landing_page() {
 // OTP = on this page
 export function init_headers(sticky_content, lang_strings) {
   // Add on-this-page block
-  var this_page = $('<div id="this_page"></div>').prependTo(sticky_content);
-  this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
+  $('div#this_page').append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
+  $('div#this_page').addClass('not-empty');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
   var baseHeadingLevel = 0;
@@ -188,17 +188,25 @@ function init_toc(lang_strings) {
   $('div.toc a, #book_title select').click(function(e) {
     e.stopPropagation();
   });
+}
 
+function init_version_selector () {
+  const customIcon = '<div class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right euiFormControlLayoutIcons--absolute"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="40" viewBox="0 0 16 16" role="img" data-icon-type="arrowDown" data-is-loaded="true" aria-hidden="true"><path fill-rule="evenodd" d="M1.957 4.982a.75.75 0 0 1 1.06-.025l4.81 4.591a.25.25 0 0 0 .346 0l4.81-4.59a.75.75 0 0 1 1.035 1.085l-4.81 4.59a1.75 1.75 0 0 1-2.416 0l-4.81-4.59a.75.75 0 0 1-.025-1.06Z" clip-rule="evenodd"></path></svg></div>'
+  if ($( "#live_versions" )) {
+    $('#wrap_live_versions').append(customIcon)
+
+  }
   // Set version selector up interaction
-  var v_selected = title.find('select option:selected');
-  title
+  const version_selectors = $("div#version-selectors")
+  var v_selected = version_selectors.find('select option:selected');
+  version_selectors
     .find('select')
     .change(function(e) {
       var version = $(e.target).find('option:selected').val();
       if (version === "other") {
         $("#other_versions_text").show();
         $("#wrap_other_versions").show();
-        $("#wrap_live_versions").hide();
+        $('#wrap_other_versions').append(customIcon)
         return;
       }
       utils.get_current_page_in_version(version).fail(function() {
@@ -423,29 +431,6 @@ $(function() {
 
   var div = $('div.toc');
 
-  /** Temporary hack for custom landing pages that include TOC */
-  const landingPage = $('#landing-page')
-  if (landingPage.length) {
-    window.addEventListener("DOMContentLoaded", (event) => {
-      const left_col = document.getElementById("left_col")
-      left_col.classList.remove("col-12", "col-md-4", "col-lg-3", "h-almost-full-md", "sticky-top-md")
-
-      const right_col = document.getElementById("right_col")
-      right_col.classList.add('d-none')
-
-      const middle_col = document.getElementById("middle_col")
-      middle_col.classList.remove("col-lg-9", "col-md-8")
-
-      const mainContent = document.getElementsByClassName("euiFlexGroup euiFlexGroup-responsive-xl-flexStart-stretch-row")
-      mainContent[0].classList.remove("euiFlexGroup", "euiFlexGroup-responsive-xl-flexStart-stretch-row")
-
-      // const toc = middle_col.getElementsByClassName("toc")[0]
-      // toc.remove()
-      // left_col.appendChild(toc);
-    });
-  }
-
-
   // Enable Sense widget
   init_sense_widgets();
   init_console_widgets();
@@ -493,20 +478,52 @@ $(function() {
     });
   });
 
-  var div = $('div.toc');
+  /** Temporary hack for custom landing pages that include TOC */
+  const landingPage = $('#landing-page')
+
+  console.log(landingPage)
+  if (landingPage.length) {
+    window.addEventListener("DOMContentLoaded", (event) => {
+      const left_col = $('#left_col');
+      left_col.removeClass("col-12 col-md-4 col-lg-3 h-almost-full-md sticky-top-md")
+
+      const right_col = document.getElementById("right_col")
+      right_col.classList.add('d-none')
+
+      const middle_col = document.getElementById("middle_col")
+      middle_col.classList.remove("col-lg-9", "col-md-8")
+
+      const mainContent = document.getElementsByClassName("euiFlexGroup euiFlexGroup-responsive-xl-flexStart-stretch-row")
+      mainContent[0].classList.remove("euiFlexGroup", "euiFlexGroup-responsive-xl-flexStart-stretch-row")
+
+      // Local testing only
+      // $(left_col.find('ul')[0]).prepend('<div id="book_title"><span id="title_text"><span id="faux_accordion"></span>Observability</span></div>')
+    });
+  }
+
 
   // Fetch toc.html unless there is already a .toc on the page
-  if (div.length === 0) {
+  var tocDiv = $('ul.toc');
+  if (tocDiv.length === 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     $.get(url, {}, function(data) {
-      left_col.append(data);
-      // $(left_col.find('ul')[0]).prepend('<li id="book_title"><div id="wrap_live_versions"><select id="live_versions"><option value="8.10" selected="">8.10 (current)</option><option value="7.17">7.17</option><option value="other">other versions</option></select></div><div id="other_versions_text">Other versions:</div><div id="wrap_other_versions"><select id="other_versions"><option value="master">master</option><option value="8.10" selected="">8.10 (current)</option><option value="8.9">8.9</option><option value="8.8">8.8</option><option value="8.7">8.7</option><option value="8.6">8.6</option><option value="8.5">8.5</option><option value="8.4">8.4</option><option value="8.3">8.3</option><option value="8.2">8.2</option><option value="8.1">8.1</option><option value="8.0">8.0</option><option value="7.17">7.17</option><option value="7.16">7.16</option><option value="7.15">7.15</option><option value="7.14">7.14</option><option value="7.13">7.13</option><option value="7.12">7.12</option><option value="7.11">7.11</option><option value="7.10">7.10</option><option value="7.9">7.9</option></select></div><span id="title_text">Observability</span></li>')
-      const customIcon = '<div class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right euiFormControlLayoutIcons--absolute"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="40" viewBox="0 0 16 16" class="euiIcon euiFormControlLayoutCustomIcon__icon euiIcon-m-isLoaded" role="img" data-icon-type="arrowDown" data-is-loaded="true" aria-hidden="true"><path fill-rule="evenodd" d="M1.957 4.982a.75.75 0 0 1 1.06-.025l4.81 4.591a.25.25 0 0 0 .346 0l4.81-4.59a.75.75 0 0 1 1.035 1.085l-4.81 4.59a1.75 1.75 0 0 1-2.416 0l-4.81-4.59a.75.75 0 0 1-.025-1.06Z" clip-rule="evenodd"></path></svg></div>'
-      if ($( "#live_versions" )) {
-        $('#wrap_live_versions').append(customIcon)
-        $('#wrap_other_versions').append(customIcon)
-      }
+      // Break into individual pieces
+      const html = $($.parseHTML(data))
+      const version_selectors = $(html).find('div#version-selectors')
+      const book_title = $(html).find('div#book_title')
+      const toc = $(html).find('ul.toc')
+
+      // Add table of contents
+      left_col.append(`<div class="toc"></div>`);
+      $('div.toc').append(book_title)
+      $(book_title).prepend('<span id="faux_accordion"></span>');
+      $('div.toc').append(toc)
       init_toc(LangStrings);
+
+      // Add version selector
+      $('div#version-selectors').replaceWith(version_selectors);
+      init_version_selector();
+
       utils.open_current(location.pathname);
     }).fail(function() {
       // Set the width of the left column to zero
