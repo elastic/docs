@@ -58,7 +58,7 @@ module Chunker
         result << links
       end
       result << <<~HTML.strip
-        <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+        <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
       HTML
       result
     end
