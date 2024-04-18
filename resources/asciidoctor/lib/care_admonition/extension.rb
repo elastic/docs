@@ -19,10 +19,10 @@ require 'asciidoctor/extensions'
 #
 class CareAdmonition < Asciidoctor::Extensions::Group
   BETA_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+    This functionality is in beta and is subject to change. The design and code is less mature than official generally available features and is being provided as-is with no warranties. Beta features are not subject to the support service level agreement of official generally available features.
   TEXT
   DEV_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
+    This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support service level agreement of official generally available features.
   TEXT
   PREVIEW_DEFAULT_TEXT = <<~TEXT.strip
     This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
