@@ -134,7 +134,7 @@ sub build_chunked {
     # Extract the TOC and version selectors from the index.html page *before* we (potentially) replace
     # the TOC on the index.html page with a custom title page.
     extract_toc_from_index( $raw_dest );
-    extract_versions_from_index( $raw_dest );
+    # extract_versions_from_index( $raw_dest );
 
     _customize_title_page( $index, $raw_dest->file('index.html'), $single );
     finish_build( $index->parent, $raw_dest, $dest, $lang, 0 );
@@ -370,21 +370,21 @@ sub extract_toc_from_index {
     my $dir = shift;
     my $html
         = $dir->file('index.html')->slurp( 'iomode' => '<:encoding(UTF-8)' );
-    $html =~ s/^.+<ul class="toc">/<ul class="toc">/s;
+    $html =~ s/^.+<!--START_TOC-->\n?//s;
     $html =~ s/<!--END_TOC-->.*$//s;
     $dir->file('toc.html')->spew( iomode => '>:utf8', $html );
 }
 
-#===================================
-sub extract_versions_from_index {
-#===================================
-    my $dir = shift;
-    my $html
-        = $dir->file('index.html')->slurp( 'iomode' => '<:encoding(UTF-8)' );
-    $html =~ s/^.+<div class="toc">\n?//s;
-    $html =~ s/<ul class="toc">.*$//s;
-    $dir->file('versions.html')->spew( iomode => '>:utf8', $html );
-}
+# #===================================
+# sub extract_versions_from_index {
+# #===================================
+#     my $dir = shift;
+#     my $html
+#         = $dir->file('index.html')->slurp( 'iomode' => '<:encoding(UTF-8)' );
+#     $html =~ s/^.+<div class="toc">\n?//s;
+#     $html =~ s/<ul class="toc">.*$//s;
+#     $dir->file('versions.html')->spew( iomode => '>:utf8', $html );
+# }
 
 #===================================
 sub roots_opts {

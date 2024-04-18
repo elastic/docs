@@ -389,7 +389,7 @@ sub _update_title_and_version_drop_downs {
     $versionSelector .= '</select></div>';
 
     if ( $removed_any ) {
-        $versionSelector .= '<div id="other_versions_text">Other versions:</div><div id="wrap_other_versions"><select id="other_versions">';
+        $versionSelector .= '<div id="other_versions_text"><span class="warning-icon"></span>These docs may be no longer updated or still in development:</div><div id="wrap_other_versions"><select id="other_versions"><option value="" disabled selected>Select a version</option>';
         for my $b ( @{ $self->branches } ) {
             my $version = $self->branch_title($b);
 
