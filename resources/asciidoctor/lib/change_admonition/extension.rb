@@ -23,7 +23,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
-      block = ChangeAdmonitionBlock.new revisionflag, tag, message
+      block = ChangeAdmonitionBlock.new revisionflag, tag, message, title_class
       inline = ChangeAdmonitionInline.new message, title_class
       registry.block_macro block, name
       registry.inline_macro inline, name
@@ -36,23 +36,25 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     use_dsl
     name_positional_attributes :version, :passtext
 
-    def initialize(revisionflag, tag, message)
+    def initialize(revisionflag, tag, message, title_class)
       super(nil)
       @revisionflag = revisionflag
       @tag = tag
       @message = message
+      @title_class = title_class
     end
 
     def process(parent, _target, attrs)
       version = attrs[:version]
       passtext = attrs[:passtext]
       text = "#{@message} #{version}."
-      source = passtext || text
+      source = "+++<span class='admon-title'>#{text}</span>+++\n\n#{passtext}"
+      name = "#{@tag}#{@title_class}"
       Asciidoctor::Block.new parent, :admonition, source: source, attributes: {
-        'name' => @tag,
+        'name' => name,
         'revisionflag' => @revisionflag,
         'version' => version,
-        'title' => passtext ? text : nil,
+        'title' => nil,
       }
     end
   end
