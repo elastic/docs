@@ -364,13 +364,12 @@ sub _update_title_and_version_drop_downs {
 #===================================
     my ( $self, $version_dir, $branch ) = @_;
 
-    my $title = '<div id="book_title">'
-    $title .= '<span id="title_text">' . $self->title . '</span>';
-    $title .= '</div>';
+    my $title = '<div id="book_title"><span id="title_text">' . $self->title . '</span></div>';
 
-    my $versionSelector = '<div id="version-selectors">'
+    my $versionSelector = '<div id="version-selectors">';
     $versionSelector .= '<div id="wrap_live_versions">';
     $versionSelector .= '<select id="live_versions">';
+
     my $removed_any = 0;
     for my $b ( @{ $self->branches } ) {
         my $live = grep( /^$b$/, @{ $self->{live_branches} } );
@@ -388,6 +387,7 @@ sub _update_title_and_version_drop_downs {
     }
     $versionSelector .= '<option value="other">other versions</option>' if $removed_any;
     $versionSelector .= '</select></div>';
+
     if ( $removed_any ) {
         $versionSelector .= '<div id="other_versions_text">Other versions:</div><div id="wrap_other_versions"><select id="other_versions">';
         for my $b ( @{ $self->branches } ) {
@@ -401,6 +401,7 @@ sub _update_title_and_version_drop_downs {
         }
         $versionSelector .= '</select></div></div>';
     }
+
     for ( 'toc.html', 'index.html' ) {
         my $file = $version_dir->file($_);
         # Ignore missing files because the books haven't been built yet. This
