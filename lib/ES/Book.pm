@@ -395,8 +395,8 @@ sub _update_title_and_version_drop_downs {
 
             $versionSelector .= '<option value="' . $version . '"';
             $versionSelector .= ' selected'  if $branch eq $b;
-            $versionSelector .= '> Current' if $self->current eq $b; # TODO: change when "current" is a version
-            $versionSelector .= '(' . $version . ')';
+            $versionSelector .= '>' . $version;
+            $versionSelector .= ' (current)' if $self->current eq $b; # TODO: change when "current" is a version
             $versionSelector .= '</option>';
         }
         $versionSelector .= '</select></div></div>';
