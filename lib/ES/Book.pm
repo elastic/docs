@@ -364,8 +364,13 @@ sub _update_title_and_version_drop_downs {
 #===================================
     my ( $self, $version_dir, $branch ) = @_;
 
-    my $title = '<li id="book_title"><div id="wrap_live_versions">';
-    $title .= '<select id="live_versions">';
+    my $title = '<div id="book_title">'
+    $title .= '<span id="title_text">' . $self->title . '</span>';
+    $title .= '</div>';
+
+    my $versionSelector = '<div id="version-selectors">'
+    $versionSelector .= '<div id="wrap_live_versions">';
+    $versionSelector .= '<select id="live_versions">';
     my $removed_any = 0;
     for my $b ( @{ $self->branches } ) {
         my $live = grep( /^$b$/, @{ $self->{live_branches} } );
@@ -375,29 +380,27 @@ sub _update_title_and_version_drop_downs {
         }
         my $version = $self->branch_title($b);
 
-        $title .= '<option value="' . $version . '"';
-        $title .= ' selected'  if $branch eq $b;
-        $title .= '>' . $version;
-        $title .= ' (current)' if $self->current eq $b;  # TODO: change when "current" is a version
-        $title .= '</option>';
+        $versionSelector .= '<option value="' . $version . '"';
+        $versionSelector .= ' selected'  if $branch eq $b;
+        $versionSelector .= '>' . $version;
+        $versionSelector .= ' (current)' if $self->current eq $b;  # TODO: change when "current" is a version
+        $versionSelector .= '</option>';
     }
-    $title .= '<option value="other">other versions</option>' if $removed_any;
-    $title .= '</select></div>';
+    $versionSelector .= '<option value="other">other versions</option>' if $removed_any;
+    $versionSelector .= '</select></div>';
     if ( $removed_any ) {
-        $title .= '<div id="other_versions_text">Other versions:</div><div id="wrap_other_versions"><select id="other_versions">';
+        $versionSelector .= '<div id="other_versions_text">Other versions:</div><div id="wrap_other_versions"><select id="other_versions">';
         for my $b ( @{ $self->branches } ) {
             my $version = $self->branch_title($b);
 
-            $title .= '<option value="' . $version . '"';
-            $title .= ' selected'  if $branch eq $b;
-            $title .= '>' . $version;
-            $title .= ' (current)' if $self->current eq $b; # TODO: change when "current" is a version
-            $title .= '</option>';
+            $versionSelector .= '<option value="' . $version . '"';
+            $versionSelector .= ' selected'  if $branch eq $b;
+            $versionSelector .= '> Current' if $self->current eq $b; # TODO: change when "current" is a version
+            $versionSelector .= '(' . $version . ')';
+            $versionSelector .= '</option>';
         }
-        $title .= '</select></div>';
+        $versionSelector .= '</select></div></div>';
     }
-    $title .= '<span id="title_text">' . $self->title . '</span>';
-    $title .= '</li>';
     for ( 'toc.html', 'index.html' ) {
         my $file = $version_dir->file($_);
         # Ignore missing files because the books haven't been built yet. This
@@ -411,7 +414,7 @@ sub _update_title_and_version_drop_downs {
         # substitution below will fail, so we abort early in this case.
         next unless ($_ == 'index.html' && ($html =~ /ul class="toc"/));
 
-        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?\n?<li>/<ul class="toc">${title}<li>/);
+        my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?\n?<li>/${versionSelector}${title}<ul class="toc"><li>/);
         die "couldn't update version" unless $success;
         $file->spew( iomode => '>:utf8', $html );
     }
