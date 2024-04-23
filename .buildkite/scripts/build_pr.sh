@@ -85,6 +85,12 @@ build_cmd="./build_docs --all \
 echo "The following build command will be used"
 echo $build_cmd
 
+# Temporary workaround until we can move to HTTPS auth
+vault read -field=private-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa"
+vault read -field=public-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa.pub"
+ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+chmod 600 "$HOME/.ssh/id_rsa"
+
 # Kick off the build
 ssh-agent bash -c "ssh-add && $build_cmd"
 
