@@ -18,11 +18,9 @@ RSpec.describe ChangeAdmonition do
   shared_examples 'change admonition' do
     context 'block form' do
       def expect_block_admonition(body)
-        expect(converted).to include <<~HTML
-          <div class="#{admon_class} admon">
-          <div class="icon"></div>
-          <div class="admon_content">
-          #{body}
+        expect(converted).to include(<<~HTML)
+          <div class="admon #{admon_class} #{extra_class}">
+          <div class="admon-title">#{message} in 7.0.0-beta1</div>#{body ? "\n#{body}" : nil}
           </div>
           </div>
         HTML
@@ -35,8 +33,9 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_block_admonition <<~HTML.strip
-            <h3>#{message} in 7.0.0-beta1.</h3>
+            <div class="admon_content">
             <p>words</p>
+            </div>
           HTML
         end
       end
@@ -47,7 +46,7 @@ RSpec.describe ChangeAdmonition do
           ASCIIDOC
         end
         it 'has default text' do
-          expect_block_admonition "<p>#{message} in 7.0.0-beta1.</p>"
+          expect_block_admonition nil
         end
       end
       context 'with complex content' do
@@ -58,8 +57,9 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_block_admonition <<~HTML.strip
-            <h3>#{message} in 7.0.0-beta1.</h3>
+            <div class="admon_content">
             <p>Like 2<sup>7</sup></p>
+            </div>
           HTML
         end
       end
@@ -78,12 +78,12 @@ RSpec.describe ChangeAdmonition do
     end
     context 'inline form' do
       def expect_inline_admonition(version, text)
-        expect(converted).to include <<~HTML.strip
+        expect(converted).to include(<<~HTML)
           <span class="Admonishment Admonishment--change">
           <span class="Admonishment-version #{extra_class}">#{version}</span>
           <span class="Admonishment-detail">
-          #{text}
-          </span>
+          <span class="version-details-title">#{message} in 7.0.0-beta1</span>
+          #{text ? "<span class=\"version-details\">#{text}</span>" : nil}
           </span>
         HTML
       end
@@ -95,7 +95,7 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_inline_admonition(
-            '7.0.0-beta1', "#{message} in 7.0.0-beta1. admon words"
+            '7.0.0-beta1', 'admon words'
           )
         end
       end
@@ -107,7 +107,7 @@ RSpec.describe ChangeAdmonition do
         end
         it 'has default text' do
           expect_inline_admonition(
-            '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+            '7.0.0-beta1', nil
           )
         end
       end
@@ -132,13 +132,13 @@ RSpec.describe ChangeAdmonition do
         context 'the heading' do
           it 'includes the admonition' do
             expect(converted).to include <<~HTML.strip
-              <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
+              <h1><a id="id-1"></a>Title <span class="Admonishment
             HTML
             # Comment to fix syntax highlighting: ">HTML
           end
           it 'has default text' do
             expect_inline_admonition(
-              '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+              '7.0.0-beta1', nil
             )
           end
         end
@@ -151,7 +151,7 @@ RSpec.describe ChangeAdmonition do
         end
         it 'has default text' do
           expect_inline_admonition(
-            '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+            '7.0.0-beta1', nil
           )
         end
         it "doesn't modify the id" do
@@ -167,7 +167,7 @@ RSpec.describe ChangeAdmonition do
         end
         it 'has default text' do
           expect_inline_admonition(
-            '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+            '7.0.0-beta1', nil
           )
         end
         it "doesn't modify the id" do
@@ -192,21 +192,21 @@ RSpec.describe ChangeAdmonition do
     let(:key) { 'added' }
     let(:admon_class) { 'note' }
     let(:message) { 'Added' }
-    let(:extra_class) { ' version-added' }
+    let(:extra_class) { 'version-added' }
     include_examples 'change admonition'
   end
   context 'coming' do
     let(:key) { 'coming' }
     let(:admon_class) { 'note' }
     let(:message) { 'Coming' }
-    let(:extra_class) { ' version-coming' }
+    let(:extra_class) { 'version-coming' }
     include_examples 'change admonition'
   end
   context 'deprecated' do
     let(:key) { 'deprecated' }
     let(:admon_class) { 'warning' }
     let(:message) { 'Deprecated' }
-    let(:extra_class) { ' version-added' }
+    let(:extra_class) { 'version-deprecated' }
     include_examples 'change admonition'
   end
 end

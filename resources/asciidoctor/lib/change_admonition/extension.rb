@@ -17,9 +17,9 @@ require 'asciidoctor/extensions'
 #
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [
-    [:added, 'added', 'note', 'Added in', ' version-added'],
-    [:coming, 'changed', 'note', 'Coming in', ' version-coming'],
-    [:deprecated, 'deleted', 'warning', 'Deprecated in', ' version-deprecated'],
+    [:added, 'added', 'note', 'Added in', 'version-added'],
+    [:coming, 'changed', 'note', 'Coming in', 'version-coming'],
+    [:deprecated, 'deleted', 'warning', 'Deprecated in', 'version-deprecated'],
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
@@ -48,7 +48,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
       version = attrs[:version]
       passtext = attrs[:passtext]
       text = "#{@message} #{version}"
-      name = "#{@tag}#{@title_class}"
+      name = "#{@tag} #{@title_class}"
       source = passtext || nil
       Asciidoctor::Block.new parent, :admonition, source: source, attributes: {
         'name' => name,
@@ -83,6 +83,7 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
           'title_class' => "#{@extra_title_class}",
           'title' => version,
           'message_title' => message_title,
+          'name' => 'change'
         }
       )
     end

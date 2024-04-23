@@ -30,13 +30,13 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
   def activate(registry)
     [
-      [:beta, 'Beta', BETA_DEFAULT_TEXT, ' stage-beta'],
-      [:dev, 'In development', DEV_DEFAULT_TEXT , ' stage-dev'],
-      [:experimental, 'Technical preview', PREVIEW_DEFAULT_TEXT, ' stage-preview'],
-      [:preview, 'Technical preview', PREVIEW_DEFAULT_TEXT, ' stage-preview'],
+      [:beta, 'Beta', BETA_DEFAULT_TEXT, 'stage-beta'],
+      [:dev, 'In development', DEV_DEFAULT_TEXT , 'stage-dev'],
+      [:experimental, 'Technical preview', PREVIEW_DEFAULT_TEXT, 'stage-preview'],
+      [:preview, 'Technical preview', PREVIEW_DEFAULT_TEXT, 'stage-preview'],
     ].each do |(name, role, default_text, title_class)|
       registry.block_macro ChangeAdmonitionBlock.new(role, default_text, title_class), name
-      registry.inline_macro ChangeAdmonitionInline.new(role, default_text, title_class), name
+      registry.inline_macro ChangeAdmonitionInline.new(name, role, default_text, title_class), name
     end
   end
 
@@ -99,8 +99,9 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     name_positional_attributes :text
     format :short
 
-    def initialize(role, default_text, extra_title_class)
+    def initialize(name, role, default_text, extra_title_class)
       super(nil)
+      @name = name
       @role = role
       @default_text = default_text
       @extra_title_class = extra_title_class
@@ -111,6 +112,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       text ||= @default_text
       Asciidoctor::Inline.new(
         parent, :admonition, text, type: @role, attributes: {
+          'name' => @name,
           'title_type' => 'title',
           'title_class' => "#{@extra_title_class}",
           'title' => @role,

@@ -251,7 +251,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'includes the warning admonition' do
         expect(body).to include(
-          '<div class="warning admon">'
+          '<div class="admon warning">'
         )
       end
     end

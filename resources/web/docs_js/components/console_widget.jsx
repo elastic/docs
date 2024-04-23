@@ -62,8 +62,8 @@ export class _ConsoleForm extends Component {
             value={getValueFromState('curl_user')}
             onInput={linkState(this, getFieldName('curl_user'))}
           />
-          <div class="note admon">
-            <div class="icon" />
+          <div class="admon note">
+            <div class="admon-title"></div>
             <div class="admon_content">
               <p>
                 {props.langStrings('For information on how to set up and run')}

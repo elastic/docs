@@ -6,10 +6,10 @@ module DocbookCompat
   module ConvertAdmonition
     def convert_admonition(node)
       [
-        %(<div class="#{node.attr 'name'} admon">),
-        %(<div class="admon-title">#{node.attr 'title'}</div>),
-        node.content != '' ? "<div class='admon_content'>" : nil,
-        node.content != '' ? "<p>#{node.content}</p>" : nil,
+        %(<div class="admon #{node.attr 'name'}">),
+        %(<div class="admon-title">#{node.converter.convert(node, 'admonition_title_id')}</div>),
+        node.content != '' ? "<div class=\"admon_content\">" : nil,
+        node.content != '' ? (node.blocks.empty? ? "<p>#{node.content}</p>" : node.content) : nil,
         node.content != '' ? "</div>" : nil,
         '</div>',
       ].compact.join "\n"
@@ -19,10 +19,8 @@ module DocbookCompat
       return node.id ? %(<a id="#{node.id}"></a>) : nil unless node.title
 
       [
-        '<h3>',
         node.title,
         node.id ? %(<a id="#{node.id}"></a>) : nil,
-        '</h3>',
       ].compact.join
     end
 
@@ -57,12 +55,13 @@ module DocbookCompat
     def convert_inline_admonition_for_real(node)
       title_classes =
         "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
+      name = "#{node.attr 'name'}" == "experimental" ? "preview" : "#{node.attr 'name'}"
       [
-        %(<span class="Admonishment Admonishment--#{node.type}">),
+        %(<span class="Admonishment Admonishment--#{name}">),
         %(<span class="#{title_classes}">#{node.attr 'title'}</span>),
         '<span class="Admonishment-detail">',
         %(<span class="version-details-title">#{node.attr 'message_title'}</span>),
-        node.text ? "<span class='version-details'>#{node.text}</span>" : nil,
+        node.text ? "<span class=\"version-details\">#{node.text}</span>" : nil,
         '</span>',
         '</span>',
       ].join "\n"

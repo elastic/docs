@@ -18,9 +18,9 @@ RSpec.describe CareAdmonition do
   shared_examples 'care admonition' do
     context 'block form' do
       def expect_block_admonition(body)
-        expect(converted).to include <<~HTML
-          <div class="#{admon_class} admon">
-          <div class="icon"></div>
+        expect(converted).to include(<<~HTML)
+          <div class="admon #{admon_class}">
+          <div class="admon-title">#{admon_title}</div>
           <div class="admon_content">
           #{body}
           </div>
@@ -34,7 +34,9 @@ RSpec.describe CareAdmonition do
           ASCIIDOC
         end
         it "renders with Elastic's custom template" do
-          expect_block_admonition '<p>words</p>'
+          expect_block_admonition <<~HTML.strip
+            <p>words</p>
+          HTML
         end
       end
       context 'with complex content' do
@@ -124,12 +126,12 @@ RSpec.describe CareAdmonition do
     end
     context 'inline form' do
       def expect_inline_admonition(text)
-        expect(converted).to include <<~HTML.strip
+        expect(converted).to include(<<~HTML)
           <span class="Admonishment Admonishment--#{key}">
-          <span class="Admonishment-title">#{key}</span>
+          <span class="Admonishment-title #{admon_class}">#{admon_title}</span>
           <span class="Admonishment-detail">
-          #{text}
-          </span>
+          <span class="version-details-title">#{admon_title}</span>
+          <span class="version-details">#{text ? text : default_text}</span>
           </span>
         HTML
       end
@@ -174,7 +176,7 @@ RSpec.describe CareAdmonition do
         context 'the heading' do
           it 'includes the admonition' do
             expect(converted).to include <<~HTML.strip
-              <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
+              <h1><a id="id-1"></a>Title <span class="Admonishment
             HTML
             # Comment to fix syntax highlighting: ">HTML
           end
@@ -224,27 +226,30 @@ RSpec.describe CareAdmonition do
   end
   context 'beta' do
     let(:key) { 'beta' }
-    let(:admon_class) { 'warning' }
+    let(:admon_class) { 'stage-beta' }
+    let(:admon_title) { 'Beta' }
     let(:default_text) do
       <<~TEXT.strip
-        This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+        This functionality is in beta and is subject to change. The design and code is less mature than official generally available features and is being provided as-is with no warranties. Beta features are not subject to the support service level agreement of official generally available features.
       TEXT
     end
     include_examples 'care admonition'
   end
   context 'dev' do
     let(:key) { 'dev' }
-    let(:admon_class) { 'warning' }
+    let(:admon_class) { 'stage-dev' }
+    let(:admon_title) { 'In development' }
     let(:default_text) do
       <<~TEXT.strip
-        This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
+        This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support service level agreement of official generally available features.
       TEXT
     end
     include_examples 'care admonition'
   end
   context 'experimental' do
     let(:key) { 'preview' }
-    let(:admon_class) { 'warning' }
+    let(:admon_class) { 'stage-preview' }
+    let(:admon_title) { 'Technical preview' }
     let(:default_text) do
       <<~TEXT.strip
         This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
@@ -254,7 +259,8 @@ RSpec.describe CareAdmonition do
   end
   context 'preview' do
     let(:key) { 'preview' }
-    let(:admon_class) { 'warning' }
+    let(:admon_class) { 'stage-preview' }
+    let(:admon_title) { 'Technical preview' }
     let(:default_text) do
       <<~TEXT.strip
         This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.

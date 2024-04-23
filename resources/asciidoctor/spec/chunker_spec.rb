@@ -200,7 +200,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               </div>
             HTML
@@ -239,7 +239,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               </div>
             HTML
@@ -405,7 +405,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title [fooo]</a></span>
               </div>
             HTML
@@ -519,7 +519,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               </div>
             HTML
@@ -631,7 +631,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               </div>
             HTML
@@ -649,7 +649,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s1.html">S1</a></span>
               </div>
@@ -665,7 +665,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               </div>
             HTML
@@ -683,7 +683,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
               </div>
@@ -699,7 +699,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
               </div>
@@ -765,7 +765,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               </div>
             HTML
@@ -782,7 +782,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
               </div>
@@ -799,7 +799,7 @@ RSpec.describe Chunker do
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
               <div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
+              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
               </div>
