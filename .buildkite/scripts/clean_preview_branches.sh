@@ -4,6 +4,12 @@ set -eo pipefail
 export REPO=git@github.com:elastic/built-docs.git
 export IMAGE=docker.elastic.co/docs/build:latest
 
+# Temporary workaround until we can move to HTTPS auth
+vault read -field=private-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa"
+vault read -field=public-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa.pub"
+ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+chmod 600 "$HOME/.ssh/id_rsa"
+
 ./build_docs --docker-build build
 ssh-agent bash -c '
     ssh-add &&
