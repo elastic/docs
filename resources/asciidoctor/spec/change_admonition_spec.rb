@@ -132,7 +132,7 @@ RSpec.describe ChangeAdmonition do
         context 'the heading' do
           it 'includes the admonition' do
             expect(converted).to include <<~HTML.strip
-              <h1><a id="id-1"></a>Title <span class="Admonishment
+              <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
             HTML
             # Comment to fix syntax highlighting: ">HTML
           end

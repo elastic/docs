@@ -114,7 +114,6 @@ RSpec.describe DocbookCompat do
           <div>
           <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
           </div>
-          <hr>
           <!--EXTRA-->
           </div>
         HTML
@@ -136,7 +135,6 @@ RSpec.describe DocbookCompat do
             <div>
             <div><h1 class="title"><a id="title-id"></a>Title</h1></div>
             </div>
-            <hr>
             <!--EXTRA-->
             </div>
           HTML
@@ -172,7 +170,6 @@ RSpec.describe DocbookCompat do
             <div>
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             </div>
-            <hr>
             <!--EXTRA-->
           HTML
         end
@@ -180,7 +177,6 @@ RSpec.describe DocbookCompat do
       context 'the table of contents' do
         it 'is outside the titlepage' do
           expect(converted).to include(<<~HTML)
-            <hr>
             <!--EXTRA-->
             </div>
             <div id="content">
@@ -380,7 +376,6 @@ RSpec.describe DocbookCompat do
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             <div><h2 class="subtitle">Subtitle</h2></div>
             </div>
-            <hr>
             <!--EXTRA-->
             </div>
           HTML
@@ -410,7 +405,6 @@ RSpec.describe DocbookCompat do
             <div>
             <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
             </div>
-            <hr>
             <!--EXTRA-->
             </div>
           HTML
@@ -1918,7 +1912,7 @@ RSpec.describe DocbookCompat do
     def expect_block_admonition(body)
       expect(converted).to include(<<~HTML)
         <div class="admon #{admon_class}">
-        <div class="admon-title"></div>#{body ? "\n<div class=\"admon_content\">\n#{body}\n</div>": nil}
+        <div class="admon-title"></div>#{body ? "\n<div class=\"admon_content\">\n#{body}\n</div>" : nil}
         </div>
       HTML
     end
@@ -2001,12 +1995,12 @@ RSpec.describe DocbookCompat do
             end
             it "renders the title in Elastic's custom template" do
               expect(converted).to include(<<~HTML)
-              <div class="admon #{admon_class}">
-              <div class="admon-title">Title<a id="id"></a></div>
-              <div class="admon_content">
-              <p>words</p>
-              </div>
-              </div>
+                <div class="admon #{admon_class}">
+                <div class="admon-title">Title<a id="id"></a></div>
+                <div class="admon_content">
+                <p>words</p>
+                </div>
+                </div>
               HTML
             end
           end

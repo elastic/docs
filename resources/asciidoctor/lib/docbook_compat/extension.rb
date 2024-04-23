@@ -56,7 +56,7 @@ module DocbookCompat
       <<~HTML
         <div class="#{wrapper_class_for node}#{node.role ? " #{node.role}" : ''}">
         <div class="titlepage"><div><div>
-        <h1 class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h1>
+        <h#{hlevel node} class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h#{hlevel node}>
         </div></div></div>
         #{node.content}
         </div>

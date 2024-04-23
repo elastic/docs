@@ -131,7 +131,7 @@ RSpec.describe CareAdmonition do
           <span class="Admonishment-title #{admon_class}">#{admon_title}</span>
           <span class="Admonishment-detail">
           <span class="version-details-title">#{admon_title}</span>
-          <span class="version-details">#{text ? text : default_text}</span>
+          <span class="version-details">#{text || default_text}</span>
           </span>
         HTML
       end
@@ -176,7 +176,7 @@ RSpec.describe CareAdmonition do
         context 'the heading' do
           it 'includes the admonition' do
             expect(converted).to include <<~HTML.strip
-              <h1><a id="id-1"></a>Title <span class="Admonishment
+              <h1 class="title"><a id="id-1"></a>Title <span class="Admonishment
             HTML
             # Comment to fix syntax highlighting: ">HTML
           end

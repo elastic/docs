@@ -69,21 +69,20 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     def initialize(message, extra_title_class)
       super(nil)
       @message = message
-      @message_title
       @extra_title_class = extra_title_class
     end
 
     def process(parent, _target, attrs)
       version = attrs[:version]
       message_title = "#{@message} #{version}"
-      message = attrs[:text] ? attrs[:text] : nil
+      message = attrs[:text] || nil
       Asciidoctor::Inline.new(
         parent, :admonition, message, type: 'change', attributes: {
           'title_type' => 'version',
-          'title_class' => "#{@extra_title_class}",
+          'title_class' => @extra_title_class.to_s,
           'title' => version,
           'message_title' => message_title,
-          'name' => 'change'
+          'name' => 'change',
         }
       )
     end
