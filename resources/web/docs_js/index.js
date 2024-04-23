@@ -54,19 +54,17 @@ export function init_landing_page() {
   $('#bottomContent').insertAfter($lastDocsLinkSection).show();
 }
 
-// Vocab:
-// TOC = table of contents
-// OTP = on this page
-export function init_headers(sticky_content, lang_strings) {
-  // Add on-this-page block
-  $('div#this_page').append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
-  $('div#this_page').addClass('not-empty');
+export function init_headers(lang_strings) {
+  // Add "On this page" (table of contents)
+  const this_page = $('div#on-this-page-container')
+  this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
+  this_page.addClass('not-empty');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
   var baseHeadingLevel = 0;
 
-  $('main.euiPageInner').find('h1,h2,h3,h4').each(
-    function(i, el) {
+  $('main#page-template-inner').find('h1,h2,h3,h4').each(
+    function(i) {
       const link = $(this).find('a')[0]
       // Make headers into real links for permalinks
       if (link) {
@@ -165,7 +163,7 @@ function init_kibana_widgets() {
   });
 }
 
-function init_toc(lang_strings) {
+function init_toc() {
   var title = $('#book_title');
 
   // Make li elements in toc collapsible
@@ -190,14 +188,10 @@ function init_toc(lang_strings) {
   });
 }
 
+// Set up the version selector for interaction
 function init_version_selector () {
-  const customIcon = '<div class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right euiFormControlLayoutIcons--absolute"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="40" viewBox="0 0 16 16" role="img" data-icon-type="arrowDown" data-is-loaded="true" aria-hidden="true"><path fill-rule="evenodd" d="M1.957 4.982a.75.75 0 0 1 1.06-.025l4.81 4.591a.25.25 0 0 0 .346 0l4.81-4.59a.75.75 0 0 1 1.035 1.085l-4.81 4.59a1.75 1.75 0 0 1-2.416 0l-4.81-4.59a.75.75 0 0 1-.025-1.06Z" clip-rule="evenodd"></path></svg></div>'
-  if ($( "#live_versions" )) {
-    $('#wrap_live_versions').append(customIcon)
-
-  }
-  // Set version selector up interaction
-  const version_selectors = $("div#version-selectors")
+  const version_selectors = $("div#wrap_live_versions")
+  console.log(version_selectors)
   var v_selected = version_selectors.find('select option:selected');
   version_selectors
     .find('select')
@@ -226,7 +220,7 @@ function highlight_otp() {
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const id = entry.target.getAttribute('id');
-      const element = document.querySelector(`#sticky_content #this_page a[href="#${id}"]`);
+      const element = document.querySelector(`#on-this-page-container a[href="#${id}"]`);
       const itemId = $(element).parent().attr('id')
       // All heading elements have an `entry` (even the title).
       // The title does not exist in the OTP, so we must exclude it.
@@ -403,14 +397,12 @@ $(function() {
     })
   }
 
-  // Move rtp container to top right and make visible
-  var sticky_content = $('#sticky_content');
   // Left column that contains the TOC
-  var left_col = $('#left_col');
+  var left_col = $('#sidebar');
   // Middle column that contains the main content
-  var middle_col = $('#middle_col');
+  var middle_col = $('#main-content');
   // Right column that contains the OTP and demand gen content
-  var right_col = $('#right_col');
+  var right_col = $('#right-sidebar');
   // Empty column below TOC on small screens so the demand gen content can be positioned under the main content
   var bottom_left_col = $('#bottom_left_col');
 
@@ -421,15 +413,13 @@ $(function() {
     });
   });
 
-  $('#mobile-site-nav-header').click(function() {
+  $('#doc-site-header-links-tooltip-anchor').click(function() {
     $('#mobile-site-nav-header-tooltip').toggle()
   })
 
-  $('#mobile-article-nav-header').click(function() {
-    $('#nav-set-accordion-0').toggleClass("docChrome__sideNav--openMobile")
+  $('#mobile-collection-navigation').click(function() {
+    $('#inner-sidebar').toggle()
   })
-
-  var div = $('div.toc');
 
   // Enable Sense widget
   init_sense_widgets();
@@ -481,23 +471,30 @@ $(function() {
   /** Temporary hack for custom landing pages that include TOC */
   const landingPage = $('#landing-page')
 
-  console.log(landingPage)
   if (landingPage.length) {
     window.addEventListener("DOMContentLoaded", (event) => {
-      const left_col = $('#left_col');
-      left_col.removeClass("col-12 col-md-4 col-lg-3 h-almost-full-md sticky-top-md")
+      // Update layout
+      $('#doc-article').css('flex-direction', 'column');
+      $('#main-content').css('width', '100%');
+      $('#on-this-page-container').hide();
 
-      const right_col = document.getElementById("right_col")
-      right_col.classList.add('d-none')
+      // Reposition version selector
+      const version_selectors = $('div#version-selectors');
+      $('div#version-selectors-full').empty();
+      $('div#version-selectors-mid').css({
+        "display": "block",
+        "float": "right",
+        "width": "150px",
+        "margin-top": "-4px"
+      });
+      $('div#version-selectors-mid').append(version_selectors);
 
-      const middle_col = document.getElementById("middle_col")
-      middle_col.classList.remove("col-lg-9", "col-md-8")
+      // Add breadcrumbs
+      $('div.navheader').empty()
+      $('div.navheader').append('<div class="breadcrumbs"><span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span><span class="chevron-right"> /</div>');
 
-      const mainContent = document.getElementsByClassName("euiFlexGroup euiFlexGroup-responsive-xl-flexStart-stretch-row")
-      mainContent[0].classList.remove("euiFlexGroup", "euiFlexGroup-responsive-xl-flexStart-stretch-row")
-
-      // Local testing only
-      // $(left_col.find('ul')[0]).prepend('<div id="book_title"><span id="title_text"><span id="faux_accordion"></span>Observability</span></div>')
+      const toc = $("#content div.toc")
+      $('#doc-sidebar').append(toc)
     });
   }
 
@@ -511,17 +508,25 @@ $(function() {
       const html = $($.parseHTML(data))
       const version_selectors = $(html).find('div#version-selectors')
       const book_title = $(html).find('div#book_title')
+      const book_title_text = book_title.text()
       const toc = $(html).find('ul.toc')
 
       // Add table of contents
-      left_col.append(`<div class="toc"></div>`);
-      $('div.toc').append(book_title)
-      $(book_title).prepend('<span id="faux_accordion"></span>');
-      $('div.toc').append(toc)
-      init_toc(LangStrings);
+      $('div#collection-selector').append(book_title)
+      $('nav#doc-sidebar').append(toc)
+      init_toc();
+
+      $('#mobile-collection-navigation-text').text(`${book_title_text} navigation`)
 
       // Add version selector
-      $('div#version-selectors').replaceWith(version_selectors);
+      if ($(window).width() < 769) {
+        $('div#version-selectors-mobile').append(version_selectors);
+      } else if ($(window).width() >= 769 && $(window).width() < 992) {
+        $('div#version-selectors-mid').append(version_selectors);
+      } else {
+        $('div#version-selectors-full').append(version_selectors);
+      }
+
       init_version_selector();
 
       utils.open_current(location.pathname);
@@ -529,30 +534,44 @@ $(function() {
       // Set the width of the left column to zero
       left_col.removeClass().addClass('col-0');
       bottom_left_col.removeClass().addClass('col-0');
-      const sidebar = $('.docChrome__sidebar.euiPageSidebar-sticky-m')[0]
+      const sidebar = $('#sidebar')
       $(sidebar).attr('style', 'display:none')
       // Set the width of the middle column (containing the TOC) to 9
       middle_col.removeClass().addClass('guide-section');
       // Set the width of the demand gen content to 3
       right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
     }).always(function() {
-      init_headers(sticky_content, LangStrings);
+      init_headers(LangStrings);
       highlight_otp();
     });
   } else {
-    init_headers(sticky_content, LangStrings);
+    init_headers(LangStrings);
     highlight_otp();
-    init_toc(LangStrings);
-    // Set the width of the left column to zero
-    left_col.removeClass().addClass('col-0');
-    bottom_left_col.removeClass().addClass('col-0');
-    // Set the width of the middle column (containing the TOC) to 9
-    middle_col.removeClass().addClass('col-12 col-lg-9 guide-section');
-    // Set the width of the demand gen content to 3
-    right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
+    init_toc();
   }
 
   PR.prettyPrint();
+
+  // Handle window resizing
+  $( window ).on( "resize", function() {
+    const version_selector = $('#version-selectors')
+    if ($(window).width() < 767) {
+      $('div#version-selectors-full') && $('div#version-selectors-full').empty();
+      $('div#version-selectors-mid') && $('div#version-selectors-mid').empty();
+      $('div#version-selectors-mobile').append(version_selector);
+      $('#inner-sidebar').hide();
+    } else if ($(window).width() >= 767 && $(window).width() < 993) {
+      $('div#version-selectors-full') && $('div#version-selectors-full').empty();
+      $('div#version-selectors-mobile') && $('div#version-selectors-mobile').empty();
+      $('div#version-selectors-mid').append(version_selector);
+      $('#inner-sidebar').show();
+    } else {
+      $('div#version-selectors-mid') && $('div#version-selectors-mid').empty();
+      $('div#version-selectors-mobile') && $('div#version-selectors-mobile').empty();
+      $('div#version-selectors-full').append(version_selector);
+      $('#inner-sidebar').show();
+    }
+  })
 
   // Setup hot module replacement for css if we're in dev mode.
   if (module.hot) {
@@ -576,7 +595,7 @@ $(function() {
     var scrollToSelectedTOC = setInterval(() => {
       if ($('.current_page').length) {
           // Get scrollable element
-          var container = document.querySelector("#left_col");
+          var container = document.querySelector("#sidebar");
           // Get active table of contents element
           var activeItem = document.querySelector(".current_page")
           // If the top of the active item is out of view (or in the bottom 100px of the visible portion of the TOC)

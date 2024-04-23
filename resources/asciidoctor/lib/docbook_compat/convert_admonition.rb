@@ -7,11 +7,10 @@ module DocbookCompat
     def convert_admonition(node)
       [
         %(<div class="#{node.attr 'name'} admon">),
-        %(<div class="icon"></div>),
-        %(<div class="admon_content">),
-        node.converter.convert(node, 'admonition_title_id'),
-        node.blocks.empty? ? "<p>#{node.content}</p>" : node.content,
-        '</div>',
+        %(<div class="admon-title">#{node.attr 'title'}</div>),
+        node.content != '' ? "<div class='admon_content'>" : nil,
+        node.content != '' ? "<p>#{node.content}</p>" : nil,
+        node.content != '' ? "</div>" : nil,
         '</div>',
       ].compact.join "\n"
     end
@@ -62,7 +61,8 @@ module DocbookCompat
         %(<span class="Admonishment Admonishment--#{node.type}">),
         %(<span class="#{title_classes}">#{node.attr 'title'}</span>),
         '<span class="Admonishment-detail">',
-        node.text,
+        %(<span class="version-details-title">#{node.attr 'message_title'}</span>),
+        node.text ? "<span class='version-details'>#{node.text}</span>" : nil,
         '</span>',
         '</span>',
       ].join "\n"

@@ -47,14 +47,14 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     def process(parent, _target, attrs)
       version = attrs[:version]
       passtext = attrs[:passtext]
-      text = "#{@message} #{version}."
-      source = "+++<span class='admon-title'>#{text}</span>+++\n\n#{passtext}"
+      text = "#{@message} #{version}"
       name = "#{@tag}#{@title_class}"
+      source = passtext || nil
       Asciidoctor::Block.new parent, :admonition, source: source, attributes: {
         'name' => name,
         'revisionflag' => @revisionflag,
         'version' => version,
-        'title' => nil,
+        'title' => text,
       }
     end
   end
@@ -69,18 +69,20 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     def initialize(message, extra_title_class)
       super(nil)
       @message = message
+      @message_title
       @extra_title_class = extra_title_class
     end
 
     def process(parent, _target, attrs)
       version = attrs[:version]
-      message = "#{@message} #{version}."
-      message += ' ' + attrs[:text] if attrs[:text]
+      message_title = "#{@message} #{version}"
+      message = attrs[:text] ? attrs[:text] : nil
       Asciidoctor::Inline.new(
         parent, :admonition, message, type: 'change', attributes: {
           'title_type' => 'version',
           'title_class' => "#{@extra_title_class}",
           'title' => version,
+          'message_title' => message_title,
         }
       )
     end

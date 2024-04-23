@@ -35,7 +35,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       [:experimental, 'Technical preview', PREVIEW_DEFAULT_TEXT, ' stage-preview'],
       [:preview, 'Technical preview', PREVIEW_DEFAULT_TEXT, ' stage-preview'],
     ].each do |(name, role, default_text, title_class)|
-      registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
+      registry.block_macro ChangeAdmonitionBlock.new(role, default_text, title_class), name
       registry.inline_macro ChangeAdmonitionInline.new(role, default_text, title_class), name
     end
   end
@@ -46,10 +46,11 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     use_dsl
     name_positional_attributes :passtext, :issue_url
 
-    def initialize(role, default_text)
+    def initialize(role, default_text, title_class)
       super(nil)
       @role = role
       @default_text = default_text
+      @title_class = title_class
     end
 
     def generate_text(text, issue_url)
@@ -83,8 +84,9 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       Asciidoctor::Block.new(
         parent, :admonition, source: text, attributes: {
           'role' => @role,
-          'name' => 'beaker',
+          'name' => @title_class,
           'style' => 'warning',
+          'title' => @role
         }
       )
     end
@@ -112,6 +114,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
           'title_type' => 'title',
           'title_class' => "#{@extra_title_class}",
           'title' => @role,
+          'message_title' => @role,
         }
       )
     end

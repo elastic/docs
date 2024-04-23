@@ -32,81 +32,87 @@ export class _ConsoleForm extends Component {
     const getFieldName = field => `${props.setting}_${field}`
 
     return (
-      <form>
-         <p><strong>Dev Tools Console settings</strong></p>
-        <label for="url">{props.langStrings(props.url_label)}</label>
-        <input
-          id="url"
-          type="text"
-          value={getValueFromState('url')}
-          onInput={linkState(this, getFieldName('url'))}
-        />
-        <p>Learn more about the Dev Tools&nbsp;
-        <a href="https://www.elastic.co/guide/en/kibana/current/console-kibana.html">Console</a>.
-        </p>
-        <p><strong>curl settings (basic auth)</strong></p>
-        <label for="curl_host">Elasticsearch {props.langStrings('host')}</label>
-        <input
-          id="curl_host"
-          type="text"
-          value={getValueFromState('curl_host')}
-          onInput={linkState(this, getFieldName('curl_host'))}
-        />
+      <div className="console_settings">
+        <form>
+          <h5>Dev Tools Console settings</h5>
+          <label for="url">{props.langStrings(props.url_label)}</label>
+          <input
+            id="url"
+            type="text"
+            value={getValueFromState('url')}
+            onInput={linkState(this, getFieldName('url'))}
+          />
+          <p>Learn more about the Dev Tools&nbsp;
+          <a href="https://www.elastic.co/guide/en/kibana/current/console-kibana.html">Console</a>.
+          </p>
 
-        <label for="curl_username">Elasticsearch {props.langStrings('username')}</label>
-        <input
-          id="curl_username"
-          type="text"
-          value={getValueFromState('curl_user')}
-          onInput={linkState(this, getFieldName('curl_user'))}
-        />
+          <h5>curl settings (basic auth)</h5>
+          <label for="curl_host">Elasticsearch {props.langStrings('host')}</label>
+          <input
+            id="curl_host"
+            type="text"
+            value={getValueFromState('curl_host')}
+            onInput={linkState(this, getFieldName('curl_host'))}
+          />
 
-        {/* TODO
-      <label for="curl_pw" title={props.langStrings("curl_pw_title")}>curl {props.langStrings('password')}</label>
-      <input id="curl_pw" title={props.langStrings("curl_pw_title")} type="text" value={getValueFromState("curl_password")} onInput={linkState(this, getFieldName("curl_password"))} />
-       */}
-        <button
-          id="save_url"
-          type="button"
-          onClick={(e) => props.saveSettings(this.state)}
-        >
-          {props.langStrings('Save')}
-        </button>
-
-        <button
-          id="reset"
-          onClick={(e) =>
-            this.setState(
-              omit(
-                ['langStrings', 'saveSettings', 'url_label', 'setting'],
-                props
-              )
-            )
-          }
-          type="button"
-        >
-          Reset
-        </button>
-        <p className="console_help_text">
-          {props.langStrings('For information on how to set up and run')}
-          {props.setting === 'sense_url' ? (
-            <span>
-              &nbsp;the Sense 2 {props.langStrings('editor')} check&nbsp;
-              <a href="https://www.elastic.co/guide/en/sense/current/installing.html">
-                Installing Sense
-              </a>
-            </span>
-          ) : (
-            <span>
-              &nbsp;Kibana, refer to&nbsp;
-              <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">
-                Set up
-              </a>
-            </span>
-          )}
-          {props.langStrings('.')}
-        </p>
-      </form>
+          <label for="curl_username">Elasticsearch {props.langStrings('username')}</label>
+          <input
+            id="curl_username"
+            type="text"
+            value={getValueFromState('curl_user')}
+            onInput={linkState(this, getFieldName('curl_user'))}
+          />
+          <div class="note admon">
+            <div class="icon" />
+            <div class="admon_content">
+              <p>
+                {props.langStrings('For information on how to set up and run')}
+                {props.setting === 'sense_url' ? (
+                  <span>
+                    &nbsp;the Sense 2 {props.langStrings('editor')} check&nbsp;
+                    <a href="https://www.elastic.co/guide/en/sense/current/installing.html">
+                      Installing Sense
+                    </a>
+                  </span>
+                ) : (
+                  <span>
+                    &nbsp;Kibana, refer to&nbsp;
+                    <a href="https://www.elastic.co/guide/en/kibana/master/setup.html">
+                      Set up
+                    </a>
+                  </span>
+                )}
+                {props.langStrings('.')}
+              </p>
+            </div>
+          </div>
+          <div className="console-modal-button-container clearfix">
+            <button
+              id="save_url"
+              className="save-console-settings"
+              type="button"
+              onClick={(e) => props.saveSettings(this.state)}
+            >
+              {props.langStrings('Save')}
+            </button>
+            <button
+              id="reset"
+              className="reset-console-settings"
+              onClick={(e) =>
+                this.setState(
+                  omit(
+                    ['langStrings', 'saveSettings', 'url_label', 'setting'],
+                    props
+                  )
+                )
+              }
+              type="button"
+            >
+              Reset
+            </button>
+          </div>
+        </form>
+      </div>
     )
   }
 }
@@ -137,25 +143,23 @@ export class _TryConsoleSelector extends Component {
           </a>
           .
           </p>
-        <p><em>New to Elastic?</em></p>  
-        <div className="try_console_new_to_elastic_buttons">
-
+        {/* <p><em>New to Elastic?</em></p> */}
+        <div className="console-modal-button-container clearfix">
           <a
             id="try_console_selector_try_cloud_button"
-            className="button btn-primary btn-small"
+            className="doc-button doc-button-primary"
             href="https://cloud.elastic.co/registration"
             target="_blank"
           >
             Start free Cloud trial
           </a>
-        <p> 
           <a
             href="https://www.elastic.co/guide/en/elastic-stack/current/installing-elastic-stack.html"
+            className="doc-button doc-button-empty"
             target="_blank"
           >
              Install locally
           </a>
-        </p>
         </div>
       </div>
     )
