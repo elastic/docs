@@ -54,9 +54,9 @@ export function init_landing_page() {
   $('#bottomContent').insertAfter($lastDocsLinkSection).show();
 }
 
-export function init_headers(lang_strings) {
+export function init_headers(right_col, lang_strings) {
   // Add "On this page" (table of contents)
-  const this_page = $('div#on-this-page-container')
+  let this_page = $('<div id="on-this-page-container"></div>').prependTo(right_col);
   this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   this_page.addClass('not-empty');
   var ul = $('<ul></ul>').appendTo(this_page);
@@ -163,7 +163,7 @@ function init_kibana_widgets() {
   });
 }
 
-function init_toc() {
+function init_toc(lang_strings) {
   var title = $('#book_title');
 
   // Make li elements in toc collapsible
@@ -189,7 +189,7 @@ function init_toc() {
 }
 
 // Set up the version selector for interaction
-function init_version_selector () {
+function init_version_selector (lang_strings) {
   const version_selectors = $("div#wrap_live_versions")
   console.log(version_selectors)
   var v_selected = version_selectors.find('select option:selected');
@@ -541,11 +541,13 @@ $(function() {
       // Set the width of the demand gen content to 3
       right_col.removeClass().addClass('col-12 col-lg-3 sticky-top-md h-almost-full-lg');
     }).always(function() {
-      init_headers(LangStrings);
+      const right_sidebar_container = $('#right-sidebar-container')
+      init_headers(right_sidebar_container, LangStrings);
       highlight_otp();
     });
   } else {
-    init_headers(LangStrings);
+    const right_sidebar_container = $('#right-sidebar-container')
+    init_headers(right_sidebar_container, LangStrings);
     highlight_otp();
     init_toc();
   }
