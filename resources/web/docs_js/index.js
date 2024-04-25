@@ -56,7 +56,8 @@ export function init_landing_page() {
 
 export function init_headers(right_col, lang_strings) {
   // Add "On this page" (table of contents)
-  let this_page = $('<div id="on-this-page-container"></div>').prependTo(right_col);
+  const version_selector = right_col.find('#version-selectors-full')
+  let this_page = $('<div id="on-this-page-container"></div>').insertAfter(version_selector);
   this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   this_page.addClass('not-empty');
   var ul = $('<ul></ul>').appendTo(this_page);
@@ -191,16 +192,24 @@ function init_toc(lang_strings) {
 // Set up the version selector for interaction
 function init_version_selector (lang_strings) {
   const version_selectors = $("div#wrap_live_versions")
+  const liveVersions = $.makeArray(version_selectors.find('option')).map(opt => opt.value)
   var v_selected = version_selectors.find('select option:selected');
   version_selectors
     .find('select')
     .change(function(e) {
+      $.makeArray($("#wrap_other_versions").find('option')).forEach(opt => {
+        if (liveVersions.includes(opt.value)) {
+          $(`#wrap_other_versions > select > option[value="${opt.value}"]`).remove();
+        }
+      })
       var version = $(e.target).find('option:selected').val();
       if (version === "other") {
         $("#other_versions_text").show();
         $("#wrap_other_versions").show();
-        $('#wrap_other_versions').append(customIcon)
         return;
+      } else {
+        $("#other_versions_text").hide();
+        $("#wrap_other_versions").hide();
       }
       utils.get_current_page_in_version(version).fail(function() {
         v_selected.attr('selected', 'selected');
