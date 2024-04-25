@@ -119,7 +119,7 @@ function describeInitHeaders(name, guideBody, onThisPageAssertions) {
         ${guideBody}
       </main>
       <div id="right-sidebar-container">
-        <div id="other_stuff" />
+        <div id="version-selectors-full"></div>
       </div>
       `;
 
