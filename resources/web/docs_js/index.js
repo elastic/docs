@@ -27,7 +27,7 @@ export function init_landing_page() {
   // Fit into two columns on the landing page.
 
   // Select all top-level h3 elements within the #content div
-  $('.docs-landing div#content > h3').each(function() {
+  $('.docs-landing div#content > h2').each(function() {
     var $siblingDiv = $(this).next('div.ulist.itemizedlist');
 
     // Wrap the h3 and its sibling div in a div with class docs-link-section
@@ -43,10 +43,10 @@ export function init_landing_page() {
   // Append it outside of the div#content element
   $lastDocsLinkSection.addClass('legacy-docs hidden').insertAfter('div#content');
 
-  $lastDocsLinkSection.find('h3').append('<span class="toggle-icon">&#9660;</span>');
+  $lastDocsLinkSection.find('h2').append('<span class="toggle-icon">&#9660;</span>');
 
   // Click handler to toggle visibility
-  $lastDocsLinkSection.find('h3').on('click', function() {
+  $lastDocsLinkSection.find('h2').on('click', function() {
     $lastDocsLinkSection.toggleClass('hidden');
   });
 
