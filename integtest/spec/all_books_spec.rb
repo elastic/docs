@@ -632,7 +632,7 @@ RSpec.describe 'building all books' do
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master" selected>master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <div id="other_versions_text"><span class="warning-icon"></span>These docs may be no longer updated or still in development:</div><div id="wrap_other_versions"><select id="other_versions"><option value="" disabled selected>Select a version</option><option value="master" selected>master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select></div>
           HTML
         end
       end
@@ -651,7 +651,7 @@ RSpec.describe 'building all books' do
       let(:edit_url) { "#{repo.root}/edit/master/index.asciidoc" }
       it 'contains an edit_me link' do
         expect(body).to include <<~HTML.strip
-          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}">edit</a>
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="#{edit_url}"></a>
         HTML
       end
     end
@@ -671,7 +671,7 @@ RSpec.describe 'building all books' do
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10" selected>0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <div id="other_versions_text"><span class="warning-icon"></span>These docs may be no longer updated or still in development:</div><div id="wrap_other_versions"><select id="other_versions"><option value="" disabled selected>Select a version</option><option value="master">master</option><option value="0.10" selected>0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select></div>
           HTML
         end
       end
@@ -704,7 +704,7 @@ RSpec.describe 'building all books' do
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <div id="other_versions_text"><span class="warning-icon"></span>These docs may be no longer updated or still in development:</div><div id="wrap_other_versions"><select id="other_versions"><option value="" disabled selected>Select a version</option><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select></div>
           HTML
         end
       end
@@ -743,7 +743,7 @@ RSpec.describe 'building all books' do
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option></select>
+            <div id="other_versions_text"><span class="warning-icon"></span>These docs may be no longer updated or still in development:</div><div id="wrap_other_versions"><select id="other_versions"><option value="" disabled selected>Select a version</option><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option></select></div>
           HTML
         end
       end

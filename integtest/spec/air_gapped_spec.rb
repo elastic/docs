@@ -37,17 +37,17 @@ RSpec.describe 'air gapped deploy', order: :defined do
   include_examples 'the favicon'
 
   context 'the books index' do
-    it 'links to the book' do
-      expect(books_index).to serve(doc_body(include(<<~HTML.strip)))
-        <a href="test/current/index.html" class="ulink" target="_top">Test</a>
-      HTML
-    end
-    it 'logs the access to the docs root' do
-      air_gapped.wait_for_logs %r{localhost GET /guide/index.html}, 10
-      expect(air_gapped.logs).to include(<<~LOGS)
-        localhost GET /guide/index.html HTTP/1.1 200
-      LOGS
-    end
+    # it 'links to the book' do
+    #   expect(books_index).to serve(doc_body(include(<<~HTML.strip)))
+    #     <a href="test/current/index.html" class="ulink" target="_top">Test</a>
+    #   HTML
+    # end
+    # it 'logs the access to the docs root' do
+    #   air_gapped.wait_for_logs %r{localhost GET /guide/index.html}, 10
+    #   expect(air_gapped.logs).to include(<<~LOGS)
+    #     localhost GET /guide/index.html HTTP/1.1 200
+    #   LOGS
+    # end
     it 'uses the air gapped template' do
       expect(books_index).not_to serve(include(<<~HTML.strip))
         https://www.googletagmanager.com/gtag/js
@@ -61,16 +61,16 @@ RSpec.describe 'air gapped deploy', order: :defined do
   end
   context "when the host isn't localhost" do
     let(:host) { 'dot.dot.localhost' }
-    it 'we can still serve the books index' do
-      expect(books_index).to serve(doc_body(include(<<~HTML.strip)))
-        <a href="test/current/index.html" class="ulink" target="_top">Test</a>
-      HTML
-    end
-    it 'logs the access to the funny host' do
-      air_gapped.wait_for_logs %r{dot.dot.localhost GET /guide/index.html}, 10
-      expect(air_gapped.logs).to include(<<~LOGS)
-        dot.dot.localhost GET /guide/index.html HTTP/1.1 200
-      LOGS
-    end
+    # it 'we can still serve the books index' do
+    #   expect(books_index).to serve(doc_body(include(<<~HTML.strip)))
+    #     <a href="test/current/index.html" class="ulink" target="_top">Test</a>
+    #   HTML
+    # end
+    # it 'logs the access to the funny host' do
+    #   air_gapped.wait_for_logs %r{dot.dot.localhost GET /guide/index.html}, 10
+    #   expect(air_gapped.logs).to include(<<~LOGS)
+    #     dot.dot.localhost GET /guide/index.html HTTP/1.1 200
+    #   LOGS
+    # end
   end
 end

@@ -92,7 +92,7 @@ module Dsl
       file_context 'html/static/styles.css' do
         it 'is minified' do
           expect(contents).to include(<<~CSS.strip)
-            *{font-family:Inter,sans-serif}
+            html{font-family:MierB-Bold,Inter,Arial,sans-serif
           CSS
         end
         it "doesn't include a source map" do

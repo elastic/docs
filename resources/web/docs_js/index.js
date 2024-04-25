@@ -191,7 +191,6 @@ function init_toc(lang_strings) {
 // Set up the version selector for interaction
 function init_version_selector (lang_strings) {
   const version_selectors = $("div#wrap_live_versions")
-  console.log(version_selectors)
   var v_selected = version_selectors.find('select option:selected');
   version_selectors
     .find('select')

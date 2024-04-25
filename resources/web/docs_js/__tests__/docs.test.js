@@ -172,7 +172,6 @@ describe('On This Page', () => {
     });
   }
   describeInitHeaders('for page with one subsection', oneSubsection, () => {
-    console.log(oneSubsection)
     test('contains a link to the subsection header', () => {
       const link = jQuery('#on-this-page-container a[href="#nrt"]');
       expect(link).toBeTruthy();
