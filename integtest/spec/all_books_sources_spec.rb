@@ -152,7 +152,7 @@ RSpec.describe 'building all books' do
       end
       describe 'ece versions files' do
         convert_all_before_context do |src|
-          extra_branches = ['ms-92' ]
+          extra_branches = ['ms-92']
           repo = src.repo_with_index 'repo', <<~ASCIIDOC
             include::{docs-root}/shared/versions/ece/{source_branch}.asciidoc[]
 
