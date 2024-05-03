@@ -44,6 +44,18 @@ sub add_source {
         };
     }
 
+    if ( $path eq 'shared/versions/ece/current.asciidoc' ) {
+        push @$sources, {
+            repo    => $self,
+            prefix  => $prefix,
+            path    => $self->_current_stack_ece_file,
+            exclude => $exclude,
+            map_branches => $map_branches,
+            private => $private,
+            alternatives => $alternatives,
+        };
+    }
+
     $self->SUPER::add_source( $sources, $prefix, $path, $exclude, $map_branches, $private, $alternatives );
 }
 
@@ -90,6 +102,19 @@ sub _current_stack_version_file {
         $self->{current_stack_version_file} = "shared/versions/stack/$1";
     }
     return $self->{current_stack_version_file};
+}
+
+#===================================
+sub _current_ece_version_file {
+#===================================
+    my ( $self ) = @_;
+    unless ( $self->{current_ece_version_file} ) {
+        my $current = $self->{dir}->file( 'shared/versions/ece/current.asciidoc' );
+        my $contents = $current->slurp( iomode => '<:encoding(UTF-8)' );
+        die "Can't parse current.asciidoc: $contents" unless $contents =~ /include::(.+)\[\]/;
+        $self->{current_ece_version_file} = "shared/versions/ece/$1";
+    }
+    return $self->{current_ece_version_file};
 }
 
 
