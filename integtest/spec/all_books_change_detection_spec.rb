@@ -925,7 +925,9 @@ RSpec.describe 'building all books' do
                 'for master changes' do
           build_one_book_out_of_two_repos_twice(
             init: lambda do |src|
-              init_docs src, "#{ECE_VERSIONS}/{branch}.asciidoc",
+              init_docs
+                src,
+                "#{ECE_VERSIONS}/{branch}.asciidoc",
                 '{ece-version}'
             end,
             before_second_build: lambda do |src, _config|
