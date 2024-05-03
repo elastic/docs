@@ -27,6 +27,13 @@ RSpec.describe 'building all books' do
 
         m[1]
       end
+      let(:master_ece_version) do
+        contents = docs_repo.read 'shared/versions/ece/master.asciidoc'
+        m = contents.match(/:ece-version:\s+(.+)\n/)
+        raise "couldn't parse #{contents}" unless m
+
+        m[1]
+      end
       let(:current_version) do
         contents = docs_repo.read "shared/versions/stack/#{current_target}"
         m = contents.match(/:elasticsearch_version:\s+(.+)\n/)
@@ -34,15 +41,15 @@ RSpec.describe 'building all books' do
 
         m[1]
       end
-      let(:current_target) do
+      let(:current_ece_target) do
         contents = docs_repo.read 'shared/versions/ece/current.asciidoc'
         m = contents.match(/include::(.+)\[\]/)
         raise "couldn't parse #{contents}" unless m
 
         m[1]
       end
-      let(:current_version) do
-        contents = docs_repo.read "shared/versions/ece/#{current_target}"
+      let(:current_ece_version) do
+        contents = docs_repo.read "shared/versions/ece/#{current_ece_target}"
         m = contents.match(/:ece-version:\s+(.+)\n/)
         raise "couldn't parse #{contents}" unless m
 
@@ -169,7 +176,7 @@ RSpec.describe 'building all books' do
           page_context "raw/test/#{branch}/chapter.html" do
             it 'resolves an attribute from the docs repo' do
               expect(body).to include(<<~HTML.strip)
-                <p>#{value == 'master' ? master_version : value}</p>
+                <p>#{value == 'master' ? master_ece_version : value}</p>
               HTML
             end
           end
@@ -203,19 +210,19 @@ RSpec.describe 'building all books' do
         page_context 'raw/test/current/chapter.html' do
           it 'resolves an attribute from the docs repo' do
             expect(body).to include(<<~HTML.strip)
-              <p>#{current_version}</p>
+              <p>#{current_ece_version}</p>
             HTML
           end
         end
         file_context 'html/branches.yaml' do
           it 'references current.asciidoc' do
             expect(contents).to include(<<~LOG.strip)
-              Test/shared/versions/ece/current.asciidoc/main: #{hash}
+              Test/shared/versions/ece/current.asciidoc/master: #{hash}
             LOG
           end
           it "references current.asciidoc's target" do
             expect(contents).to include(<<~LOG.strip)
-              Test/shared/versions/ece/#{current_target}/main: #{hash}
+              Test/shared/versions/ece/#{current_ece_target}/master: #{hash}
             LOG
           end
         end
