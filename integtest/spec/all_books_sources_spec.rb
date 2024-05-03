@@ -34,6 +34,20 @@ RSpec.describe 'building all books' do
 
         m[1]
       end
+      let(:current_target) do
+        contents = docs_repo.read 'shared/versions/ece/current.asciidoc'
+        m = contents.match(/include::(.+)\[\]/)
+        raise "couldn't parse #{contents}" unless m
+
+        m[1]
+      end
+      let(:current_version) do
+        contents = docs_repo.read "shared/versions/ece/#{current_target}"
+        m = contents.match(/:ece-version:\s+(.+)\n/)
+        raise "couldn't parse #{contents}" unless m
+
+        m[1]
+      end
       describe 'attributes file' do
         convert_all_before_context do |src|
           repo = src.repo_with_index 'repo', <<~ASCIIDOC
@@ -60,7 +74,7 @@ RSpec.describe 'building all books' do
           end
         end
       end
-      describe 'versions files' do
+      describe 'stack versions files' do
         convert_all_before_context do |src|
           extra_branches = ['5.5', '6.3', '7.2']
           repo = src.repo_with_index 'repo', <<~ASCIIDOC
@@ -104,7 +118,7 @@ RSpec.describe 'building all books' do
           include_examples 'references the real path', '5.5'
         end
       end
-      describe 'the current version file' do
+      describe 'the current stack version file' do
         convert_all_before_context do |src|
           repo = src.repo_with_index 'repo', <<~ASCIIDOC
             include::{docs-root}/shared/versions/stack/current.asciidoc[]
@@ -132,6 +146,76 @@ RSpec.describe 'building all books' do
           it "references current.asciidoc's target" do
             expect(contents).to include(<<~LOG.strip)
               Test/shared/versions/stack/#{current_target}/master: #{hash}
+            LOG
+          end
+        end
+      end
+      describe 'ece versions files' do
+        convert_all_before_context do |src|
+          extra_branches = ['ms-92' ]
+          repo = src.repo_with_index 'repo', <<~ASCIIDOC
+            include::{docs-root}/shared/versions/ece/{source_branch}.asciidoc[]
+
+            {ece-version}
+          ASCIIDOC
+          extra_branches.each { |b| repo.switch_to_new_branch b }
+          docs_repo = init_docs_repo src
+          book = src.book 'Test'
+          book.branches += extra_branches
+          book.source repo, 'index.asciidoc'
+          book.source docs_repo, 'shared/versions/ece/{branch}.asciidoc'
+        end
+        shared_examples 'resolved ece attribute' do |branch, value|
+          page_context "raw/test/#{branch}/chapter.html" do
+            it 'resolves an attribute from the docs repo' do
+              expect(body).to include(<<~HTML.strip)
+                <p>#{value == 'master' ? master_version : value}</p>
+              HTML
+            end
+          end
+        end
+        include_examples 'resolved ece attribute', 'ms-92', '3.6.2'
+        file_context 'html/branches.yaml' do
+          shared_examples 'references the real path' do |branch|
+            context "#{branch} branch" do
+              it 'references the real path' do
+                expect(contents).to include(<<~LOG.strip)
+                  Test/shared/versions/ece/#{branch}.asciidoc/#{branch}: #{hash}
+                LOG
+              end
+            end
+          end
+          include_examples 'references the real path', 'ms-92'
+        end
+      end
+      describe 'the current ece version file' do
+        convert_all_before_context do |src|
+          repo = src.repo_with_index 'repo', <<~ASCIIDOC
+            include::{docs-root}/shared/versions/ece/current.asciidoc[]
+
+            {ece-version}
+          ASCIIDOC
+          docs_repo = init_docs_repo src
+          book = src.book 'Test'
+          book.source repo, 'index.asciidoc'
+          book.source docs_repo, 'shared/versions/ece/current.asciidoc'
+        end
+        page_context 'raw/test/current/chapter.html' do
+          it 'resolves an attribute from the docs repo' do
+            expect(body).to include(<<~HTML.strip)
+              <p>#{current_version}</p>
+            HTML
+          end
+        end
+        file_context 'html/branches.yaml' do
+          it 'references current.asciidoc' do
+            expect(contents).to include(<<~LOG.strip)
+              Test/shared/versions/ece/current.asciidoc/main: #{hash}
+            LOG
+          end
+          it "references current.asciidoc's target" do
+            expect(contents).to include(<<~LOG.strip)
+              Test/shared/versions/ece/#{current_target}/main: #{hash}
             LOG
           end
         end
