@@ -48,7 +48,7 @@ sub add_source {
         push @$sources, {
             repo    => $self,
             prefix  => $prefix,
-            path    => $self->_current_stack_ece_file,
+            path    => $self->_current_ece_version_file,
             exclude => $exclude,
             map_branches => $map_branches,
             private => $private,

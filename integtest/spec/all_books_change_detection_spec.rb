@@ -45,7 +45,7 @@ RSpec.describe 'building all books' do
       Some text.
     ASCIIDOC
     STACK_VERSIONS = 'shared/versions/stack/'
-
+    ECE_VERSIONS = 'shared/versions/ece/'
     def self.build_twice(
         before_first_build:,
         before_second_build:
@@ -915,6 +915,57 @@ RSpec.describe 'building all books' do
               docs_repo = src.repo 'docs'
               docs_repo.append "#{STACK_VERSIONS}/master.asciidoc", <<~ASCIIDOC
                 :version: cow
+              ASCIIDOC
+              docs_repo.commit 'changed'
+            end
+          )
+          include_examples 'second build is not a noop'
+        end
+        context "because the docs repo's ece version file " \
+                'for master changes' do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, "#{ECE_VERSIONS}/{branch}.asciidoc", '{ece-version}'
+            end,
+            before_second_build: lambda do |src, _config|
+              docs_repo = src.repo 'docs'
+              docs_repo.append "#{ECE_VERSIONS}/master.asciidoc", <<~ASCIIDOC
+                :ece-version: pig
+              ASCIIDOC
+              docs_repo.commit 'changed'
+            end
+          )
+          include_examples 'second build is not a noop'
+        end
+        context "because the docs repo's current ece version file changes" do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              init_docs src, "#{ECE_VERSIONS}/current.asciidoc", '{ece-version}'
+            end,
+            before_second_build: lambda do |src, _config|
+              docs_repo = src.repo 'docs'
+              docs_repo.write "#{ECE_VERSIONS}/current.asciidoc", <<~ASCIIDOC
+                include::master.asciidoc[]
+              ASCIIDOC
+              docs_repo.commit 'changed'
+            end
+          )
+          include_examples 'second build is not a noop'
+        end
+        context "because the file referenced by the docs repo's current " \
+                'ece version file changes' do
+          build_one_book_out_of_two_repos_twice(
+            init: lambda do |src|
+              path = "#{ECE_VERSIONS}/current.asciidoc"
+              init_docs src, path, '{ece-version}'
+              docs_repo = src.repo 'docs'
+              docs_repo.write path, 'include::master.asciidoc[]'
+              docs_repo.commit 'use master'
+            end,
+            before_second_build: lambda do |src, _config|
+              docs_repo = src.repo 'docs'
+              docs_repo.append "#{ECE_VERSIONS}/master.asciidoc", <<~ASCIIDOC
+                :ece-version: cow
               ASCIIDOC
               docs_repo.commit 'changed'
             end
