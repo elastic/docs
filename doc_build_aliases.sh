@@ -174,7 +174,7 @@ alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GI
 alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/apm-server/docs --resource=$GIT_HOME/observability-docs/docs --chunk 2'
 
 # Integrations developer guide
-alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
+alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 1'
 
 # APM Guide (7.16-8.11)
 alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/observability/docs/en/apm-server/integrations-index.asciidoc --resource=$GIT_HOME/apm-server/ --resource=$GIT_HOME/ingest-docs/ --chunk 2 --open'
