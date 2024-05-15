@@ -477,9 +477,9 @@ $(function() {
   });
 
   /** Temporary hack for custom landing pages that include TOC */
-  const landingPage = $('#landing-page')
+  const customLandingPage = $('#preamble')
 
-  if (landingPage.length) {
+  if (customLandingPage.length) {
     window.addEventListener("DOMContentLoaded", (event) => {
       // Update layout
       $('#doc-article').css('flex-direction', 'column');
