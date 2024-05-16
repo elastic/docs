@@ -199,10 +199,10 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
           it 'contains a link to the second section' do
@@ -238,10 +238,10 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
           it 'contains a link to an element in the first section' do
@@ -404,10 +404,10 @@ RSpec.describe Chunker do
           include_examples 'subpage'
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title [fooo]</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -518,10 +518,10 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -630,10 +630,10 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
           it 'contains a link to the level 3 section' do
@@ -648,11 +648,11 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s1.html">S1</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -664,10 +664,10 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -682,11 +682,11 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -698,11 +698,11 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -764,10 +764,10 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -781,11 +781,11 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end
@@ -798,11 +798,11 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
-              </div>
+              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end

@@ -486,20 +486,14 @@ $(function() {
       $('#main-content').css('width', '100%');
       $('#on-this-page-container').hide();
 
+      // Add breadcrumbs
+      $('div.navheader').empty()
+      $('div.navheader').append('<div class="breadcrumb-container"><div class="breadcrumbs"><span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span></div><div id="version-selectors-mid"></div></div>');
+
       // Reposition version selector
       const version_selectors = $('div#version-selectors');
       $('div#version-selectors-full').empty();
-      $('div#version-selectors-mid').css({
-        "display": "block",
-        "float": "right",
-        "width": "150px",
-        "margin-top": "-4px"
-      });
       $('div#version-selectors-mid').append(version_selectors);
-
-      // Add breadcrumbs
-      $('div.navheader').empty()
-      $('div.navheader').append('<div class="breadcrumbs"><span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span><span class="chevron-right"> /</div>');
 
       const toc = $("#content div.toc")
       $('#doc-sidebar').append(toc)
@@ -563,22 +557,43 @@ $(function() {
   PR.prettyPrint();
 
   // Handle window resizing
-  $( window ).on( "resize", function() {
+  $( window ).on("resize", function() {
     const version_selector = $('#version-selectors')
+    // On mobile devices
     if ($(window).width() < 767) {
+      // Make sure the version selector does NOT exist outside the mobile nav
       $('div#version-selectors-full') && $('div#version-selectors-full').empty();
       $('div#version-selectors-mid') && $('div#version-selectors-mid').empty();
+      // Make sure the the version selector is in the mobile nav
       $('div#version-selectors-mobile').append(version_selector);
+      // Hide the left side bar
       $('#inner-sidebar').hide();
+    // On mid-size screens
     } else if ($(window).width() >= 767 && $(window).width() < 993) {
+      // Make sure the version selector does NOT exist in the right side nav or the mobile nav
       $('div#version-selectors-full') && $('div#version-selectors-full').empty();
       $('div#version-selectors-mobile') && $('div#version-selectors-mobile').empty();
+      // Make sure the the version selector is in the middle column
       $('div#version-selectors-mid').append(version_selector);
+      // Show the left side bar
       $('#inner-sidebar').show();
+    // On full laptop/desktop screens
     } else {
-      $('div#version-selectors-mid') && $('div#version-selectors-mid').empty();
-      $('div#version-selectors-mobile') && $('div#version-selectors-mobile').empty();
-      $('div#version-selectors-full').append(version_selector);
+      // If it's a custom landing page (which has no right side nav)
+      if (customLandingPage.length) {
+        // Make sure the version selector does NOT exist in the right side nav or the mobile nav
+        $('div#version-selectors-mobile') && $('div#version-selectors-mobile').empty();
+        $('div#version-selectors-full') && $('div#version-selectors-full').empty();
+        // Make sure the the version selector is in the middle column
+        $('div#version-selectors-mid').append(version_selector);
+      } else {
+        // Make sure the version selector does NOT exist in the right side nav or middle column
+        $('div#version-selectors-mobile') && $('div#version-selectors-mobile').empty();
+        $('div#version-selectors-mid') && $('div#version-selectors-mid').empty();
+        // Make sure the the version selector is in the right side bar
+        $('div#version-selectors-full').append(version_selector);
+      }
+      // Show the left side bar
       $('#inner-sidebar').show();
     }
   })

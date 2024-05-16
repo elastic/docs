@@ -16,9 +16,9 @@ module Chunker
       chev = <<~HTML.strip
         <span class="chevron-right">/</span>
       HTML
-      result = ['<div class="breadcrumbs">']
+      result = ['<div class="breadcrumb-container"><div class="breadcrumbs">']
       result += generate_breadcrumb_links(section, chev).reverse
-      result << '</div>'
+      result << '</div><div id="version-selectors-mid"></div></div>'
 
       update_breadcrumbs_cases(result, chev, doc)
 
