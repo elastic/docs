@@ -357,6 +357,7 @@ sub check_kibana_links {
             while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED|APP_SEARCH_DOCS|ENTERPRISE_SEARCH_DOCS|WORKPLACE_SEARCH_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$version/;
+                $path =~ s/\$\{(?:ECS_VERSION)\}/current/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
                 # the Elasticsearch Guide. In newer branches, the
                 # variable is called `${ELASTICSEARCH_DOCS}`
