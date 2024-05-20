@@ -192,31 +192,46 @@ function init_toc(lang_strings) {
 // Set up the version selector for interaction
 function init_version_selector (lang_strings) {
   const version_selectors = $("div#wrap_live_versions")
-  const liveVersions = $.makeArray(version_selectors.find('option')).map(opt => opt.value)
-  var v_selected = version_selectors.find('select option:selected');
-  version_selectors
-    .find('select')
-    .change(function(e) {
-      $.makeArray($("#wrap_other_versions").find('option')).forEach(opt => {
-        if (liveVersions.includes(opt.value)) {
-          $(`#wrap_other_versions > select > option[value="${opt.value}"]`).remove();
-        }
-      })
-      var version = $(e.target).find('option:selected').val();
-      if (version === "other") {
-        $("#other_versions_text").show();
-        $("#wrap_other_versions").show();
-        return;
-      } else {
-        $("#other_versions_text").hide();
-        $("#wrap_other_versions").hide();
+  const other_version_selectors = $("div#wrap_other_versions")
+
+  // When the page is loaded, if the value of the live version selector
+  // is 'other', show the other version selector and related text
+  if (version_selectors.find('select option:selected').val() === 'other') {
+    $("#other_versions_text").show();
+    $("#wrap_other_versions").show();
+  }
+
+  $(version_selectors).find('select').change(function(e) {
+    onVersionChange(e.target)
+  })
+
+  $(other_version_selectors).find('select').change(function(e) {
+    onVersionChange(e.target)
+  })
+
+  function onVersionChange (target) {
+    const versions_list = $.makeArray($(target).find('option')).map(opt => opt.value)
+    const v_selected = $(target).find('select option:selected');
+    const version = $(target).find('option:selected').val();
+    $.makeArray($("#wrap_other_versions").find('option')).forEach(opt => {
+      if (versions_list.includes(opt.value)) {
+        $(`#wrap_other_versions > select > option[value="${opt.value}"]`).remove();
       }
-      utils.get_current_page_in_version(version).fail(function() {
-        v_selected.attr('selected', 'selected');
-        alert(lang_strings('This page is not available in the docs for version:')
-              + version);
-      });
+    })
+
+    if (version === "other") {
+      $("#other_versions_text").show();
+      $("#wrap_other_versions").show();
+      return;
+    } else {
+      $("#other_versions_text").hide();
+      $("#wrap_other_versions").hide();
+    }
+    utils.get_current_page_in_version(version).fail(function() {
+      v_selected.attr('selected', 'selected');
+      alert('This page is not available in the docs for version:' + version);
     });
+  }
 }
 
 // In the OTP, highlight the heading of the section that is
