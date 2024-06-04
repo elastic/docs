@@ -374,9 +374,22 @@ $(function() {
     if (index === 0) {
       currentHeading.replaceWith(`<h1>${contents}</h1>`);
     } else {
-      if ($(this).prop('nodeName') === allLevels[0]) $(this).replaceWith(`<h2>${contents}</h2>`);
-      if ($(this).prop('nodeName') === allLevels[1]) $(this).replaceWith(`<h3>${contents}</h3>`);
-      if ($(this).prop('nodeName') === allLevels[2]) $(this).replaceWith(`<h4>${contents}</h4>`);
+      if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
+        $(this).replaceWith(`<h2>${contents}</h2>`);
+      }
+      if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
+        $(this).replaceWith(`<h3>${contents}</h3>`);
+      }
+      console.log(allLevels[2])
+      if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
+        $(this).replaceWith(`<h4>${contents}</h4>`);
+      }
+      if (allLevels[3] && ($(this).prop('nodeName') === allLevels[3])) {
+        $(this).replaceWith(`<h5>${contents}</h5>`);
+      }
+      if (allLevels[4] && ($(this).prop('nodeName') === allLevels[4])) {
+        $(this).replaceWith(`<h6>${contents}</h6>`);
+      }
     }
   })
   // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)
