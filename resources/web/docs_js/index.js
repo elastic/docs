@@ -346,12 +346,14 @@ $(function() {
 
   AlternativeSwitcher(store());
 
-  // Get all headings (except for the title)
-  const allHeadings = $('#content').find('h2, h3, h4, h5, h6')
+  // Get all headings
+  const allHeadings = $('#content').find('h1,h2,h3,h4,h5,h6')
   let allLevels = []
   // Create a list of all heading levels used on the page
   allHeadings.each(function(index) {
-    if (!allLevels.includes($(this).prop('nodeName'))) allLevels.push($(this).prop('nodeName'))
+    // Don't include the first heading because that's the title
+    if (index === 0) return;
+    if (!allLevels.includes($(this).prop('nodeName'))) allLevels.push($(this).prop('nodeName'));
   })
   // Update the heading level to be incremental
   // (i.e. the first heading after the title should be an h2 and
@@ -359,21 +361,25 @@ $(function() {
   allHeadings.each(function(index) {
     const currentHeading = $(this)
     const contents = currentHeading.prop('innerHTML')
-    if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
-      $(this).replaceWith(`<h2>${contents}</h2>`);
-    }
-    if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
-      $(this).replaceWith(`<h3>${contents}</h3>`);
-    }
-    console.log(allLevels[2])
-    if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
-      $(this).replaceWith(`<h4>${contents}</h4>`);
-    }
-    if (allLevels[3] && ($(this).prop('nodeName') === allLevels[3])) {
-      $(this).replaceWith(`<h5>${contents}</h5>`);
-    }
-    if (allLevels[4] && ($(this).prop('nodeName') === allLevels[4])) {
-      $(this).replaceWith(`<h6>${contents}</h6>`);
+    // Don't include the first heading because that's the
+    // title and we always want that to be an h1
+    if (index > 0) {
+      if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
+        $(this).replaceWith(`<h2>${contents}</h2>`);
+      }
+      if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
+        $(this).replaceWith(`<h3>${contents}</h3>`);
+      }
+      console.log(allLevels[2])
+      if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
+        $(this).replaceWith(`<h4>${contents}</h4>`);
+      }
+      if (allLevels[3] && ($(this).prop('nodeName') === allLevels[3])) {
+        $(this).replaceWith(`<h5>${contents}</h5>`);
+      }
+      if (allLevels[4] && ($(this).prop('nodeName') === allLevels[4])) {
+        $(this).replaceWith(`<h6>${contents}</h6>`);
+      }
     }
   })
 
