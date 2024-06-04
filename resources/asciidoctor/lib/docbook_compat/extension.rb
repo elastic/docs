@@ -76,22 +76,6 @@ module DocbookCompat
       '<a class="xpack_tag" href="/subscriptions"></a>'
     end
 
-    def hlevel(section)
-      # Walk up the ancestry until the ancestor's parent is the document. The
-      # ancestor that we end up with is the "biggest" section containing this
-      # section. Except don't walk *all* the way. Because docbook doesn't.
-      # See that `unless` below? If we were walking it should be `until` but
-      # docbook *doesn't* walk. It just does this. Why? Ghosts maybe. I dunno.
-      # But we're trying to emulate docbook. So here we are.
-      ancestor = section
-      ancestor = ancestor.parent unless ancestor.parent.context == :document
-      # If *that* section is level 0 then we have to bump the hlevel of our
-      # section by one. The argument for this goes: we have to bump the level 0
-      # section's hlevel by one anyway because there *isn't* an h0 tag. So we
-      # have to bump all of its children.
-      section.level
-    end
-
     SECTION_WRAPPER_CLASSES = %w[part chapter].freeze
     def wrapper_class_for(section)
       wrapper_class = section.attr 'style'
