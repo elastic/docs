@@ -375,17 +375,6 @@ sub extract_toc_from_index {
     $dir->file('toc.html')->spew( iomode => '>:utf8', $html );
 }
 
-# #===================================
-# sub extract_versions_from_index {
-# #===================================
-#     my $dir = shift;
-#     my $html
-#         = $dir->file('index.html')->slurp( 'iomode' => '<:encoding(UTF-8)' );
-#     $html =~ s/^.+<div class="toc">\n?//s;
-#     $html =~ s/<ul class="toc">.*$//s;
-#     $dir->file('versions.html')->spew( iomode => '>:utf8', $html );
-# }
-
 #===================================
 sub roots_opts {
 #===================================
