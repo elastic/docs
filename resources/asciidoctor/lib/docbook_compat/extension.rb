@@ -56,7 +56,7 @@ module DocbookCompat
       <<~HTML
         <div class="#{wrapper_class_for node}#{node.role ? " #{node.role}" : ''}">
         <div class="titlepage"><div><div>
-        <h#{hlevel node} class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h#{hlevel node}>
+        <h1 class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h1>
         </div></div></div>
         #{node.content}
         </div>
@@ -89,7 +89,7 @@ module DocbookCompat
       # section by one. The argument for this goes: we have to bump the level 0
       # section's hlevel by one anyway because there *isn't* an h0 tag. So we
       # have to bump all of its children.
-      section.level + (ancestor.level.zero? ? 1 : 0)
+      section.level
     end
 
     SECTION_WRAPPER_CLASSES = %w[part chapter].freeze
