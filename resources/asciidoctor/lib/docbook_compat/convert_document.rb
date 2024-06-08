@@ -61,12 +61,15 @@ module DocbookCompat
     end
 
     def munge_title(doc, title, html)
-      return if doc.attr 'noheader'
 
       # Important: we're not replacing the whole header - it still will have a
       # closing </div>.
+      #
+      # We also add a placeholder for the breadcrumbs that will be replaced
+      # in resources/asciidoctor/lib/chunker/extension.rb
       header_start = <<~HTML
         <div class="titlepage">
+        <div id="breadcrumbs-go-here"></div>
         #{docbook_style_title doc, title}
       HTML
       html.gsub!(%r{<div id="header">\n<h1>.+?</h1>\n}m, header_start) ||
@@ -84,7 +87,6 @@ module DocbookCompat
       HTML
       result + <<~HTML.strip
         </div>
-        <hr>
         <!--EXTRA-->
       HTML
     end

@@ -65,8 +65,9 @@ export function init_headers(sticky_content, lang_strings) {
   var items = 0;
   var baseHeadingLevel = 0;
 
-  $('#guide a[id]:not([href])').each(
-    function(i, el) {
+  // Get all headings inside the main body of the doc
+  $('div#content a[id]:not([href])').each(
+    function(el, i) {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
 
@@ -252,7 +253,9 @@ function highlight_otp() {
     })
   })
 
-  document.querySelectorAll('#guide a[id]').forEach((heading) => {
+  document.querySelectorAll('div#content a[id]').forEach((heading, i) => {
+    // Skip the first heading since it's not visible
+    if (i === 0) return
     observer.observe(heading);
   })
 }
@@ -346,8 +349,8 @@ $(function() {
 
   AlternativeSwitcher(store());
 
-  // Get all headings
-  const allHeadings = $('#content').find('h1,h2,h3,h4,h5,h6')
+  // Get all headings inside the main body of the doc
+  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6')
   let allLevels = []
   // Create a list of all heading levels used on the page
   allHeadings.each(function(index) {
@@ -370,7 +373,6 @@ $(function() {
       if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
         $(this).replaceWith(`<h3>${contents}</h3>`);
       }
-      console.log(allLevels[2])
       if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
         $(this).replaceWith(`<h4>${contents}</h4>`);
       }
@@ -491,7 +493,7 @@ $(function() {
   var div = $('div.toc');
 
   // Fetch toc.html unless there is already a .toc on the page
-  if (div.length == 0 && $('#guide').find('div.article,div.book').length == 0) {
+  if (div.length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = $.get(url, {}, function(data) {
       left_col.append(data);

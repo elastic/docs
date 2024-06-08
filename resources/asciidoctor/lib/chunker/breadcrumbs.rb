@@ -12,17 +12,18 @@ module Chunker
     include SearchBreadcrumbs
     include ObsBreadcrumbs
 
+    # Return HTML
     def generate_breadcrumbs(doc, section)
       chev = <<~HTML.strip
         <span class="chevron-right">›</span>
       HTML
-      result = ['<div class="breadcrumbs">']
-      result += generate_breadcrumb_links(section, chev).reverse
-      result << '</div>'
-
-      update_breadcrumbs_cases(result, chev, doc)
-
-      Asciidoctor::Block.new doc, :pass, source: result.join("\n")
+      result = <<~HTML.strip
+        <div class="breadcrumbs">
+      HTML
+      result += generate_breadcrumb_links(section, chev)
+      result += <<~HTML.strip
+        </div>
+      HTML
     end
 
     def update_breadcrumbs_cases(result, chev, doc)
@@ -47,20 +48,27 @@ module Chunker
     end
 
     def generate_breadcrumb_links(section, chev)
-      result = []
-      parent = section
-      while (parent = parent.parent)
-        extra = parent.context == :document ? parent.attr('title-extra') : ''
-        link = <<~HTML.strip
-          <span class="breadcrumb-link"><a #{link_href parent}>#{parent.title}#{extra}</a></span>
-        HTML
-        links = chev + link
-        result << links
-      end
-      result << <<~HTML.strip
+      # Add the docs landing page as the first breadcrumb
+      result = <<~HTML.strip
         <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
       HTML
-      result
+      # Build an array of all levels...
+      all = []
+      parent = section
+      while (parent = parent.parent)
+        all << parent
+      end
+      # ... then reverse the array, go through each level,
+      # build a link, and add it to the result
+      result += all.reverse.map { |x| build_link(x, chev) }.join('')
+    end
+
+    def build_link(node, chev)
+      extra = node.context == :document ? node.attr('title-extra') : ''
+      link = <<~HTML.strip
+        <span class="breadcrumb-link"><a #{link_href node}>#{node.title}#{extra}</a></span>
+      HTML
+      links = chev + link
     end
   end
 end

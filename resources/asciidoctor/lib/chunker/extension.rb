@@ -57,6 +57,11 @@ module Chunker
       return yield unless section.level <= @chunk_level
 
       html = form_section_into_page doc, section, yield
+      # Replace the breadcrumbs placeholder with
+      # the generated breadcrumbs
+      html.gsub!(%r{<div id="breadcrumbs-go-here"></div>}m, generate_breadcrumbs(doc, section)) ||
+        raise("Couldn't add breadcrumbs in #{html}")
+
       write doc, "#{section.id}.html", html
       ''
     end
@@ -98,9 +103,7 @@ module Chunker
     end
 
     def add_subdoc_sections(doc, subdoc, section, html)
-      subdoc << generate_breadcrumbs(doc, section)
       nav = Nav.new subdoc
-      subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
       subdoc << footnotes(doc, subdoc) if doc.footnotes?
       subdoc << nav.footer
@@ -121,7 +124,10 @@ module Chunker
     def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['doctitle'] = subdoc_title section, maintitle
+      # Rendered h1 heading
+      attrs['doctitle'] = subdoc_doctitle section
+      # Value of `title` in the `head`
+      attrs['title'] = subdoc_title section, maintitle
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear
@@ -130,13 +136,20 @@ module Chunker
       attrs['stylesheet'] = nil unless attrs['stylesheet']
       attrs['icons'] = nil unless attrs['icons']
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
-      attrs['noheader'] = true
       attrs['title-separator'] = ''
       attrs['canonical-url'] = section.attributes['canonical-url']
       attrs.merge! find_related(section)
       attrs
     end
 
+    # For the `h1` heading that appears on the rendered page,
+    # use just the page title
+    def subdoc_doctitle(section)
+      strip_tags "#{section.captioned_title}"
+    end
+
+    # For the `title` in the `head`, use the page title followed
+    # by the site title ("Elastic")
     def subdoc_title(section, maintitle)
       strip_tags "#{section.captioned_title} | #{maintitle.main}"
     end

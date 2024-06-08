@@ -56,7 +56,7 @@ module DocbookCompat
       <<~HTML
         <div class="#{wrapper_class_for node}#{node.role ? " #{node.role}" : ''}">
         <div class="titlepage"><div><div>
-        <h1 class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h1>
+        <h#{hlevel node} class="title"><a id="#{node.id}"></a>#{node.captioned_title}#{node.attr 'edit_me_link', ''}#{xpack_tag node}</h#{hlevel node}>
         </div></div></div>
         #{node.content}
         </div>
@@ -74,6 +74,23 @@ module DocbookCompat
       return if (node.document.attr 'hide-xpack-tags') == 'true'
 
       '<a class="xpack_tag" href="/subscriptions"></a>'
+    end
+
+    def hlevel(section)
+      # If the heading level is less than 2, use 2,
+      # otherwise use the given heading level.
+      #
+      # This ensures:
+      # - There are no `h0`s, which are not valid HTML elements.
+      # - There are no `h1`s in the page's main content since
+      #   we only want one `h1` per page, and one is generated
+      #   automatically and added to the page header (outside
+      #   div#content).
+      if section.level < 2
+        2
+      else
+        section.level
+      end
     end
 
     SECTION_WRAPPER_CLASSES = %w[part chapter].freeze
