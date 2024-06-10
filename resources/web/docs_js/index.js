@@ -202,10 +202,12 @@ function init_version_selector (lang_strings) {
   }
 
   $(version_selectors).find('select').change(function(e) {
+    console.log('change live version to: ', e.target)
     onVersionChange(e.target)
   })
 
   $(other_version_selectors).find('select').change(function(e) {
+    console.log('change other version to: ', e.target)
     onVersionChange(e.target)
   })
 
@@ -579,6 +581,7 @@ $(function() {
     const right_sidebar_container = $('#right-sidebar-container')
     init_headers(right_sidebar_container, LangStrings);
     highlight_otp();
+    init_version_selector();
     init_toc();
   }
 
