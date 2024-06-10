@@ -521,6 +521,10 @@ $(function() {
       const version_selectors = $('div#version-selectors');
       $('div#version-selectors-full').empty();
       $('div#version-selectors-mid').append(version_selectors);
+      if ($(window).width() <= 766) {
+        $('div#version-selectors-mid').empty();
+        $('div#version-selectors-mobile').append(version_selectors);
+      }
 
       const toc = $("#content div.toc")
       $('#doc-sidebar').append(toc)
