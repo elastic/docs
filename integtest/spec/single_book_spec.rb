@@ -325,7 +325,7 @@ RSpec.describe 'building a single book' do
         <a class="xpack_tag" href="/subscriptions"></a>
       HTML
     end
-    let(:rx) { %r{<h1 class="title"><a id="#{id}"></a>(.+?)</h1>} }
+    let(:rx) { %r{<#{h} class="title"><a id="#{id}"></a>(.+?)</#{h}>} }
     let(:title_tag) do
       return unless body
 
