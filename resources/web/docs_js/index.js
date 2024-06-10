@@ -202,12 +202,10 @@ function init_version_selector (lang_strings) {
   }
 
   $(version_selectors).find('select').change(function(e) {
-    console.log('change live version to: ', e.target)
     onVersionChange(e.target)
   })
 
   $(other_version_selectors).find('select').change(function(e) {
-    console.log('change other version to: ', e.target)
     onVersionChange(e.target)
   })
 
@@ -382,7 +380,6 @@ $(function() {
       if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
         $(this).replaceWith(`<h3>${contents}</h3>`);
       }
-      console.log(allLevels[2])
       if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
         $(this).replaceWith(`<h4>${contents}</h4>`);
       }
