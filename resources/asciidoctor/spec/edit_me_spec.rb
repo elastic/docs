@@ -166,7 +166,7 @@ RSpec.describe EditMe do
       it 'uses the longest match' do
         link = edit_link 'www.example.com/section2'
         expect(converted).to include <<~HTML
-          <h1 class="title"><a id="_section_2"></a>Section 2#{link}</h1>
+          <h2 class="title"><a id="_section_2"></a>Section 2#{link}</h2>
         HTML
       end
     end
@@ -188,7 +188,7 @@ RSpec.describe EditMe do
       end
       it "doesn't have an edit me link" do
         expect(converted).to include <<~HTML
-          <h1 class="title"><a id="_section_2"></a>Section 2</h1>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>
         HTML
       end
     end
@@ -320,7 +320,7 @@ RSpec.describe EditMe do
       it 'uses the longest match' do
         link = edit_link 'www.example.com/section2'
         expect(converted).to include <<~HTML
-          <h1 class="title"><a id="_section_2"></a>Section 2#{link}</h1>
+          <h2 class="title"><a id="_section_2"></a>Section 2#{link}</h2>
         HTML
       end
     end
@@ -345,7 +345,7 @@ RSpec.describe EditMe do
       end
       it "doesn't have an edit me link" do
         expect(converted).to include <<~HTML
-          <h1 class="title"><a id="_section_2"></a>Section 2</h1>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>
         HTML
       end
     end

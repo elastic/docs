@@ -616,7 +616,7 @@ RSpec.describe DocbookCompat do
   end
 
   context 'sections' do
-    shared_examples 'section basics' do |wrapper_class, id, title|
+    shared_examples 'section basics' do |wrapper_class, hlevel, id, title|
       context 'the wrapper' do
         it "has the '#{wrapper_class}' class" do
           expect(converted).to include(<<~HTML.strip)
@@ -636,7 +636,7 @@ RSpec.describe DocbookCompat do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage"><div><div>
-            <h1 class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h1>
+            <h#{hlevel} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{hlevel}>
             </div></div></div>
           HTML
         end
@@ -649,7 +649,7 @@ RSpec.describe DocbookCompat do
           == Section
         ASCIIDOC
       end
-      include_examples 'section basics', 'chapter', '_section', 'Section'
+      include_examples 'section basics', 'chapter', 1, '_section', 'Section'
       context 'with the xpack role' do
         let(:input) do
           <<~ASCIIDOC
@@ -657,7 +657,7 @@ RSpec.describe DocbookCompat do
             == S1
           ASCIIDOC
         end
-        include_examples 'section basics', 'chapter xpack', '_s1', 'S1'
+        include_examples 'section basics', 'chapter xpack', 1, '_s1', 'S1'
         context 'with the hide-xpack-tags attribute' do
           let(:input) do
             <<~ASCIIDOC
@@ -670,7 +670,7 @@ RSpec.describe DocbookCompat do
           # Because the block is marked with the `xpack` role, the surrounding
           # <div> will still have the "xpack" class. But the clickable icon
           # should be hidden.
-          include_examples 'section basics', 'chapter xpack',
+          include_examples 'section basics', 'chapter xpack', 1,
                            '_some_xpack_feature', 'Some XPack Feature'
         end
       end
@@ -682,7 +682,7 @@ RSpec.describe DocbookCompat do
           === Section 2
         ASCIIDOC
       end
-      include_examples 'section basics', 'section', '_section_2', 'Section 2'
+      include_examples 'section basics', 'section', 2, '_section_2', 'Section 2'
       context 'with the xpack role' do
         let(:input) do
           <<~ASCIIDOC
@@ -690,7 +690,7 @@ RSpec.describe DocbookCompat do
             === S2
           ASCIIDOC
         end
-        include_examples 'section basics', 'section xpack', '_s2', 'S2'
+        include_examples 'section basics', 'section xpack', 2, '_s2', 'S2'
       end
     end
 
@@ -700,7 +700,7 @@ RSpec.describe DocbookCompat do
           ==== Section 3
         ASCIIDOC
       end
-      include_examples 'section basics', 'section', '_section_3', 'Section 3'
+      include_examples 'section basics', 'section', 3, '_section_3', 'Section 3'
       context 'with the xpack role' do
         let(:input) do
           <<~ASCIIDOC
@@ -708,7 +708,7 @@ RSpec.describe DocbookCompat do
             ==== S3
           ASCIIDOC
         end
-        include_examples 'section basics', 'section xpack', '_s3', 'S3'
+        include_examples 'section basics', 'section xpack', 3, '_s3', 'S3'
       end
     end
 
@@ -724,13 +724,13 @@ RSpec.describe DocbookCompat do
           === L2
         ASCIIDOC
       end
-      include_examples 'section basics', 'part', '_section', 'Section'
+      include_examples 'section basics', 'part', 1, '_section', 'Section'
       it "bumps the h tag of it's children" do
-        expect(converted).to include 'L1</h1>'
+        expect(converted).to include 'L1</h2>'
       end
       it "doesn't bump the h tag of it's children's children" do
         # Docbook doesn't seem to do this
-        expect(converted).to include 'L2</h1>'
+        expect(converted).to include 'L2</h2>'
       end
       context 'with the xpack role' do
         let(:input) do
@@ -743,7 +743,7 @@ RSpec.describe DocbookCompat do
             == Chapter
           ASCIIDOC
         end
-        include_examples 'section basics', 'part xpack', '_s1', 'S1'
+        include_examples 'section basics', 'part xpack', 1, '_s1', 'S1'
       end
     end
 
@@ -755,7 +755,7 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      include_examples 'section basics', 'preface', '_preface', 'Preface'
+      include_examples 'section basics', 'preface', 1, '_preface', 'Preface'
       context 'with the xpack role' do
         let(:input) do
           <<~ASCIIDOC
@@ -763,7 +763,7 @@ RSpec.describe DocbookCompat do
             == P
           ASCIIDOC
         end
-        include_examples 'section basics', 'preface xpack', '_p', 'P'
+        include_examples 'section basics', 'preface xpack', 1, '_p', 'P'
       end
     end
 
@@ -775,7 +775,7 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      include_examples 'section basics', 'appendix', '_foo',
+      include_examples 'section basics', 'appendix', 1, '_foo',
                        'Appendix A: Foo'
       context 'with the xpack role' do
         let(:input) do
@@ -784,7 +784,7 @@ RSpec.describe DocbookCompat do
             == Foo
           ASCIIDOC
         end
-        include_examples 'section basics', 'appendix xpack', '_foo',
+        include_examples 'section basics', 'appendix xpack', 1, '_foo',
                          'Appendix A: Foo'
       end
       context 'with level 0' do
@@ -798,7 +798,7 @@ RSpec.describe DocbookCompat do
             == Bar
           ASCIIDOC
         end
-        include_examples 'section basics', 'appendix', '_foo',
+        include_examples 'section basics', 'appendix', 1, '_foo',
                          'Appendix A: Foo'
         it "doesn't bump the h tags of sections within it" do
           expect(converted).to include 'Bar</h1>'
