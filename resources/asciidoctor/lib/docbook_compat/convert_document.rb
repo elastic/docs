@@ -25,7 +25,7 @@ module DocbookCompat
     def munge_html(doc, html, wants_toc)
       title = doc.doctitle partition: true
       munge_html_tag html
-      munge_head doc.attr('title-extra'), title, html
+      munge_head doc.attr('title-extra'), html
       munge_body doc, html
       munge_title doc, title, html
       add_toc doc, html if wants_toc
@@ -36,15 +36,26 @@ module DocbookCompat
         raise("Coudn't fix html in #{html}")
     end
 
-    def munge_head(title_extra, title, html)
-      html.gsub!(
-        %r{<title>.+?</title>}m, <<~HTML
-          <title>#{strip_tags title.main}#{title_extra} | Elastic</title>
-          <meta class=\"elastic\" name=\"content\" \
-          content=\"#{strip_tags title.main}#{title_extra}\">
-        HTML
-      ) || raise("Couldn't munge <title> in #{html}")
+    def munge_head(title_extra, html)
+      if html !~ %r{^<title>([\S\s]+)<\/title>$}m
+        raise("Couldn't munge <title> in #{html}")
+      end
+
+      html.gsub!(%r{^<title>([\S\s]+)<\/title>$}m) do
+        add_content_meta Regexp.last_match[1], title_extra
+      end
       munge_meta html
+    end
+
+    def add_content_meta(match, title_extra)
+      # If multiple lines, get just the first line
+      clean_title = match.gsub!(/\n[\S\s]+/, '') || match
+      clean_title = strip_tags clean_title
+      <<~HTML
+        <title>#{clean_title}#{title_extra} | Elastic</title>
+        <meta class=\"elastic\" name=\"content\" \
+        content=\"#{clean_title}#{title_extra}\">
+      HTML
     end
 
     META_VIEWPORT = <<~HTML
@@ -61,7 +72,6 @@ module DocbookCompat
     end
 
     def munge_title(doc, title, html)
-
       # Important: we're not replacing the whole header - it still will have a
       # closing </div>.
       #

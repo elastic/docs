@@ -13,7 +13,7 @@ module Chunker
     include ObsBreadcrumbs
 
     # Return HTML
-    def generate_breadcrumbs(doc, section)
+    def generate_breadcrumbs(section)
       chev = <<~HTML.strip
         <span class="chevron-right">›</span>
       HTML
@@ -21,7 +21,7 @@ module Chunker
         <div class="breadcrumbs">
       HTML
       result += generate_breadcrumb_links(section, chev)
-      result += <<~HTML.strip
+      result + <<~HTML.strip
         </div>
       HTML
     end
@@ -60,7 +60,7 @@ module Chunker
       end
       # ... then reverse the array, go through each level,
       # build a link, and add it to the result
-      result += all.reverse.map { |x| build_link(x, chev) }.join('')
+      result + all.reverse.map { |x| build_link(x, chev) }.join('')
     end
 
     def build_link(node, chev)
@@ -68,7 +68,7 @@ module Chunker
       link = <<~HTML.strip
         <span class="breadcrumb-link"><a #{link_href node}>#{node.title}#{extra}</a></span>
       HTML
-      links = chev + link
+      chev + link
     end
   end
 end

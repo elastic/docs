@@ -77,11 +77,11 @@ export function init_headers(sticky_content, lang_strings) {
         // Assume initial heading is an H1, but adjust if it's not
         let hLevel = 0;
         if ($(this).parent().is("h2")){
-          hLevel = 1;
+          hLevel = 0;
         } else if ($(this).parent().is("h3")){
-          hLevel = 2;
+          hLevel = 1;
         } else if ($(this).parent().is("h4")){
-          hLevel = 3;
+          hLevel = 2;
         }
 
         // Set the base heading level for the page to the title page level + 1

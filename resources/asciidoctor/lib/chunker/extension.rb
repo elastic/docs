@@ -59,9 +59,13 @@ module Chunker
       html = form_section_into_page doc, section, yield
       # Replace the breadcrumbs placeholder with
       # the generated breadcrumbs
-      html.gsub!(%r{<div id="breadcrumbs-go-here"></div>}m, generate_breadcrumbs(doc, section)) ||
-        raise("Couldn't add breadcrumbs in #{html}")
-
+      if html =~ %r{<div id="breadcrumbs-go-here"></div>}
+        html.gsub!(
+          %r{<div id="breadcrumbs-go-here"></div>},
+          generate_breadcrumbs(section)
+        )
+        # raise("Couldn't add breadcrumbs in #{html}")
+      end
       write doc, "#{section.id}.html", html
       ''
     end
@@ -98,12 +102,13 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
-      add_subdoc_sections doc, subdoc, section, html
+      add_subdoc_sections doc, subdoc, html
       subdoc.convert
     end
 
-    def add_subdoc_sections(doc, subdoc, section, html)
+    def add_subdoc_sections(doc, subdoc, html)
       nav = Nav.new subdoc
+      subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
       subdoc << footnotes(doc, subdoc) if doc.footnotes?
       subdoc << nav.footer
@@ -145,7 +150,7 @@ module Chunker
     # For the `h1` heading that appears on the rendered page,
     # use just the page title
     def subdoc_doctitle(section)
-      strip_tags "#{section.captioned_title}"
+      strip_tags section.captioned_title.to_s
     end
 
     # For the `title` in the `head`, use the page title followed
