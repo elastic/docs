@@ -67,7 +67,7 @@ export function init_headers(sticky_content, lang_strings) {
 
   // Get all headings inside the main body of the doc
   $('div#content a[id]:not([href])').each(
-    function(el, i) {
+    function(i) {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
 
