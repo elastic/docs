@@ -20,8 +20,10 @@ module Chunker
       result = <<~HTML.strip
         <div class="breadcrumbs">
       HTML
+      result += "\n"
       result += generate_breadcrumb_links(section, chev)
-      result + <<~HTML.strip
+      result += "\n"
+      result += <<~HTML.strip
         </div>
       HTML
     end
@@ -52,6 +54,7 @@ module Chunker
       result = <<~HTML.strip
         <span class="breadcrumb-link"><a href="/guide/">Elastic Docs</a></span>
       HTML
+      result += "\n"
       # Build an array of all levels...
       all = []
       parent = section
@@ -60,7 +63,7 @@ module Chunker
       end
       # ... then reverse the array, go through each level,
       # build a link, and add it to the result
-      result + all.reverse.map { |x| build_link(x, chev) }.join('')
+      result + all.reverse.map { |x| build_link(x, chev) }.join("\n")
     end
 
     def build_link(node, chev)
