@@ -23,7 +23,7 @@ module Chunker
       result += "\n"
       result += generate_breadcrumb_links(section, chev)
       result += "\n"
-      result += <<~HTML.strip
+      result + <<~HTML.strip
         </div>
       HTML
     end

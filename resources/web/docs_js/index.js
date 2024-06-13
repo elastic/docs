@@ -63,7 +63,6 @@ export function init_headers(sticky_content, lang_strings) {
   this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
-  var baseHeadingLevel = 0;
 
   // Get all headings inside the main body of the doc
   $('div#content a[id]:not([href])').each(
@@ -84,19 +83,12 @@ export function init_headers(sticky_content, lang_strings) {
           hLevel = 2;
         }
 
-        // Set the base heading level for the page to the title page level + 1
-        // This ensures top level headings aren't nested
-        if (i === 0){
-          baseHeadingLevel = hLevel + 1;
-        }
-
         // Build list items for all headings except the page title
         if (0 < items++) {
           title_container.find('a,.added,.coming,.deprecated,.experimental')
             .remove();
           var text = title_container.html();
-          const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const li = '<li id="otp-text-' + i + '" class="heading-level-' + hLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
