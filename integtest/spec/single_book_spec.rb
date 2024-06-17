@@ -314,8 +314,6 @@ RSpec.describe 'building a single book' do
     end
   end
 
-  # Do we still need the xpack tag tests?
-
   context 'for README.asciidoc' do
     convert_single_before_context do |src|
       root = File.expand_path('../../', __dir__)

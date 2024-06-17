@@ -359,14 +359,6 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      # context 'the title' do
-      #   it "doesn't include the subtitle" do
-      #     expect(converted).to include(<<~HTML)
-      #       <title>Title | Elastic</title>
-      #       <meta class="elastic" name="content" content="Title">
-      #     HTML
-      #   end
-      # end
       context 'the header' do
         it 'includes the title and subtitle' do
           expect(converted).to include(<<~HTML)
