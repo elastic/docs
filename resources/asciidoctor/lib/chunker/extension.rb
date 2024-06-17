@@ -62,7 +62,7 @@ module Chunker
       if html =~ %r{<div id="breadcrumbs-go-here"></div>}
         html.gsub!(
           %r{<div id="breadcrumbs-go-here"></div>},
-          generate_breadcrumbs(section)
+          generate_breadcrumbs(doc, section).to_s
         )
         # raise("Couldn't add breadcrumbs in #{html}")
       end
