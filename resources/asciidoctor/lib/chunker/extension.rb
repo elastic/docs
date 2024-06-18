@@ -55,7 +55,6 @@ module Chunker
     def convert_section(section)
       doc = section.document
       return yield unless section.level <= @chunk_level
-
       html = form_section_into_page doc, section, yield
       # Replace the breadcrumbs placeholder with
       # the generated breadcrumbs
@@ -66,6 +65,7 @@ module Chunker
         )
         # raise("Couldn't add breadcrumbs in #{html}")
       end
+      html.gsub!(%r{</h1>}, "#{section.attr('edit_me_link', '')}</h1>")
       write doc, "#{section.id}.html", html
       ''
     end
