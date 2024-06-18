@@ -493,7 +493,7 @@ sub write_nginx_test_config {
     my $web_conf;
     if ( $watching_web ) {
         $web_conf = <<"CONF"
-    rewrite ^/guide/static/docs\\.js(.*)\$ /guide/static/docs_js/index-v1.js\$1 last;
+    rewrite ^/guide/static/docs-v1\\.js(.*)\$ /guide/static/docs_js/index-v1.js\$1 last;
     location ^~ /guide/static/jquery.js {
       alias /node_modules/jquery/dist/jquery.js;
       types {
