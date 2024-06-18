@@ -115,7 +115,7 @@ function describeInitHeaders(name, guideBody, onThisPageAssertions) {
   describe(name, () => {
     beforeEach(() => {
       document.body.innerHTML = dedent `
-        <div id="content">
+        <div id="guide">
           ${guideBody}
         </div>
         <div id="right_col">
@@ -142,28 +142,28 @@ describe('On This Page', () => {
   `;
   const oneSubsection = dedent `
     ${onlyTitle}
-    <h2>
+    <h3>
       <a id="nrt"></a>
       Near Realtime (NRT)
-    </h2>
+    </h3>
   `;
   const twoSubsections = dedent `
     ${oneSubsection}
-    <h2>
+    <h3>
       <a id="cluster"></a>
       Cluster
-    </h2>
+    </h3>
   `;
   const fourSubsections = dedent `
     ${twoSubsections}
-    <h3>
+    <h4>
       <a id="observability"></a>
       Observability
-    </h3>
-    <h2>
+    </h4>
+    <h3>
       <a id="apm"></a>
       APM
-    </h2>
+    </h3>
   `;
 
   describeInitHeaders('for page with just a title', onlyTitle, () => {
