@@ -63,10 +63,10 @@ export function init_headers(sticky_content, lang_strings) {
   this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
+  var baseHeadingLevel = 0;
 
-  // Get all headings inside the main body of the doc
-  $('div#content a[id]:not([href])').each(
-    function(i) {
+  $('#guide a[id]:not([href])').each(
+    function(i, el) {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
 
@@ -76,11 +76,17 @@ export function init_headers(sticky_content, lang_strings) {
         // Assume initial heading is an H1, but adjust if it's not
         let hLevel = 0;
         if ($(this).parent().is("h2")){
-          hLevel = 0;
-        } else if ($(this).parent().is("h3")){
           hLevel = 1;
-        } else if ($(this).parent().is("h4")){
+        } else if ($(this).parent().is("h3")){
           hLevel = 2;
+        } else if ($(this).parent().is("h4")){
+          hLevel = 3;
+        }
+
+        // Set the base heading level for the page to the title page level + 1
+        // This ensures top level headings aren't nested
+        if (i === 0){
+          baseHeadingLevel = hLevel + 1;
         }
 
         // Build list items for all headings except the page title
@@ -88,7 +94,8 @@ export function init_headers(sticky_content, lang_strings) {
           title_container.find('a,.added,.coming,.deprecated,.experimental')
             .remove();
           var text = title_container.html();
-          const li = '<li id="otp-text-' + i + '" class="heading-level-' + hLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const adjustedLevel = hLevel - baseHeadingLevel;
+          const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
@@ -245,9 +252,7 @@ function highlight_otp() {
     })
   })
 
-  document.querySelectorAll('div#content a[id]').forEach((heading, i) => {
-    // Skip the first heading since it's not visible
-    if (i === 0) return
+  document.querySelectorAll('#guide a[id]').forEach((heading) => {
     observer.observe(heading);
   })
 }
@@ -340,42 +345,6 @@ $(function() {
   mount($('body'), Modal);
 
   AlternativeSwitcher(store());
-
-  // Get all headings inside the main body of the doc
-  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6')
-  let allLevels = []
-  // Create a list of all heading levels used on the page
-  allHeadings.each(function(index) {
-    // Don't include the first heading because that's the title
-    if (index === 0) return;
-    if (!allLevels.includes($(this).prop('nodeName'))) allLevels.push($(this).prop('nodeName'));
-  })
-  // Update the heading level to be incremental
-  // (i.e. the first heading after the title should be an h2 and
-  // then deeper levels should be adjusted so they are incremental)
-  allHeadings.each(function(index) {
-    const currentHeading = $(this)
-    const contents = currentHeading.prop('innerHTML')
-    // Don't include the first heading because that's the
-    // title and we always want that to be an h1
-    if (index > 0) {
-      if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
-        $(this).replaceWith(`<h2>${contents}</h2>`);
-      }
-      if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
-        $(this).replaceWith(`<h3>${contents}</h3>`);
-      }
-      if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
-        $(this).replaceWith(`<h4>${contents}</h4>`);
-      }
-      if (allLevels[3] && ($(this).prop('nodeName') === allLevels[3])) {
-        $(this).replaceWith(`<h5>${contents}</h5>`);
-      }
-      if (allLevels[4] && ($(this).prop('nodeName') === allLevels[4])) {
-        $(this).replaceWith(`<h6>${contents}</h6>`);
-      }
-    }
-  })
 
   // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)
   // handle interaction with the dropdown
@@ -485,7 +454,7 @@ $(function() {
   var div = $('div.toc');
 
   // Fetch toc.html unless there is already a .toc on the page
-  if (div.length == 0) {
+  if (div.length == 0 && $('#guide').find('div.article,div.book').length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = $.get(url, {}, function(data) {
       left_col.append(data);

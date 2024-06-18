@@ -195,7 +195,7 @@ RSpec.describe ElasticCompatPreprocessor do
     end
     it 'uses the attributes for the header' do
       expect(converted).to include <<~HTML
-        <h2 class="title"><a id="foo-bar"></a>Header</h2>
+        <h1 class="title"><a id="foo-bar"></a>Header</h1>
       HTML
     end
     it 'uses the attributes outside of the header' do
@@ -299,7 +299,7 @@ RSpec.describe ElasticCompatPreprocessor do
         expect(converted).to eq <<~HTML
           <div class="chapter">
           <div class="titlepage"><div><div>
-          <h2 class="title"><a id="_example"></a>Example</h2>
+          <h1 class="title"><a id="_example"></a>Example</h1>
           </div></div></div>
 
           </div>
@@ -340,7 +340,7 @@ RSpec.describe ElasticCompatPreprocessor do
         expect(converted).to eq <<~HTML
           <div class="chapter">
           <div class="titlepage"><div><div>
-          <h2 class="title"><a id="_example"></a>Example</h2>
+          <h1 class="title"><a id="_example"></a>Example</h1>
           </div></div></div>
 
           </div>
@@ -470,7 +470,7 @@ RSpec.describe ElasticCompatPreprocessor do
     end
     it 'has the right offset' do
       expect(converted).to include <<~HTML
-        <h2 class="title"><a id="_target"></a>Target</h2>
+        <h1 class="title"><a id="_target"></a>Target</h1>
       HTML
     end
   end
