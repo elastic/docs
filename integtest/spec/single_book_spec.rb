@@ -314,6 +314,134 @@ RSpec.describe 'building a single book' do
     end
   end
 
+  context 'regarding the xpack tag' do
+    let(:edit_me) do
+      <<~HTML.strip
+        <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="https://github.com/elastic/docs/edit/master/index.asciidoc">edit</a>
+      HTML
+    end
+    let(:xpack_tag) do
+      <<~HTML.strip
+        <a class="xpack_tag" href="/subscriptions"></a>
+      HTML
+    end
+    let(:rx) { %r{<#{h} class="title"><a id="#{id}"></a>(.+?)</#{h}>} }
+    let(:title_tag) do
+      return unless body
+
+      m = rx.match(body)
+      raise "Can't find title_tag with #{rx} in #{body}" unless m
+
+      m[1]
+    end
+    shared_examples 'xpack tag title' do |has_tag|
+      it 'contains the edit_me link' do
+        expect(title_tag).to include(edit_me)
+      end
+      if has_tag
+        it 'contains the xpack tag' do
+          expect(title_tag).to include(xpack_tag)
+        end
+      else
+        it "doesn't contain the xpack tag" do
+          expect(title_tag).not_to include(xpack_tag)
+        end
+      end
+    end
+    shared_examples 'part page titles' do |onpart|
+      page_context 'part.html' do
+        let(:h) { 'h1' }
+        let(:id) { 'part' }
+        include_examples 'xpack tag title', onpart
+      end
+    end
+    shared_examples 'chapter page titles' do |onchapter, onfloater, onsection|
+      page_context 'chapter.html' do
+        let(:h) { 'h2' }
+        context 'the chapter title' do
+          let(:id) { 'chapter' }
+          include_examples 'xpack tag title', onchapter
+        end
+        context 'the section title' do
+          let(:id) { 'section' }
+          include_examples 'xpack tag title', onsection
+        end
+        context 'the float title' do
+          let(:rx) { %r{<h2><a id="floater"></a>(.+?)</h2>} }
+          include_examples 'xpack tag title', onfloater
+        end
+      end
+    end
+
+    def self.xpack_tag_context(onpart, onchapter, onfloater, onsection,
+                               hide_xpack)
+      convert_single_before_context do |src|
+        index = xpack_tag_test_asciidoc onpart, onchapter, onfloater, onsection,
+                                        hide_xpack
+        src.write 'index.asciidoc', index
+      end
+
+      include_examples 'part page titles',
+                       onpart && !hide_xpack
+      include_examples 'chapter page titles', onchapter && !hide_xpack,
+                       onfloater && !hide_xpack, onsection && !hide_xpack
+    end
+
+    def self.xpack_tag_test_asciidoc(onpart, onchapter, onfloater, onsection,
+                                     hide_xpack)
+      <<~ASCIIDOC
+        = Title
+
+        #{hide_xpack ? ':hide-xpack-tags: true' : ''}
+
+        #{onpart ? '[role="xpack"]' : ''}
+        [[part]]
+        = Part
+
+        #{onchapter ? '[role="xpack"]' : ''}
+        [[chapter]]
+        == Chapter
+
+        Chapter words.
+
+        [[floater]]
+        [float]
+        == #{onfloater ? '[xpack]#Floater#' : 'Floater'}
+
+        Floater words.
+
+        #{onsection ? '[role="xpack"]' : ''}
+        [[section]]
+        === Section
+
+        Section words.
+      ASCIIDOC
+    end
+
+    context 'when not hiding xpack tags' do
+      context 'when the xpack role is on a part' do
+        xpack_tag_context true, false, false, false, false
+      end
+      context 'when the xpack role is on a chapter' do
+        xpack_tag_context false, true, false, false, false
+      end
+      context 'when the xpack role is on a floating title' do
+        xpack_tag_context false, false, true, false, false
+      end
+      context 'when the xpack role is on a section' do
+        xpack_tag_context false, false, false, true, false
+      end
+      context 'when the xpack role is on everything' do
+        xpack_tag_context true, true, true, true, false
+      end
+    end
+    context 'when hiding xpack tags' do
+      context 'when the xpack role is on everything' do
+        xpack_tag_context true, true, true, true, true
+      end
+    end
+  end
+
   context 'for README.asciidoc' do
     convert_single_before_context do |src|
       root = File.expand_path('../../', __dir__)
