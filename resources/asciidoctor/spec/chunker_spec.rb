@@ -175,7 +175,7 @@ RSpec.describe Chunker do
             HTML
           end
           it "doesn't contain breadcrumbs" do
-            expect(converted).not_to include('<div class="breadcrumbs">')
+            expect(converted).not_to include('<div class="breadcrumb-container"><div class="breadcrumbs">')
           end
           it "doesn't contain any footnotes" do
             expect(converted).not_to include('<div id="footnotes">')
@@ -195,14 +195,6 @@ RSpec.describe Chunker do
           it 'contains the contents' do
             expect(contents).to include <<~HTML
               <p>Words words.<sup class="footnote">[<a id="_footnoteref_1" class="footnote" href="#_footnotedef_1" title="View footnote.">1</a>]</sup></p>
-            HTML
-          end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
           it 'contains a link to the second section' do
@@ -236,14 +228,6 @@ RSpec.describe Chunker do
           it 'contains the contents' do
             expect(contents).to include '<p>Words again.</p>'
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
-          end
           it 'contains a link to an element in the first section' do
             expect(contents).to include(
               '<a href="s1.html#linkme">override text</a>'
@@ -260,6 +244,36 @@ RSpec.describe Chunker do
               </div>
               </div>
             HTML
+          end
+        end
+        context 'breadcrumbs' do
+          before(:each) do
+            # We need docbook compat to verify breadcrumbs
+            # We unregister_all first because the order that we
+            # register the plugins matters.
+            Asciidoctor::Extensions.unregister_all
+            Asciidoctor::Extensions.register DocbookCompat
+            Asciidoctor::Extensions.register Chunker
+          end
+          file_context 'the first section', 's1.html' do
+            it 'contains the breadcrumbs' do
+              expect(contents).to include <<~HTML
+                <div class="breadcrumb-container"><div class="breadcrumbs">
+                <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                </div><div id="version-selectors-mid"></div></div>
+              HTML
+            end
+          end
+          file_context 'the second section', 's2.html' do
+            it 'contains the breadcrumbs' do
+              expect(contents).to include <<~HTML
+                <div class="breadcrumb-container"><div class="breadcrumbs">
+                <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                </div><div id="version-selectors-mid"></div></div>
+              HTML
+            end
           end
         end
       end
@@ -402,13 +416,25 @@ RSpec.describe Chunker do
           include_examples 'standard page', 'index', nil
           let(:prev_title) { 'Title [fooo]' }
           include_examples 'subpage'
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title [fooo]</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
+        end
+        context 'breadcrumbs' do
+          before(:each) do
+            # We need docbook compat to verify breadcrumbs
+            # We unregister_all first because the order that we
+            # register the plugins matters.
+            Asciidoctor::Extensions.unregister_all
+            Asciidoctor::Extensions.register DocbookCompat
+            Asciidoctor::Extensions.register Chunker
+          end
+          file_context 'the section', 's1.html' do
+            it 'contains the breadcrumbs' do
+              expect(contents).to include <<~HTML
+                <div class="breadcrumb-container"><div class="breadcrumbs">
+                <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title [fooo]</a></span>
+                </div><div id="version-selectors-mid"></div></div>
+              HTML
+            end
           end
         end
       end
@@ -508,7 +534,7 @@ RSpec.describe Chunker do
           end
           it 'contains the heading' do
             expect(contents).to include(
-              '<h1 class="title"><a id="s"></a>Section: With subtitle</h1>'
+              '<h1 class="title"><a id="id-1"></a>Section: With subtitle</h1>'
             )
           end
           it 'contains the contents' do
@@ -518,7 +544,7 @@ RSpec.describe Chunker do
           end
           it 'contains the breadcrumbs' do
             expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
+              <div class="breadcrumb-container"><div class="breadcrumb-container"><div class="breadcrumbs">
               <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
               <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
               </div><div id="version-selectors-mid"></div></div>
@@ -628,14 +654,6 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s1">S1</h2>')
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
-          end
           it 'contains a link to the level 3 section' do
             expect(contents).to include('<a href="s2_1.html#s2_1_1">S2_1_1</a>')
           end
@@ -646,29 +664,12 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s1_1">S1_1</h3>')
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s1.html">S1</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
-          end
         end
         file_context 'the second level 1 section', 's2.html' do
           include_examples 'standard page', 's1_1', 's2_1'
           include_examples 'subpage'
           it 'contains the heading' do
             expect(contents).to include('<h2 id="s2">S2</h2>')
-          end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
           end
         end
         file_context 'the second level 2 section', 's2_1.html' do
@@ -680,15 +681,6 @@ RSpec.describe Chunker do
           it 'contains the level 3 section' do
             expect(contents).to include('<h4 id="s2_1_1">S2_1_1</h4>')
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
-          end
         end
         file_context 'the last level 2 section', 's2_2.html' do
           include_examples 'standard page', 's2_1', nil
@@ -696,14 +688,68 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h3 id="s2_2">S2_2</h3>')
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
+        end
+        context 'breadcrumbs' do
+          before(:each) do
+            # We need docbook compat to verify breadcrumbs
+            # We unregister_all first because the order that we
+            # register the plugins matters.
+            Asciidoctor::Extensions.unregister_all
+            Asciidoctor::Extensions.register DocbookCompat
+            Asciidoctor::Extensions.register Chunker
+          end
+          file_context 'the first level 1 section', 's1.html' do
+            it 'contains the breadcrumbs' do
+              expect(contents).to include <<~HTML
+                <div class="breadcrumb-container"><div class="breadcrumbs">
+                <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                </div><div id="version-selectors-mid"></div></div>
+              HTML
+            end
+            file_context 'the first level 2 section', 's1_1.html' do
+              it 'contains the breadcrumbs' do
+                expect(contents).to include <<~HTML
+                  <div class="breadcrumb-container"><div class="breadcrumbs">
+                  <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s1.html">S1</a></span>
+                  </div><div id="version-selectors-mid"></div></div>
+                HTML
+              end
+            end
+            file_context 'the second level 1 section', 's2.html' do
+              it 'contains the breadcrumbs' do
+                expect(contents).to include <<~HTML
+                  <div class="breadcrumb-container"><div class="breadcrumbs">
+                  <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                  </div><div id="version-selectors-mid"></div></div>
+                HTML
+              end
+            end
+            file_context 'the second level 2 section', 's2_1.html' do
+              it 'contains the breadcrumbs' do
+                expect(contents).to include <<~HTML
+                  <div class="breadcrumb-container"><div class="breadcrumbs">
+                  <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
+                  </div><div id="version-selectors-mid"></div></div>
+                HTML
+              end
+            end
+            file_context 'the last level 2 section', 's2_2.html' do
+              it 'contains the breadcrumbs' do
+                expect(contents).to include <<~HTML
+                  <div class="breadcrumb-container"><div class="breadcrumbs">
+                  <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="s2.html">S2</a></span>
+                  </div><div id="version-selectors-mid"></div></div>
+                HTML
+              end
+            end
           end
         end
       end
@@ -762,14 +808,6 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h2 id="app">Appendix A: Foo</h2>')
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
-          end
         end
         file_context 'the first page in the appendix', 'app_1.html' do
           include_examples 'standard page', 'app', 'app_2'
@@ -779,15 +817,6 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h3 id="app_1">Foo 1</h3>')
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
-          end
         end
         file_context 'the first page in the appendix', 'app_2.html' do
           include_examples 'standard page', 'app_1', nil
@@ -796,14 +825,47 @@ RSpec.describe Chunker do
           it 'contains the heading' do
             expect(contents).to include('<h3 id="app_2">Foo 2</h3>')
           end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
-              </div><div id="version-selectors-mid"></div></div>
-            HTML
+        end
+        context 'breadcrumbs' do
+          before(:each) do
+            # We need docbook compat to verify breadcrumbs
+            # We unregister_all first because the order that we
+            # register the plugins matters.
+            Asciidoctor::Extensions.unregister_all
+            Asciidoctor::Extensions.register DocbookCompat
+            Asciidoctor::Extensions.register Chunker
+          end
+          file_context 'the appendix', 'app.html' do
+            it 'contains the breadcrumbs' do
+              expect(contents).to include <<~HTML
+                <div class="breadcrumb-container"><div class="breadcrumbs">
+                <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                </div><div id="version-selectors-mid"></div></div>
+              HTML
+            end
+            file_context 'the first page in the appendix', 'app_1.html' do
+              it 'contains the breadcrumbs' do
+                expect(contents).to include <<~HTML
+                  <div class="breadcrumb-container"><div class="breadcrumbs">
+                  <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
+                  </div><div id="version-selectors-mid"></div></div>
+                HTML
+              end
+            end
+            file_context 'the first page in the appendix', 'app_2.html' do
+              it 'contains the breadcrumbs' do
+                expect(contents).to include <<~HTML
+                  <div class="breadcrumb-container"><div class="breadcrumbs">
+                  <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
+                  <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="app.html">Foo</a></span>
+                  </div><div id="version-selectors-mid"></div></div>
+                HTML
+              end
+            end
           end
         end
       end

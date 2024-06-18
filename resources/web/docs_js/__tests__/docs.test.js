@@ -160,10 +160,10 @@ describe('On This Page', () => {
       <a id="observability"></a>
       Observability
     </h3>
-    <h4>
+    <h2>
       <a id="apm"></a>
       APM
-    </h4>
+    </h2>
   `;
 
   function existsAssertions() {

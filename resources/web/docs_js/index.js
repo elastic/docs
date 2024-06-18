@@ -62,42 +62,32 @@ export function init_headers(right_col, lang_strings) {
   this_page.addClass('not-empty');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
-  var baseHeadingLevel = 0;
 
-  $('main#page-template-inner').find('h1,h2,h3,h4').each(
+  // Get all headings inside the main body of the doc
+  $('div#content a[id]:not([href])').each(
     function(i) {
-      const link = $(this).find('a')[0]
       // Make headers into real links for permalinks
-      if (link) {
-        link.href = '#' + link.id;
-        // Extract on-this-page headers, without embedded links
-        var title_container = $(link).parent('h1,h2,h3,h4').clone();
-        if (title_container.length > 0) {
-          // Assume initial heading is an H1, but adjust if it's not
-          let hLevel = 0;
-          if ($(link).parent().is("h2")){
-            hLevel = 1;
-          } else if ($(link).parent().is("h3")){
-            hLevel = 2;
-          } else if ($(link).parent().is("h4")){
-            hLevel = 3;
-          }
+      this.href = '#' + this.id;
+      // Extract on-this-page headers, without embedded links
+      var title_container = $(this).parent('h1,h2,h3,h4').clone();
+      if (title_container.length > 0) {
+        // Assume initial heading is an H1, but adjust if it's not
+        let hLevel = 0;
+        if ($(this).parent().is("h2")){
+          hLevel = 0;
+        } else if ($(this).parent().is("h3")){
+          hLevel = 1;
+        } else if ($(this).parent().is("h4")){
+          hLevel = 2;
+        }
 
-          // Set the base heading level for the page to the title page level + 1
-          // This ensures top level headings aren't nested
-          if (i === 0){
-            baseHeadingLevel = hLevel + 1;
-          }
-
-          // Build list items for all headings except the page title
-          if (0 < items++) {
-            title_container.find('a,.added,.coming,.deprecated,.experimental')
-              .remove();
-            var text = title_container.html();
-            const adjustedLevel = hLevel - baseHeadingLevel;
-            const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + link.id + '">' + text + '</a></li>';
-            ul.append(li);
-          }
+        // Build list items for all headings except the page title
+        if (0 < items++) {
+          title_container.find('a,.added,.coming,.deprecated,.experimental')
+            .remove();
+          var text = title_container.html();
+          const li = '<li id="otp-text-' + i + '" class="heading-level-' + hLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          ul.append(li);
         }
       }
     });
@@ -267,7 +257,9 @@ function highlight_otp() {
     })
   })
 
-  document.querySelectorAll('#guide a[id]').forEach((heading) => {
+  document.querySelectorAll('div#content a[id]').forEach((heading, i) => {
+    // Skip the first heading since it's not visible
+    if (i === 0) return
     observer.observe(heading);
   })
 }
@@ -361,19 +353,24 @@ $(function() {
 
   AlternativeSwitcher(store());
 
-  const allHeadings = $('main').find('h1, h2, h3, h4, h5, h6')
+  // Get all headings inside the main body of the doc
+  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6')
   let allLevels = []
+  // Create a list of all heading levels used on the page
   allHeadings.each(function(index) {
-    if (index === 0) return
-    if (!allLevels.includes($(this).prop('nodeName'))) allLevels.push($(this).prop('nodeName'))
+    // Don't include the first heading because that's the title
+    if (index === 0) return;
+    if (!allLevels.includes($(this).prop('nodeName'))) allLevels.push($(this).prop('nodeName'));
   })
-
+  // Update the heading level to be incremental
+  // (i.e. the first heading after the title should be an h2 and
+  // then deeper levels should be adjusted so they are incremental)
   allHeadings.each(function(index) {
     const currentHeading = $(this)
     const contents = currentHeading.prop('innerHTML')
-    if (index === 0) {
-      currentHeading.replaceWith(`<h1>${contents}</h1>`);
-    } else {
+    // Don't include the first heading because that's the
+    // title and we always want that to be an h1
+    if (index > 0) {
       if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
         $(this).replaceWith(`<h2>${contents}</h2>`);
       }
@@ -512,10 +509,6 @@ $(function() {
       $('#doc-article').css('flex-direction', 'column');
       $('#main-content').css('width', '100%');
       $('#on-this-page-container').hide();
-
-      // Add breadcrumbs
-      $('div.navheader').empty()
-      $('div.navheader').append('<div class="breadcrumb-container"><div class="breadcrumbs"><span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span></div><div id="version-selectors-mid"></div></div>');
 
       // Reposition version selector
       const version_selectors = $('div#version-selectors');
