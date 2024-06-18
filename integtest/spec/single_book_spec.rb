@@ -34,12 +34,12 @@ RSpec.describe 'building a single book' do
         end
         it 'has a link to the css' do
           expect(head).to include(<<~HTML)
-            <link rel="stylesheet" type="text/css" href="/guide/static/styles.css" />
+            <link rel="stylesheet" type="text/css" href="/guide/static/styles-v1.css" />
           HTML
         end
         it 'has a link to the js' do
           expect(contents).to include(<<~HTML)
-            <script type="text/javascript" src="/guide/static/docs.js"></script>
+            <script type="text/javascript" src="/guide/static/docs-v1.js"></script>
           HTML
         end
         it 'has the right language' do
@@ -723,13 +723,13 @@ RSpec.describe 'building a single book' do
     end
     let(:toc) { Net::HTTP.get_response(URI("#{root}/toc.html")) }
     let(:js) do
-      Net::HTTP.get_response(URI("#{static}/docs.js"))
+      Net::HTTP.get_response(URI("#{static}/docs-v1.js"))
     end
     let(:jquery) do
       Net::HTTP.get_response(URI("#{static}/jquery.js"))
     end
     let(:css) do
-      Net::HTTP.get_response(URI("#{static}/styles.css"))
+      Net::HTTP.get_response(URI("#{static}/styles-v1.css"))
     end
 
     include_examples 'the root'

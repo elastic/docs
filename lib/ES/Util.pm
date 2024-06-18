@@ -722,7 +722,7 @@ sub build_web_resources {
 
     my $parcel_out = dir('/tmp/parcel');
     my $compiled_js = $parcel_out->file('docs_js/index.js');
-    my $compiled_css = $parcel_out->file('styles.css');
+    my $compiled_css = $parcel_out->file('styles-v1.css');
 
     unless ( -e $compiled_js && -e $compiled_css ) {
         # We write the compiled js and css to /tmp so we can use them on
@@ -742,10 +742,10 @@ sub build_web_resources {
 
     my $static_dir = $dest->subdir( 'raw' )->subdir( 'static' );
     $static_dir->mkpath;
-    my $js = $static_dir->file( 'docs.js' );
-    my $css = $static_dir->file( 'styles.css' );
-    my $js_licenses = file( 'resources/web/docs.js.licenses' );
-    my $css_licenses = file( 'resources/web/styles.css.licenses' );
+    my $js = $static_dir->file( 'docs-v1.js' );
+    my $css = $static_dir->file( 'styles-v1.css' );
+    my $js_licenses = file( 'resources/web/docs-v1.js.licenses' );
+    my $css_licenses = file( 'resources/web/styles-v1.css.licenses' );
     $js->spew(
         iomode => '>:utf8',
         $js_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_js->slurp( iomode => '<:encoding(UTF-8)' )
