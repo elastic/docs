@@ -493,7 +493,7 @@ sub write_nginx_test_config {
     my $web_conf;
     if ( $watching_web ) {
         $web_conf = <<"CONF"
-    rewrite ^/guide/static/docs\\.js(.*)\$ /guide/static/docs_js/index.js\$1 last;
+    rewrite ^/guide/static/docs\\.js(.*)\$ /guide/static/docs_js/index-v1.js\$1 last;
     location ^~ /guide/static/jquery.js {
       alias /node_modules/jquery/dist/jquery.js;
       types {
@@ -695,7 +695,7 @@ sub start_web_resources_watcher {
              --public-url /guide/static/
              --hmr-port 8001
              -d /tmp/parcel/
-             resources/web/docs_js/index.js resources/web/styles.pcss) );
+             resources/web/docs_js/index-v1.js resources/web/styles-v1.pcss) );
 }
 
 #===================================
@@ -721,7 +721,7 @@ sub build_web_resources {
     my ( $dest ) = @_;
 
     my $parcel_out = dir('/tmp/parcel');
-    my $compiled_js = $parcel_out->file('docs_js/index.js');
+    my $compiled_js = $parcel_out->file('docs_js/index-v1.js');
     my $compiled_css = $parcel_out->file('styles-v1.css');
 
     unless ( -e $compiled_js && -e $compiled_css ) {
@@ -735,7 +735,7 @@ sub build_web_resources {
             '--public-url', '/guide/static/',
             '--experimental-scope-hoisting', '--no-source-maps',
             '-d', $parcel_out,
-            'resources/web/docs_js/index.js', 'resources/web/styles.pcss';
+            'resources/web/docs_js/index-v1.js', 'resources/web/styles-v1.pcss';
         die "Parcel didn't make $compiled_js" unless -e $compiled_js;
         die "Parcel didn't make $compiled_css" unless -e $compiled_css;
     }
@@ -744,8 +744,8 @@ sub build_web_resources {
     $static_dir->mkpath;
     my $js = $static_dir->file( 'docs-v1.js' );
     my $css = $static_dir->file( 'styles-v1.css' );
-    my $js_licenses = file( 'resources/web/docs-v1.js.licenses' );
-    my $css_licenses = file( 'resources/web/styles-v1.css.licenses' );
+    my $js_licenses = file( 'resources/web/docs.js.licenses' );
+    my $css_licenses = file( 'resources/web/styles.css.licenses' );
     $js->spew(
         iomode => '>:utf8',
         $js_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_js->slurp( iomode => '<:encoding(UTF-8)' )
