@@ -1,20 +1,20 @@
-import AlternativeSwitcher from "./components/alternative_switcher";
-import ConsoleWidget from "./components/console_widget";
-import FeedbackModal from './components/feedback_modal';
-import FeedbackWidget from './components/feedback_widget';
-import Modal from "./components/modal";
-import mount from "./components/mount";
-import {switchTabs} from "./components/tabbed_widget";
-import {Cookies, $} from "./deps";
-import {lang_strings} from "./localization";
-import store from "./store";
+import AlternativeSwitcher from "./components/alternative_switcher.js";
+import ConsoleWidget from "./components/console_widget.jsx";
+import FeedbackModal from './components/feedback_modal.jsx';
+import FeedbackWidget from './components/feedback_widget.jsx';
+import Modal from "./components/modal.js";
+import mount from "./components/mount.js";
+import {switchTabs} from "./components/tabbed_widget.js";
+import {Cookies, $} from "./deps.js";
+import {lang_strings} from "./localization.js";
+import store from "./store.js";
 import * as utils from "./utils.js";
-import PR from "../lib/prettify/prettify";
-import "./prettify/lang-asciidoc";
-import "./prettify/lang-console";
-import "../lib/prettify/lang-esql";
-import "../lib/prettify/lang-sql";
-import "../lib/prettify/lang-yaml";
+import PR from "../lib/prettify/prettify.js";
+import "./prettify/lang-asciidoc.js";
+import "./prettify/lang-console.js";
+import "../lib/prettify/lang-esql.js";
+import "../lib/prettify/lang-sql.js";
+import "../lib/prettify/lang-yaml.js";
 
 // Add support for <details> in IE and the like
 import "../../../../../node_modules/details-polyfill";
