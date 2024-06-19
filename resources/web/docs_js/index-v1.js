@@ -368,24 +368,20 @@ $(function() {
   allHeadings.each(function(index) {
     const currentHeading = $(this)
     const contents = currentHeading.prop('innerHTML')
-    // Don't include the first heading because that's the
-    // title and we always want that to be an h1
-    if (index > 0) {
-      if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
-        $(this).replaceWith(`<h2>${contents}</h2>`);
-      }
-      if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
-        $(this).replaceWith(`<h3>${contents}</h3>`);
-      }
-      if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
-        $(this).replaceWith(`<h4>${contents}</h4>`);
-      }
-      if (allLevels[3] && ($(this).prop('nodeName') === allLevels[3])) {
-        $(this).replaceWith(`<h5>${contents}</h5>`);
-      }
-      if (allLevels[4] && ($(this).prop('nodeName') === allLevels[4])) {
-        $(this).replaceWith(`<h6>${contents}</h6>`);
-      }
+    if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
+      $(this).replaceWith(`<h2>${contents}</h2>`);
+    }
+    if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
+      $(this).replaceWith(`<h3>${contents}</h3>`);
+    }
+    if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
+      $(this).replaceWith(`<h4>${contents}</h4>`);
+    }
+    if (allLevels[3] && ($(this).prop('nodeName') === allLevels[3])) {
+      $(this).replaceWith(`<h5>${contents}</h5>`);
+    }
+    if (allLevels[4] && ($(this).prop('nodeName') === allLevels[4])) {
+      $(this).replaceWith(`<h6>${contents}</h6>`);
     }
   })
   // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)

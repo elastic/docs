@@ -175,7 +175,7 @@ RSpec.describe Chunker do
             HTML
           end
           it "doesn't contain breadcrumbs" do
-            expect(converted).not_to include('<div class="breadcrumb-container"><div class="breadcrumbs">')
+            expect(converted).not_to include('<div class="breadcrumbs">')
           end
           it "doesn't contain any footnotes" do
             expect(converted).not_to include('<div id="footnotes">')
@@ -540,14 +540,6 @@ RSpec.describe Chunker do
           it 'contains the contents' do
             expect(contents).to include <<~HTML
               <p>Words.</p>
-            HTML
-          end
-          it 'contains the breadcrumbs' do
-            expect(contents).to include <<~HTML
-              <div class="breadcrumb-container"><div class="breadcrumb-container"><div class="breadcrumbs">
-              <span class="breadcrumb-link"><a href="/guide/"><span class="home-link"></span></a></span>
-              <span class="chevron-right">/</span><span class="breadcrumb-link"><a href="index.html">Title</a></span>
-              </div><div id="version-selectors-mid"></div></div>
             HTML
           end
         end

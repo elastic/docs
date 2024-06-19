@@ -115,11 +115,13 @@ function describeInitHeaders(name, guideBody, onThisPageAssertions) {
   describe(name, () => {
     beforeEach(() => {
       document.body.innerHTML = dedent `
-      <main id="page-template-inner">
+      <div id="content">
         ${guideBody}
-      </main>
-      <div id="right-sidebar-container">
-        <div id="version-selectors-full"></div>
+      </div>
+      <div id="right-sidebar">
+        <div id="right-sidebar-container">
+          <div id="version-selectors-full"></div>
+        </div>
       </div>
       `;
 
@@ -135,10 +137,10 @@ function describeInitHeaders(name, guideBody, onThisPageAssertions) {
 
 describe('On This Page', () => {
   const onlyTitle = dedent `
-    <h1>
+    <h2>
       <a id="getting-started"></a>
       Getting Started
-    </h1>
+    </h2>
   `;
   const oneSubsection = dedent `
     ${onlyTitle}
@@ -160,10 +162,10 @@ describe('On This Page', () => {
       <a id="observability"></a>
       Observability
     </h3>
-    <h2>
+    <h4>
       <a id="apm"></a>
       APM
-    </h2>
+    </h4>
   `;
 
   function existsAssertions() {
