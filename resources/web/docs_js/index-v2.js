@@ -505,6 +505,7 @@ $(function() {
       $('#doc-article').css('flex-direction', 'column');
       $('#main-content').css('width', '100%');
       $('#on-this-page-container').hide();
+      $('#breadcrumbs-go-here').replaceWith('<div class="breadcrumb-container"><div class="breadcrumbs"></div><div id="version-selectors-mid"></div></div>')
 
       // Reposition version selector
       const version_selectors = $('div#version-selectors');
