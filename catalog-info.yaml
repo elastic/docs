@@ -194,3 +194,42 @@ spec:
           access_level: BUILD_AND_READ
         everyone:
           access_level: READ_ONLY
+
+# Declare link-checker
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: buildkite-pipeline-docs-link-checker
+  description: Link-checker
+  links:
+    - title: Pipeline
+      url: https://buildkite.com/elastic/docs-link-check
+
+spec:
+  type: buildkite-pipeline
+  owner: group:docs
+  system: buildkite
+  implementation:
+    apiVersion: buildkite.elastic.dev/v1
+    kind: Pipeline
+    metadata:
+      name: docs / link_check
+    spec:
+      repository: elastic/docs
+      pipeline_file: ".buildkite/link_check_pipeline.yml"
+      provider_settings:
+        trigger_mode: none
+      schedules:
+        Daily Run:
+          branch: "master"
+          # This cron won't run until 2044 (yes, we want that for now)
+          cronline: "0 0 29 2 1"
+          message: "Check links between MDX and Legacy docs."
+      teams:
+        docs-build-guild:
+          access_level: MANAGE_BUILD_AND_READ
+        docs:
+          access_level: BUILD_AND_READ
+        everyone:
+          access_level: READ_ONLY
