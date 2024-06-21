@@ -64,8 +64,8 @@ module Chunker
           %r{<div id="breadcrumbs-go-here"></div>},
           generate_breadcrumbs(doc, section).to_s
         )
-        # raise("Couldn't add breadcrumbs in #{html}")
       end
+      html.gsub!(%r{</h1>}, "</h1>#{section.attr('edit_me_link', '')}")
       write doc, "#{section.id}.html", html
       ''
     end
