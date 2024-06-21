@@ -20,6 +20,10 @@ module Chunker
           </ul>
           <li class="dropdown-category">APM agents</li>
           <ul>
+          <li><a href="/guide/en/apm/otel/java/current/intro.html">Java Distribution Reference</a></li>
+          </ul>
+          <li class="dropdown-category">APM agents</li>
+          <ul>
           <li><a href="/guide/en/apm/agent/android/current/intro.html">Android Agent Reference</a></li>
           <li><a href="/guide/en/apm/agent/go/current/introduction.html">Go Agent Reference</a></li>
           <li><a href="/guide/en/apm/agent/swift/current/intro.html">iOS Agent Reference</a></li>
