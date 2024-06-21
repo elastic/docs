@@ -48,7 +48,7 @@ RSpec.describe 'building all books' do
         TXT
       end
     end
-    file_context 'html/static/docs.js' do
+    file_context 'html/static/docs-v1.js' do
       has_license 'code-prettify', 'The Apache 2.0 License'
       has_license "code-prettify's lang-sql", 'The Apache 2.0 License'
       has_license "code-prettify's lang-yaml", 'The Apache 2.0 License'
@@ -64,7 +64,7 @@ RSpec.describe 'building all books' do
       has_license 'redux-thunk', 'The MIT License (MIT)'
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
-    file_context 'html/static/styles.css' do
+    file_context 'html/static/styles-v1.css' do
       has_license 'Bootstrap', 'The MIT License (MIT)'
       has_license 'Inter', 'SIL OPEN FONT LICENSE'
       has_license 'Noto Sans Japanese', 'SIL OPEN FONT LICENSE'
