@@ -38,8 +38,8 @@ RSpec.describe ElasticCompatPreprocessor do
 
       shared_examples 'invokes the block macro' do
         it 'invokes the block macro' do
-          expect(converted).to include <<~HTML.strip
-            <div class="#{block_admon_class} admon">
+          expect(converted).to include(<<~HTML.strip)
+            <div class="admon #{block_admon_class}">
           HTML
         end
       end
@@ -113,19 +113,19 @@ RSpec.describe ElasticCompatPreprocessor do
     context 'for added' do
       include_context 'change admonition'
       let(:name) { 'added' }
-      let(:block_admon_class) { 'note' }
+      let(:block_admon_class) { 'note version-added' }
       let(:inline_admon_class) { 'change' }
     end
     context 'for coming' do
       include_context 'change admonition'
       let(:name) { 'coming' }
-      let(:block_admon_class) { 'note' }
+      let(:block_admon_class) { 'note version-coming' }
       let(:inline_admon_class) { 'change' }
     end
     context 'for deprecated' do
       include_context 'change admonition'
       let(:name) { 'deprecated' }
-      let(:block_admon_class) { 'warning' }
+      let(:block_admon_class) { 'warning version-deprecated' }
       let(:inline_admon_class) { 'change' }
     end
 
@@ -138,16 +138,19 @@ RSpec.describe ElasticCompatPreprocessor do
     context 'for beta' do
       include_context 'care admonition'
       let(:name) { 'beta' }
+      let(:block_admon_class) { 'stage-beta' }
       let(:inline_admon_class) { 'beta' }
     end
     context 'for dev' do
       include_context 'care admonition'
       let(:name) { 'dev' }
+      let(:block_admon_class) { 'stage-dev' }
       let(:inline_admon_class) { 'dev' }
     end
-    context 'for experimental' do
+    context 'for preview' do
       include_context 'care admonition'
       let(:name) { 'experimental' }
+      let(:block_admon_class) { 'stage-preview' }
       let(:inline_admon_class) { 'preview' }
     end
   end
@@ -219,8 +222,9 @@ RSpec.describe ElasticCompatPreprocessor do
         ASCIIDOC
       end
       it 'the processing works as expected' do
-        expect(converted).to include <<~HTML
-          <p>Added in some_version.</p>
+        expect(converted).to include(<<~HTML)
+          <div class="admon-title">Added in some_version</div>
+          </div>
         HTML
       end
     end
@@ -239,8 +243,9 @@ RSpec.describe ElasticCompatPreprocessor do
       ASCIIDOC
     end
     it 'the contents of the block are processed normally' do
-      expect(converted).to include <<~HTML
-        <p>Added in some_version.</p>
+      expect(converted).to include(<<~HTML)
+        <div class="admon-title">Added in some_version</div>
+        </div>
       HTML
     end
   end

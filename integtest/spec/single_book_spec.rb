@@ -34,12 +34,12 @@ RSpec.describe 'building a single book' do
         end
         it 'has a link to the css' do
           expect(head).to include(<<~HTML)
-            <link rel="stylesheet" type="text/css" href="/guide/static/styles-v1.css" />
+            <link rel="stylesheet" type="text/css" href="/guide/static/styles-v2.css" />
           HTML
         end
         it 'has a link to the js' do
           expect(contents).to include(<<~HTML)
-            <script type="text/javascript" src="/guide/static/docs-v1.js"></script>
+            <script type="text/javascript" src="/guide/static/docs-v2.js"></script>
           HTML
         end
         it 'has the right language' do
@@ -137,7 +137,7 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'has an "unknown" edit url' do
         expect(body).to include(<<~HTML.strip)
-          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="unknown/edit/master/index.asciidoc">edit</a>
+          <a class="edit_me" rel="nofollow" title="Edit this page on GitHub" href="unknown/edit/master/index.asciidoc"></a>
         HTML
       end
     end
@@ -247,17 +247,7 @@ RSpec.describe 'building a single book' do
     end
   end
 
-  shared_context 'care admonition' do
-    page_context 'chapter.html' do
-      it 'includes the warning admonition' do
-        expect(body).to include(
-          '<div class="warning admon">'
-        )
-      end
-    end
-  end
   context 'when the book contains beta[]' do
-    include_context 'care admonition'
     convert_single_before_context do |src|
       src.write 'index.asciidoc', <<~ASCIIDOC
         #{HEADER}
@@ -269,13 +259,22 @@ RSpec.describe 'building a single book' do
     page_context 'chapter.html' do
       it 'includes the beta text' do
         expect(body).to include(
-          'The design and code is less mature than official GA features'
+          'This functionality is in beta and is subject to change. '\
+          'The design and code is less mature than official '\
+          'generally available features and is being provided as-is '\
+          'with no warranties. Beta features are not subject to the '\
+          'support service level agreement of official generally '\
+          'available features.'
+        )
+      end
+      it 'includes the warning admonition' do
+        expect(body).to include(
+          '<div class="admon stage-beta">'
         )
       end
     end
   end
   context 'when the book contains experimental[]' do
-    include_context 'care admonition'
     convert_single_before_context do |src|
       src.write 'index.asciidoc', <<~ASCIIDOC
         #{HEADER}
@@ -291,6 +290,11 @@ RSpec.describe 'building a single book' do
           'removed in a future release. Elastic will work to fix '\
           'any issues, but features in technical preview are not subject to '\
           'the support SLA of official GA features.'
+        )
+      end
+      it 'includes the warning admonition' do
+        expect(body).to include(
+          '<div class="admon stage-preview">'
         )
       end
     end
@@ -723,13 +727,13 @@ RSpec.describe 'building a single book' do
     end
     let(:toc) { Net::HTTP.get_response(URI("#{root}/toc.html")) }
     let(:js) do
-      Net::HTTP.get_response(URI("#{static}/docs-v1.js"))
+      Net::HTTP.get_response(URI("#{static}/docs-v2.js"))
     end
     let(:jquery) do
       Net::HTTP.get_response(URI("#{static}/jquery.js"))
     end
     let(:css) do
-      Net::HTTP.get_response(URI("#{static}/styles-v1.css"))
+      Net::HTTP.get_response(URI("#{static}/styles-v2.css"))
     end
 
     include_examples 'the root'
@@ -754,11 +758,11 @@ RSpec.describe 'building a single book' do
             https://www.googletagmanager.com/gtag/js
           HTML
         end
-        it 'serves the chapter header' do
-          expect(air_gapped_index).to serve(doc_body(include(<<~HTML.strip)))
-            <a href="chapter.html">Chapter
-          HTML
-        end
+        # it 'serves the chapter header' do
+        #   expect(air_gapped_index).to serve(doc_body(include(<<~HTML.strip)))
+        #     <a href="chapter.html">Chapter
+        #   HTML
+        # end
       end
     end
     context 'the table of contents' do

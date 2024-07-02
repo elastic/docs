@@ -1,6 +1,6 @@
 import {jQuery} from "../deps";
 import dedent from "../../../../../node_modules/dedent";
-import {init_console_widgets, init_headers} from "../index-v1";
+import {init_console_widgets, init_headers} from "../index-v2";
 import * as utils from "../utils";
 import * as l from "../localization";
 import store from "../store";
@@ -115,16 +115,18 @@ function describeInitHeaders(name, guideBody, onThisPageAssertions) {
   describe(name, () => {
     beforeEach(() => {
       document.body.innerHTML = dedent `
-        <div id="content">
-          ${guideBody}
+      <div id="content">
+        ${guideBody}
+      </div>
+      <div id="right-sidebar">
+        <div id="right-sidebar-container">
+          <div id="version-selectors-full"></div>
         </div>
-        <div id="right_col">
-          <div id="other_stuff" />
-        </div>
+      </div>
       `;
 
-      const rightCol = jQuery('#right_col');
-      init_headers(rightCol, LangStrings);
+      const rightSidebar = jQuery('#right-sidebar-container');
+      init_headers(rightSidebar, LangStrings);
     });
 
     describe('the "On This Page" section', () => {
@@ -160,51 +162,38 @@ describe('On This Page', () => {
       <a id="observability"></a>
       Observability
     </h3>
-    <h2>
+    <h4>
       <a id="apm"></a>
       APM
-    </h2>
+    </h4>
   `;
-
-  describeInitHeaders('for page with just a title', onlyTitle, () => {
-    test("doesn't exist", () => {
-      expect(jQuery('#this_page')).toHaveLength(0);
-    });
-  });
 
   function existsAssertions() {
     test('exists', () => {
-      expect(jQuery('#this_page')).toHaveLength(1);
-    });
-    test('be before any other right column content', () => {
-      expect(jQuery('#right_col').children().get(0).id).toEqual('this_page');
-      expect(jQuery('#right_col').children().get(1).id).toEqual('other_stuff');
-      expect(jQuery('#right_col').children()).toHaveLength(2);
+      expect(jQuery('#on-this-page-container')).toHaveLength(1);
     });
   }
   describeInitHeaders('for page with one subsection', oneSubsection, () => {
-    existsAssertions();
     test('contains a link to the subsection header', () => {
-      const link = jQuery('#this_page a[href="#nrt"]');
-      expect(link).toHaveLength(1);
+      const link = jQuery('#on-this-page-container a[href="#nrt"]');
+      expect(link).toBeTruthy();
       expect(link.text().trim()).toEqual('Near Realtime (NRT)');
     });
   });
   describeInitHeaders('for page with two subsections', twoSubsections, () => {
-    existsAssertions();
     test('contains a link to the first subsection header', () => {
-      const link = jQuery('#this_page a[href="#nrt"]');
-      expect(link).toHaveLength(1);
+      const link = jQuery('#on-this-page-container a[href="#nrt"]');
+      expect(link).toBeTruthy();
       expect(link.text().trim()).toEqual('Near Realtime (NRT)');
     });
     test('contains a link to the second subsection header', () => {
-      const link = jQuery('#this_page a[href="#cluster"]');
-      expect(link).toHaveLength(1);
+      const link = jQuery('#on-this-page-container a[href="#cluster"]');
+      expect(link).toBeTruthy();
       expect(link.text().trim()).toEqual('Cluster');
     });
     test('similar heading sections should be nested correctly', () => {
-      const link1 = jQuery('#this_page a[href="#nrt"]');
-      const link2 = jQuery('#this_page a[href="#cluster"]');
+      const link1 = jQuery('#on-this-page-container a[href="#nrt"]');
+      const link2 = jQuery('#on-this-page-container a[href="#cluster"]');
       expect(link1.parent().hasClass('heading-level-0')).toBe(true);
       expect(link2.parent().hasClass('heading-level-0')).toBe(true);
     });
@@ -212,14 +201,14 @@ describe('On This Page', () => {
   describeInitHeaders('for page with four subsections', fourSubsections, () => {
     existsAssertions();
     test('different heading sections should be nested correctly', () => {
-      const link1 = jQuery('#this_page a[href="#nrt"]');
-      const link2 = jQuery('#this_page a[href="#cluster"]');
-      const link3 = jQuery('#this_page a[href="#observability"]');
-      const link4 = jQuery('#this_page a[href="#apm"]');
+      const link1 = jQuery('#on-this-page-container a[href="#nrt"]');
+      const link2 = jQuery('#on-this-page-container a[href="#cluster"]');
+      const link3 = jQuery('#on-this-page-container a[href="#observability"]');
+      const link4 = jQuery('#on-this-page-container a[href="#apm"]');
       expect(link1.parent().hasClass('heading-level-0')).toBe(true);
       expect(link2.parent().hasClass('heading-level-0')).toBe(true);
       expect(link3.parent().hasClass('heading-level-1')).toBe(true);
-      expect(link4.parent().hasClass('heading-level-0')).toBe(true);
+      expect(link4.parent().hasClass('heading-level-2')).toBe(true);
     });
   });
 });

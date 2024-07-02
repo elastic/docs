@@ -10,7 +10,7 @@ module StripTags
     # Asciidoctor doesn't give us a better way.
     html = html.gsub(%r{
       <span\ class="Admonishment.+
-      \[<span\ class.+</span>\].+
+      <span\ class.+</span>.+
       <span\ class=".+
       </span>\n
       </span>

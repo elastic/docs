@@ -6,24 +6,37 @@ module DocbookCompat
   module ConvertAdmonition
     def convert_admonition(node)
       [
-        %(<div class="#{node.attr 'name'} admon">),
-        %(<div class="icon"></div>),
-        %(<div class="admon_content">),
-        node.converter.convert(node, 'admonition_title_id'),
-        node.blocks.empty? ? "<p>#{node.content}</p>" : node.content,
-        '</div>',
+        %(<div class="admon #{node.attr 'name'}">),
+        %(<div class="admon-title">#{node.converter.convert(
+          node,
+          'admonition_title_id'
+        )}</div>),
+        node.converter.convert(
+          node,
+          'inner_content'
+        ),
         '</div>',
       ].compact.join "\n"
+    end
+
+    def convert_inner_content(node)
+      return if node.content == ''
+
+      inner_content =
+        if node.blocks.empty?
+          "<p>#{node.content}</p>"
+        else
+          node.content
+        end
+      "<div class=\"admon_content\">\n#{inner_content}\n</div>"
     end
 
     def convert_admonition_title_id(node)
       return node.id ? %(<a id="#{node.id}"></a>) : nil unless node.title
 
       [
-        '<h3>',
         node.title,
         node.id ? %(<a id="#{node.id}"></a>) : nil,
-        '</h3>',
       ].compact.join
     end
 
@@ -58,11 +71,19 @@ module DocbookCompat
     def convert_inline_admonition_for_real(node)
       title_classes =
         "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
+      name =
+        if (node.attr 'name').to_s == 'experimental'
+          'preview'
+        else
+          (node.attr 'name').to_s
+        end
+      message_title = node.attr 'message_title'
       [
-        %(<span class="Admonishment Admonishment--#{node.type}">),
-        %([<span class="#{title_classes}">#{node.attr 'title'}</span>]),
+        %(<span class="Admonishment Admonishment--#{name}">),
+        %(<span class="#{title_classes}">#{node.attr 'title'}</span>),
         '<span class="Admonishment-detail">',
-        node.text,
+        %(<span class="version-details-title">#{message_title}</span>),
+        node.text ? "<span class=\"version-details\">#{node.text}</span>" : nil,
         '</span>',
         '</span>',
       ].join "\n"

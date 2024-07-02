@@ -17,13 +17,13 @@ require 'asciidoctor/extensions'
 #
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [
-    [:added, 'added', 'note', 'Added in', nil],
-    [:coming, 'changed', 'note', 'Coming in', nil],
-    [:deprecated, 'deleted', 'warning', 'Deprecated in', ' u-strikethrough'],
+    [:added, 'added', 'note', 'Added in', 'version-added'],
+    [:coming, 'changed', 'note', 'Coming in', 'version-coming'],
+    [:deprecated, 'deleted', 'warning', 'Deprecated in', 'version-deprecated'],
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
-      block = ChangeAdmonitionBlock.new revisionflag, tag, message
+      block = ChangeAdmonitionBlock.new revisionflag, tag, message, title_class
       inline = ChangeAdmonitionInline.new message, title_class
       registry.block_macro block, name
       registry.inline_macro inline, name
@@ -36,23 +36,25 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
     use_dsl
     name_positional_attributes :version, :passtext
 
-    def initialize(revisionflag, tag, message)
+    def initialize(revisionflag, tag, message, title_class)
       super(nil)
       @revisionflag = revisionflag
       @tag = tag
       @message = message
+      @title_class = title_class
     end
 
     def process(parent, _target, attrs)
       version = attrs[:version]
       passtext = attrs[:passtext]
-      text = "#{@message} #{version}."
-      source = passtext || text
+      text = "#{@message} #{version}"
+      name = "#{@tag} #{@title_class}"
+      source = passtext || nil
       Asciidoctor::Block.new parent, :admonition, source: source, attributes: {
-        'name' => @tag,
+        'name' => name,
         'revisionflag' => @revisionflag,
         'version' => version,
-        'title' => passtext ? text : nil,
+        'title' => text,
       }
     end
   end
@@ -72,13 +74,15 @@ class ChangeAdmonition < Asciidoctor::Extensions::Group
 
     def process(parent, _target, attrs)
       version = attrs[:version]
-      message = "#{@message} #{version}."
-      message += ' ' + attrs[:text] if attrs[:text]
+      message_title = "#{@message} #{version}"
+      message = attrs[:text] || nil
       Asciidoctor::Inline.new(
         parent, :admonition, message, type: 'change', attributes: {
           'title_type' => 'version',
-          'title_class' => "u-mono#{@extra_title_class}",
+          'title_class' => @extra_title_class.to_s,
           'title' => version,
+          'message_title' => message_title,
+          'name' => 'change',
         }
       )
     end

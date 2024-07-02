@@ -19,10 +19,10 @@ require 'asciidoctor/extensions'
 #
 class CareAdmonition < Asciidoctor::Extensions::Group
   BETA_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+    This functionality is in beta and is subject to change. The design and code is less mature than official generally available features and is being provided as-is with no warranties. Beta features are not subject to the support service level agreement of official generally available features.
   TEXT
   DEV_DEFAULT_TEXT = <<~TEXT.strip
-    This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
+    This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support service level agreement of official generally available features.
   TEXT
   PREVIEW_DEFAULT_TEXT = <<~TEXT.strip
     This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
@@ -30,13 +30,22 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
   def activate(registry)
     [
-      [:beta, 'beta', BETA_DEFAULT_TEXT],
-      [:dev, 'dev', DEV_DEFAULT_TEXT],
-      [:experimental, 'preview', PREVIEW_DEFAULT_TEXT],
-      [:preview, 'preview', PREVIEW_DEFAULT_TEXT],
-    ].each do |(name, role, default_text)|
-      registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
-      registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
+      [:beta, 'Beta', BETA_DEFAULT_TEXT, 'stage-beta'],
+      [:dev, 'In development', DEV_DEFAULT_TEXT, 'stage-dev'],
+      [
+        :experimental,
+        'Technical preview',
+        PREVIEW_DEFAULT_TEXT,
+        'stage-preview',
+      ],
+      [:preview, 'Technical preview', PREVIEW_DEFAULT_TEXT, 'stage-preview'],
+    ].each do |(name, role, default_text, title_class)|
+      registry.block_macro ChangeAdmonitionBlock.new(
+        role, default_text, title_class
+      ), name
+      registry.inline_macro ChangeAdmonitionInline.new(
+        name, role, default_text, title_class
+      ), name
     end
   end
 
@@ -46,10 +55,11 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     use_dsl
     name_positional_attributes :passtext, :issue_url
 
-    def initialize(role, default_text)
+    def initialize(role, default_text, title_class)
       super(nil)
       @role = role
       @default_text = default_text
+      @title_class = title_class
     end
 
     def generate_text(text, issue_url)
@@ -83,8 +93,9 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       Asciidoctor::Block.new(
         parent, :admonition, source: text, attributes: {
           'role' => @role,
-          'name' => 'warning',
+          'name' => @title_class,
           'style' => 'warning',
+          'title' => @role,
         }
       )
     end
@@ -97,10 +108,12 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     name_positional_attributes :text
     format :short
 
-    def initialize(role, default_text)
+    def initialize(name, role, default_text, extra_title_class)
       super(nil)
+      @name = name
       @role = role
       @default_text = default_text
+      @extra_title_class = extra_title_class
     end
 
     def process(parent, _target, attrs)
@@ -108,9 +121,11 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       text ||= @default_text
       Asciidoctor::Inline.new(
         parent, :admonition, text, type: @role, attributes: {
+          'name' => @name,
           'title_type' => 'title',
-          'title_class' => 'u-mono',
+          'title_class' => @extra_title_class.to_s,
           'title' => @role,
+          'message_title' => @role,
         }
       )
     end

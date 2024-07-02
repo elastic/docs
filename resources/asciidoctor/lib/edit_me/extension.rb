@@ -83,7 +83,7 @@ module EditMe
       end
 
       <<~HTML.strip
-        <a class="#{css_classes}" rel="nofollow" title="#{title}" href="#{url}">edit</a>
+        <a class="#{css_classes}" rel="nofollow" title="#{title}" href="#{url}"></a>
       HTML
     end
 

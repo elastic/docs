@@ -44,8 +44,8 @@ describe("air_gapped_template.html", () => {
      * the built-docs repo.
      */
     const compiledWebResources = [
-      "/guide/static/styles-v1.css",
-      "/guide/static/docs-v1.js",
+      "/guide/static/styles-v2.css",
+      "/guide/static/docs-v2.js",
       "/guide/static/jquery.js"
     ];
     /**

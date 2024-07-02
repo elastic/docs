@@ -1031,7 +1031,7 @@ RSpec.describe DocbookCompat do
             <div class="calloutlist">
             <table border="0" summary="Callout list">
             <tr>
-            <td align="left" valign="top" width="5%">
+            <td align="left" valign="top" width="24px">
             <p><a href="#CO1-1"><i class="conum" data-value="1"></i></a></p>
             </td>
             <td align="left" valign="top">
@@ -1680,14 +1680,14 @@ RSpec.describe DocbookCompat do
             ASCIIDOC
           end
           it 'has the title in a strong with the html' do
-            expect(converted).to include <<~HTML
+            expect(converted).to include(<<~HTML)
               <div class="table">
               <p class="title"><strong>Table 1. <code class="literal">foo</code></strong></p>
               <div class="table-contents">
             HTML
           end
           it 'has the title as the summary without the html' do
-            expect(converted).to include <<~HTML
+            expect(converted).to include(<<~HTML)
               <div class="table-contents">
               <table border="0" cellpadding="4px" summary="foo">
             HTML
@@ -1846,12 +1846,9 @@ RSpec.describe DocbookCompat do
 
   context 'admonitions' do
     def expect_block_admonition(body)
-      expect(converted).to include <<~HTML
-        <div class="#{admon_class} admon">
-        <div class="icon"></div>
-        <div class="admon_content">
-        #{body}
-        </div>
+      expect(converted).to include(<<~HTML)
+        <div class="admon #{admon_class}">
+        <div class="admon-title"></div>#{body ? "\n<div class=\"admon_content\">\n#{body}\n</div>" : nil}
         </div>
       HTML
     end
@@ -1897,7 +1894,7 @@ RSpec.describe DocbookCompat do
             ASCIIDOC
           end
           it "doesn't have default text" do
-            expect_block_admonition '<p></p>'
+            expect_block_admonition nil
           end
         end
         context 'with a title' do
@@ -1912,10 +1909,9 @@ RSpec.describe DocbookCompat do
           end
           it "renders the title in Elastic's custom template" do
             expect(converted).to include(<<~HTML)
-              <div class="#{admon_class} admon">
-              <div class="icon"></div>
+              <div class="admon #{admon_class}">
+              <div class="admon-title">Title</div>
               <div class="admon_content">
-              <h3>Title</h3>
               <p>words</p>
               </div>
               </div>
@@ -1935,10 +1931,9 @@ RSpec.describe DocbookCompat do
             end
             it "renders the title in Elastic's custom template" do
               expect(converted).to include(<<~HTML)
-                <div class="#{admon_class} admon">
-                <div class="icon"></div>
+                <div class="admon #{admon_class}">
+                <div class="admon-title">Title<a id="id"></a></div>
                 <div class="admon_content">
-                <h3>Title<a id="id"></a></h3>
                 <p>words</p>
                 </div>
                 </div>
@@ -1958,10 +1953,9 @@ RSpec.describe DocbookCompat do
           end
           it "renders the id in Elastic's custom template" do
             expect(converted).to include(<<~HTML)
-              <div class="#{admon_class} admon">
-              <div class="icon"></div>
+              <div class="admon #{admon_class}">
+              <div class="admon-title"><a id="id"></a></div>
               <div class="admon_content">
-              <a id="id"></a>
               <p>words</p>
               </div>
               </div>
