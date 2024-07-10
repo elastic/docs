@@ -639,7 +639,7 @@ RSpec.describe 'building all books' do
       it 'includes the prelim docs header' do
         expect(body).to include <<~HTML
           <div class="page_header">
-          You are looking at preliminary documentation for a future release.
+          You are looking at documentation that might contain both current Elastic Cloud serverless and future Elastic Stack and Cloud details.
           Not what you want? See the
           <a href="../current/index.html">current release documentation</a>.
           </div>

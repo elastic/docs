@@ -25,7 +25,7 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-You are looking at preliminary documentation for a future release.
+You are looking at documentation that might contain both current Elastic Cloud serverless and future Elastic Stack and Cloud details.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
@@ -52,7 +52,7 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-You are looking at preliminary documentation for a future release.
+You are looking at documentation that might contain both current Elastic Cloud serverless and future Elastic Stack and Cloud details.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
@@ -68,7 +68,7 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-You are looking at preliminary documentation for a future release.
+You are looking at documentation that might contain both current Elastic Cloud serverless and future Elastic Stack and Cloud details.
 Not what you want? See the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
