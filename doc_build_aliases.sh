@@ -204,8 +204,10 @@ alias docbldaws='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-aws-lambda/docs/i
 
 alias docbldamw='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-k8s-attacher/docs/index.asciidoc --chunk 1'
 
-# Otel Distro
+# Otel Distros
 alias docbldoteljava='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elastic-otel-java/docs/index.asciidoc --chunk 1'
+
+alias docbldoteldotnet='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elastic-otel-dotnet/docs/index.asciidoc --chunk 1'
 
 # APM Legacy
 alias docbldamg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-server/docs/guide/index.asciidoc --chunk 1'
