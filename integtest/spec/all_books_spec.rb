@@ -639,9 +639,9 @@ RSpec.describe 'building all books' do
       it 'includes the prelim docs header' do
         expect(body).to include <<~HTML
           <div class="page_header">
-          You are looking at documentation that might contain both current Elastic Cloud serverless and future Elastic Stack and Cloud details.
-          Not what you want? See the
-          <a href="../current/index.html">current release documentation</a>.
+          This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs.
+          
+          This documentation also contains the latest Elastic Cloud serverless information. For our serverless-specific documentation, check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a>.
           </div>
         HTML
       end
