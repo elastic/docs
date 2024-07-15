@@ -25,9 +25,8 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs.
-          
-This documentation also contains the latest Elastic Cloud serverless information. For our serverless-specific documentation, check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a>.
+<p>This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs.</p>
+<p>This documentation also contains the latest Elastic Cloud serverless information. For our serverless-specific documentation, check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a>.</p>
 HEADER
     },
     zh_cn => {
@@ -52,9 +51,8 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs.
-          
-This documentation also contains the latest Elastic Cloud serverless information. For our serverless-specific documentation, check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a>.
+<p>This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs.</p>
+<p>This documentation also contains the latest Elastic Cloud serverless information. For our serverless-specific documentation, check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a>.</p>
 HEADER
     },
     ko => {
@@ -68,9 +66,8 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs.
-          
-This documentation also contains the latest Elastic Cloud serverless information. For our serverless-specific documentation, check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a>.
+<p>This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs.</p>
+<p>This documentation also contains the latest Elastic Cloud serverless information. For our serverless-specific documentation, check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a>.</p>
 HEADER
         }
 
