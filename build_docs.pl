@@ -354,7 +354,7 @@ sub check_kibana_links {
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED|APP_SEARCH_DOCS|ENTERPRISE_SEARCH_DOCS|WORKPLACE_SEARCH_DOCS)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED|APP_SEARCH_DOCS|ENTERPRISE_SEARCH_DOCS|INTEGRATIONS_DEV_DOCS|WORKPLACE_SEARCH_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$version/;
                 $path =~ s/\$\{(?:ECS_VERSION)\}/current/;
@@ -375,6 +375,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{ENTERPRISE_SEARCH_DOCS\}!en/enterprise-search/$version/!;
                 $path =~ s!\$\{WORKPLACE_SEARCH_DOCS\}!en/workplace-search/$version/!;
                 $path =~ s!\$\{MACHINE_LEARNING_DOCS\}!en/machine-learning/$version/!;
+                $path =~ s!\$\{INTEGRATIONS_DEV_DOCS}!en/integrations-developer/current/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
