@@ -25,9 +25,7 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
+This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a> for more details.
 HEADER
     },
     zh_cn => {
@@ -52,9 +50,7 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
+This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a> for more details.
 HEADER
     },
     ko => {
@@ -68,9 +64,7 @@ will be released for this version. For the latest information, see the
 <a href="../current/index.html">current release documentation</a>.
 HEADER
         new => <<"HEADER"
-You are looking at preliminary documentation for a future release.
-Not what you want? See the
-<a href="../current/index.html">current release documentation</a>.
+This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a> for more details.
 HEADER
         }
 

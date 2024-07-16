@@ -639,9 +639,7 @@ RSpec.describe 'building all books' do
       it 'includes the prelim docs header' do
         expect(body).to include <<~HTML
           <div class="page_header">
-          You are looking at preliminary documentation for a future release.
-          Not what you want? See the
-          <a href="../current/index.html">current release documentation</a>.
+          This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a> for more details.
           </div>
         HTML
       end
@@ -975,7 +973,7 @@ RSpec.describe 'building all books' do
     shared_examples 'future version' do
       it 'contains a "future" header' do
         expect(body).to include('<div class="page_header">')
-        expect(body).to include('You are looking at preliminary documentation')
+        expect(body).to include('This documentation contains work-in-progress')
       end
     end
     shared_examples 'past version' do
