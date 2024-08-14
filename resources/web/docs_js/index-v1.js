@@ -342,7 +342,7 @@ $(function() {
   AlternativeSwitcher(store());
 
   // Get all headings inside the main body of the doc
-  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6')
+  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6,h7')
   let allLevels = []
   // Create a list of all heading levels used on the page
   allHeadings.each(function(index) {
