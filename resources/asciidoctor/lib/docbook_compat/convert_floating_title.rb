@@ -14,7 +14,7 @@ module DocbookCompat
         xpack_tag(node),
         '</', tag_name, '>',
         node.attr('edit_me_link', ''),
-        '</div>',
+        '</div>'
       ].compact.join
     end
   end
