@@ -566,7 +566,7 @@ RSpec.describe DocbookCompat do
           level = hlevel < 2 ? 2 : hlevel
           expect(converted).to include(<<~HTML)
             <div class="titlepage"><div><div>
-            <h#{level} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{level}>
+            <div class="position-relative"><h#{level} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{level}></div>
             </div></div></div>
           HTML
         end
@@ -976,7 +976,7 @@ RSpec.describe DocbookCompat do
       end
       it 'has the xpack tag' do
         expect(converted).to include <<~HTML
-          <span class="xpack">Foo</span><a class="xpack_tag" href="/subscriptions"></a></h4>
+          <span class="xpack">Foo</span><a class="xpack_tag" href="/subscriptions"></a></h4></div>
         HTML
       end
     end
