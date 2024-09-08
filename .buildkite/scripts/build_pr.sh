@@ -55,15 +55,18 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
       git switch pr_$GITHUB_PR_NUMBER
 
   if [[ "${GITHUB_PR_BASE_REPO}" == 'apm-server' ]]; then
-    git diff --quiet HEAD $GITHUB_PR_TARGET_BRANCH -- ./docs ./changelogs CHANGELOG.asciidoc
-
-    empty=$?
-
-    if [ $empty -eq 0 ]; then
-      echo "${GITHUB_PR_TARGET_BRANCH} in ${GITHUB_PR_BASE_REPO} has no docs changes"
-      exit 0
-    fi
+    docs_diff=$(git diff --stat "$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./changelogs CHANGELOG.asciidoc)
+  else
+    docs_diff=$(git diff --stat "$GITHUB_PR_TARGET_BRANCH"...HEAD)
   fi
+
+  if [[ -z $docs_diff ]]; then
+    echo "${GITHUB_PR_TARGET_BRANCH} in ${GITHUB_PR_BASE_REPO} has no docs changes"
+    exit 0
+  fi
+
+  echo "diff:"
+  echo "$docs_diff"
 
   cd ..
   # For product repos - context in https://github.com/elastic/docs/commit/5b06c2dc1f50208fcf6025eaed6d5c4e81200330
