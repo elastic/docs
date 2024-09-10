@@ -1,20 +1,20 @@
-import AlternativeSwitcher from "./components/alternative_switcher";
-import ConsoleWidget from "./components/console_widget";
-import FeedbackModal from './components/feedback_modal';
-import FeedbackWidget from './components/feedback_widget';
-import Modal from "./components/modal";
-import mount from "./components/mount";
-import {switchTabs} from "./components/tabbed_widget";
-import {Cookies, $} from "./deps";
-import {lang_strings} from "./localization";
-import store from "./store";
+import AlternativeSwitcher from "./components/alternative_switcher.js";
+import ConsoleWidget from "./components/console_widget.jsx";
+import FeedbackModal from './components/feedback_modal.jsx';
+import FeedbackWidget from './components/feedback_widget.jsx';
+import Modal from "./components/modal.js";
+import mount from "./components/mount.js";
+import {switchTabs} from "./components/tabbed_widget.js";
+import {Cookies, $} from "./deps.js";
+import {lang_strings} from "./localization.js";
+import store from "./store.js";
 import * as utils from "./utils.js";
-import PR from "../lib/prettify/prettify";
-import "./prettify/lang-asciidoc";
-import "./prettify/lang-console";
-import "../lib/prettify/lang-esql";
-import "../lib/prettify/lang-sql";
-import "../lib/prettify/lang-yaml";
+import PR from "../lib/prettify/prettify.js";
+import "./prettify/lang-asciidoc.js";
+import "./prettify/lang-console.js";
+import "../lib/prettify/lang-esql.js";
+import "../lib/prettify/lang-sql.js";
+import "../lib/prettify/lang-yaml.js";
 
 // Add support for <details> in IE and the like
 import "../../../../../node_modules/details-polyfill";
@@ -63,10 +63,10 @@ export function init_headers(sticky_content, lang_strings) {
   this_page.append('<p id="otp" class="aside-heading">' + lang_strings('On this page') + '</p>');
   var ul = $('<ul></ul>').appendTo(this_page);
   var items = 0;
-  var baseHeadingLevel = 0;
 
-  $('#guide a[id]:not([href])').each(
-    function(i, el) {
+  // Get all headings inside the main body of the doc
+  $('div#content a[id]:not([href])').each(
+    function(i) {
       // Make headers into real links for permalinks
       this.href = '#' + this.id;
 
@@ -76,17 +76,11 @@ export function init_headers(sticky_content, lang_strings) {
         // Assume initial heading is an H1, but adjust if it's not
         let hLevel = 0;
         if ($(this).parent().is("h2")){
-          hLevel = 1;
+          hLevel = 0;
         } else if ($(this).parent().is("h3")){
-          hLevel = 2;
+          hLevel = 1;
         } else if ($(this).parent().is("h4")){
-          hLevel = 3;
-        }
-
-        // Set the base heading level for the page to the title page level + 1
-        // This ensures top level headings aren't nested
-        if (i === 0){
-          baseHeadingLevel = hLevel + 1;
+          hLevel = 2;
         }
 
         // Build list items for all headings except the page title
@@ -94,8 +88,7 @@ export function init_headers(sticky_content, lang_strings) {
           title_container.find('a,.added,.coming,.deprecated,.experimental')
             .remove();
           var text = title_container.html();
-          const adjustedLevel = hLevel - baseHeadingLevel;
-          const li = '<li id="otp-text-' + i + '" class="heading-level-' + adjustedLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+          const li = '<li id="otp-text-' + i + '" class="heading-level-' + hLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
           ul.append(li);
         }
       }
@@ -113,8 +106,8 @@ export function init_console_widgets() {
           langs       = div.attr("class").split(" ").filter(c => c.startsWith("has-")).map(function(string) { return string.substring(4) });
 
     return mount(div, ConsoleWidget, {setting: "console",
-                                      url_label: 'Enter the URL of the Console editor',
-                                      view_in_text: 'View in Console',
+                                      url_label: 'Console URL',
+                                      view_in_text: 'Try in Elastic',
                                       configure_text: 'Configure Console URL',
                                       addPretty: true,
                                       consoleText,
@@ -139,7 +132,7 @@ export function init_sense_widgets() {
           consoleText = div.prev().text() + '\n';
 
     return mount(div, ConsoleWidget, {setting: "sense",
-                                      url_label: 'Enter the URL of the Sense editor',
+                                      url_label: 'Sense URL',
                                       view_in_text: 'View in Sense',
                                       configure_text: 'Configure Sense URL',
                                       addPretty: true,
@@ -252,7 +245,9 @@ function highlight_otp() {
     })
   })
 
-  document.querySelectorAll('#guide a[id]').forEach((heading) => {
+  document.querySelectorAll('div#content a[id]').forEach((heading, i) => {
+    // Skip the first heading since it's not visible
+    if (i === 0) return
     observer.observe(heading);
   })
 }
@@ -292,7 +287,8 @@ $(function() {
   var lang = $('section#guide[lang]').attr('lang') || 'en';
 
   const default_kibana_url  = 'http://localhost:5601',
-        default_console_url = default_kibana_url + '/app/kibana#/dev_tools/console',
+        default_base_path   = '/zzz', // Since the original implementation, the base path was added and most users use it.
+        default_console_url = default_kibana_url + default_base_path + '/app/kibana#/dev_tools/console',
         default_sense_url   = default_kibana_url + '/app/sense/',
         default_ess_url     = 'http://localhost:5601', // localhost is wrong, but we'll enhance this later
         default_ece_url     = 'http://localhost:5601',
@@ -344,6 +340,42 @@ $(function() {
   mount($('body'), Modal);
 
   AlternativeSwitcher(store());
+
+  // Get all headings inside the main body of the doc
+  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6,h7')
+  let allLevels = []
+  // Create a list of all heading levels used on the page
+  allHeadings.each(function(index) {
+    // Don't include the first heading because that's the title
+    if (index === 0) return;
+    if (!allLevels.includes($(this).prop('nodeName'))) allLevels.push($(this).prop('nodeName'));
+  })
+  // Update the heading level to be incremental
+  // (i.e. the first heading after the title should be an h2 and
+  // then deeper levels should be adjusted so they are incremental)
+  allHeadings.each(function(index) {
+    const currentHeading = $(this)
+    const contents = currentHeading.prop('innerHTML')
+    // Don't include the first heading because that's the
+    // title and we always want that to be an h1
+    if (index > 0) {
+      if (allLevels[0] && ($(this).prop('nodeName') === allLevels[0])) {
+        $(this).replaceWith(`<h2>${contents}</h2>`);
+      }
+      if (allLevels[1] && ($(this).prop('nodeName') === allLevels[1])) {
+        $(this).replaceWith(`<h3>${contents}</h3>`);
+      }
+      if (allLevels[2] && ($(this).prop('nodeName') === allLevels[2])) {
+        $(this).replaceWith(`<h4>${contents}</h4>`);
+      }
+      if (allLevels[3] && ($(this).prop('nodeName') === allLevels[3])) {
+        $(this).replaceWith(`<h5>${contents}</h5>`);
+      }
+      if (allLevels[4] && ($(this).prop('nodeName') === allLevels[4])) {
+        $(this).replaceWith(`<h6>${contents}</h6>`);
+      }
+    }
+  })
 
   // If breadcrumbs contain a dropdown (e.g. APM, ECS Logging)
   // handle interaction with the dropdown
@@ -437,10 +469,23 @@ $(function() {
     });
   });
 
+  $('div.console_code_copy').each(function () {
+    const $copyButton = $(this);
+    const langText = $copyButton.next().text();
+
+    $copyButton.on('click', function () {
+      utils.copyText(langText, lang_strings);
+      $copyButton.addClass('copied');
+      setTimeout(function () {
+        $copyButton.removeClass('copied')
+      }, 3000);
+    });
+  });
+
   var div = $('div.toc');
 
   // Fetch toc.html unless there is already a .toc on the page
-  if (div.length == 0 && $('#guide').find('div.article,div.book').length == 0) {
+  if (div.length == 0) {
     var url = location.href.replace(/[^\/]+$/, 'toc.html');
     var toc = $.get(url, {}, function(data) {
       left_col.append(data);

@@ -22,7 +22,7 @@ module Chunker
 
       update_breadcrumbs_cases(result, chev, doc)
 
-      Asciidoctor::Block.new doc, :pass, source: result.join("\n")
+      result.join("\n")
     end
 
     def update_breadcrumbs_cases(result, chev, doc)

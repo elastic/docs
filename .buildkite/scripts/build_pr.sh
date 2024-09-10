@@ -3,8 +3,8 @@ set -euo pipefail
 set +x
 
 # This script should only be invoked by the Buildkite PR bot
-if [ -z ${GITHUB_PR_BRANCH+set} ] || [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ -z ${GITHUB_PR_NUMBER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ];then
-  echo "One of the following env. variable GITHUB_PR_BRANCH, GITHUB_PR_TARGET_BRANCH, GITHUB_PR_NUMBER, GITHUB_PR_BASE_REPO is missing - exiting."
+if [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ -z ${GITHUB_PR_NUMBER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ];then
+  echo "One of the following env. variable GITHUB_PR_TARGET_BRANCH, GITHUB_PR_NUMBER, GITHUB_PR_BASE_REPO is missing - exiting."
   exit 1
 fi
 
@@ -51,8 +51,8 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
     git@github.com:elastic/$GITHUB_PR_BASE_REPO.git ./product-repo
 
   cd ./product-repo &&
-      git fetch origin pull/$GITHUB_PR_NUMBER/head:$GITHUB_PR_BRANCH &&
-      git switch $GITHUB_PR_BRANCH &&
+      git fetch origin pull/$GITHUB_PR_NUMBER/head:pr_$GITHUB_PR_NUMBER &&
+      git switch pr_$GITHUB_PR_NUMBER &&
       cd ..
   # For product repos - context in https://github.com/elastic/docs/commit/5b06c2dc1f50208fcf6025eaed6d5c4e81200330
   build_args+=" --keep_hash"
@@ -84,6 +84,12 @@ build_cmd="./build_docs --all \
 
 echo "The following build command will be used"
 echo $build_cmd
+
+# Temporary workaround until we can move to HTTPS auth
+vault read -field=private-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa"
+vault read -field=public-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa.pub"
+ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+chmod 600 "$HOME/.ssh/id_rsa"
 
 # Kick off the build
 ssh-agent bash -c "ssh-add && $build_cmd"

@@ -3,7 +3,6 @@
 # Build the docker image for the air gapped docs.
 
 set -eo pipefail
-
 cd $(git rev-parse --show-toplevel)
 
 if [[ ! -d /opt/git-mirrors/built-docs.git ]]; then

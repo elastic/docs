@@ -75,11 +75,11 @@ RSpec.describe EditMe do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
-            expect(converted).to include("#{type.capitalize} 1#{link}</")
+            expect(converted).to include(link)
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
-            expect(converted).to include("#{type.capitalize} 2#{link}</")
+            expect(converted).to include(link)
           end
         end
         context "that doesn't override edit_url" do
@@ -112,15 +112,15 @@ RSpec.describe EditMe do
               }
             end
             it 'adds a link to the enclosing chapter' do
-              expect(converted).to include(">Chapter#{stdin_link}</")
+              expect(converted).to include(stdin_link)
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
-              expect(converted).to include("#{type.capitalize} 1#{link}</")
+              expect(converted).to include(link)
             end
             it "adds a link to #{type} 2" do
               link = edit_link 'bar'
-              expect(converted).to include("#{type.capitalize} 2#{link}</")
+              expect(converted).to include(link)
             end
             context 'when overriding to an empty string' do
               let(:input) do
@@ -166,7 +166,7 @@ RSpec.describe EditMe do
       it 'uses the longest match' do
         link = edit_link 'www.example.com/section2'
         expect(converted).to include <<~HTML
-          <h2 class="title"><a id="_section_2"></a>Section 2#{link}</h2>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>#{link}</div>
         HTML
       end
     end
@@ -188,7 +188,7 @@ RSpec.describe EditMe do
       end
       it "doesn't have an edit me link" do
         expect(converted).to include <<~HTML
-          <h2 class="title"><a id="_section_2"></a>Section 2</h2>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2></div>
         HTML
       end
     end
@@ -225,11 +225,11 @@ RSpec.describe EditMe do
         shared_examples 'has standard edit links' do
           it "adds a link to #{type} 1" do
             link = spec_dir_link "#{type}1.adoc"
-            expect(converted).to include("#{type.capitalize} 1#{link}</")
+            expect(converted).to include(link)
           end
           it "adds a link to #{type} 2" do
             link = spec_dir_link "#{type}2.adoc"
-            expect(converted).to include("#{type.capitalize} 2#{link}</")
+            expect(converted).to include(link)
           end
         end
         context "that doesn't override edit_url" do
@@ -263,15 +263,15 @@ RSpec.describe EditMe do
               }
             end
             it 'adds a link to the enclosing chapter' do
-              expect(converted).to include(">Chapter#{stdin_link}</")
+              expect(converted).to include(stdin_link)
             end
             it "adds a link to #{type} 1" do
               link = edit_link 'foo'
-              expect(converted).to include("#{type.capitalize} 1#{link}</")
+              expect(converted).to include(link)
             end
             it "adds a link to #{type} 2" do
               link = edit_link 'bar'
-              expect(converted).to include("#{type.capitalize} 2#{link}</")
+              expect(converted).to include(link)
             end
             context 'when overriding to an empty string' do
               let(:input) do
@@ -320,7 +320,7 @@ RSpec.describe EditMe do
       it 'uses the longest match' do
         link = edit_link 'www.example.com/section2'
         expect(converted).to include <<~HTML
-          <h2 class="title"><a id="_section_2"></a>Section 2#{link}</h2>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2>#{link}</div>
         HTML
       end
     end
@@ -345,7 +345,7 @@ RSpec.describe EditMe do
       end
       it "doesn't have an edit me link" do
         expect(converted).to include <<~HTML
-          <h2 class="title"><a id="_section_2"></a>Section 2</h2>
+          <h2 class="title"><a id="_section_2"></a>Section 2</h2></div>
         HTML
       end
     end

@@ -57,6 +57,15 @@ module Chunker
       return yield unless section.level <= @chunk_level
 
       html = form_section_into_page doc, section, yield
+      # Replace the breadcrumbs placeholder with
+      # the generated breadcrumbs
+      if html =~ %r{<div id="breadcrumbs-go-here"></div>}
+        html.gsub!(
+          %r{<div id="breadcrumbs-go-here"></div>},
+          generate_breadcrumbs(doc, section).to_s
+        )
+      end
+      html.gsub!(%r{</h1>}, "</h1>#{section.attr('edit_me_link', '')}")
       write doc, "#{section.id}.html", html
       ''
     end
@@ -93,12 +102,11 @@ module Chunker
       # We don't use asciidoctor's "parent" documents here because they don't
       # seem to buy us much and they are an "internal" detail.
       subdoc = Asciidoctor::Document.new [], subdoc_opts(doc, section)
-      add_subdoc_sections doc, subdoc, section, html
+      add_subdoc_sections doc, subdoc, html
       subdoc.convert
     end
 
-    def add_subdoc_sections(doc, subdoc, section, html)
-      subdoc << generate_breadcrumbs(doc, section)
+    def add_subdoc_sections(doc, subdoc, html)
       nav = Nav.new subdoc
       subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
@@ -121,7 +129,10 @@ module Chunker
     def subdoc_attrs(doc, section)
       attrs = doc.attributes.dup
       maintitle = doc.doctitle partition: true
-      attrs['doctitle'] = subdoc_title section, maintitle
+      # Rendered h1 heading
+      attrs['doctitle'] = subdoc_doctitle section
+      # Value of `title` in the `head`
+      attrs['title'] = subdoc_title section, maintitle
       # Asciidoctor defaults these attribute to empty string if they aren't
       # specified and setting them to `nil` clears them. Since we want to
       # preserve the configuration from the parent into the child, we clear
@@ -130,13 +141,20 @@ module Chunker
       attrs['stylesheet'] = nil unless attrs['stylesheet']
       attrs['icons'] = nil unless attrs['icons']
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
-      attrs['noheader'] = true
       attrs['title-separator'] = ''
       attrs['canonical-url'] = section.attributes['canonical-url']
       attrs.merge! find_related(section)
       attrs
     end
 
+    # For the `h1` heading that appears on the rendered page,
+    # use just the page title
+    def subdoc_doctitle(section)
+      strip_tags section.captioned_title.to_s
+    end
+
+    # For the `title` in the `head`, use the page title followed
+    # by the site title ("Elastic")
     def subdoc_title(section, maintitle)
       strip_tags "#{section.captioned_title} | #{maintitle.main}"
     end

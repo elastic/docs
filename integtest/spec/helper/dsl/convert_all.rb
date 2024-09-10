@@ -69,7 +69,7 @@ module Dsl
           end
         end
       end
-      file_context 'html/static/docs.js' do
+      file_context 'html/static/docs-v1.js' do
         it 'is minified' do
           expect(contents).to include(<<~JS.strip)
             return a&&a.__esModule?{d:a.default}:{d:a}
@@ -89,7 +89,7 @@ module Dsl
           expect(contents).not_to include('sourceMappingURL=')
         end
       end
-      file_context 'html/static/styles.css' do
+      file_context 'html/static/styles-v1.css' do
         it 'is minified' do
           expect(contents).to include(<<~CSS.strip)
             *{font-family:Inter,sans-serif}

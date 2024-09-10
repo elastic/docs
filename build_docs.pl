@@ -354,9 +354,10 @@ sub check_kibana_links {
     my $extractor = sub {
         my $contents = shift;
         return sub {
-            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED|APP_SEARCH_DOCS|ENTERPRISE_SEARCH_DOCS|WORKPLACE_SEARCH_DOCS)\}[^`]+)`!g ) {
+            while ( $contents =~ m!`(\$\{(?:baseUrl|ELASTIC.+|KIBANA_DOCS|PLUGIN_DOCS|FLEET_DOCS|APM_DOCS|STACK_DOCS|SECURITY_SOLUTION_DOCS|STACK_GETTING_STARTED|APP_SEARCH_DOCS|ENTERPRISE_SEARCH_DOCS|INTEGRATIONS_DEV_DOCS|WORKPLACE_SEARCH_DOCS)\}[^`]+)`!g ) {
                 my $path = $1;
                 $path =~ s/\$\{(?:DOC_LINK_VERSION|urlVersion)\}/$version/;
+                $path =~ s/\$\{(?:ECS_VERSION)\}/current/;
                 # In older versions, the variable `${ELASTIC_DOCS}` referred to
                 # the Elasticsearch Guide. In newer branches, the
                 # variable is called `${ELASTICSEARCH_DOCS}`
@@ -364,6 +365,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{ELASTICSEARCH_DOCS\}!en/elasticsearch/reference/$version/!;
                 $path =~ s!\$\{KIBANA_DOCS\}!en/kibana/$version/!;
                 $path =~ s!\$\{PLUGIN_DOCS\}!en/elasticsearch/plugins/$version/!;
+                $path =~ s!\$\{OBSERVABILITY_DOCS\}!en/observability/$version/!;
                 $path =~ s!\$\{FLEET_DOCS\}!en/fleet/$version/!;
                 $path =~ s!\$\{APM_DOCS\}!en/apm/!;
                 $path =~ s!\$\{STACK_DOCS\}!en/elastic-stack/$version/!;
@@ -373,6 +375,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{ENTERPRISE_SEARCH_DOCS\}!en/enterprise-search/$version/!;
                 $path =~ s!\$\{WORKPLACE_SEARCH_DOCS\}!en/workplace-search/$version/!;
                 $path =~ s!\$\{MACHINE_LEARNING_DOCS\}!en/machine-learning/$version/!;
+                $path =~ s!\$\{INTEGRATIONS_DEV_DOCS}!en/integrations-developer/current/!;
                 # Replace the "https://www.elastic.co/guide/" URL prefix so that
                 # it becomes a file path in the built docs.
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
@@ -453,13 +456,22 @@ sub check_elasticsearch_links {
     # So we grab all quoted strings that contain `html`. This *should* be fine
     # for a while because the keys in the file are all in SHOUTING_SNAKE_CASE
     # so even if one contains "html" it'll contain "HTML" which doesn't match.
-    my $extractor = sub {
+    my $json_extractor = sub {
         my $contents = shift;
         return sub {
             while ( $contents =~ m!"([^"\#]+)(?:\#([^"]+))?"!g ) {
                 my $path = $1;
                 next unless $path =~ m!html!;
                 return "en/elasticsearch/reference/$version/$path";
+            }
+            return;
+        };
+    };
+    my $tabdelim_extractor = sub {
+        my $contents = shift;
+        return sub {
+            while ( $contents =~ m!"[^\t]+\t(.*)"!g ) {
+                return "en/elasticsearch/reference/$version/$1";
             }
             return;
         };
@@ -485,7 +497,19 @@ sub check_elasticsearch_links {
         # https://github.com/elastic/docs/issues/2264
         $branch = $version eq "master" ? "main" : $version;
         say "  Branch: $branch, Version: $version";
-        my $source = $repo->show_file( $link_check_name, $branch, $src_path );
+
+        my $links_file;
+        my $extractor;
+        my $source = eval {
+            $links_file = 'server/src/main/resources/org/elasticsearch/common/reference-docs-links.json';
+            $extractor = $json_extractor;
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
+            $links_file = 'libs/core/src/main/resources/org/elasticsearch/core/reference-docs-links.txt';
+            $extractor = $tabdelim_extractor;
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        };
+        die "failed to find elasticsearch links file;\n$@" unless $source;
 
         $link_checker->check_source( $source, $extractor,
             "Elasticsearch [$version]: $src_path" );

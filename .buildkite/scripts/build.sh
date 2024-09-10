@@ -25,12 +25,17 @@ elif [[ "${BROKEN_LINKS}" == 'warnlinkcheck' ]]; then
 fi
 
 if [[ "${BUILDKITE_BRANCH}" == "master" ]]; then
-  # temporary pushing to staging instead of master until the migration is over
-  build_args+=" --target_branch staging --push"
+  build_args+=" --push"
 fi
 
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
+
+# Temporary workaround until we can move to HTTPS auth
+vault read -field=private-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa"
+vault read -field=public-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa.pub"
+ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+chmod 600 "$HOME/.ssh/id_rsa"
 
 ssh-agent bash -c "
   ssh-add &&

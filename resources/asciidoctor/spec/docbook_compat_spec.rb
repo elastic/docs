@@ -111,11 +111,9 @@ RSpec.describe DocbookCompat do
       it "is wrapped in docbook's funny titlepage" do
         expect(converted).to include(<<~HTML)
           <div class="titlepage">
+          <div id="breadcrumbs-go-here"></div>
           <div>
           <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
-          </div>
-          <hr>
-          <!--EXTRA-->
           </div>
         HTML
       end
@@ -133,11 +131,9 @@ RSpec.describe DocbookCompat do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div id="breadcrumbs-go-here"></div>
             <div>
             <div><h1 class="title"><a id="title-id"></a>Title</h1></div>
-            </div>
-            <hr>
-            <!--EXTRA-->
             </div>
           HTML
         end
@@ -169,10 +165,10 @@ RSpec.describe DocbookCompat do
         it "is wrapped in docbook's funny titlepage" do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div id="breadcrumbs-go-here"></div>
             <div>
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             </div>
-            <hr>
             <!--EXTRA-->
           HTML
         end
@@ -180,7 +176,6 @@ RSpec.describe DocbookCompat do
       context 'the table of contents' do
         it 'is outside the titlepage' do
           expect(converted).to include(<<~HTML)
-            <hr>
             <!--EXTRA-->
             </div>
             <div id="content">
@@ -293,7 +288,7 @@ RSpec.describe DocbookCompat do
               expect(converted).not_to include '<titleabbrev>'
             end
             it 'includes the unabbreviated title' do
-              expect(converted).to include 'Section 1</h1>'
+              expect(converted).to include 'Section 1</h2>'
             end
             it 'includes a link to the abbreviated section' do
               expect(converted).to include <<~HTML.strip
@@ -364,23 +359,15 @@ RSpec.describe DocbookCompat do
           Words.
         ASCIIDOC
       end
-      context 'the title' do
-        it "doesn't include the subtitle" do
-          expect(converted).to include(<<~HTML)
-            <title>Title | Elastic</title>
-            <meta class="elastic" name="content" content="Title">
-          HTML
-        end
-      end
       context 'the header' do
         it 'includes the title and subtitle' do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div id="breadcrumbs-go-here"></div>
             <div>
             <div><h1 class="title"><a id="id-1"></a>Title</h1></div>
             <div><h2 class="subtitle">Subtitle</h2></div>
             </div>
-            <hr>
             <!--EXTRA-->
             </div>
           HTML
@@ -407,10 +394,10 @@ RSpec.describe DocbookCompat do
         it 'includes the title and subtitle' do
           expect(converted).to include(<<~HTML)
             <div class="titlepage">
+            <div id="breadcrumbs-go-here"></div>
             <div>
             <div><h1 class="title"><a id="id-1"></a><code class="literal">foo</code></h1></div>
             </div>
-            <hr>
             <!--EXTRA-->
             </div>
           HTML
@@ -500,64 +487,6 @@ RSpec.describe DocbookCompat do
         {
           # Shrink the output slightly so it is easier to read
           'stylesheet!' => false,
-          # Disable the head
-          'noheader' => true,
-        }
-      end
-      let(:input) do
-        <<~ASCIIDOC
-          = Title
-
-          Words.
-        ASCIIDOC
-      end
-      context 'the header' do
-        it "doesn't contain the title h1" do
-          expect(converted).not_to include('Title</h1>')
-        end
-      end
-      context 'the body' do
-        it "doesn't have attributes" do
-          expect(converted).to include('<body>')
-        end
-        it "doesn't include the 'book' wrapper" do
-          expect(converted).not_to include(<<~HTML)
-            <div class="book" lang="en">
-          HTML
-        end
-      end
-
-      context 'when there is a page-header' do
-        let(:convert_attributes) do
-          {
-            # Shrink the output slightly so it is easier to read
-            'stylesheet!' => false,
-            'noheader' => true,
-            'page-header' => '<div class="foo" />',
-          }
-        end
-        let(:input) do
-          <<~ASCIIDOC
-            = Title
-
-            Words.
-          ASCIIDOC
-        end
-        context 'the header' do
-          it 'contains the page-header right after the body tag' do
-            expect(converted).not_to include <<~HTML
-              <body>
-              <div class="foo" />
-            HTML
-          end
-        end
-      end
-    end
-    context 'when the head is disabled' do
-      let(:convert_attributes) do
-        {
-          # Shrink the output slightly so it is easier to read
-          'stylesheet!' => false,
           # Set some metadata that will be included in the header
           'dc.type' => 'FooType',
           'dc.subject' => 'BarSubject',
@@ -634,9 +563,10 @@ RSpec.describe DocbookCompat do
           end
         end
         it "is wrapped in docbook's funny titlepage" do
+          level = hlevel < 2 ? 2 : hlevel
           expect(converted).to include(<<~HTML)
             <div class="titlepage"><div><div>
-            <h#{hlevel} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{hlevel}>
+            <div class="position-relative"><h#{level} class="title"><a id="#{id}"></a>#{title}#{xpack_tag}</h#{level}></div>
             </div></div></div>
           HTML
         end
@@ -801,7 +731,7 @@ RSpec.describe DocbookCompat do
         include_examples 'section basics', 'appendix', 1, '_foo',
                          'Appendix A: Foo'
         it "doesn't bump the h tags of sections within it" do
-          expect(converted).to include 'Bar</h1>'
+          expect(converted).to include 'Bar</h2>'
         end
       end
     end
@@ -1046,7 +976,7 @@ RSpec.describe DocbookCompat do
       end
       it 'has the xpack tag' do
         expect(converted).to include <<~HTML
-          <span class="xpack">Foo</span><a class="xpack_tag" href="/subscriptions"></a></h4>
+          <span class="xpack">Foo</span><a class="xpack_tag" href="/subscriptions"></a></h4></div>
         HTML
       end
     end
@@ -1065,6 +995,7 @@ RSpec.describe DocbookCompat do
       # It is important that there isn't any extra space around the <pre> tags
       expect(converted).to include(<<~HTML)
         <div class="pre_wrapper lang-sh">
+        <div class="console_code_copy" title="Copy to clipboard"></div>
         <pre class="programlisting prettyprint lang-sh">cpanm Search::Elasticsearch</pre>
         </div>
       HTML
@@ -1253,6 +1184,7 @@ RSpec.describe DocbookCompat do
       it 'the role is included as a class' do
         expect(converted).to include(<<~HTML)
           <div class="pre_wrapper lang-sh foo">
+          <div class="console_code_copy" title="Copy to clipboard"></div>
           <pre class="programlisting prettyprint lang-sh foo">cpanm Search::Elasticsearch</pre>
           </div>
         HTML

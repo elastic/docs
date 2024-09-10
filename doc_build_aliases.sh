@@ -58,7 +58,7 @@ docbldlsvpr() {
 }
 
 # Installation and Upgrade Guide 7.10 and later
-alias docbldstk='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/observability-docs/docs/en/observability --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --resource=$GIT_HOME/security-docs/docs/ --chunk 1'
+alias docbldstk='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/observability-docs/docs/en/observability --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --resource=$GIT_HOME/security-docs/docs/ --chunk 1'
 
 # Installation and Upgrade Guide 7.0 to 7.9
 alias docbldstkold2='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --chunk 1'
@@ -110,7 +110,7 @@ alias docbldeesr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-ru
 alias docbldewsn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/enterprise-search-pubs/client-docs/workplace-search-node/index.asciidoc --single'
 
 # Observability Guide 8.8 and later
-alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 3 --resource $GIT_HOME/apm-server --resource=$GIT_HOME/ingest-docs/docs'
+alias docbldob='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 4 --resource $GIT_HOME/apm-server --resource=$GIT_HOME/ingest-docs/docs'
 
 # Observability Guide 8.7 and earlier
 alias docbldobold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/observability/index.asciidoc --chunk 2 --resource $GIT_HOME/beats/libbeat/docs --resource $GIT_HOME/apm-server/docs/guide --resource=$GIT_HOME/ingest-docs/docs'
@@ -174,7 +174,7 @@ alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GI
 alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/ingest-management/index.asciidoc --resource=$GIT_HOME/apm-server/docs --resource=$GIT_HOME/observability-docs/docs --chunk 2'
 
 # Integrations developer guide
-alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 2'
+alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 1'
 
 # APM Guide (7.16-8.11)
 alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/observability/docs/en/apm-server/integrations-index.asciidoc --resource=$GIT_HOME/apm-server/ --resource=$GIT_HOME/ingest-docs/ --chunk 2 --open'
@@ -264,6 +264,8 @@ alias docbldecslg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging/docs/in
 alias docbldecslrs='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-logrus/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 
 alias docbldecszap='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-zap/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
+
+alias docbldecszro='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-go-zerolog/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 
 alias docbldecsjv='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ecs-logging-java/docs/index.asciidoc --resource=$GIT_HOME/ecs-logging/docs/ --chunk 1'
 
