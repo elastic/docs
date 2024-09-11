@@ -62,7 +62,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   fi
 
   if [[ -z $docs_diff ]]; then
-    echo "${GITHUB_PR_TARGET_BRANCH} in ${GITHUB_PR_BASE_REPO} has no docs changes"
+    echo "pull/${GITHUB_PR_NUMBER} in ${GITHUB_PR_BASE_REPO} has no docs changes compared to ${GITHUB_PR_TARGET_BRANCH}"
     exit 0
   fi
 
