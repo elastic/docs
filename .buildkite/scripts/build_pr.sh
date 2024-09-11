@@ -56,7 +56,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
   if [[ "${GITHUB_PR_BASE_REPO}" == 'apm-agent-go' ]]; then
     git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-    docs_diff=$(git diff --stat "$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs CHANGELOG.asciidoc)
+    docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs CHANGELOG.asciidoc)
   else
     docs_diff="always build"
   fi
