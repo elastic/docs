@@ -150,7 +150,7 @@ export class _TryConsoleSelector extends Component {
           </a>
         <p> 
           <a
-            href="https://www.elastic.co/guide/en/elastic-stack/current/installing-elastic-stack.html"
+            href="https://www.elastic.co/guide/en/elasticsearch/reference/current/run-elasticsearch-locally.html"
             target="_blank"
           >
              Install locally
