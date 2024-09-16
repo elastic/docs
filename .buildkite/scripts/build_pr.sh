@@ -52,8 +52,48 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
   cd ./product-repo &&
       git fetch origin pull/$GITHUB_PR_NUMBER/head:pr_$GITHUB_PR_NUMBER &&
-      git switch pr_$GITHUB_PR_NUMBER &&
-      cd ..
+      git switch pr_$GITHUB_PR_NUMBER
+
+  # Some repositories allow the documentation build to exit early if there are no doc-related changes
+  # For these repos, we fetch the latest changes from the target branch of the pull request and check
+  # for changes in specified files and directories with git diff.
+  case $GITHUB_PR_BASE_REPO in
+
+    # repositories with a docs dir and changelog
+    "apm-aws-lambda" | "apm-agent-android" | "apm-agent-nodejs" | "apm-agent-python" | "apm-agent-ruby" | "apm-agent-rum-js" | "apm-agent-go" | "apm-agent-java" | "apm-agent-dotnet" | "apm-agent-php" | "apm-agent-ios")
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs CHANGELOG.asciidoc)
+      ;;
+      
+    # repositories with a docs dir
+    "apm-k8s-attacher")
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs)
+      ;;
+      
+    # repositories with a docs dir, changelogs dir, and changelog
+    "apm-server")
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./changelogs CHANGELOG.asciidoc)
+      ;;
+
+    # All other repos will always build
+    *)
+      docs_diff="always build"
+      ;;
+  esac
+
+  # If docs_diff is empty, exit early and succeed
+  if [[ -z $docs_diff ]]; then
+    echo "pull/${GITHUB_PR_NUMBER} in ${GITHUB_PR_BASE_REPO} has no docs changes compared to ${GITHUB_PR_TARGET_BRANCH}"
+    exit 0
+  fi
+
+  # Regardless of whether we build or not, we print out the diff
+  echo "diff:"
+  echo "$docs_diff"
+
+  cd ..
   # For product repos - context in https://github.com/elastic/docs/commit/5b06c2dc1f50208fcf6025eaed6d5c4e81200330
   build_args+=" --keep_hash"
   build_args+=" --sub_dir $GITHUB_PR_BASE_REPO:$GITHUB_PR_TARGET_BRANCH:./product-repo"

@@ -71,16 +71,18 @@ export function init_headers(sticky_content, lang_strings) {
       this.href = '#' + this.id;
 
       // Extract on-this-page headers, without embedded links
-      var title_container = $(this).parent('h1,h2,h3,h4').clone();
+      var title_container = $(this).parent('h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12').clone();
       if (title_container.length > 0) {
         // Assume initial heading is an H1, but adjust if it's not
-        let hLevel = 0;
+        let hLevel;
         if ($(this).parent().is("h2")){
           hLevel = 0;
         } else if ($(this).parent().is("h3")){
           hLevel = 1;
         } else if ($(this).parent().is("h4")){
           hLevel = 2;
+        } else if ($(this).parent().is("h5,h6,h7,h8,h9,h10,h11,h12")) {
+          hLevel = null
         }
 
         // Build list items for all headings except the page title
@@ -88,8 +90,10 @@ export function init_headers(sticky_content, lang_strings) {
           title_container.find('a,.added,.coming,.deprecated,.experimental')
             .remove();
           var text = title_container.html();
-          const li = '<li id="otp-text-' + i + '" class="heading-level-' + hLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
-          ul.append(li);
+          if (hLevel !== null) {
+            const li = '<li id="otp-text-' + i + '" class="heading-level-' + hLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
+            ul.append(li);
+          }
         }
       }
     });
@@ -342,7 +346,7 @@ $(function() {
   AlternativeSwitcher(store());
 
   // Get all headings inside the main body of the doc
-  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6,h7')
+  const allHeadings = $('div#content').find('h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12')
   let allLevels = []
   // Create a list of all heading levels used on the page
   allHeadings.each(function(index) {
