@@ -12,10 +12,14 @@ require_relative '../migration_log'
 #   added[6.0.0-beta1]
 #   coming[6.0.0-beta1]
 #   deprecated[6.0.0-beta1]
+#   discontinued-stack[9.0.0]
+#   ga_stack[8.10]
 # Into
 #   added::[6.0.0-beta1]
 #   coming::[6.0.0-beta1]
 #   deprecated::[6.0.0-beta1]
+#   discontinued-stack[9.0.0]
+#   ga_stack::[8.10]
 # Because `::` is required by asciidoctor to invoke block macros but isn't
 # required by asciidoc.
 #
@@ -23,10 +27,14 @@ require_relative '../migration_log'
 #   words words added[6.0.0-beta1]
 #   words words changed[6.0.0-beta1]
 #   words words deprecated[6.0.0-beta1]
+#   words words discontinued[9.0.0]
+#   words words ga_stack[8.10]
 # Into
 #   words words added:[6.0.0-beta1]
 #   words words changed:[6.0.0-beta1]
 #   words words deprecated:[6.0.0-beta1]
+#   words words discontinued:[9.0.0]
+#   words words ga_stack:[8.10]
 # Because `:` is required by asciidoctor to invoke inline macros but isn't
 # required by asciidoc.
 #
@@ -116,7 +124,7 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
     /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
   CODE_BLOCK_RX = /^-----*$/
   SNIPPET_RX = %r{^//\s*(AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)$}
-  LEGACY_MACROS = 'added|beta|coming|deprecated|dev|experimental'
+  LEGACY_MACROS = 'added|beta|coming|deprecated|dev|experimental|ga_stack|ga_serverless|ga_ess|beta_serverless|beta_ess|coming_serverless|coming_ess|deprecated_serverless|deprecated_ess|dev_serverless|dev_ess|preview_serverless|preview_ess|discontinued_stack|discontinued_ess|discontinued_serverless'
   LEGACY_BLOCK_MACRO_RX = /^\s*(#{LEGACY_MACROS})\[(.*)\]\s*$/
   LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[(.*)\]/
 
