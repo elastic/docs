@@ -183,7 +183,7 @@ RSpec.describe ElasticCompatPreprocessor do
     shared_examples 'care admonition' do
       include_examples 'admonition'
       let(:invocation) { "#{name}[]" }
-      let(:invocation_with_text) { "#{name}[#{invocation_text}]" }s
+      let(:invocation_with_text) { "#{name}[#{invocation_text}]" }
       let(:block_admon_class) { 'warning' }
     end
     context 'for beta' do

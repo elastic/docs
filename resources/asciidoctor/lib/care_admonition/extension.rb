@@ -99,23 +99,23 @@ class CareAdmonition < Asciidoctor::Extensions::Group
   def activate(registry)
     [
       [:beta, 'beta', BETA_DEFAULT_TEXT],
-      [:beta_serverless, 'beta', BETA_SERVERLESS_TEXT],
-      [:beta_ess, 'beta', BETA_ESS_TEXT],
+      [:beta_serverless, 'Serverless:beta', BETA_SERVERLESS_TEXT],
+      [:beta_ess, 'ESS:beta', BETA_ESS_TEXT],
       [:dev, 'dev', DEV_DEFAULT_TEXT],
-      [:dev_serverless, 'dev', DEV_SERVERLESS_TEXT],
-      [:dev_ess, 'dev', DEV_ESS_TEXT],
+      [:dev_serverless, 'Serverless:dev', DEV_SERVERLESS_TEXT],
+      [:dev_ess, 'ESS:dev', DEV_ESS_TEXT],
       [:experimental, 'preview', PREVIEW_DEFAULT_TEXT],
       [:preview, 'preview', PREVIEW_DEFAULT_TEXT],
-      [:preview_serverless, 'preview', PREVIEW_SERVERLESS_TEXT],
-      [:preview_ess, 'preview', PREVIEW_ESS_TEXT],
-      [:deprecated_serverless, 'deprecated', DEPRECATED_SERVERLESS_TEXT],
-      [:deprecated_ess, 'deprecated', DEPRECATED_ESS_TEXT],
-      [:discontinued_serverless, 'discontinued', DISCONTINUED_SERVERLESS_TEXT],
-      [:discontinued_ess, 'discontinued', DISCONTINUED_ESS_TEXT],
-      [:coming_serverless, 'coming', COMING_SERVERLESS_TEXT],
-      [:coming_ess, 'coming', COMING_ESS_TEXT],
-      [:ga_serverless, 'added', GA_SERVERLESS_TEXT],
-      [:ga_ess, 'added', GA_ESS_TEXT]
+      [:preview_serverless, 'Serverless:preview', PREVIEW_SERVERLESS_TEXT],
+      [:preview_ess, 'ESS:preview', PREVIEW_ESS_TEXT],
+      [:deprecated_serverless, 'Serverless:deprecated', DEPRECATED_SERVERLESS_TEXT],
+      [:deprecated_ess, 'ESS:deprecated', DEPRECATED_ESS_TEXT],
+      [:discontinued_serverless, 'Serverless:discontinued', DISCONTINUED_SERVERLESS_TEXT],
+      [:discontinued_ess, 'ESS:discontinued', DISCONTINUED_ESS_TEXT],
+      [:coming_serverless, 'Serverless:coming', COMING_SERVERLESS_TEXT],
+      [:coming_ess, 'ESS:coming', COMING_ESS_TEXT],
+      [:ga_serverless, 'Serverless:GA', GA_SERVERLESS_TEXT],
+      [:ga_ess, 'ESS:GA', GA_ESS_TEXT]
     ].each do |(name, role, default_text)|
       registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
       registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
