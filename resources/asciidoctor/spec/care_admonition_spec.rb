@@ -232,6 +232,16 @@ RSpec.describe CareAdmonition do
     end
     include_examples 'care admonition'
   end
+  context 'beta serverless' do
+    let(:key) { 'beta_serverless' }
+    let(:admon_class) { 'warning' }
+    let(:default_text) do
+      <<~TEXT.strip
+        This functionality is in beta in Elastic Serverless and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+      TEXT
+    end
+    include_examples 'care admonition'
+  end
   context 'dev' do
     let(:key) { 'dev' }
     let(:admon_class) { 'warning' }

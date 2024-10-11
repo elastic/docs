@@ -40,7 +40,7 @@ RSpec.describe ChangeAdmonition do
           HTML
         end
       end
-      context 'without content' do
+      context 'with version without content' do
         let(:input) do
           <<~ASCIIDOC
             #{key}::[7.0.0-beta1]
@@ -48,6 +48,16 @@ RSpec.describe ChangeAdmonition do
         end
         it 'has default text' do
           expect_block_admonition "<p>#{message} in 7.0.0-beta1.</p>"
+        end
+      end
+      context 'without content' do
+        let(:input) do
+          <<~ASCIIDOC
+            #{key}::[]
+          ASCIIDOC
+        end
+        it 'has default text' do
+          expect_block_admonition "<p>#{message}</p>"
         end
       end
       context 'with complex content' do
@@ -99,7 +109,7 @@ RSpec.describe ChangeAdmonition do
           )
         end
       end
-      context 'without text' do
+      context 'with version without text' do
         let(:input) do
           <<~ASCIIDOC
             Words #{key}:[7.0.0-beta1] words.
@@ -108,6 +118,18 @@ RSpec.describe ChangeAdmonition do
         it 'has default text' do
           expect_inline_admonition(
             '7.0.0-beta1', "#{message} in 7.0.0-beta1."
+          )
+        end
+      end
+      context 'without text' do
+        let(:input) do
+          <<~ASCIIDOC
+            Words #{key}:[] words.
+          ASCIIDOC
+        end
+        it 'has default text' do
+          expect_inline_admonition(
+            '', "#{message}"
           )
         end
       end
@@ -195,6 +217,13 @@ RSpec.describe ChangeAdmonition do
     let(:extra_class) { '' }
     include_examples 'change admonition'
   end
+  context 'ga in stack' do
+    let(:key) { 'ga_stack' }
+    let(:admon_class) { 'note' }
+    let(:message) { 'Generally available in Elastic Stack' }
+    let(:extra_class) { '' }
+    include_examples 'change admonition'
+  end
   context 'coming' do
     let(:key) { 'coming' }
     let(:admon_class) { 'note' }
@@ -206,6 +235,13 @@ RSpec.describe ChangeAdmonition do
     let(:key) { 'deprecated' }
     let(:admon_class) { 'warning' }
     let(:message) { 'Deprecated' }
+    let(:extra_class) { ' u-strikethrough' }
+    include_examples 'change admonition'
+  end
+  context 'discontinued in stack' do
+    let(:key) { 'discontinued_stack' }
+    let(:admon_class) { 'warning' }
+    let(:message) { 'Discontinued' }
     let(:extra_class) { ' u-strikethrough' }
     include_examples 'change admonition'
   end
