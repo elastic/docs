@@ -9,15 +9,15 @@ require 'asciidoctor/extensions'
 # Usage
 #
 #   added::[6.0.0-beta1]
-#   gastack::[8.10]
+#   ga_stack::[8.10]
 #   coming::[6.0.0-beta1]
 #   deprecated::[6.0.0-beta1]
-#   discontinuedstack::[9.0.0]
+#   discontinued_stack::[9.0.0]
 #   Foo added:[6.0.0-beta1]
 #   Foo coming:[6.0.0-beta1]
 #   Foo deprecated:[6.0.0-beta1]
-#   Foo gastack:[8.10]
-#   Foo discontinuedstack:[9.0.0]
+#   Foo ga_stack:[8.10]
+#   Foo discontinued_stack:[9.0.0]
 #
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [

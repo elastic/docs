@@ -122,16 +122,6 @@ RSpec.describe ElasticCompatPreprocessor do
       let(:block_admon_class) { 'note' }
       let(:inline_admon_class) { 'change' }
     end
-    context 'for ga in serverless' do
-      include_context 'care admonition'
-      let(:name) { 'ga_serverless' }
-      let(:inline_admon_class) { 'ga_serverless' }
-    end
-    context 'for ga in ESS' do
-      include_context 'care admonition'
-      let(:name) { 'ga_ess' }
-      let(:inline_admon_class) { 'ga_ess' }
-    end
     context 'for coming' do
       include_context 'change admonition'
       let(:name) { 'coming' }
@@ -144,41 +134,11 @@ RSpec.describe ElasticCompatPreprocessor do
       let(:block_admon_class) { 'warning' }
       let(:inline_admon_class) { 'change' }
     end
-    context 'for deprecated in serverless' do
-      include_context 'care admonition'
-      let(:name) { 'deprecated' }
-      let(:inline_admon_class) { 'deprecated' }
-    end
-    context 'for deprecated in ESS' do
-      include_context 'care admonition'
-      let(:name) { 'deprecated' }
-      let(:inline_admon_class) { 'deprecated' }
-    end
     context 'for discontinued in stack' do
       include_context 'change admonition'
       let(:name) { 'discontinued_stack' }
       let(:block_admon_class) { 'warning' }
       let(:inline_admon_class) { 'change' }
-    end
-    context 'for discontinued in serverless' do
-      include_context 'care admonition'
-      let(:name) { 'discontinued' }
-      let(:inline_admon_class) { 'discontinued' }
-    end
-    context 'for discontinued in ESS' do
-      include_context 'care admonition'
-      let(:name) { 'discontinued' }
-      let(:inline_admon_class) { 'discontinued' }
-    end
-    context 'for coming in serverless' do
-      include_context 'care admonition'
-      let(:name) { 'coming' }
-      let(:inline_admon_class) { 'coming' }
-    end
-    context 'for coming in ESS' do
-      include_context 'care admonition'
-      let(:name) { 'coming' }
-      let(:inline_admon_class) { 'coming' }
     end
     shared_examples 'care admonition' do
       include_examples 'admonition'
@@ -235,6 +195,46 @@ RSpec.describe ElasticCompatPreprocessor do
       include_context 'care admonition'
       let(:name) { 'preview_ess' }
       let(:inline_admon_class) { 'preview' }
+    end
+    context 'for ga in serverless' do
+      include_context 'care admonition'
+      let(:name) { 'ga_serverless' }
+      let(:inline_admon_class) { 'ga_serverless' }
+    end
+    context 'for ga in ESS' do
+      include_context 'care admonition'
+      let(:name) { 'ga_ess' }
+      let(:inline_admon_class) { 'ga_ess' }
+    end
+    context 'for deprecated in serverless' do
+      include_context 'care admonition'
+      let(:name) { 'deprecated' }
+      let(:inline_admon_class) { 'deprecated' }
+    end
+    context 'for deprecated in ESS' do
+      include_context 'care admonition'
+      let(:name) { 'deprecated' }
+      let(:inline_admon_class) { 'deprecated' }
+    end
+    context 'for discontinued in serverless' do
+      include_context 'care admonition'
+      let(:name) { 'discontinued' }
+      let(:inline_admon_class) { 'discontinued' }
+    end
+    context 'for discontinued in ESS' do
+      include_context 'care admonition'
+      let(:name) { 'discontinued' }
+      let(:inline_admon_class) { 'discontinued' }
+    end
+    context 'for coming in serverless' do
+      include_context 'care admonition'
+      let(:name) { 'coming' }
+      let(:inline_admon_class) { 'coming' }
+    end
+    context 'for coming in ESS' do
+      include_context 'care admonition'
+      let(:name) { 'coming' }
+      let(:inline_admon_class) { 'coming' }
     end
   end
 

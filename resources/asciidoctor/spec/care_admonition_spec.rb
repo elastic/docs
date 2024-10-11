@@ -232,8 +232,8 @@ RSpec.describe CareAdmonition do
     end
     include_examples 'care admonition'
   end
-  context 'beta-serverless' do
-    let(:key) { 'beta-serverless' }
+  context 'beta serverless' do
+    let(:key) { 'beta_serverless' }
     let(:admon_class) { 'warning' }
     let(:default_text) do
       <<~TEXT.strip
