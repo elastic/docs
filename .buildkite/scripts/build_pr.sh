@@ -142,11 +142,6 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en)
       ;;
 
-    "kibana")
-      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ":(glob)x-pack/**/*.asciidoc" ":(glob)src/**/*.asciidoc" ":(glob)examples/**/*.asciidoc")
-      ;;
-
     "packagespec")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./versions ./spec)
