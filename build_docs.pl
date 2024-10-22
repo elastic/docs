@@ -408,18 +408,7 @@ sub check_kibana_links {
         #
         # TODO: remove as part of
         # https://github.com/elastic/docs/issues/2264
-        if ($version eq "master") {
-            $branch = "main";
-        }
-        else {
-            # Temporary work-around for 8.x branch masquerading as 8.16
-            if ($version eq "8.16") {
-                $branch = "8.x";
-            }
-            else {
-                $branch = $version;
-            }
-        }
+        $branch = $version eq "master" ? "main" : $version;
         say "  Branch: $branch, Version: $version";
         my $links_file;
         my $source = eval {
