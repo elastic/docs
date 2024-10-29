@@ -9,6 +9,9 @@
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
 
+# Serverless
+alias docbldserverless='$GIT_HOME/docs/build_docs --doc $GIT_HOME/docs-content/serverless/index.asciidoc --chunk 5 --open --resource $GIT_HOME/observability-docs/docs/en/serverless --resource $GIT_HOME/security-docs/docs/serverless --resource $GIT_HOME/docs-content/serverless'
+
 # Elasticsearch
 alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --chunk 1'
 
