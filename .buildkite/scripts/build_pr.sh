@@ -48,11 +48,10 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   echo "Cloning the ${GITHUB_PR_BASE_REPO} PR locally"
 
   git clone --reference /opt/git-mirrors/elastic-$GITHUB_PR_BASE_REPO \
-    --filter=tree:0 --no-checkout --no-tags --depth 1 -v --branch "$GITHUB_PR_TARGET_BRANCH" \
     git@github.com:elastic/$GITHUB_PR_BASE_REPO.git ./product-repo
 
   cd ./product-repo &&
-      git fetch --no-tags origin pull/$GITHUB_PR_NUMBER/head:pr_$GITHUB_PR_NUMBER &&
+      git fetch origin pull/$GITHUB_PR_NUMBER/head:pr_$GITHUB_PR_NUMBER &&
       git switch pr_$GITHUB_PR_NUMBER
 
   # Some repositories allow the documentation build to exit early if there are no doc-related changes
@@ -62,114 +61,114 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
     # repositories with a docs dir and changelog
     "apm-aws-lambda" | "apm-agent-android" | "apm-agent-nodejs" | "apm-agent-python" | "apm-agent-ruby" | "apm-agent-rum-js" | "apm-agent-go" | "apm-agent-java" | "apm-agent-dotnet" | "apm-agent-php" | "apm-agent-ios")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs CHANGELOG.asciidoc)
       ;;
       
     # repositories with a docs dir
     "apm-k8s-attacher" | "cloud" | "cloud-assets" | "cloud-on-k8s" | "ecctl" | "ecs" | "ecs-dotnet" | "ecs-logging" | "ecs-logging-go-logrus" | "ecs-logging-go-zap" | "ecs-logging-go-zerolog" | "ecs-logging-java" | "ecs-logging-nodejs" | "ecs-logging-php" | "ecs-logging-python" | "ecs-logging-ruby" | "elasticsearch-js" | "elasticsearch-js-legacy" | "elasticsearch-ruby" | "elasticsearch-php" | "elasticsearch-perl" | "elasticsearch-rs" | "kibana-cn" | "logstash" | "logstash-docs" | "security-docs" | "sense" | "swiftype")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs)
       ;;
       
     # repositories with a docs dir, changelogs dir, and changelog
     "apm-server")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./changelogs CHANGELOG.asciidoc)
       ;;
 
     "beats")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./auditbeat ./CHANGELOG.asciidoc ./docs ./filebeat ./heartbeat ./journalbeat ./libbeat/docs ./libbeat/outputs/*/docs/* ./libbeat/processors/*/docs/* ./metricbeat ./packetbeat ./topbeat/docs ./winlogbeat ./x-pack/auditbeat ./x-pack/dockerlogbeat/docs ./x-pack/filebeat/docs ./x-pack/filebeat/processors/*/docs/* ./x-pack/functionbeat ./x-pack/libbeat/docs ./x-pack/libbeat/processors/*/docs/* ./x-pack/metricbeat/module)
       ;;
 
     "clients-team")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/examples/elastic-cloud)
       ;;
 
     "curator")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/asciidoc)
       ;;
 
     "eland" | "enterprise-search-php" | "enterprise-search-python" | "enterprise-search-ruby")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/guide)
       ;;
 
     "elasticsearch")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./buildSrc ./build-tools-internal ./build-tools/src/main/resources ./client ./docs ./modules/reindex/src/internalClusterTest/java/org/elasticsearch/client/documentation ./modules/reindex/src/test/java/org/elasticsearch/client/documentation ./plugins/examples ./server/src/internalClusterTest/java/org/elasticsearch/client/documentation ./server/src/main/resources/org/elasticsearch/common ./server/src/test/java/org/elasticsearch/client/documentation ./x-pack/docs ./x-pack/plugin/esql/qa/testFixtures/src/main/resources ./x-pack/plugin/sql/qa ./x-pack/qa/sql)
       ;;
 
     "elasticsearch-hadoop")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/src/reference/asciidoc)
       ;;
 
     "elasticsearch-java")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./java-client/src/test/java/co/elastic/clients/documentation)
       ;;
 
     "elasticsearch-net")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./tests/Tests/Documentation)
       ;;
 
     "elasticsearch-py")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/guide ./docs/examples)
       ;;
 
     "go-elasticsearch")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./.doc)
       ;;
 
     "enterprise-search-pubs")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./enterprise-search-docs ./workplace-search-docs ./app-search-docs ./esre-docs ./client-docs/app-search-javascript ./client-docs/app-search-node ./client-docs/workplace-search-node)
       ;;
 
     "enterprise-search-js")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./packages/enterprise-search/docs)
       ;;
 
     "esf" | "ingest-docs" | "observability-docs" | "stack-docs" | "x-pack-logstash")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en)
       ;;
 
     "packagespec")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./versions ./spec)
       ;;
 
     "tech-content")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./welcome-to-elastic)
       ;;
 
     "terraform-provider-ec")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs-elastic)
       ;;
 
     "x-pack")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/public/graph ./docs/public/marvel ./docs/public/reporting ./docs/public/shield ./docs/public/watcher ./docs/en ./docs/kr ./docs/jp)
       ;;
 
     "x-pack-elasticsearch")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en ./docs/kr ./docs/jp ./qa/sql)
       ;;
 
     "x-pack-kibana")
-      git fetch --no-tags --unshallow origin "$GITHUB_PR_TARGET_BRANCH"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en ./docs/kr ./docs/jp)
       ;;
 
