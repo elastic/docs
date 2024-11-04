@@ -133,6 +133,8 @@ const streamChild = (child) => {
        */
       let missing = stderrBuffer.includes("Not a valid object name");
       missing |= stderrBuffer.includes("fatal: bad revision");
+      missing |= stderrBuffer.includes("does not exist in");
+      missing |= stderrBuffer.includes("invalid object name");
       if (missing) {
         flushCallback("missing");
       } else {
@@ -252,7 +254,11 @@ const parseDiffTreeZ = async function* (itr) {
 
 const toStringHandler = (resolve, reject, onMissing) => (err, stdout) => {
   if (err) {
-    if (err.message.includes("Not a valid object name")) {
+    if (err.message.includes("path") && err.message.includes("does not exist in")) {
+      onMissing("missing");
+    } else if (err.message.includes("invalid object name")) {
+      onMissing("missing");
+    } else if (err.message.includes("not a valid object name")) {
       onMissing("missing");
     } else {
       reject(err);
