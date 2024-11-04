@@ -110,7 +110,7 @@ RUN install_packages python3 python3-pip python3-setuptools python3-wheel python
 # --break-system-packages since we don't use venv
 RUN pip3 install --break-system-packages \
   beautifulsoup4==4.8.1 \
-  lxml==4.4.2 \
+  lxml==4.9.4 \
   pycodestyle==2.5.0 \
   yamale==3.0.1 \
   pyyaml==5.3.1
