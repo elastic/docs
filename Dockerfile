@@ -8,7 +8,7 @@
 
 # Debian builds the docs about 20% faster than alpine. The image is larger
 # and takes longer to build but that is worth it.
-FROM bitnami/minideb:buster AS base
+FROM bitnami/minideb:bookworm AS base
 
 # TODO install_packages calls apt-get update and then nukes the list files after. We should avoid multiple calls to apt-get update.....
 # We could probably fix this by running the update and installs ourself with `RUN --mount type=cache` but that is "experimental"
@@ -18,7 +18,7 @@ COPY .docker/apt/keys/nodesource.gpg /
 RUN apt-key add /nodesource.gpg
 COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages \
-  build-essential python2 \
+  build-essential python-is-python3 \
     # needed for compiling native modules on ARM
   nodejs ruby \
     # Used both to install dependencies and at run time
@@ -33,32 +33,36 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-
 FROM base AS ruby_deps
 RUN install_packages \
-  bundler \
+  ruby-build bundler \
     # Fetches ruby dependencies
-  ruby-dev make cmake gcc libc-dev patch
+  ruby-dev make cmake gcc libc-dev patch \
     # Required to compile some of the native dependencies
+  libssl-dev libnss-wrapper
+
+# RUN ruby-build 2.7.6 /usr/local/ruby-2.7.6
+
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 # --frozen forces us to regenerate Gemfile.lock locally before using it in
 # docker which lets us lock the versions in place.
 RUN bundle install --binstubs --system --frozen --without test
 COPY .docker/asciidoctor_2_0_10.patch /
-RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
+RUN cd /var/lib/gems/3.1.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
 
 
 FROM base AS node_deps
 COPY .docker/apt/keys/yarn.gpg /
 RUN apt-key add /yarn.gpg
 COPY .docker/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/
-RUN install_packages yarn=1.22.19-1
+RUN install_packages yarn=1.22.22-1
 COPY package.json /
 COPY yarn.lock /
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 # --frozen-lockfile forces us to regenerate yarn.lock locally before using it
 # in docker which lets us lock the versions in place.
+RUN yarn global add node-gyp
 RUN yarn install --frozen-lockfile --production
 
 
