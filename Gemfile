@@ -12,8 +12,9 @@ gem "digest-murmurhash", "~> 1.1.1"  # Used by a custom asciidoctor plugin
 gem "thread_safe", "~> 0.3.6"        # Used by asciidoctor
 gem "asciidoctor-diagram", "~> 1.5"  # Speculative
 gem "asciimath", "~> 1.0"            # Speculative
+gem "jaro_winkler", "~> 1.6"            # Speculative
 
 group :test do
   gem "rspec", "~> 3.8"
-  gem "rubocop", "~> 0.64.0"
+  gem "rubocop", "~> 0.84.0"
 end
