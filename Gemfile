@@ -17,6 +17,6 @@ gem 'jaro_winkler', '~> 1.6' # Speculative
 gem 'thread_safe', '~> 0.3.6'        # Used by asciidoctor
 
 group :test do
-  gem 'rspec', '~> 3.8'
+  gem 'rspec', '~> 3.13.0'
   gem 'rubocop', '~> 1.50.0'
 end
