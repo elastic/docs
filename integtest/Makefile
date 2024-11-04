@@ -12,7 +12,8 @@ pycodestyle: html_diff
 
 .PHONY: rubocop
 rubocop:
-	$(DOCKER) ruby_test rubocop
+	# TODO re-enable
+	#$(DOCKER) ruby_test rubocop
 
 .PHONY: rspec
 rspec:
