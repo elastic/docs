@@ -62,6 +62,7 @@ COPY yarn.lock /
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 # --frozen-lockfile forces us to regenerate yarn.lock locally before using it
 # in docker which lets us lock the versions in place
+RUN yarn global add node-gyp
 RUN yarn install --frozen-lockfile --production
 
 
