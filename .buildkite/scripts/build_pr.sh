@@ -79,7 +79,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
     "beats")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./auditbeat ./CHANGELOG.asciidoc ./docs ./filebeat ./heartbeat ./journalbeat ./libbeat/docs ./libbeat/outputs/*/docs/* ./libbeat/processors/*/docs/* ./metricbeat ./packetbeat ./topbeat/docs ./winlogbeat ./x-pack/auditbeat ./x-pack/dockerlogbeat/docs ./x-pack/filebeat/docs ./x-pack/filebeat/processors/*/docs/* ./x-pack/functionbeat ./x-pack/libbeat/docs ./x-pack/libbeat/processors/*/docs/* ./x-pack/metricbeat/module)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./auditbeat ./CHANGELOG.asciidoc ./docs ./filebeat ./heartbeat ./journalbeat ./libbeat/docs ./libbeat/outputs/*/docs/* ./libbeat/processors/*/docs/* ./metricbeat ./packetbeat ./topbeat/docs ./winlogbeat ./x-pack/auditbeat ./x-pack/dockerlogbeat/docs ./x-pack/filebeat/docs ./x-pack/filebeat/processors/*/docs/* ./x-pack/libbeat/docs ./x-pack/libbeat/processors/*/docs/* ./x-pack/metricbeat/module)
       ;;
 
     "clients-team")

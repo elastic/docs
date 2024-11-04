@@ -166,8 +166,6 @@ alias docbldabx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $G
 
 alias docbldab=docbldabx
 
-alias docbldfnb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/x-pack/functionbeat/docs/index.asciidoc --chunk 1'
-
 alias docbldjb='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/beats/journalbeat/docs/index.asciidoc --chunk 1'
 
 # Fleet and Elastic Agent guide
