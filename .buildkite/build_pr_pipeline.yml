@@ -6,7 +6,18 @@ steps:
     command: ".buildkite/scripts/cancel_running_pr.sh || true"
   - key: "build-pr-setup"
     label: "setup"
-    command: ".buildkite/scripts/build_pr_commit_status.sh pending"
+    command: |
+      githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_BASE_OWNER}/${GITHUB_PR_BASE_REPO}/statuses/${GITHUB_PR_TRIGGERED_SHA}"
+      data='{"state":"'pending'","target_url":"'$BUILDKITE_BUILD_URL'","description":"'Build started'","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
+      curl -s -L \
+        -X POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer ${VAULT_GITHUB_TOKEN}" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "${githubPublishStatus}" \
+        -d "${data}"
+    plugins:
+      - 'uber-workflow/run-without-clone':
   - key: "build-pr"
     label: ":hammer: Build docs PR"
     command: ".buildkite/scripts/build_pr.sh"
@@ -21,11 +32,21 @@ steps:
   - key: "teardown"
     label: "teardown"
     command: |
+      status_state=failure
       if [ $(buildkite-agent step get "outcome" --step "build-pr") == "passed" ]; then
-        .buildkite/scripts/build_pr_commit_status.sh success
-      else
-        .buildkite/scripts/build_pr_commit_status.sh failure
+        status_state=success
       fi
+      githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_BASE_OWNER}/${GITHUB_PR_BASE_REPO}/statuses/${GITHUB_PR_TRIGGERED_SHA}"
+      data='{"state":"'$status_state'","target_url":"'$BUILDKITE_BUILD_URL'","description":"'Build finished'","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
+      curl -s -L \
+        -X POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer ${VAULT_GITHUB_TOKEN}" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "${githubPublishStatus}" \
+        -d "${data}"
     depends_on:
       - step: "build-pr"
         allow_failure: true
+    plugins:
+      - 'uber-workflow/run-without-clone':
