@@ -64,7 +64,7 @@ RSpec.describe 'building all books' do
       has_license 'redux-thunk', 'The MIT License (MIT)'
       has_license 'symbol-observable', 'The MIT License (MIT)'
     end
-    file_context 'html/static/styles-v1.css' do
+    file_context 'html/static/styles-v2.css' do
       has_license 'Bootstrap', 'The MIT License (MIT)'
       has_license 'Inter', 'SIL OPEN FONT LICENSE'
       has_license 'Noto Sans Japanese', 'SIL OPEN FONT LICENSE'

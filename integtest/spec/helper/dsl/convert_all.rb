@@ -89,7 +89,7 @@ module Dsl
           expect(contents).not_to include('sourceMappingURL=')
         end
       end
-      file_context 'html/static/styles-v1.css' do
+      file_context 'html/static/styles-v2.css' do
         it 'is minified' do
           expect(contents).to include(<<~CSS.strip)
             *{font-family:Inter,sans-serif}
