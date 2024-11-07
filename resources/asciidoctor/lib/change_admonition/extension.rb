@@ -9,17 +9,29 @@ require 'asciidoctor/extensions'
 # Usage
 #
 #   added::[6.0.0-beta1]
+#   ga_stack::[8.10]
 #   coming::[6.0.0-beta1]
 #   deprecated::[6.0.0-beta1]
+#   discontinued_stack::[9.0.0]
 #   Foo added:[6.0.0-beta1]
 #   Foo coming:[6.0.0-beta1]
 #   Foo deprecated:[6.0.0-beta1]
+#   Foo ga_stack:[8.10]
+#   Foo discontinued_stack:[9.0.0]
 #
 class ChangeAdmonition < Asciidoctor::Extensions::Group
   MACRO_CONF = [
     [:added, 'added', 'note', 'Added in', nil],
     [:coming, 'changed', 'note', 'Coming in', nil],
     [:deprecated, 'deleted', 'warning', 'Deprecated in', ' u-strikethrough'],
+    [:ga_stack, 'added', 'note', 'Generally available in Elack Stack in', nil],
+    [
+      :discontinued_stack,
+      'deleted',
+      'warning',
+      'Discontinued in',
+      ' u-strikethrough',
+    ],
   ].freeze
   def activate(registry)
     MACRO_CONF.each do |(name, revisionflag, tag, message, title_class)|
