@@ -20,10 +20,10 @@ module DocbookCompat
       return node.id ? %(<a id="#{node.id}"></a>) : nil unless node.title
 
       [
-        '<h3>',
+        '<p class="admon_title">',
         node.title,
         node.id ? %(<a id="#{node.id}"></a>) : nil,
-        '</h3>',
+        '</p>',
       ].compact.join
     end
 
