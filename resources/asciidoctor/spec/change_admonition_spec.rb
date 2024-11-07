@@ -35,7 +35,7 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_block_admonition <<~HTML.strip
-            <h3>#{message} in 7.0.0-beta1.</h3>
+            <p class="admon_title">#{message} in 7.0.0-beta1.</p>
             <p>words</p>
           HTML
         end
@@ -58,7 +58,7 @@ RSpec.describe ChangeAdmonition do
         end
         it "renders with Elastic's custom template" do
           expect_block_admonition <<~HTML.strip
-            <h3>#{message} in 7.0.0-beta1.</h3>
+            <p class="admon_title">#{message} in 7.0.0-beta1.</p>
             <p>Like 2<sup>7</sup></p>
           HTML
         end
