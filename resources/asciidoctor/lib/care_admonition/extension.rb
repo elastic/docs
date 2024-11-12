@@ -49,7 +49,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     This functionality is in beta and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
   TEXT
   BETA_SERVERLESS_TEXT = <<~TEXT.strip
-    This functionality is in beta in Elastic Serverless and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
+    This functionality is in beta in Elastic Cloud Serverless and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
   TEXT
   BETA_ESS_TEXT = <<~TEXT.strip
     This functionality is in beta in Elasticsearch Service and is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.
@@ -58,7 +58,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     This functionality is in development and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
   TEXT
   DEV_SERVERLESS_TEXT = <<~TEXT.strip
-    This functionality is in development in Elastic Serverless and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
+    This functionality is in development in Elastic Cloud Serverless and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
   TEXT
   DEV_ESS_TEXT = <<~TEXT.strip
     This functionality is in development in Elasticsearch Service and may be changed or removed completely in a future release. These features are unsupported and not subject to the support SLA of official GA features.
@@ -67,7 +67,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     This functionality is in technical preview and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
   TEXT
   PREVIEW_SERVERLESS_TEXT = <<~TEXT.strip
-    This functionality is in technical preview in Elastic Serverless and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
+    This functionality is in technical preview in Elastic Cloud Serverless and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
   TEXT
   PREVIEW_ESS_TEXT = <<~TEXT.strip
     This functionality is in technical in preview in Elasticsearch Service and may be changed or removed in a future release. Elastic will work to fix any issues, but features in technical preview are not subject to the support SLA of official GA features.
@@ -76,25 +76,25 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     This functionality is deprecated in Elasticsearch Service and will be removed in a future release.
   TEXT
   DEPRECATED_SERVERLESS_TEXT = <<~TEXT.strip
-    This functionality is deprecated in Elastic Serverless and will be removed in a future release.
+    This functionality is deprecated in Elastic Cloud Serverless and will be removed in a future release.
   TEXT
   DISCONTINUED_ESS_TEXT = <<~TEXT.strip
     This functionality is discontinued in Elasticsearch Service.
   TEXT
   DISCONTINUED_SERVERLESS_TEXT = <<~TEXT.strip
-    This functionality is discontinued in Elastic Serverless.
+    This functionality is discontinued in Elastic Cloud Serverless.
   TEXT
   COMING_ESS_TEXT = <<~TEXT.strip
     This functionality is coming in Elasticsearch Service.
   TEXT
   COMING_SERVERLESS_TEXT = <<~TEXT.strip
-    This functionality is coming in Elastic Serverless.
+    This functionality is coming in Elastic Cloud Serverless.
   TEXT
   GA_ESS_TEXT = <<~TEXT.strip
     This functionality is generally available in Elasticsearch Service.
   TEXT
   GA_SERVERLESS_TEXT = <<~TEXT.strip
-    This functionality is generally available in Elastic Serverless.
+    This functionality is generally available in Elastic Cloud Serverless.
   TEXT
 
   def activate(registry)
