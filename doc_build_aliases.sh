@@ -180,7 +180,7 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/in
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 1'
 
 # APM Guide (7.16-8.11)
-alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/observability/docs/en/apm-server/integrations-index.asciidoc --resource=$GIT_HOME/apm-server/ --resource=$GIT_HOME/ingest-docs/ --chunk 2 --open'
+alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/observability/docs/en/apm-server/integrations-index.asciidoc --resource=$GIT_HOME/apm-server/ --resource=$GIT_HOME/ingest-docs/ --chunk 2'
 
 # APM Agents
 alias docbldama='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-android/docs/index.asciidoc --chunk 1'
