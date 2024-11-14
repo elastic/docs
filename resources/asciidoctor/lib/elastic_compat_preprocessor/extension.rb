@@ -12,10 +12,14 @@ require_relative '../migration_log'
 #   added[6.0.0-beta1]
 #   coming[6.0.0-beta1]
 #   deprecated[6.0.0-beta1]
+#   discontinued-stack[9.0.0]
+#   ga_stack[8.10]
 # Into
 #   added::[6.0.0-beta1]
 #   coming::[6.0.0-beta1]
 #   deprecated::[6.0.0-beta1]
+#   discontinued-stack[9.0.0]
+#   ga_stack::[8.10]
 # Because `::` is required by asciidoctor to invoke block macros but isn't
 # required by asciidoc.
 #
@@ -23,10 +27,14 @@ require_relative '../migration_log'
 #   words words added[6.0.0-beta1]
 #   words words changed[6.0.0-beta1]
 #   words words deprecated[6.0.0-beta1]
+#   words words discontinued[9.0.0]
+#   words words ga_stack[8.10]
 # Into
 #   words words added:[6.0.0-beta1]
 #   words words changed:[6.0.0-beta1]
 #   words words deprecated:[6.0.0-beta1]
+#   words words discontinued:[9.0.0]
+#   words words ga_stack:[8.10]
 # Because `:` is required by asciidoctor to invoke inline macros but isn't
 # required by asciidoc.
 #
@@ -116,9 +124,17 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
     /^\["source", ?"[^"]+", ?subs="(#{Asciidoctor::CC_ANY}+)"\]$/
   CODE_BLOCK_RX = /^-----*$/
   SNIPPET_RX = %r{^//\s*(AUTOSENSE|KIBANA|CONSOLE|SENSE:[^\n<]+)$}
-  LEGACY_MACROS = 'added|beta|coming|deprecated|dev|experimental'
-  LEGACY_BLOCK_MACRO_RX = /^\s*(#{LEGACY_MACROS})\[(.*)\]\s*$/
-  LEGACY_INLINE_MACRO_RX = /(#{LEGACY_MACROS})\[(.*)\]/
+  LEGACY = 'added|experimental'
+  BETA = 'beta|beta_serverless|beta_ess'
+  COMING = 'coming|coming_serverless|coming_ess'
+  DEP = 'deprecated|deprecated_serverless|deprecated_ess'
+  DEV = 'dev|dev_serverless|dev_ess'
+  DISC = 'discontinued_stack|discontinued_ess|discontinued_serverless'
+  GA = 'ga_stack|ga_serverless|ga_ess'
+  PREV = 'preview_serverless|preview_ess'
+  MACROS = "#{LEGACY}|#{BETA}|#{COMING}|#{DEP}|#{DEV}|#{DISC}|#{GA}|#{PREV}"
+  BLOCK_MACRO_RX = /^\s*(#{MACROS})\[(.*)\]\s*$/
+  INLINE_MACRO_RX = /(#{MACROS})\[(.*)\]/
 
   def process(_document, reader)
     reader.extend ReaderExtension
@@ -205,11 +221,10 @@ class ElasticCompatPreprocessor < Asciidoctor::Extensions::Preprocessor
 
       # First convert the "block" version of these macros. We convert them
       # to block macros because they are alone on a line
-      line.gsub!(LEGACY_BLOCK_MACRO_RX, '\1::[\2]')
+      line.gsub!(BLOCK_MACRO_RX, '\1::[\2]')
       # Then convert the "inline" version of these macros. We convert them
       # to inline macros because they are *not* at the start of the line....
-      line.gsub!(LEGACY_INLINE_MACRO_RX, '\1:[\2]')
-
+      line.gsub!(INLINE_MACRO_RX, '\1:[\2]')
       # Transform Elastic's traditional comment based marking for
       # AUTOSENSE/KIBANA/CONSOLE snippets into a marker that we can pick
       # up during tree processing to turn the snippet into a marked up

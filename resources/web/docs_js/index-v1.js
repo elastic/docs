@@ -87,7 +87,7 @@ export function init_headers(sticky_content, lang_strings) {
 
         // Build list items for all headings except the page title
         if (0 < items++) {
-          title_container.find('a,.added,.coming,.deprecated,.experimental')
+          title_container.find('a,.added,.ga_stack,.ga_serverless,.ga_ess,.coming,.coming_serverless,.coming_ess,.deprecated,.deprecated_serverless,.deprecated_ess,.experimental,.preview_serverless,.preview_ess,.beta,.beta_serverless,.beta_ess,.dev,.dev_serverless,.dev_ess,.discontinued_stack,.discontinued_ess,.discontinued_serverless')
             .remove();
           var text = title_container.html();
           if (hLevel !== null) {
