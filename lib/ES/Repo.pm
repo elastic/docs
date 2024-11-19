@@ -277,6 +277,7 @@ sub _extract_from_ref {
     $dest->mkpath;
     my $tar = $dest->file( '.temp_git_archive.tar' );
     die "File <$tar> already exists" if -e $tar;
+    run qw(git fetch --no-tags --depth=1), $ref . ':' . $ref;
     run qw(git archive --format=tar -o), $tar, $ref, $path;
 
     run qw(tar -x -C), $dest, '-f', $tar;
