@@ -423,6 +423,18 @@ $(function() {
     })
   }
 
+  $('.availability-note').prepend('<span class="availability-note-icon"></span>')
+  $('.availability-note').append('<span class="availability-note-tooltip">Unless explicitly noted, all features described on this page are available in the following conditions.</span>');
+
+  $('.availability-note-icon').hover(
+    function (e) {
+    $('.availability-note-tooltip').addClass('show')
+    },
+    function (e) {
+      $('.availability-note-tooltip').removeClass('show')
+    }
+  )
+
   // Move rtp container to top right and make visible
   var sticky_content = $('#sticky_content');
   // Left column that contains the TOC
