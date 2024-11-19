@@ -46,7 +46,7 @@ sub update_from_remote {
         unless ( $self->_try_to_fetch ) {
             my $url = $self->url;
             printf(" - %20s: Cloning from <%s>\n", $name, $url);
-            run 'git', 'clone', '--bare', $self->_reference_args, $url, $git_dir;
+            run 'git', 'clone', '--bare', '--no-tags', '--depth=1', $self->_reference_args, $url, $git_dir;
         }
         1;
     }
