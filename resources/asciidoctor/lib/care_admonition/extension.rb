@@ -99,35 +99,41 @@ class CareAdmonition < Asciidoctor::Extensions::Group
 
   def activate(registry)
     [
-      [:beta, 'beta', BETA_DEFAULT_TEXT],
-      [:beta_serverless, 'Serverless:beta', BETA_SERVERLESS_TEXT],
-      [:beta_ess, 'ESS:beta', BETA_ESS_TEXT],
-      [:dev, 'dev', DEV_DEFAULT_TEXT],
-      [:dev_serverless, 'Serverless:dev', DEV_SERVERLESS_TEXT],
-      [:dev_ess, 'ESS:dev', DEV_ESS_TEXT],
-      [:experimental, 'preview', PREVIEW_DEFAULT_TEXT],
-      [:preview, 'preview', PREVIEW_DEFAULT_TEXT],
-      [:preview_serverless, 'Serverless:preview', PREVIEW_SERVERLESS_TEXT],
-      [:preview_ess, 'ESS:preview', PREVIEW_ESS_TEXT],
+      [:beta, 'Beta', 'beta', BETA_DEFAULT_TEXT],
+      [:beta_serverless, 'Serverless: Beta', 'serverless_beta', BETA_SERVERLESS_TEXT],
+      [:beta_ess, 'ESS: Beta', 'ess_beta', BETA_ESS_TEXT],
+      [:dev, 'dev', 'dev', DEV_DEFAULT_TEXT],
+      [:dev_serverless, 'Serverless: Dev', 'serverless_dev', DEV_SERVERLESS_TEXT],
+      [:dev_ess, 'ESS: Dev', 'ess_dev', DEV_ESS_TEXT],
+      [:experimental, 'preview', 'preview', PREVIEW_DEFAULT_TEXT],
+      [:preview, 'Preview', 'preview', PREVIEW_DEFAULT_TEXT],
+      [:preview_serverless, 'Serverless: Preview', 'serverless_preview', PREVIEW_SERVERLESS_TEXT],
+      [:preview_ess, 'ESS: Preview', 'ess_preview', PREVIEW_ESS_TEXT],
       [
         :deprecated_serverless,
-        'Serverless:deprecated',
+        'Serverless: Deprecated',
+        'serverless_deprecated',
         DEPRECATED_SERVERLESS_TEXT,
       ],
-      [:deprecated_ess, 'ESS:deprecated', DEPRECATED_ESS_TEXT],
+      [:deprecated_ess, 'ESS: Deprecated', 'hello', DEPRECATED_ESS_TEXT],
       [
         :discontinued_serverless,
-        'Serverless:discontinued',
+        'Serverless: Removed',
+        'serverless_removed',
         DISCONTINUED_SERVERLESS_TEXT,
       ],
-      [:discontinued_ess, 'ESS:discontinued', DISCONTINUED_ESS_TEXT],
-      [:coming_serverless, 'Serverless:coming', COMING_SERVERLESS_TEXT],
-      [:coming_ess, 'ESS:coming', COMING_ESS_TEXT],
-      [:ga_serverless, 'Serverless:GA', GA_SERVERLESS_TEXT],
-      [:ga_ess, 'ESS:GA', GA_ESS_TEXT],
-    ].each do |(name, role, default_text)|
-      registry.block_macro ChangeAdmonitionBlock.new(role, default_text), name
-      registry.inline_macro ChangeAdmonitionInline.new(role, default_text), name
+      [:discontinued_ess, 'ESS: Removed', 'ess_removed', DISCONTINUED_ESS_TEXT],
+      [:coming_serverless, 'Serverless: Coming soon', 'serverless_coming', COMING_SERVERLESS_TEXT],
+      [:coming_ess, 'ESS: Coming soon', 'ess_coming', COMING_ESS_TEXT],
+      [:ga_serverless, 'Serverless: GA', 'serverless_ga', GA_SERVERLESS_TEXT],
+      [:ga_ess, 'ESS: GA', 'ess_ga', GA_ESS_TEXT],
+      [:serverless_available, 'Serverless', 'serverless_available', GA_SERVERLESS_TEXT],
+      [:ess_available, 'ESS', 'ess_available', GA_ESS_TEXT],
+      [:serverless_unavailable, 'Serverless', 'serverless_unavailable', 'This functionality is not available in Elastic Cloud Serverless.'],
+      [:ess_unavailable, 'ESS', 'ess_unavailable', 'This functionality is not available in Elasticsearch Service.'],
+    ].each do |(name, role, classname,  default_text)|
+      registry.block_macro ChangeAdmonitionBlock.new(role, classname, default_text), name
+      registry.inline_macro ChangeAdmonitionInline.new(role, classname, default_text), name
     end
   end
 
@@ -137,9 +143,10 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     use_dsl
     name_positional_attributes :passtext, :issue_url
 
-    def initialize(role, default_text)
+    def initialize(role, classname, default_text)
       super(nil)
       @role = role
+      @classname = classname
       @default_text = default_text
     end
 
@@ -188,9 +195,10 @@ class CareAdmonition < Asciidoctor::Extensions::Group
     name_positional_attributes :text
     format :short
 
-    def initialize(role, default_text)
+    def initialize(role, classname, default_text)
       super(nil)
       @role = role
+      @classname = 'Admonishment--' + classname
       @default_text = default_text
     end
 
@@ -200,7 +208,7 @@ class CareAdmonition < Asciidoctor::Extensions::Group
       Asciidoctor::Inline.new(
         parent, :admonition, text, type: @role, attributes: {
           'title_type' => 'title',
-          'title_class' => 'u-mono',
+          'title_class' => @classname,
           'title' => @role,
         }
       )
