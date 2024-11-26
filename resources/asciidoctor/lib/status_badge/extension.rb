@@ -17,20 +17,16 @@ class StatusBadge < Asciidoctor::Extensions::Group
 
     def generate_tooltip_text(deployment_type, availability_type, version)
       # Deployment type
-      if deployment_type == 'serverless'
+      if deployment_type == 'cloud_serverless'
         deployment_long_name = 'Elastic Cloud Serverless'
-      elsif deployment_type == 'hosted'
+      elsif deployment_type == 'cloud_hosted'
         deployment_long_name = 'Elastic Cloud Hosted'
-      elsif deployment_type == 'stack'
-        deployment_long_name = 'Elastic Stack'
-      elsif deployment_type == 'cloud'
-        deployment_long_name = 'Elastic Cloud'
       elsif deployment_type == 'ece'
         deployment_long_name = 'Elastic Cloud Enterprise'
       elsif deployment_type == 'eck'
-        deployment_long_name = 'Elastic Cloud Kubernetes'
-      elsif deployment_type == 'self_managed'
-        deployment_long_name = 'Self-managed'
+        deployment_long_name = 'Elastic Cloud on Kubernetes'
+      elsif deployment_type == 'stack_self_managed'
+        deployment_long_name = 'Elastic Stack Self-managed'
       end
 
       # Availability
@@ -75,19 +71,15 @@ class StatusBadge < Asciidoctor::Extensions::Group
 
     def generate_badge_text(deployment_type, availability_type, version)
       # Deployment/product type
-      if deployment_type == 'serverless'
-        deployment_short_name = 'Serverless'
-      elsif deployment_type == 'hosted'
-        deployment_short_name = 'Hosted'
-      elsif deployment_type == 'stack'
-        deployment_short_name = 'Elastic Stack'
-      elsif deployment_type == 'cloud'
-        deployment_short_name = 'Elastic Cloud'
+      if deployment_type == 'cloud_serverless'
+        deployment_short_name = 'Cloud Serverless'
+      elsif deployment_type == 'cloud_hosted'
+        deployment_short_name = 'Cloud Hosted'
       elsif deployment_type == 'ece'
         deployment_short_name = 'ECE'
       elsif deployment_type == 'eck'
         deployment_short_name = 'ECK'
-      elsif deployment_type == 'self_managed'
+      elsif deployment_type == 'stack_self_managed'
         deployment_short_name = 'Self-managed'
       end
 
@@ -96,8 +88,8 @@ class StatusBadge < Asciidoctor::Extensions::Group
         availability_badge_text = 'Technical preview'
       elsif availability_type == 'beta'
         availability_badge_text = 'Beta'
-      # elsif availability_type == 'ga'
-      #   availability_badge_text = ''
+      elsif availability_type == 'ga'
+        availability_badge_text = 'GA'
       elsif availability_type == 'coming'
         availability_badge_text = 'Coming soon'
       elsif availability_type == 'deprecated'
