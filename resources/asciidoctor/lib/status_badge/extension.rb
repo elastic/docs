@@ -27,6 +27,8 @@ class StatusBadge < Asciidoctor::Extensions::Group
         deployment_long_name = 'Elastic Cloud on Kubernetes'
       elsif deployment_type == 'stack_self_managed'
         deployment_long_name = 'Elastic Stack Self-managed'
+      elsif deployment_type == 'synthetics_cli'
+        deployment_long_name = 'Elastic Synthetics'
       end
 
       # Availability
@@ -38,6 +40,9 @@ class StatusBadge < Asciidoctor::Extensions::Group
         availability_long_description = 'This functionality is subject to change. The design and code is less mature than official GA features and is being provided as-is with no warranties. Beta features are not subject to the support SLA of official GA features.'
       elsif availability_type == 'ga'
         availability_tooltip_text = ' is generally available'
+        availability_long_description = ''
+      elsif availability_type == 'added'
+        availability_tooltip_text = ' was added'
         availability_long_description = ''
       elsif availability_type == 'coming'
         availability_tooltip_text = ' is coming soon'
@@ -81,6 +86,8 @@ class StatusBadge < Asciidoctor::Extensions::Group
         deployment_short_name = 'ECK'
       elsif deployment_type == 'stack_self_managed'
         deployment_short_name = 'Self-managed'
+      elsif deployment_type == 'synthetics_cli'
+        deployment_short_name = 'Synthetics'
       end
 
       # Availability
@@ -90,6 +97,8 @@ class StatusBadge < Asciidoctor::Extensions::Group
         availability_badge_text = 'Beta'
       elsif availability_type == 'ga'
         availability_badge_text = 'GA'
+      elsif availability_type == 'added'
+        availability_badge_text = 'Added'
       elsif availability_type == 'coming'
         availability_badge_text = 'Coming soon'
       elsif availability_type == 'deprecated'
@@ -101,7 +110,9 @@ class StatusBadge < Asciidoctor::Extensions::Group
       end
 
       text = deployment_short_name
-      if availability_badge_text
+      if availability_type == 'ga' and !version
+        text += ''
+      elsif availability_badge_text
         text += ': '
         text += availability_badge_text
       end
