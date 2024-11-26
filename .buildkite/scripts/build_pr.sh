@@ -142,6 +142,12 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en)
       ;;
 
+    "observability-robots-playground")
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      echo "This project is only for testing purposes"
+      exit 0
+      ;;
+
     "packagespec")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./versions ./spec)
