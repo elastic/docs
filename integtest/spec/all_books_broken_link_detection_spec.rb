@@ -6,7 +6,7 @@ require_relative 'spec_helper'
 # Assertions about when books are rebuilt based on changes in source
 # repositories or the book's configuration.
 RSpec.describe 'building all books' do
-  KIBANA_LINKS_FILE = 'src/core/public/doc_links/doc_links_service.ts'
+  KIBANA_LINKS_FILE = 'packages/core/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts'
   shared_context 'there is a broken link in the docs' do |text, check_links|
     convert_before do |src, dest|
       repo = src.repo_with_index 'repo', text
@@ -112,7 +112,7 @@ RSpec.describe 'building all books' do
       end
       it 'logs the bad link' do
         expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
-          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+          Kibana [master]: packages/core/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts contains broken links to:
            - #{url}
         LOG
       end

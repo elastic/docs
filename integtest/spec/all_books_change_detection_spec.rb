@@ -326,7 +326,7 @@ RSpec.describe 'building all books' do
               kibana_repo.rename_branch 'main'
 
               kibana_repo.write(
-                'src/core/public/doc_links/doc_links_service.ts',
+                'packages/core/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts',
                 'text but no links actually'
               )
               kibana_repo.commit 'add links file'
