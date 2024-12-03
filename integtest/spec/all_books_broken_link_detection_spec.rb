@@ -112,7 +112,7 @@ RSpec.describe 'building all books' do
       end
       it 'logs the bad link' do
         expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
-          Kibana [master]: packages/core/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts contains broken links to:
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
            - #{url}
         LOG
       end
