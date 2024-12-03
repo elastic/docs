@@ -40,7 +40,7 @@ RSpec.describe ChangeAdmonition do
           HTML
         end
       end
-      context 'without content' do
+      context 'with version content' do
         let(:input) do
           <<~ASCIIDOC
             #{key}::[7.0.0-beta1]
@@ -206,6 +206,13 @@ RSpec.describe ChangeAdmonition do
     let(:key) { 'deprecated' }
     let(:admon_class) { 'warning' }
     let(:message) { 'Deprecated' }
+    let(:extra_class) { ' u-strikethrough' }
+    include_examples 'change admonition'
+  end
+  context 'discontinued in stack' do
+    let(:key) { 'discontinued_stack' }
+    let(:admon_class) { 'warning' }
+    let(:message) { 'Discontinued' }
     let(:extra_class) { ' u-strikethrough' }
     include_examples 'change admonition'
   end

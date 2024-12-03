@@ -15,6 +15,7 @@ require_relative 'glob_include_processor/extension'
 require_relative 'lang_override/extension'
 require_relative 'open_in_widget/extension'
 require_relative 'relativize_link/extension'
+require_relative 'status_badge/extension'
 
 Asciidoctor::Extensions.register do
   # Enable storing the source locations so we can look at them. This is required
@@ -42,3 +43,4 @@ Asciidoctor::Extensions.register do
   include_processor GlobIncludeProcessor
 end
 Asciidoctor::Extensions.register AlternativeLanguageLookup
+Asciidoctor::Extensions.register StatusBadge

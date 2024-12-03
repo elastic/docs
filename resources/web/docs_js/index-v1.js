@@ -87,9 +87,10 @@ export function init_headers(sticky_content, lang_strings) {
 
         // Build list items for all headings except the page title
         if (0 < items++) {
-          title_container.find('a,.added,.coming,.deprecated,.experimental')
+          // title_container.find('a,.added,.ga_stack,.ga_serverless,.ga_ess,.coming,.coming_serverless,.coming_ess,.deprecated,.deprecated_serverless,.deprecated_ess,.experimental,.preview_serverless,.preview_ess,.beta,.beta_serverless,.beta_ess,.dev,.dev_serverless,.dev_ess,.discontinued_stack,.discontinued_ess,.discontinued_serverless')
+          title_container.find('a,.Admonishment.Admonishment--status_badge,.added,.coming,.deprecated,.Admonishment--Experimental,.Admonishment--Preview,.Admonishment--Beta,.Admonishment--Dev')
             .remove();
-          var text = title_container.html();
+          let text = title_container.html();
           if (hLevel !== null) {
             const li = '<li id="otp-text-' + i + '" class="heading-level-' + hLevel + '"><a href="#' + this.id + '">' + text + '</a></li>';
             ul.append(li);
@@ -421,6 +422,18 @@ $(function() {
       }
     })
   }
+
+  $('.availability-note').prepend('<span class="availability-note-icon"></span>')
+  $('.availability-note').append('<span class="availability-note-tooltip">Unless explicitly noted, all features described on this page are available in the following conditions.</span>');
+
+  $('.availability-note-icon').hover(
+    function (e) {
+    $('.availability-note-tooltip').addClass('show')
+    },
+    function (e) {
+      $('.availability-note-tooltip').removeClass('show')
+    }
+  )
 
   // Move rtp container to top right and make visible
   var sticky_content = $('#sticky_content');

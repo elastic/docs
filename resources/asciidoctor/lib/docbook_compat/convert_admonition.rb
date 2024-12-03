@@ -59,9 +59,9 @@ module DocbookCompat
       title_classes =
         "Admonishment-#{node.attr 'title_type'} #{node.attr 'title_class'}"
       [
-        %(<span class="Admonishment Admonishment--#{node.type}">),
-        %([<span class="#{title_classes}">#{node.attr 'title'}</span>]),
-        '<span class="Admonishment-detail">',
+        %(<span aria-describedby="#{node.attr 'tooltip_id'}" class="Admonishment Admonishment--#{node.type}">),
+        %(<span class="#{title_classes}">#{node.attr 'title'}</span>),
+        %(<span id="#{node.attr 'tooltip_id'}" role="tooltip" class="Admonishment-detail">),
         node.text,
         '</span>',
         '</span>',
