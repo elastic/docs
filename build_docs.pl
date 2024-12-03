@@ -431,6 +431,9 @@ sub check_kibana_links {
             $links_file = $legacy_path . ".ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
+            $links_file = "src/core/packages/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
             $links_file = "packages/core/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
