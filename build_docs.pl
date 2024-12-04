@@ -413,6 +413,9 @@ sub check_kibana_links {
         say "  Branch: $branch, Version: $version";
         my $links_file;
         my $source = eval {
+            $links_file = "src/platform/packages/shared/kbn-doc-links/src/get_doc_links.ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
             $links_file = "packages/kbn-doc-links/src/get_doc_links.ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
@@ -426,6 +429,12 @@ sub check_kibana_links {
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
             $links_file = $legacy_path . ".ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
+            $links_file = "src/core/packages/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts";
+            $repo->show_file( $link_check_name, $branch, $links_file );
+        } || eval {
+            $links_file = "packages/core/doc-links/core-doc-links-browser-internal/src/doc_links_service.ts";
             $repo->show_file( $link_check_name, $branch, $links_file );
         } || eval {
             $links_file = "src/core/public/doc_links/doc_links_service.ts";
