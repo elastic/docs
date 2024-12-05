@@ -13,7 +13,7 @@
 alias docbldserverless='$GIT_HOME/docs/build_docs --doc $GIT_HOME/docs-content/serverless/index.asciidoc --chunk 5 --resource $GIT_HOME/observability-docs/docs/en/serverless --resource $GIT_HOME/security-docs/docs/serverless --resource $GIT_HOME/docs-content/serverless'
 
 # Integrations
-alias docbldintegration='$GIT_HOME/docs/build_docs --doc $GIT_HOME/integration-docs/dist/index.asciidoc --chunk 2 --open'
+alias docbldintegration='$GIT_HOME/docs/build_docs --doc $GIT_HOME/integration-docs/dist/index.asciidoc --chunk 2'
 
 # Elasticsearch
 alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --chunk 1'
