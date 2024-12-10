@@ -15,6 +15,9 @@ alias docbldserverless='$GIT_HOME/docs/build_docs --doc $GIT_HOME/docs-content/s
 # Integrations
 alias docbldintegration='$GIT_HOME/docs/build_docs --doc $GIT_HOME/integration-docs/dist/index.asciidoc --chunk 2'
 
+# Search UI
+alias docbldsearchui='$GIT_HOME/docs/build_docs --doc $GIT_HOME/search-ui/docs/index.asciidoc --chunk 3'
+
 # Elasticsearch
 alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --chunk 1'
 
