@@ -114,7 +114,7 @@ describe('Cleaner.is_pr_closed', () => {
       }
     }));
     await expect(cleaner.is_pr_closed({repo: 'r', number: 1})).rejects
-      .toThrow(/Cannot read property 'closed' of undefined/);
+      .toThrow(/Cannot read properties of undefined \(reading 'closed'\)/);
   });
   test("backs off if there aren't many requests remaining", async () => {
     // Mock setTimeout to immediately run. We don't use jest.useFakeTimers
