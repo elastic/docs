@@ -43,7 +43,7 @@ alias docbldkb=docbldkbx
 alias docbldkbold='$GIT_HOME/docs/build_docs --doc $GIT_HOME/kibana/docs/index.x.asciidoc --resource=$GIT_HOME/kibana-extra/x-pack-kibana/docs/ --chunk 1'
 
 # Ingest
-alias docbldarch='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/ingest-arch/index.asciidoc --chunk 1'
+alias docbldarch='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/ingest-guide/index.asciidoc --chunk 1'
 
 # Logstash
 alias docbldlsx='$GIT_HOME/docs/build_docs --respect_edit_url_overrides --doc $GIT_HOME/logstash/docs/index.asciidoc --resource=$GIT_HOME/logstash-docs/docs/ --chunk 1'
@@ -65,6 +65,9 @@ docbldlsvpr() {
     popd || return
     "$GIT_HOME/docs/build_docs" --doc "$GIT_HOME/logstash-docs/docs/versioned-plugins/index.asciidoc" --chunk 1 "$@"
 }
+
+# Ingest Overview
+alias docbldingest='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/ingest-guide/index.asciidoc --chunk 1'
 
 # Installation and Upgrade Guide 7.10 and later
 alias docbldstk='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/observability-docs/docs/en/observability --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --resource=$GIT_HOME/security-docs/docs/ --chunk 1'
