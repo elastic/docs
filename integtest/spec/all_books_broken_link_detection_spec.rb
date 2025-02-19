@@ -21,8 +21,7 @@ RSpec.describe 'building all books' do
     include_context 'there is a broken link in the docs',
                     'https://www.elastic.co/guide/foo', check_links
   end
-  shared_context 'there is a broken main/master link in the docs' do
-    |check_links|
+  shared_context 'broken main/master link in docs' do |check_links|
     include_context 'there is a broken link in the docs',
                     'link:/guide/main/foo[]', check_links
   end
