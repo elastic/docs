@@ -48,7 +48,7 @@ sub checkout_minimal {
 
     my $original_pwd = Cwd::cwd();
     eval {
-        my $out = run qw(git clone --no-checkout),
+        my $out = run qw(git clone --no-checkout --no-tags --depth=1),
             $self->git_dir, $self->{destination};
 
         # This if statement handles empty repositories in a way that works with
