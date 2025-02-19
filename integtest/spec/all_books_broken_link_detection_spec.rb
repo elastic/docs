@@ -141,6 +141,21 @@ RSpec.describe 'building all books' do
       include_context 'there is a broken link in kibana', true
       include_examples 'there are broken links in kibana', 'foo'
     end
+    describe 'when broken link detection is enabled' do    
+      shared_examples 'there are broken main/master links in the docs' do
+        it 'logs a warning for broken main/master links' do
+          expect(outputs[-1]).to include('Warning: /tmp/docsbuild/target_repo/html/test/current/chapter.html contains a broken link to /guide/main/foo')
+        end
+      end
+      describe 'when there is a broken main/master link in the docs' do
+        include_context 'there is a broken main/master link in the docs', true
+        include_examples 'there are broken main/master links in the docs'
+      end
+      describe 'when there is a broken link in kibana' do
+        include_context 'there is a broken link in kibana', true
+        include_examples 'there are broken links in kibana', 'foo'
+      end
+    end
     describe 'when a link in kibana goes to the website outside the guide' do
       include_context 'there is a kibana link', true,
                       '${ELASTIC_WEBSITE_URL}not-part-of-the-guide', false

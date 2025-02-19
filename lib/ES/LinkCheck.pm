@@ -63,12 +63,20 @@ sub check_source {
     while ( my ( $path, $fragment ) = $link_it->() ) {
         my $dest = $self->root->file($path);
         unless ( $self->_file_exists( $dest, $path ) ) {
-            $self->add_bad( $file_descr, $path );
+            if ($path =~ /main|master/) {
+                warn "Warning: $file_descr contains a broken link to $path\n";
+            } else {
+                $self->add_bad( $file_descr, $path );
+            }
             next;
         }
         next unless $fragment;
         unless ( $self->_fragment_exists( $dest, $path, $fragment ) ) {
-            $self->add_bad( $file_descr, "$path#$fragment" );
+            if ($path =~ /main|master/) {
+                warn "Warning: $file_descr contains a broken link to $path#$fragment\n";
+            } else {
+                $self->add_bad( $file_descr, "$path#$fragment" );
+            }
         }
     }
 }
