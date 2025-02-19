@@ -21,6 +21,10 @@ RSpec.describe 'building all books' do
     include_context 'there is a broken link in the docs',
                     'https://www.elastic.co/guide/foo', check_links
   end
+  shared_context 'there is a broken main/master link in the docs' do |check_links|
+    include_context 'there is a broken link in the docs',
+                    'link:/guide/main/foo[]', check_links
+  end
   shared_context 'there is a broken relative link in the docs' do |check_links|
     include_context 'there is a broken link in the docs',
                     'link:/guide/foo[]', check_links
@@ -144,7 +148,9 @@ RSpec.describe 'building all books' do
     describe 'when broken link detection is enabled' do    
       shared_examples 'there are broken main/master links in the docs' do
         it 'logs a warning for broken main/master links' do
-          expect(outputs[-1]).to include('Warning: /tmp/docsbuild/target_repo/html/test/current/chapter.html contains a broken link to /guide/main/foo')
+          expect(outputs[-1]).to include('Warning:
+          /tmp/docsbuild/target_repo/html/test/current/chapter.html
+          contains a broken link to /guide/main/foo')
         end
       end
       describe 'when there is a broken main/master link in the docs' do
