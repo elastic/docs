@@ -156,28 +156,60 @@ RSpec.describe 'building all books' do
                       '${ELASTICSEARCH_DOCS}missing-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/elasticsearch/reference/master/missing-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/elasticsearch/reference/master/missing-page.html
+        LOG
+      end
     end
     describe 'when there is a broken Kibana guide link' do
       include_context 'there is a kibana link', true,
                       '${KIBANA_DOCS}not-a-kibana-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/kibana/master/not-a-kibana-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/kibana/master/not-a-kibana-page.html
+        LOG
+      end
     end
     describe 'when there is a broken ES Plugin link' do
       include_context 'there is a kibana link', true,
                       '${PLUGIN_DOCS}not-valid-plugin.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/elasticsearch/plugins/master/not-valid-plugin.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/elasticsearch/plugins/master/not-valid-plugin.html
+        LOG
+      end
     end
     describe 'when there is a broken Fleet link' do
       include_context 'there is a kibana link', true,
                       '${FLEET_DOCS}not-a-fleet-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/fleet/master/not-a-fleet-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/fleet/master/not-a-fleet-page.html
+        LOG
+      end
     end
     describe 'when there is a broken APM link' do
       include_context 'there is a kibana link', true,
@@ -190,42 +222,90 @@ RSpec.describe 'building all books' do
                       '${STACK_DOCS}not-a-stack-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/elastic-stack/master/not-a-stack-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/elastic-stack/master/not-a-stack-page.html
+        LOG
+      end
     end
     describe 'when there is a broken Security link' do
       include_context 'there is a kibana link', true,
                       '${SECURITY_SOLUTION_DOCS}not-a-security-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/security/master/not-a-security-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/security/master/not-a-security-page.html
+        LOG
+      end
     end
     describe 'when there is a broken Stack Getting Started link' do
       include_context 'there is a kibana link', true,
                       '${STACK_GETTING_STARTED}not-a-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/elastic-stack-get-started/master/not-a-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/elastic-stack-get-started/master/not-a-page.html
+        LOG
+      end
     end
     describe 'when there is a broken App Search link' do
       include_context 'there is a kibana link', true,
                       '${APP_SEARCH_DOCS}not-a-search-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/app-search/master/not-a-search-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/app-search/master/not-a-search-page.html
+        LOG
+      end
     end
     describe 'when there is a broken Enterprise Search link' do
       include_context 'there is a kibana link', true,
                       '${ENTERPRISE_SEARCH_DOCS}not-a-search-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/enterprise-search/master/not-a-search-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/enterprise-search/master/not-a-search-page.html
+        LOG
+      end
     end
     describe 'when there is a broken Workplace Search link' do
       include_context 'there is a kibana link', true,
                       '${WORKPLACE_SEARCH_DOCS}not-a-search-page.html', true
       # include_examples 'there are broken links in kibana',
       #                  'en/workplace-search/master/not-a-search-page.html'
-      include_examples 'all links are ok'
+      it 'logs there are bad cross document links' do
+        expect(outputs[-1]).to include('Bad cross-document links:')
+      end
+      it 'logs the bad link' do
+        expect(outputs[-1]).to include(indent(<<~LOG.strip, '  '))
+          Kibana [master]: src/core/public/doc_links/doc_links_service.ts contains broken links to:
+           - en/workplace-search/master/not-a-search-page.html
+        LOG
+      end
     end
     describe 'when using --keep_hash and --sub_dir together like a PR test' do
       describe 'when there is a broken link in one of the books being built' do
