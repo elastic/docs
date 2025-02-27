@@ -50,9 +50,11 @@ module DocbookCompat
     def convert_listing_body_with_language(node, lang)
       extra_classes = node.roles.empty? ? '' : " #{node.roles.join ' '}"
       pre_classes = "programlisting prettyprint lang-#{lang}#{extra_classes}"
+      c_cla = '"console_code_copy" title="Copy to clipboard" data-track="cta"'
+      span = '<span class="visually-hidden">Copy to clipboard</span>'
       [
         %(<div class="pre_wrapper lang-#{lang}#{extra_classes}">),
-        %(<div class="console_code_copy" title="Copy to clipboard"></div>),
+        %(<div class=#{c_cla}>#{span}</div>),
         %(<pre class="#{pre_classes}">#{node.content || ''}</pre>),
         %(</div>),
       ].join "\n"
