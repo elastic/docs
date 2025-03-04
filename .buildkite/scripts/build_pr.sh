@@ -64,13 +64,19 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs CHANGELOG.asciidoc)
       ;;
-      
+
+    # test glob
+    "ecs-logging")
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/**/*.asciidoc)
+      ;;
+
     # repositories with a docs dir
-    "apm-k8s-attacher" | "cloud" | "cloud-assets" | "cloud-on-k8s" | "ecctl" | "ecs" | "ecs-dotnet" | "ecs-logging" | "ecs-logging-go-logrus" | "ecs-logging-go-zap" | "ecs-logging-go-zerolog" | "ecs-logging-java" | "ecs-logging-nodejs" | "ecs-logging-php" | "ecs-logging-python" | "ecs-logging-ruby" | "elasticsearch-js" | "elasticsearch-js-legacy" | "elasticsearch-ruby" | "elasticsearch-php" | "elasticsearch-perl" | "elasticsearch-rs" | "kibana-cn" | "logstash" | "logstash-docs" | "security-docs" | "sense" | "swiftype")
+    "apm-k8s-attacher" | "cloud" | "cloud-assets" | "cloud-on-k8s" | "ecctl" | "ecs" | "ecs-dotnet" | "ecs-logging-go-logrus" | "ecs-logging-go-zap" | "ecs-logging-go-zerolog" | "ecs-logging-java" | "ecs-logging-nodejs" | "ecs-logging-php" | "ecs-logging-python" | "ecs-logging-ruby" | "elasticsearch-js" | "elasticsearch-js-legacy" | "elasticsearch-ruby" | "elasticsearch-php" | "elasticsearch-perl" | "elasticsearch-rs" | "kibana-cn" | "logstash" | "logstash-docs" | "security-docs" | "sense" | "swiftype")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs)
       ;;
-      
+
     # repositories with a docs dir, changelogs dir, and changelog
     "apm-server")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
