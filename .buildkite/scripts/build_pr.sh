@@ -62,17 +62,17 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
     # repositories with a docs dir and changelog
     "apm-aws-lambda" | "apm-agent-android" | "apm-agent-nodejs" | "apm-agent-python" | "apm-agent-ruby" | "apm-agent-rum-js" | "apm-agent-go" | "apm-agent-java" | "apm-agent-dotnet" | "apm-agent-php" | "apm-agent-ios")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs CHANGELOG.asciidoc)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/**/*.asciidoc CHANGELOG.asciidoc)
       ;;
 
-    # test glob
-    "ecs-logging")
+    # repositories with a docs dir that are migrated to docs-builder
+    "apm-k8s-attacher" | "cloud" | "ecs-logging" | "cloud-on-k8s" | "ecctl" | "ecs" | "ecs-dotnet" | "ecs-logging-go-logrus" | "ecs-logging-go-zap" | "ecs-logging-go-zerolog" | "ecs-logging-java" | "ecs-logging-nodejs" | "ecs-logging-php" | "ecs-logging-python" | "ecs-logging-ruby" | "elasticsearch-js" | "elasticsearch-ruby" | "elasticsearch-php"| "elasticsearch-rs" | "logstash" | "logstash-docs" | "security-docs")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/**/*.asciidoc)
       ;;
 
-    # repositories with a docs dir
-    "apm-k8s-attacher" | "cloud" | "cloud-assets" | "cloud-on-k8s" | "ecctl" | "ecs" | "ecs-dotnet" | "ecs-logging-go-logrus" | "ecs-logging-go-zap" | "ecs-logging-go-zerolog" | "ecs-logging-java" | "ecs-logging-nodejs" | "ecs-logging-php" | "ecs-logging-python" | "ecs-logging-ruby" | "elasticsearch-js" | "elasticsearch-js-legacy" | "elasticsearch-ruby" | "elasticsearch-php" | "elasticsearch-perl" | "elasticsearch-rs" | "kibana-cn" | "logstash" | "logstash-docs" | "security-docs" | "sense" | "swiftype")
+    # repositories with a docs dir that are not migrated to docs-builder
+     "cloud-assets"  | "elasticsearch-js-legacy"  | "elasticsearch-perl" | "kibana-cn" | "sense" | "swiftype")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs)
       ;;
@@ -80,7 +80,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
     # repositories with a docs dir, changelogs dir, and changelog
     "apm-server")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./changelogs CHANGELOG.asciidoc)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/**/*.asciidoc ./changelogs/**/*.asciidoc CHANGELOG.asciidoc)
       ;;
 
     "docs-content")
@@ -90,7 +90,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
     "beats")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./auditbeat ./CHANGELOG.asciidoc ./docs ./filebeat ./heartbeat ./journalbeat ./libbeat/docs ./libbeat/outputs/*/docs/* ./libbeat/processors/*/docs/* ./metricbeat ./packetbeat ./topbeat/docs ./winlogbeat ./x-pack/auditbeat ./x-pack/dockerlogbeat/docs ./x-pack/filebeat/docs ./x-pack/filebeat/processors/*/docs/* ./x-pack/functionbeat ./x-pack/libbeat/docs ./x-pack/libbeat/processors/*/docs/* ./x-pack/metricbeat/module)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./auditbeat/**/*.asciidoc ./CHANGELOG.asciidoc ./docs/**/*.asciidoc ./filebeat/**/*.asciidoc ./heartbeat/**/*.asciidoc ./journalbeat/**/*.asciidoc ./libbeat/docs/**/*.asciidoc ./libbeat/outputs/*/docs/*/**/*.asciidoc ./libbeat/processors/*/docs/*/**/*.asciidoc ./metricbeat/**/*.asciidoc ./packetbeat/**/*.asciidoc ./topbeat/docs/**/*.asciidoc ./winlogbeat/**/*.asciidoc ./x-pack/auditbeat/**/*.asciidoc ./x-pack/dockerlogbeat/docs/**/*.asciidoc ./x-pack/filebeat/docs/**/*.asciidoc ./x-pack/filebeat/processors/*/docs/*/**/*.asciidoc ./x-pack/functionbeat/**/*.asciidoc ./x-pack/libbeat/docs/**/*.asciidoc ./x-pack/libbeat/processors/*/docs/*/**/*.asciidoc ./x-pack/metricbeat/module/**/*.asciidoc)
       ;;
 
     "clients-team")
@@ -103,14 +103,19 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/asciidoc)
       ;;
 
-    "eland" | "enterprise-search-php" | "enterprise-search-python" | "enterprise-search-ruby")
+    "eland")
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/guide/**/*.asciidoc)
+      ;;
+
+    "enterprise-search-php" | "enterprise-search-python" | "enterprise-search-ruby")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/guide)
       ;;
 
     "elasticsearch")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./buildSrc ./build-tools-internal ./build-tools/src/main/resources ./client ./docs ./modules/reindex/src/internalClusterTest/java/org/elasticsearch/client/documentation ./modules/reindex/src/test/java/org/elasticsearch/client/documentation ./plugins/examples ./server/src/internalClusterTest/java/org/elasticsearch/client/documentation ./server/src/main/resources/org/elasticsearch/common ./server/src/test/java/org/elasticsearch/client/documentation ./x-pack/docs ./x-pack/plugin/esql/qa/testFixtures/src/main/resources ./x-pack/plugin/sql/qa ./x-pack/qa/sql)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./buildSrc ./build-tools-internal ./build-tools/src/main/resources ./client ./docs/**/*.asciidoc ./modules/reindex/src/internalClusterTest/java/org/elasticsearch/client/documentation ./modules/reindex/src/test/java/org/elasticsearch/client/documentation ./plugins/examples ./server/src/internalClusterTest/java/org/elasticsearch/client/documentation ./server/src/main/resources/org/elasticsearch/common ./server/src/test/java/org/elasticsearch/client/documentation ./x-pack/docs ./x-pack/plugin/esql/qa/testFixtures/src/main/resources ./x-pack/plugin/sql/qa ./x-pack/qa/sql)
       ;;
 
     "elasticsearch-hadoop")
@@ -120,22 +125,22 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
     "elasticsearch-java")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./java-client/src/test/java/co/elastic/clients/documentation)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./java-client/src/test/java/co/elastic/clients/documentation/**/*.asciidoc)
       ;;
 
     "elasticsearch-net")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs ./tests/Tests/Documentation)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/**/*.asciidoc ./tests/Tests/Documentation)
       ;;
 
     "elasticsearch-py")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/guide ./docs/examples)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/guide/**/*.asciidoc ./docs/examples)
       ;;
 
     "go-elasticsearch")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./.doc)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./.doc/**/*.asciidoc)
       ;;
 
     "enterprise-search-pubs")
@@ -148,9 +153,14 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./packages/enterprise-search/docs)
       ;;
 
-    "esf" | "ingest-docs" | "observability-docs" | "stack-docs" | "x-pack-logstash")
+    "x-pack-logstash")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en)
+      ;;
+
+    "esf" | "ingest-docs" | "observability-docs" | "stack-docs" | "x-pack-logstash")
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en/**/*.asciidoc)
       ;;
 
     "observability-robots-playground")
