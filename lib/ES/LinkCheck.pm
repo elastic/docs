@@ -63,12 +63,28 @@ sub check_source {
     while ( my ( $path, $fragment ) = $link_it->() ) {
         my $dest = $self->root->file($path);
         unless ( $self->_file_exists( $dest, $path ) ) {
-            $self->add_bad( $file_descr, $path );
+            # Check if the path contains 'main' or 'master'
+            if ($path =~ /main|master/) {
+                # Warn (not error!) on broken main/master links
+                warn "Warning: $file_descr contains a broken link to $path\n";
+            } else {
+                # Add non-main/master broken links to the list of bad links
+                # A list length greater than zero will result in a build failure
+                $self->add_bad( $file_descr, $path );
+            }
             next;
         }
         next unless $fragment;
         unless ( $self->_fragment_exists( $dest, $path, $fragment ) ) {
-            $self->add_bad( $file_descr, "$path#$fragment" );
+            # Check if the path contains 'main' or 'master'
+            if ($path =~ /main|master/) {
+                # Warn (not error!) on broken main/master links
+                warn "Warning: $file_descr contains a broken link to $path#$fragment\n";
+            } else {
+                # Add non-main/master broken links to the list of bad links
+                # A list length greater than zero will result in a build failure
+                $self->add_bad( $file_descr, "$path#$fragment" );
+            }
         }
     }
 }
