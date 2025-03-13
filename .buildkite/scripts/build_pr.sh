@@ -68,7 +68,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
     # test glob
     "ecs-logging")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/**/*.asciidoc)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- "**/*.asciidoc")
       ;;
 
     # repositories with a docs dir
