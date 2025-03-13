@@ -68,7 +68,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
     # repositories with a docs dir that are migrated to docs-builder
     "apm-k8s-attacher" | "cloud" | "ecs-logging" | "cloud-on-k8s" | "ecctl" | "ecs" | "ecs-dotnet" | "ecs-logging-go-logrus" | "ecs-logging-go-zap" | "ecs-logging-go-zerolog" | "ecs-logging-java" | "ecs-logging-nodejs" | "ecs-logging-php" | "ecs-logging-python" | "ecs-logging-ruby" | "elasticsearch-js" | "elasticsearch-ruby" | "elasticsearch-php"| "elasticsearch-rs" | "logstash" | "logstash-docs" | "security-docs")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/**/*.asciidoc)
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- "**/*.asciidoc")
       ;;
 
     # repositories with a docs dir that are not migrated to docs-builder
