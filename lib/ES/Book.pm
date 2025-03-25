@@ -39,8 +39,8 @@ our %Page_Header = (
             my ($self, $mappings, $current_url) = @_;
             my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
 
-            printf(" - %40.40s: current url", $current_url);
-            printf(" - %40.40s: redirect url", $redirect_url);
+            printf("current_url: %s\n", $current_url);
+            printf("redirect_url: %s\n", $redirect_url);
 
             return <<"HEADER";
 A newer version is available. For the latest information, see the
