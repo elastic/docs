@@ -544,6 +544,39 @@ sub _page_header_text {
 sub _get_current_url {
 #===================================
     my ($self) = @_;
+
+# sub title            { shift->{title} }
+# sub dir              { shift->{dir} }
+# sub prefix           { shift->{prefix} }
+# sub chunk            { shift->{chunk} }
+# sub toc              { shift->{toc} }
+# sub single           { shift->{single} }
+# sub index            { shift->{index} }
+# sub branches         { shift->{branches} }
+# sub branch_title     { shift->{branch_titles}->{ shift() } }
+# sub current          { shift->{current} }
+# sub is_multi_version { @{ shift->branches } > 1 }
+# sub tags             { shift->{tags} }
+# sub subject          { shift->{subject} }
+# sub source           { shift->{source} }
+# sub lang             { shift->{lang} }
+
+    printf("self->title: %s\n", $self->title);
+    printf("self->dir: %s\n", $self->dir);
+    printf("self->prefix: %s\n", $self->prefix);
+    printf("self->chunk: %s\n", $self->chunk);
+    printf("self->toc: %s\n", $self->toc);
+    printf("self->single: %s\n", $self->single);
+    printf("self->index: %s\n", $self->index);
+    printf("self->branches: %s\n", $self->branches);
+    printf("self->branch_title: %s\n", $self->branch_title($self->current));
+    printf("self->current: %s\n", $self->current);
+    printf("self->is_multi_version: %s\n", $self->is_multi_version);
+    printf("self->tags: %s\n", $self->tags);
+    printf("self->subject: %s\n", $self->subject);
+    printf("self->source: %s\n", $self->source);
+    printf("self->lang: %s\n", $self->lang);
+
     my $trimmed_dir = $self->dir;
     $trimmed_dir =~ s|^/tmp/docsbuild/target_repo/html/||;
     return sprintf("https://www.elastic.co/guide/%s/%s/index.html", $trimmed_dir, $self->branch_title($self->current));
