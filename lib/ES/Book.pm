@@ -30,7 +30,7 @@ sub _load_url_mappings {
 # Add function to get redirect URL
 sub _get_redirect_url {
     my ($self, $current_url, $mappings) = @_;
-    return $mappings->{$current_url} || '../current/index.html';  # Default fallback
+    return $mappings->{$current_url} || 'https://www.elastic.co/docs';  # Default fallback
 }
 
 our %Page_Header = (
@@ -38,6 +38,10 @@ our %Page_Header = (
         old => sub {
             my ($self, $mappings, $current_url) = @_;
             my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+
+            printf(" - %40.40s: current url", $current_url);
+            printf(" - %40.40s: redirect url", $redirect_url);
+
             return <<"HEADER";
 A newer version is available. For the latest information, see the
 <a href="$redirect_url">current release documentation</a>.
