@@ -367,7 +367,7 @@ sub _build_book {
                 private       => $self->private( $branch ),
                 noindex       => $self->noindex( $branch ),
                 multi         => $self->is_multi_version,
-                page_header   => $self->_page_header($branch, $first_path($index), $version),
+                page_header   => $self->_page_header($branch, $first_path->file($index), $version),
                 section_title => $section_title,
                 subject       => $subject,
                 toc           => $self->toc,
