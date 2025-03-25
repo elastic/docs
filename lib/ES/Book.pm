@@ -544,16 +544,9 @@ sub _page_header_text {
 sub _get_current_url {
 #===================================
     my ($self) = @_;
-
-
-    printf("index: %s\n", $self->index);
-    printf("title: %s\n", $self->title);
-    printf("dir: %s\n", $self->dir);
-    printf("toc: %s\n", $self->toc);
-
-
-    # Construct the current URL based on the book's context
-    return sprintf("%s/%s/index.html", $self->prefix, $self->branch_title($self->current));
+    my $trimmed_dir = $self->dir;
+    $trimmed_dir =~ s|^/tmp/docsbuild/target_repo/html/||;
+    return sprintf("https://www.elastic.co/guide/%s/%s/index.html", $trimmed_dir, $self->branch_title($self->current));
 }
 
 #===================================
