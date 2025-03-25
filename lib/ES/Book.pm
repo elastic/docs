@@ -12,62 +12,129 @@ use File::Copy::Recursive qw(fcopy rcopy);
 use ES::Toc();
 use utf8;
 use List::Util qw(first);
+use JSON::PP;
+
+# Add new function to load URL mappings
+sub _load_url_mappings {
+    my ($self, $json_file) = @_;
+    return {} unless -f $json_file;
+    
+    local $/;
+    open(my $fh, '<', $json_file) or die "Cannot open $json_file: $!";
+    my $json_text = <$fh>;
+    close($fh);
+    
+    return decode_json($json_text);
+}
+
+# Add function to get redirect URL
+sub _get_redirect_url {
+    my ($self, $current_url, $mappings) = @_;
+    return $mappings->{$current_url} || '../current/index.html';  # Default fallback
+}
 
 our %Page_Header = (
     en => {
-        old => <<"HEADER",
+        old => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
 A newer version is available. For the latest information, see the
-<a href="../current/index.html">current release documentation</a>.
+<a href="$redirect_url">current release documentation</a>.
 HEADER
-        dead => <<"HEADER",
+        },
+        dead => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
 <strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
 will be released for this version. For the latest information, see the
-<a href="../current/index.html">current release documentation</a>.
+<a href="$redirect_url">current release documentation</a>.
 HEADER
-        new => <<"HEADER"
-This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a> for more details.
-HEADER
-    },
-    zh_cn => {
-        old => <<"HEADER",
-你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
-HEADER
-        dead => <<"HEADER",
-你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
-HEADER
-        new => <<"HEADER"
-你当前正在查看的是未发布版本的预览版文档。如果不是你要找的，请点击查看 <a href="../current/index.html">当前发布版本的文档</a>。
-HEADER
-    },
-    ja => {
-        old => <<"HEADER",
-A newer version is available. For the latest information, see the
-<a href="../current/index.html">current release documentation</a>.
-HEADER
-        dead => <<"HEADER",
-<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
-will be released for this version. For the latest information, see the
-<a href="../current/index.html">current release documentation</a>.
-HEADER
-        new => <<"HEADER"
-This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a> for more details.
-HEADER
-    },
-    ko => {
-        old => <<"HEADER",
-A newer version is available. For the latest information, see the
-<a href="../current/index.html">current release documentation</a>.
-HEADER
-        dead => <<"HEADER",
-<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
-will be released for this version. For the latest information, see the
-<a href="../current/index.html">current release documentation</a>.
-HEADER
-        new => <<"HEADER"
-This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="https://www.elastic.co/docs/current/serverless">serverless docs</a> for more details.
+        },
+        new => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER"
+This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="$redirect_url">serverless docs</a> for more details.
 HEADER
         }
-
+    },
+    zh_cn => {
+        old => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="$redirect_url">当前发布版本的文档</a>。
+HEADER
+        },
+        dead => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="$redirect_url">当前发布版本的文档</a>。
+HEADER
+        },
+        new => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+你当前正在查看的是未发布版本的预览版文档。如果不是你要找的，请点击查看 <a href="$redirect_url">当前发布版本的文档</a>。
+HEADER
+        }
+    },
+    ja => {
+        old => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+A newer version is available. For the latest information, see the
+<a href="$redirect_url">current release documentation</a>.
+HEADER
+        },
+        dead => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
+will be released for this version. For the latest information, see the
+<a href="$redirect_url">current release documentation</a>.
+HEADER
+        },
+        new => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="$redirect_url">serverless docs</a> for more details.
+HEADER
+        }
+    },
+    ko => {
+        old => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+A newer version is available. For the latest information, see the
+<a href="$redirect_url">current release documentation</a>.
+HEADER
+        },
+        dead => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+<strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
+will be released for this version. For the latest information, see the
+<a href="$redirect_url">current release documentation</a>.
+HEADER
+        },
+        new => sub {
+            my ($self, $mappings, $current_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            return <<"HEADER";
+This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="$redirect_url">serverless docs</a> for more details.
+HEADER
+        }
+    }
 );
 
 #===================================
@@ -119,10 +186,6 @@ sub new {
         push @difference, $item unless grep { $item eq $_ } @branches;
     }
 
-    # print "Branches: ", join(", ", @branches), "\n";
-    # print "Live: ", join(", ", @$live_branches), "\n";
-    # print "Difference: ", join(", ", @difference), "\n";
-
     my $missing = join ", ", @difference;
     die "Live branch(es) <$missing> not in <branches> in book <$title>"
         if $difference[0];
@@ -170,6 +233,7 @@ sub new {
         respect_edit_url_overrides => $respect_edit_url_overrides,
         suppress_migration_warnings => $args{suppress_migration_warnings} || 0,
         toc_extra => $args{toc_extra} || '',
+        url_mappings_file => $args{url_mappings_file} || '',
     }, $class;
 }
 
@@ -456,11 +520,28 @@ sub _page_header_text {
 #===================================
     my ( $self, $phrase ) = @_;
     $phrase ||= '';
-    return $Page_Header{ $self->lang }{$phrase}
+    
+    my $header_sub = $Page_Header{ $self->lang }{$phrase}
         || die "No page header available for lang: "
         . $self->lang
         . " and phrase: $phrase";
+    
+    # Load URL mappings from JSON file if it exists
+    my $mappings = $self->_load_url_mappings($self->{url_mappings_file} || 'url_mappings.json');
+    
+    # Get current URL from the context
+    my $current_url = $self->_get_current_url();
+    
+    # Call the header sub with mappings and current URL
+    return $header_sub->($self, $mappings, $current_url);
+}
 
+#===================================
+sub _get_current_url {
+#===================================
+    my ($self) = @_;
+    # Construct the current URL based on the book's context
+    return sprintf("%s/%s/index.html", $self->prefix, $self->branch_title($self->current));
 }
 
 #===================================

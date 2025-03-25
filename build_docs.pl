@@ -567,6 +567,7 @@ sub build_entries {
             dir      => $build,
             raw_dir  => $raw_build,
             temp_dir => $temp_dir,
+            url_mappings => 'url_mappings.json',
             %$entry
         );
         $toc->add_entry( $book->build( $Opts->{rebuild}, $ConfPath ) );
