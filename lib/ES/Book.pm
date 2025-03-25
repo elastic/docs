@@ -29,15 +29,18 @@ sub _load_url_mappings {
 
 # Add function to get redirect URL
 sub _get_redirect_url {
-    my ($self, $current_url, $mappings) = @_;
-    return $mappings->{$current_url} || 'https://www.elastic.co/docs';  # Default fallback
+    my ($self, $current_url, $mappings, $canonical_url) = @_;
+    # If we have a canonical URL, use that as the redirect URL
+    return $canonical_url if $canonical_url;
+    # Otherwise fall back to the mappings or default
+    return $mappings->{$current_url} || 'https://www.elastic.co/docs';
 }
 
 our %Page_Header = (
     en => {
         old => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
 
             printf("current_url: %s\n", $current_url);
             printf("redirect_url: %s\n", $redirect_url);
@@ -48,8 +51,8 @@ A newer version is available. For the latest information, see the
 HEADER
         },
         dead => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 <strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
 will be released for this version. For the latest information, see the
@@ -57,8 +60,8 @@ will be released for this version. For the latest information, see the
 HEADER
         },
         new => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER"
 This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="$redirect_url">serverless docs</a> for more details.
 HEADER
@@ -66,22 +69,22 @@ HEADER
     },
     zh_cn => {
         old => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="$redirect_url">当前发布版本的文档</a>。
 HEADER
         },
         dead => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 你当前正在查看的是旧版本的文档。如果不是你要找的，请点击查看 <a href="$redirect_url">当前发布版本的文档</a>。
 HEADER
         },
         new => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 你当前正在查看的是未发布版本的预览版文档。如果不是你要找的，请点击查看 <a href="$redirect_url">当前发布版本的文档</a>。
 HEADER
@@ -89,16 +92,16 @@ HEADER
     },
     ja => {
         old => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 A newer version is available. For the latest information, see the
 <a href="$redirect_url">current release documentation</a>.
 HEADER
         },
         dead => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 <strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
 will be released for this version. For the latest information, see the
@@ -106,8 +109,8 @@ will be released for this version. For the latest information, see the
 HEADER
         },
         new => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="$redirect_url">serverless docs</a> for more details.
 HEADER
@@ -115,16 +118,16 @@ HEADER
     },
     ko => {
         old => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 A newer version is available. For the latest information, see the
 <a href="$redirect_url">current release documentation</a>.
 HEADER
         },
         dead => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 <strong>IMPORTANT</strong>: No additional bug fixes or documentation updates
 will be released for this version. For the latest information, see the
@@ -132,8 +135,8 @@ will be released for this version. For the latest information, see the
 HEADER
         },
         new => sub {
-            my ($self, $mappings, $current_url) = @_;
-            my $redirect_url = $self->_get_redirect_url($current_url, $mappings);
+            my ($self, $mappings, $current_url, $canonical_url) = @_;
+            my $redirect_url = $self->_get_redirect_url($current_url, $mappings, $canonical_url);
             return <<"HEADER";
 This documentation contains work-in-progress information for future Elastic Stack and Cloud releases. Use the version selector to view supported release docs. It also contains some Elastic Cloud serverless information. Check out our <a href="$redirect_url">serverless docs</a> for more details.
 HEADER
@@ -535,12 +538,23 @@ sub _page_header_text {
     
     # Get current URL from the context
     my $current_url = $self->_get_current_url();
+    
+    # Get canonical URL from the document attributes
+    my $canonical_url = '';
+    if ($index_path && -e $index_path) {
+        my $content = $index_path->slurp(iomode => '<:encoding(UTF-8)');
+        if ($content =~ /<link rel="canonical" href="([^"]+)"/) {
+            $canonical_url = $1;
+        }
+    }
 
     printf("index_path: %s\n", $index_path);
     printf("version: %s\n", $version);
     printf("branch: %s\n", $branch);
-    # Call the header sub with mappings and current URL
-    return $header_sub->($self, $mappings, $current_url);
+    printf("canonical_url: %s\n", $canonical_url);
+    
+    # Call the header sub with mappings, current URL, and canonical URL
+    return $header_sub->($self, $mappings, $current_url, $canonical_url);
 }
 
 #===================================
