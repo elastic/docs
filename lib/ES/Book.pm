@@ -367,7 +367,7 @@ sub _build_book {
                 private       => $self->private( $branch ),
                 noindex       => $self->noindex( $branch ),
                 multi         => $self->is_multi_version,
-                page_header   => $self->_page_header($branch, $first_path->file($index), $version),
+                page_header   => $self->_page_header($branch, $first_path-($index), $version),
                 section_title => $section_title,
                 subject       => $subject,
                 toc           => $self->toc,
@@ -392,7 +392,7 @@ sub _build_book {
                 noindex       => $self->noindex( $branch ),
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
-                page_header   => $self->_page_header($branch),
+                page_header   => $self->_page_header($branch, $first_path->file($index), $version),
                 section_title => $section_title,
                 subject       => $subject,
                 resource      => [$checkout],
@@ -516,13 +516,13 @@ sub _page_header {
     my $key = $branchidx > $currentidx ? 'old' : 'new';
     $key = 'dead' if $key eq 'old' && !grep( /^$branch$/, @{ $self->{live_branches} } );
 
-    return $self->_page_header_text( $key, $index_path, $version );
+    return $self->_page_header_text( $key, $index_path, $version, $branch );
 }
 
 #===================================
 sub _page_header_text {
 #===================================
-    my ( $self, $phrase, $index_path, $version ) = @_;
+    my ( $self, $phrase, $index_path, $version, $branch ) = @_;
     $phrase ||= '';
     
     my $header_sub = $Page_Header{ $self->lang }{$phrase}
@@ -538,7 +538,7 @@ sub _page_header_text {
 
     printf("index_path: %s\n", $index_path);
     printf("version: %s\n", $version);
-    
+    printf("branch: %s\n", $branch);
     # Call the header sub with mappings and current URL
     return $header_sub->($self, $mappings, $current_url);
 }
