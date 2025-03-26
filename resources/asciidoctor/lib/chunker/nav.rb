@@ -13,10 +13,10 @@ module Chunker
     def initialize(doc)
       body = nav_body doc
 
-      printf("current-url: %s\n", doc.attr('current-url'))
+      puts "current-url: #{doc.attr('current-url')}"
 
       @header = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
-        <div class="navheader">
+        <div class="navheader" data-current-url="#{doc.attr('current-url')}">
         #{body}
         </div>
       HTML
