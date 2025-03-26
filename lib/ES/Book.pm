@@ -592,6 +592,7 @@ sub _get_current_url {
     printf("self->tags: %s\n", $self->tags);
     printf("self->subject: %s\n", $self->subject);
     printf("self->source: %s\n", $self->source);
+    printf("source-path: %s\n", $self->source->path);
     printf("self->lang: %s\n", $self->lang);
 
     my $trimmed_dir = $self->dir;
