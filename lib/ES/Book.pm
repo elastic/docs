@@ -536,22 +536,17 @@ sub _page_header_text {
     # Load URL mappings from JSON file if it exists
     my $mappings = $self->_load_url_mappings($self->{url_mappings_file} || 'url_mappings.json');
     
-    # Get current URL from the context
-    my $current_url = $self->_get_current_url();
+    # Get current URL based on context info
+    my $current_url = $self->_get_current_url($index_path, $version, $branch);
     
     # Get canonical URL from the document attributes
     my $canonical_url = '';
     if ($index_path && -e $index_path) {
         my $content = $index_path->slurp(iomode => '<:encoding(UTF-8)');
-        if ($content =~ /<link rel="canonical" href="([^"]+)"/) {
+        if ($content =~ /:page-canonical-url:\s*(.+)$/m) {
             $canonical_url = $1;
         }
     }
-
-    printf("index_path: %s\n", $index_path);
-    printf("version: %s\n", $version);
-    printf("branch: %s\n", $branch);
-    printf("canonical_url: %s\n", $canonical_url);
     
     # Call the header sub with mappings, current URL, and canonical URL
     return $header_sub->($self, $mappings, $current_url, $canonical_url);
@@ -560,44 +555,36 @@ sub _page_header_text {
 #===================================
 sub _get_current_url {
 #===================================
-    my ($self) = @_;
-
-# sub title            { shift->{title} }
-# sub dir              { shift->{dir} }
-# sub prefix           { shift->{prefix} }
-# sub chunk            { shift->{chunk} }
-# sub toc              { shift->{toc} }
-# sub single           { shift->{single} }
-# sub index            { shift->{index} }
-# sub branches         { shift->{branches} }
-# sub branch_title     { shift->{branch_titles}->{ shift() } }
-# sub current          { shift->{current} }
-# sub is_multi_version { @{ shift->branches } > 1 }
-# sub tags             { shift->{tags} }
-# sub subject          { shift->{subject} }
-# sub source           { shift->{source} }
-# sub lang             { shift->{lang} }
-
-    printf("self->title: %s\n", $self->title);
-    printf("self->dir: %s\n", $self->dir);
-    printf("self->prefix: %s\n", $self->prefix);
-    printf("self->chunk: %s\n", $self->chunk);
-    printf("self->toc: %s\n", $self->toc);
-    printf("self->single: %s\n", $self->single);
-    printf("self->index: %s\n", $self->index);
-    printf("self->branches: %s\n", $self->branches);
-    printf("self->branch_title: %s\n", $self->branch_title($self->current));
-    printf("self->current: %s\n", $self->current);
-    printf("self->is_multi_version: %s\n", $self->is_multi_version);
-    printf("self->tags: %s\n", $self->tags);
-    printf("self->subject: %s\n", $self->subject);
-    printf("self->source: %s\n", $self->source);
-    printf("source-path: %s\n", $self->source->path);
-    printf("self->lang: %s\n", $self->lang);
-
-    my $trimmed_dir = $self->dir;
-    $trimmed_dir =~ s|^/tmp/docsbuild/target_repo/html/||;
-    return sprintf("https://www.elastic.co/guide/%s/%s/index.html", $trimmed_dir, $self->branch_title($self->current));
+    my ($self, $index_path, $version, $branch) = @_;
+    
+    # Extract book path component
+    my $book_path = $self->prefix;
+    
+    # Get relative path from index.asciidoc to the current file being processed
+    my $relative_path = '';
+    if ($index_path) {
+        # If we're processing index.asciidoc, use it directly
+        if ($index_path->basename eq 'index.asciidoc') {
+            $relative_path = 'index.html';
+        } else {
+            # Otherwise get the path relative to the book root
+            my $file_path = $index_path->stringify;
+            if ($file_path =~ m|/([^/]+?)\.asciidoc$|) {
+                $relative_path = "$1.html";
+            } else {
+                $relative_path = 'index.html'; # Default fallback
+            }
+        }
+    } else {
+        $relative_path = 'index.html'; # Default fallback
+    }
+    
+    # Construct the URL using the domain, book path, version and file
+    return sprintf("https://www.elastic.co/guide/%s/%s/%s", 
+        $book_path, 
+        $version, 
+        $relative_path
+    );
 }
 
 #===================================
