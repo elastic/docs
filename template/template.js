@@ -32,7 +32,7 @@ const readFile = promisify(fs.readFile);
 const stat = promisify(fs.stat);
 
 module.exports = templateSource => {
-  const apply = (rawItr, lang, initialJsState) => {
+  const apply = (rawItr, lang, initialJsState, currentPath, destPath) => {
     /*
      * We apply the template by walking a stream for the template and a stream
      * for the raw page in parallel. We do this instead of pulling everything
@@ -108,6 +108,7 @@ module.exports = templateSource => {
         yield `lang="${lang}"`;
         yield* template.gather("<!-- DOCS BODY -->");
         await raw.dump("<body>");
+        yield `<div id="custom-content">Current path: ${currentPath}<br>Dest path: ${destPath}</div>`;
         yield* raw.gather("</body>");
         yield* template.gather("<!-- DOCS FINAL -->");
         yield `<script type="text/javascript">
@@ -185,10 +186,9 @@ module.exports = templateSource => {
       const raw = fs.createReadStream(source, {encoding: 'UTF-8'});
       const write = fs.createWriteStream(dest, {encoding: 'UTF-8'});
       await new Promise((resolve, reject) => {
-        const out = apply(raw[Symbol.asyncIterator](), lang, initialJsState);
+        const out = apply(raw[Symbol.asyncIterator](), lang, initialJsState, source, dest);
         write.on("close", resolve);
         write.on("error", reject);
-        // out.on("error", write.destroy) doesn't properly forward the error!
         out.on("error", err => write.destroy(err));
         out.pipe(write);
       }).finally(() => raw.close());
