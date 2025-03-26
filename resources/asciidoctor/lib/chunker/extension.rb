@@ -75,8 +75,8 @@ module Chunker
       yield
     end
 
-    def add_nav(doc, section)
-      nav = Nav.new doc, section
+    def add_nav(doc)
+      nav = Nav.new doc
       doc.blocks.insert 0, nav.header
       doc.blocks.append nav.footer
     end
@@ -143,6 +143,7 @@ module Chunker
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
       attrs['title-separator'] = ''
       attrs['canonical-url'] = section.attributes['canonical-url']
+      attrs['current-url'] = "#{section.id}.html"
       attrs.merge! find_related(section)
       attrs
     end
