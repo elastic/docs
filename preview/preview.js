@@ -82,7 +82,7 @@ const requestHandler = async (core, parsedUrl, response) => {
     const lang = await file.lang();
     const initialJsState = await buildInitialJsState(file.alternativesReport);
     const templated = template.apply(
-      file.stream[Symbol.asyncIterator](), lang.trim(), initialJsState
+      file.stream[Symbol.asyncIterator](), lang.trim(), initialJsState, path,
     );
     return new Promise((resolve, reject) => {
       file.stream.on("error", reject);
