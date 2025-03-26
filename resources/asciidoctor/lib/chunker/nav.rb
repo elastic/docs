@@ -11,6 +11,9 @@ module Chunker
     attr_reader :header, :footer
 
     def initialize(doc, section)
+
+      printf("section.id: %s\n", section.id)
+
       body = nav_body doc, section
       @header = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
         <div class="navheader" data-current-url="#{section.id}.html">
