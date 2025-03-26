@@ -147,6 +147,7 @@ sub _sources_for_branch {
 #===================================
 sub sources { shift->{sources} }
 sub temp_dir { shift->{temp_dir} }
+sub path { shift->{path} }
 #===================================
 
 1;
