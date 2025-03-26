@@ -106,9 +106,12 @@ module.exports = templateSource => {
         yield* raw.gather("</head>");
         yield* template.gather("<!-- DOCS LANG -->");
         yield `lang="${lang}"`;
+
+        yield* template.gather("<!-- DOCS CURRENT -->");
+        yield `<div id="custom-content">Current path: ${currentPath}<br>Dest path: ${destPath}</div>`;
+
         yield* template.gather("<!-- DOCS BODY -->");
         await raw.dump("<body>");
-        yield `<div id="custom-content">Current path: ${currentPath}<br>Dest path: ${destPath}</div>`;
         yield* raw.gather("</body>");
         yield* template.gather("<!-- DOCS FINAL -->");
         yield `<script type="text/javascript">
