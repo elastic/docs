@@ -75,8 +75,8 @@ module Chunker
       yield
     end
 
-    def add_nav(doc)
-      nav = Nav.new doc
+    def add_nav(doc, section)
+      nav = Nav.new doc, section
       doc.blocks.insert 0, nav.header
       doc.blocks.append nav.footer
     end
