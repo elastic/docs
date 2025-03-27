@@ -28,7 +28,7 @@ module Chunker
         segments[0]
       end
 
-      actual_url = '/guide' + path_dir + '/*/' + current_url
+      actual_url = 'https://www.elastic.co/guide' + path_dir + '/*/' + current_url
 
       if mapping.key?(actual_url)
         new_url = mapping[actual_url]
@@ -39,7 +39,7 @@ module Chunker
       @header = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
       <div id="url-to-v3">
         From: #{actual_url}
-        To: <a href="#{new_url}">NEW URL</a>
+        To: <a href="https://www.elastic.co#{new_url}">NEW URL</a>
       </div>
       HTML
     end
