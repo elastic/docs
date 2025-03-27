@@ -85,7 +85,7 @@ module Chunker
 
     def add_url_to_v3(doc)
       url_to_v3 = UrlToV3.new doc
-      doc.blocks.insert 0, url_to_v3.header
+      doc.blocks.insert 0, url_to_v3.url
     end
 
     def correct_xref(node)
@@ -116,7 +116,7 @@ module Chunker
     def add_subdoc_sections(doc, subdoc, html)
       nav = Nav.new subdoc
       url_to_v3 = UrlToV3.new subdoc
-      subdoc << url_to_v3.header
+      subdoc << url_to_v3.url
       subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
       subdoc << footnotes(doc, subdoc) if doc.footnotes?
