@@ -104,12 +104,10 @@ module.exports = templateSource => {
         const raw = await Gatherer('raw', rawItr);
         await raw.dump("<head>");
         yield* raw.gather("</head>");
-        yield* template.gather("<!-- DOCS LANG -->");
-        yield `lang="${lang}"`;
-
         yield* template.gather("<!-- DOCS CURRENT -->");
         yield `<div id="custom-content">Dest path: ${destPath}</div>`;
-
+        yield* template.gather("<!-- DOCS LANG -->");
+        yield `lang="${lang}"`;
         yield* template.gather("<!-- DOCS BODY -->");
         await raw.dump("<body>");
         yield* raw.gather("</body>");
