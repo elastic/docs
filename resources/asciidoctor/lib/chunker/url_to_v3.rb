@@ -18,6 +18,8 @@ module Chunker
       # # Read content from the specified file and convert it to a dictionary
       # mapping = JSON.parse(File.read(file_path)) if File.exist?(file_path)
 
+      segments = outdir.sub('/tmp/docsbuild/target_repo/raw', '').split('/')
+
       path_dir = if segments.empty?
         ''
       elsif segments.length > 1
