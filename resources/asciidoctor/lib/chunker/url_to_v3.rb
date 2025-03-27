@@ -2,7 +2,7 @@ module Chunker
 
   class UrlToV3
 
-    attr_reader :header
+    attr_reader :url
 
     def initialize(doc)
       current_url = doc.attr('current-url')
@@ -28,7 +28,7 @@ module Chunker
         segments[0]
       end
 
-      actual_url = 'https://www.elastic.co/guide' + path_dir + '/*/' + current_url
+      actual_url = '/guide' + path_dir + '/*/' + current_url
 
       if mapping.key?(actual_url)
         new_url = mapping[actual_url]
@@ -36,10 +36,9 @@ module Chunker
        new_url = '/docs'
       end
 
-      @header = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
-      <div id="url-to-v3">
-        From: #{actual_url}
-        To: <a href="https://www.elastic.co#{new_url}">NEW URL</a>
+      @url = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
+      <div id="url-to-v3" style="display: none;">
+        A newer version is available. For the latest information, see the <a href="https://www.elastic.co#{new_url}">current release documentation</a>
       </div>
       HTML
     end

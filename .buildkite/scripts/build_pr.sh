@@ -228,7 +228,6 @@ PREVIEW_URL="https://${TARGET_BRANCH}.docs-preview.app.elstc.co"
 build_cmd="./build_docs --all \
   --target_repo git@github.com:elastic/built-docs \
   --reference /opt/git-mirrors/ \
-  --skiplinkcheck \
   --target_branch ${TARGET_BRANCH} \
   --push \
   --announce_preview ${PREVIEW_URL}/diff \
