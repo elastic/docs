@@ -11,7 +11,7 @@ module Chunker
       current_url ||= 'index.html'
       
       # raise ArgumentError, "Missing required attribute 'current-url'" if current_url.nil?
-      raise ArgumentError, "Missing required attribute 'outdir'" if outdir.nil?
+      # raise ArgumentError, "Missing required attribute 'outdir'" if outdir.nil?
 
       # Hardcoded file path
       file_path = File.expand_path('v3-mapping.json', __dir__)
@@ -23,8 +23,13 @@ module Chunker
 
       actual_url = '/guide' + path_dir + '/*/' + current_url
 
-      new_url = mapping[actual_url]
-      
+
+      if mapping.key?(actual_url)
+        new_url = mapping[actual_url]
+      else
+        new_url = '/docs'
+      end
+
       @header = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
       <div id="url-to-v3">
         From: <a href="#{actual_url}">CURRENT URL</a>
