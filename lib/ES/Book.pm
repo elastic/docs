@@ -279,6 +279,8 @@ sub _build_book {
     my $subject       = $self->subject;
     my $lang          = $self->lang;
 
+
+
     return 0 unless $rebuild ||
         $source->has_changed( $self->title, $branch );
 
@@ -299,7 +301,7 @@ sub _build_book {
                 private       => $self->private( $branch ),
                 noindex       => $self->noindex( $branch ),
                 multi         => $self->is_multi_version,
-                page_header   => $self->_page_header($branch, $version_dir),
+                page_header   => $self->_page_header($branch, $version_dir, $section_title),
                 section_title => $section_title,
                 subject       => $subject,
                 toc           => $self->toc,
@@ -324,7 +326,7 @@ sub _build_book {
                 noindex       => $self->noindex( $branch ),
                 chunk         => $self->chunk,
                 multi         => $self->is_multi_version,
-                page_header   => $self->_page_header($branch, $version_dir),
+                page_header   => $self->_page_header($branch, $version_dir, $section_title),
                 section_title => $section_title,
                 subject       => $subject,
                 resource      => [$checkout],
@@ -432,7 +434,7 @@ sub _copy_branch_to_current {
 #===================================
 sub _page_header {
 #===================================
-    my ( $self, $branch, $version_dir ) = @_;
+    my ( $self, $branch, $version_dir, $section_title ) = @_;
     return '' unless $self->is_multi_version;
 
 
@@ -440,6 +442,7 @@ sub _page_header {
     return '' if $current eq $branch;
 
     printf("version_dir: %s\n", $version_dir);
+    printf("section_title: %s\n", $section_title);
 
     # Find the positions of the branch being built ($branch) and the current
     # branch ($current) in the list of branches for this book.
