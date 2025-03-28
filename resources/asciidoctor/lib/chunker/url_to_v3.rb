@@ -28,7 +28,7 @@ module Chunker
         segments[0]
       end
 
-      actual_url = '/guide' + path_dir + '/*/' + current_url
+      actual_url = path_dir + '/*/' + current_url
 
       if mapping.key?(actual_url)
         new_url = mapping[actual_url]
