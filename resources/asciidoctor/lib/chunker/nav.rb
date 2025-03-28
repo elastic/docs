@@ -11,10 +11,9 @@ module Chunker
     attr_reader :header, :footer
 
     def initialize(doc)
-
       body = nav_body doc
       @header = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
-        <div class="navheader" data-foo="#{doc.attr('current-url')}" data-out="#{doc.attr('outdir')}" data-subdoc="#{doc.attr('subdoc')}">
+        <div class="navheader">
         #{body}
         </div>
       HTML
