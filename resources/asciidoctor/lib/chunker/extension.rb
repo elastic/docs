@@ -9,6 +9,7 @@ require_relative 'extra_docinfo'
 require_relative 'find_related'
 require_relative 'footnotes'
 require_relative 'nav'
+require_relative 'url_to_v3'
 
 ##
 # HTML5 converter that chunks like docbook.
@@ -49,6 +50,7 @@ module Chunker
       )
       doc.attributes['next_section'] = find_next_in doc, 0
       add_nav doc
+      add_url_to_v3 doc
       yield
     end
 
@@ -81,6 +83,11 @@ module Chunker
       doc.blocks.append nav.footer
     end
 
+    def add_url_to_v3(doc)
+      url_to_v3 = UrlToV3.new doc
+      doc.blocks.insert 0, url_to_v3.url
+    end
+
     def correct_xref(node)
       refid = node.attributes['refid']
       return unless (ref = node.document.catalog[:refs][refid])
@@ -108,6 +115,8 @@ module Chunker
 
     def add_subdoc_sections(doc, subdoc, html)
       nav = Nav.new subdoc
+      url_to_v3 = UrlToV3.new subdoc
+      subdoc << url_to_v3.url
       subdoc << nav.header
       subdoc << Asciidoctor::Block.new(subdoc, :pass, source: html)
       subdoc << footnotes(doc, subdoc) if doc.footnotes?
@@ -143,6 +152,7 @@ module Chunker
       attrs['subdoc'] = true # Mark the subdoc so we don't try and chunk it
       attrs['title-separator'] = ''
       attrs['canonical-url'] = section.attributes['canonical-url']
+      attrs['current-url'] = "#{section.id}.html"
       attrs.merge! find_related(section)
       attrs
     end
