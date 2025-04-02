@@ -90,7 +90,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
 
     "beats")
       git fetch origin "$GITHUB_PR_TARGET_BRANCH"
-      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- "./auditbeat/**.asciidoc" ./CHANGELOG.asciidoc "./docs/**.asciidoc" "./filebeat/**.asciidoc" "./heartbeat/**.asciidoc" "./journalbeat/**.asciidoc" "./libbeat/docs/**.asciidoc" "./libbeat/outputs/*/docs/**.asciidoc" "./libbeat/processors/*/docs/**.asciidoc" "./metricbeat/**/*.asciidoc" "./packetbeat/**.asciidoc" "./topbeat/docs/**.asciidoc" "./winlogbeat/**.asciidoc" "./x-pack/auditbeat/**/*.asciidoc" "./x-pack/dockerlogbeat/docs/**.asciidoc" "./x-pack/filebeat/docs/**.asciidoc" "./x-pack/filebeat/processors/*/docs/**.asciidoc" "./x-pack/functionbeat/**.asciidoc" "./x-pack/libbeat/docs/**.asciidoc" "./x-pack/libbeat/processors/*/docs/**.asciidoc" "./x-pack/metricbeat/module/**.asciidoc")
+      docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- "./auditbeat/**.asciidoc" ./**.asciidoc "./docs/**.asciidoc" "./filebeat/**.asciidoc" "./heartbeat/**.asciidoc" "./journalbeat/**.asciidoc" "./libbeat/docs/**.asciidoc" "./libbeat/outputs/*/docs/**.asciidoc" "./libbeat/processors/*/docs/**.asciidoc" "./metricbeat/**/*.asciidoc" "./packetbeat/**.asciidoc" "./topbeat/docs/**.asciidoc" "./winlogbeat/**.asciidoc" "./x-pack/auditbeat/**/*.asciidoc" "./x-pack/dockerlogbeat/docs/**.asciidoc" "./x-pack/filebeat/docs/**.asciidoc" "./x-pack/filebeat/processors/*/docs/**.asciidoc" "./x-pack/functionbeat/**.asciidoc" "./x-pack/libbeat/docs/**.asciidoc" "./x-pack/libbeat/processors/*/docs/**.asciidoc" "./x-pack/metricbeat/module/**.asciidoc")
       ;;
 
     "clients-team")
