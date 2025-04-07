@@ -46,13 +46,13 @@ module Chunker
       if version == '8.18'
         @url = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
           <div id="url-to-v3" class="version-warning">
-            A newer version is available. For the latest information, see the <a href="https://www.elastic.co#{new_url}">current release documentation</a>
+              A newer version is available. Check out the <a href="https://www.elastic.co#{new_url}">latest documentation</a>.
           </div>
         HTML
       else
         @url = Asciidoctor::Block.new(doc, :pass, source: <<~HTML)
           <div id="url-to-v3" class="version-warning">
-            <strong>IMPORTANT</strong>: No additional bug fixes or documentation updates will be released for this version. For the latest information, see the <a href="https://www.elastic.co#{new_url}">current release documentation</a>
+              <strong>IMPORTANT</strong>: This documentation is no longer updated. Refer to <a href="https://www.elastic.co/support/eol">Elastic's version policy</a> and the <a href="https://www.elastic.co#{new_url}">latest documentation</a>.
           </div>
         HTML
       end
