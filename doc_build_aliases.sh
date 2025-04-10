@@ -143,6 +143,9 @@ alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/
 # Cloud
 alias docbldec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
+# Cloud Release Notes
+alias docbldecrn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --chunk 1'
+
 alias docbldess=docbldec
 
 # Cloud - Elastic Cloud Enterprise
