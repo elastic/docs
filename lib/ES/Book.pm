@@ -94,7 +94,7 @@ sub new {
 
     my $branch_list = $args{branches};
     my $current     = $args{current};
-    my $latest_8          = $args{latest_8} || '';
+    my $latest_8    = $args{latest_8} || '';
 
     die "<branches> must be an array in book <$title>"
         unless ref $branch_list eq 'ARRAY';
@@ -163,7 +163,7 @@ sub new {
         live_branches => $args{live} || \@branches,
         branch_titles => \%branch_titles,
         current       => $current,
-        latest_8            => $latest_8 || '',
+        latest_8      => $latest_8,
         tags          => $tags,
         subject       => $subject,
         private       => $args{private} || '',
@@ -213,6 +213,11 @@ sub build {
             );
             $rebuilding_current_branch = $building;
         } elsif ( $branch eq $self->latest_8 ) {
+          $toc->add_entry(
+              {   title => "$title: 8.x",
+                  url   => "8.x/index.html"
+              }
+          );
           $rebuilding_latest_8_branch = $building;
         } else {
             $toc->add_entry(
@@ -237,11 +242,13 @@ sub build {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
+            # $self->_update_title_and_version_drop_downs( $dir->subdir( '8.x' ) , $self->latest_8 );
             for ( @{ $self->branches } ) {
                 my $version = $self->branch_title($_);
                 $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( 'current' ) , $self->current );
+            # $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( '8.x' ) , $self->latest_8 );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -554,6 +561,7 @@ sub index            { shift->{index} }
 sub branches         { shift->{branches} }
 sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
+sub latest_8         { shift->{latest_8} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
