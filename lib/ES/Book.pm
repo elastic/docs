@@ -226,7 +226,7 @@ sub build {
     }
     $pm->wait_all_children();
     $self->_copy_branch_to_current if $rebuilding_current_branch;
-    $self->_copy_branch_to_latest_8 if rebuilding_latest_8_branch;
+    $self->_copy_branch_to_latest_8 if $rebuilding_latest_8_branch;
     $update_version_toc |= $self->_remove_old_versions;
     if ( $self->is_multi_version ) {
         if ( $update_version_toc ) {
