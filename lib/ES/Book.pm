@@ -204,8 +204,9 @@ sub build {
         $latest = 0;
 
         my $version = $self->branch_title($branch);
+        print($branch);
+        print($self->latest_8);
         if ( $branch eq $self->current ) {  # TODO: when "current" is a version, change this.
-            printf("current !!", $branch);
             $toc->add_entry(
                 {   title => "$title: $version (current)",
                     url   => "current/index.html"
@@ -213,7 +214,6 @@ sub build {
             );
             $rebuilding_current_branch = $building;
         } elsif ( $branch eq $self->latest_8 ) {
-            printf("latest_8 !!", $branch);
             $toc->add_entry(
                 {   title => "$title: 8.x",
                     url   => "8.x/index.html"
