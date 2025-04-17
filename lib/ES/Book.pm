@@ -562,6 +562,7 @@ sub index            { shift->{index} }
 sub branches         { shift->{branches} }
 sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
+sub latest_8         { shift->{latest_8} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
