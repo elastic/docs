@@ -413,8 +413,8 @@ sub check_kibana_links {
             $branch = "main"
         }
         else {
-            if ($version eq "8.19") {
-                $branch = "8.x"
+            if ($version eq "8.x") {
+                $branch = "8.19"
             }
             else {
                 $branch = $version
