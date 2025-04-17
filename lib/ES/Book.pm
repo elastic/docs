@@ -94,6 +94,7 @@ sub new {
 
     my $branch_list = $args{branches};
     my $current     = $args{current};
+    my $8x          = $args{8x} || '';
 
     die "<branches> must be an array in book <$title>"
         unless ref $branch_list eq 'ARRAY';
@@ -110,6 +111,8 @@ sub new {
 
     die "Current branch <$current> is not in <branches> in book <$title>"
         unless $branch_titles{$current};
+    die "8.x branch <$8x> is not in <branches> in book <$title>"
+        unless $branch_titles{$8x};
 
     my $live_branches = $args{live};
     # If `live` is defined, check if there are any specified branches that
@@ -162,6 +165,7 @@ sub new {
         live_branches => $args{live} || \@branches,
         branch_titles => \%branch_titles,
         current       => $current,
+        8x            => $8x || '',
         tags          => $tags,
         subject       => $subject,
         private       => $args{private} || '',
@@ -196,6 +200,7 @@ sub build {
     my $latest = !$self->{suppress_migration_warnings};
     my $update_version_toc = 0;
     my $rebuilding_current_branch = 0;
+    my $rebuilding_8x_branch = 0;
     for my $branch ( @{ $self->branches } ) {
         my $building = $self->_build_book( $branch, $pm, $rebuild, $latest );
         $update_version_toc ||= $building;
@@ -209,8 +214,9 @@ sub build {
                 }
             );
             $rebuilding_current_branch = $building;
-        }
-        else {
+        } elsif ( $branch eq $self->8x ) {
+          $rebuilding_8x_branch = $building;
+        } else {
             $toc->add_entry(
                 {   title => "$title: $version",
                     url   => "$version/index.html"
@@ -220,6 +226,7 @@ sub build {
     }
     $pm->wait_all_children();
     $self->_copy_branch_to_current if $rebuilding_current_branch;
+    $self->_copy_branch_to_8x if rebuilding_8x_branch;
     $update_version_toc |= $self->_remove_old_versions;
     if ( $self->is_multi_version ) {
         if ( $update_version_toc ) {
@@ -427,6 +434,25 @@ sub _copy_branch_to_current {
     $raw_current_dir->rmtree;
     rcopy( $raw_version_dir, $raw_current_dir )
         or die "Couldn't copy <$raw_version_dir> to <$raw_current_dir>: $!";
+}
+
+#===================================
+sub _copy_branch_to_8x {
+#===================================
+    my ( $self ) = @_;
+
+    # TODO: 8x should be a version, not a branch
+    my $version_dir  = $self->{dir}->subdir( $self->branch_title( $self->8x ) );
+    my $8x_dir = $self->{dir}->subdir('8.x');
+    my $raw_version_dir  = $self->{raw_dir}->subdir( $self->branch_title( $self->8x ) );
+    my $raw_8x_dir = $self->{raw_dir}->subdir('8.x');
+
+    $8x_dir->rmtree;
+    rcopy( $version_dir, $8x_dir )
+        or die "Couldn't copy <$version_dir> to <$8x_dir>: $!";
+    $raw_8x_dir->rmtree;
+    rcopy( $raw_version_dir, $raw_8x_dir )
+        or die "Couldn't copy <$raw_version_dir> to <$raw_8x_dir>: $!";
 }
 
 #===================================
