@@ -204,8 +204,7 @@ sub build {
         $latest = 0;
 
         my $version = $self->branch_title($branch);
-        print($branch);
-        print($self->latest_8);
+        print($branch eq $self->latest_8);
         if ( $branch eq $self->current ) {  # TODO: when "current" is a version, change this.
             $toc->add_entry(
                 {   title => "$title: $version (current)",
