@@ -111,8 +111,6 @@ sub new {
 
     die "Current branch <$current> is not in <branches> in book <$title>"
         unless $branch_titles{$current};
-    die "8.x branch <$latest_8> is not in <branches> in book <$title>"
-        unless $branch_titles{$latest_8};
 
     my $live_branches = $args{live};
     # If `live` is defined, check if there are any specified branches that
