@@ -204,7 +204,6 @@ sub build {
         $latest = 0;
 
         my $version = $self->branch_title($branch);
-        print($branch eq $self->latest_8);
         if ( $branch eq $self->current ) {  # TODO: when "current" is a version, change this.
             $toc->add_entry(
                 {   title => "$title: $version (current)",
@@ -220,7 +219,6 @@ sub build {
             );
         }
         if ( $branch eq $self->latest_8 ) {
-            print("latest !!");
             $toc->add_entry(
                 {   title => "$title: 8.x",
                     url   => "8.x/index.html"
@@ -244,13 +242,13 @@ sub build {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
-            # $self->_update_title_and_version_drop_downs( $dir->subdir( '8.x' ) , $self->latest_8 );
+            $self->_update_title_and_version_drop_downs( $dir->subdir( '8.x' ) , $self->latest_8 );
             for ( @{ $self->branches } ) {
                 my $version = $self->branch_title($_);
                 $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( 'current' ) , $self->current );
-            # $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( '8.x' ) , $self->latest_8 );
+            $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( '8.x' ) , $self->latest_8 );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -448,7 +446,6 @@ sub _copy_branch_to_latest_8 {
 #===================================
     my ( $self ) = @_;
 
-    # TODO: latest_8 should be a version, not a branch
     my $version_dir  = $self->{dir}->subdir( $self->branch_title( $self->latest_8 ) );
     my $latest_8_dir = $self->{dir}->subdir('8.x');
     my $raw_version_dir  = $self->{raw_dir}->subdir( $self->branch_title( $self->latest_8 ) );
