@@ -212,19 +212,21 @@ sub build {
                 }
             );
             $rebuilding_current_branch = $building;
-        } elsif ( $branch eq $self->latest_8 ) {
-            $toc->add_entry(
-                {   title => "$title: 8.x",
-                    url   => "8.x/index.html"
-                }
-            );
-          $rebuilding_latest_8_branch = $building;
         } else {
             $toc->add_entry(
                 {   title => "$title: $version",
                     url   => "$version/index.html"
                 }
             );
+        }
+        if ( $branch eq $self->latest_8 ) {
+            print("latest !!");
+            $toc->add_entry(
+                {   title => "$title: 8.x",
+                    url   => "8.x/index.html"
+                }
+            );
+          $rebuilding_latest_8_branch = $building;
         }
     }
     $pm->wait_all_children();
