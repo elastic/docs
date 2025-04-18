@@ -64,7 +64,7 @@ sub check_source {
         my $dest = $self->root->file($path);
         unless ( $self->_file_exists( $dest, $path ) ) {
             # Check if the path contains 'main' or 'master'
-            if ($path =~ /main|master/) {
+            if ($path =~ /main|master|8.x/) {
                 # Warn (not error!) on broken main/master links
                 warn "Warning: $file_descr contains a broken link to $path\n";
             } else {
@@ -77,7 +77,7 @@ sub check_source {
         next unless $fragment;
         unless ( $self->_fragment_exists( $dest, $path, $fragment ) ) {
             # Check if the path contains 'main' or 'master'
-            if ($path =~ /main|master/) {
+            if ($path =~ /main|master|8.x/) {
                 # Warn (not error!) on broken main/master links
                 warn "Warning: $file_descr contains a broken link to $path#$fragment\n";
             } else {

@@ -162,6 +162,7 @@ sub new {
         live_branches => $args{live} || \@branches,
         branch_titles => \%branch_titles,
         current       => $current,
+        latest_8      => $args{latest_8} || '',
         tags          => $tags,
         subject       => $subject,
         private       => $args{private} || '',
@@ -196,6 +197,7 @@ sub build {
     my $latest = !$self->{suppress_migration_warnings};
     my $update_version_toc = 0;
     my $rebuilding_current_branch = 0;
+    my $rebuilding_latest_8_branch = 0;
     for my $branch ( @{ $self->branches } ) {
         my $building = $self->_build_book( $branch, $pm, $rebuild, $latest );
         $update_version_toc ||= $building;
@@ -209,17 +211,25 @@ sub build {
                 }
             );
             $rebuilding_current_branch = $building;
-        }
-        else {
+        } else {
             $toc->add_entry(
                 {   title => "$title: $version",
                     url   => "$version/index.html"
                 }
             );
         }
+        if ( $branch eq $self->latest_8 ) {
+            $toc->add_entry(
+                {   title => "$title: 8.x",
+                    url   => "8.x/index.html"
+                }
+            );
+          $rebuilding_latest_8_branch = $building;
+        }
     }
     $pm->wait_all_children();
     $self->_copy_branch_to_current if $rebuilding_current_branch;
+    $self->_copy_branch_to_latest_8 if $rebuilding_latest_8_branch;
     $update_version_toc |= $self->_remove_old_versions;
     if ( $self->is_multi_version ) {
         if ( $update_version_toc ) {
@@ -232,11 +242,13 @@ sub build {
                 $self->_update_title_and_version_drop_downs( $dir->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $dir->subdir( 'current' ) , $self->current );
+            $self->_update_title_and_version_drop_downs( $dir->subdir( '8.x' ) , $self->latest_8 );
             for ( @{ $self->branches } ) {
                 my $version = $self->branch_title($_);
                 $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( $version ), $_ );
             }
             $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( 'current' ) , $self->current );
+            $self->_update_title_and_version_drop_downs( $self->{raw_dir}->subdir( '8.x' ) , $self->latest_8 );
         }
         return {
             title => "$title [" . $self->branch_title( $self->current ) . "\\]",
@@ -430,6 +442,24 @@ sub _copy_branch_to_current {
 }
 
 #===================================
+sub _copy_branch_to_latest_8 {
+#===================================
+    my ( $self ) = @_;
+
+    my $version_dir  = $self->{dir}->subdir( $self->branch_title( $self->latest_8 ) );
+    my $latest_8_dir = $self->{dir}->subdir('8.x');
+    my $raw_version_dir  = $self->{raw_dir}->subdir( $self->branch_title( $self->latest_8 ) );
+    my $raw_latest_8_dir = $self->{raw_dir}->subdir('8.x');
+
+    $latest_8_dir->rmtree;
+    rcopy( $version_dir, $latest_8_dir )
+        or die "Couldn't copy <$version_dir> to <$latest_8_dir>: $!";
+    $raw_latest_8_dir->rmtree;
+    rcopy( $raw_version_dir, $raw_latest_8_dir )
+        or die "Couldn't copy <$raw_version_dir> to <$raw_latest_8_dir>: $!";
+}
+
+#===================================
 sub _page_header {
 #===================================
     my ( $self, $branch ) = @_;
@@ -530,6 +560,7 @@ sub index            { shift->{index} }
 sub branches         { shift->{branches} }
 sub branch_title     { shift->{branch_titles}->{ shift() } }
 sub current          { shift->{current} }
+sub latest_8         { shift->{latest_8} }
 sub is_multi_version { @{ shift->branches } > 1 }
 sub tags             { shift->{tags} }
 sub subject          { shift->{subject} }
