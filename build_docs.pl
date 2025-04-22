@@ -382,7 +382,7 @@ sub check_kibana_links {
                 $path =~ s!\$\{(?:baseUrl|ELASTIC_WEBSITE_URL)\}guide/!!;
                 # We don't want to check any links to www.elastic.co that aren't
                 # part of the docs.
-                return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL|ELASTIC_GITHUB)\}.*/;
+                return "" if $path =~ m/\$\{(?:baseUrl|ELASTIC_WEBSITE_URL|ELASTIC_GITHUB|API_DOCS|ELASTICSEARCH_APIS|ELASTICSEARCH_SERVERLESS_APIS|KIBANA_APIS|KIBANA_SERVERLESS_APIS)\}.*/;
                 # Otherwise, return the link to check
                 return ( split /#/, $path );
             }
