@@ -202,20 +202,13 @@ sub build {
         $latest = 0;
 
         my $version = $self->branch_title($branch);
-        if ( $branch eq $self->current ) {  # TODO: when "current" is a version, change this.
-            $toc->add_entry(
-                {   title => "$title: $version (current)",
-                    url   => "current/index.html"
-                }
-            );
+        $toc->add_entry(
+            {   title => "$title: $version",
+                url   => "$version/index.html"
+            }
+        );
+        if ( $branch eq $self->current ) {
             $rebuilding_current_branch = $building;
-        }
-        else {
-            $toc->add_entry(
-                {   title => "$title: $version",
-                    url   => "$version/index.html"
-                }
-            );
         }
     }
     $pm->wait_all_children();
@@ -372,7 +365,6 @@ sub _update_title_and_version_drop_downs {
         $title .= '<option value="' . $version . '"';
         $title .= ' selected'  if $branch eq $b;
         $title .= '>' . $version;
-        $title .= ' (current)' if $self->current eq $b;  # TODO: change when "current" is a version
         $title .= '</option>';
     }
     $title .= '<option value="other">other versions</option>' if $removed_any;
@@ -385,7 +377,6 @@ sub _update_title_and_version_drop_downs {
             $title .= '<option value="' . $version . '"';
             $title .= ' selected'  if $branch eq $b;
             $title .= '>' . $version;
-            $title .= ' (current)' if $self->current eq $b; # TODO: change when "current" is a version
             $title .= '</option>';
         }
         $title .= '</select>';
