@@ -8,6 +8,12 @@ if [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ -z ${GITHUB_PR_NUMBER+set} ] || [ 
   exit 1
 fi
 
+# We only want to build PRs if the target branch is a major version < 9
+if ! [[ $GITHUB_PR_TARGET_BRANCH =~ ^([0-8])\.[0-9]+$ ]]; then
+  echo "Target branch '$GITHUB_PR_TARGET_BRANCH' is not a valid version branch (must be in format X.Y where X <= 8)"
+  exit 0
+fi
+
 # Configure the git author and committer information
 export GIT_AUTHOR_NAME='Buildkite CI'
 export GIT_AUTHOR_EMAIL='docs-status+buildkite@elastic.co'
@@ -263,5 +269,5 @@ buildkite-agent annotate \
   "<br>Preview url: ${PREVIEW_URL}"
 
 buildkite-agent meta-data set pr_comment:doc-preview:head " * Documentation preview
-   - 📚 [HTML diff](${PREVIEW_URL}/diff)
-   - 📙 [Preview](${PREVIEW_URL})"
+   - [HTML diff](${PREVIEW_URL}/diff)
+   - [Preview](${PREVIEW_URL})"
