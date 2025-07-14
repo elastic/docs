@@ -196,16 +196,14 @@ RSpec.describe 'building all books' do
     shared_examples 'toc and version drop down' do
       shared_examples 'correct' do
         context 'the version drop down' do
-          let(:master_current) { current == 'master' ? ' (current)' : '' }
           let(:master_option) do
             <<~HTML.strip
-              <option value="master"#{master_selected}>master#{master_current}</option>
+              <option value="master"#{master_selected}>master</option>
             HTML
           end
-          let(:foo_current) { current == 'foo' ? ' (current)' : '' }
           let(:foo_option) do
             <<~HTML.strip
-              <option value="foo"#{foo_selected}>foo#{foo_current}</option>
+              <option value="foo"#{foo_selected}>foo</option>
             HTML
           end
           it 'contains all versions' do

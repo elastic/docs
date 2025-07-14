@@ -1915,7 +1915,7 @@ RSpec.describe DocbookCompat do
               <div class="#{admon_class} admon">
               <div class="icon"></div>
               <div class="admon_content">
-              <h3>Title</h3>
+              <p class="admon_title">Title</p>
               <p>words</p>
               </div>
               </div>
@@ -1938,7 +1938,7 @@ RSpec.describe DocbookCompat do
                 <div class="#{admon_class} admon">
                 <div class="icon"></div>
                 <div class="admon_content">
-                <h3>Title<a id="id"></a></h3>
+                <p class="admon_title">Title<a id="id"></a></p>
                 <p>words</p>
                 </div>
                 </div>

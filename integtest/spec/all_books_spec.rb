@@ -625,14 +625,14 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains only the live branches' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="master" selected>master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="master" selected>master</option><option value="0.10">0.10</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
           HTML
         end
       end
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master" selected>master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <span id="other_versions">other versions: <select><option value="master" selected>master</option><option value="0.10">0.10</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
           HTML
         end
       end
@@ -662,14 +662,14 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains only the live branches' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="0.10" selected>0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="0.10" selected>0.10</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="other">other versions</option></select>
           HTML
         end
       end
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10" selected>0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10" selected>0.10</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
           HTML
         end
       end
@@ -695,14 +695,14 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains only the live branches' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="other">other versions</option></select>
+            <select id="live_versions"><option value="0.10">0.10</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="other">other versions</option></select>
           HTML
         end
       end
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
+            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10</option><option value="0.9_oldbutlive" selected>0.9_oldbutlive</option><option value="0.8_nonlive">0.8_nonlive</option></select>
           HTML
         end
       end
@@ -734,14 +734,14 @@ RSpec.describe 'building all books' do
       context 'the live versions drop down' do
         it 'contains the deprecated branch' do
           expect(body).to include(<<~HTML.strip)
-            <select id="live_versions"><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option><option value="other">other versions</option>
+            <select id="live_versions"><option value="0.10">0.10</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option><option value="other">other versions</option>
           HTML
         end
       end
       context 'the other versions drop down' do
         it 'contains all branches' do
           expect(body).to include(<<~HTML.strip)
-            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10 (current)</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option></select>
+            <span id="other_versions">other versions: <select><option value="master">master</option><option value="0.10">0.10</option><option value="0.9_oldbutlive">0.9_oldbutlive</option><option value="0.8_nonlive" selected>0.8_nonlive</option></select>
           HTML
         end
       end

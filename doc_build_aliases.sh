@@ -9,6 +9,15 @@
 #    source $GIT_HOME/docs/doc_build_aliases.sh
 #
 
+# Serverless
+alias docbldserverless='$GIT_HOME/docs/build_docs --doc $GIT_HOME/docs-content/serverless/index.asciidoc --chunk 5 --resource $GIT_HOME/observability-docs/docs/en/serverless --resource $GIT_HOME/security-docs/docs/serverless --resource $GIT_HOME/docs-content/serverless'
+
+# Integrations
+alias docbldintegration='$GIT_HOME/docs/build_docs --doc $GIT_HOME/integration-docs/dist/index.asciidoc --chunk 2'
+
+# Search UI
+alias docbldsearchui='$GIT_HOME/docs/build_docs --doc $GIT_HOME/search-ui/docs/index.asciidoc --chunk 3'
+
 # Elasticsearch
 alias docbldesx='$GIT_HOME/docs/build_docs --doc $GIT_HOME/elasticsearch/docs/reference/index.asciidoc --chunk 1'
 
@@ -56,6 +65,12 @@ docbldlsvpr() {
     popd || return
     "$GIT_HOME/docs/build_docs" --doc "$GIT_HOME/logstash-docs/docs/versioned-plugins/index.asciidoc" --chunk 1 "$@"
 }
+
+# Ingest Overview
+alias docbldingest='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/ingest-guide/index.asciidoc --chunk 1'
+
+# Installation and Upgrade Guide 9.0
+alias docbldstk90='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --chunk 1'
 
 # Installation and Upgrade Guide 7.10 and later
 alias docbldstk='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/install-upgrade/index.asciidoc --resource=$GIT_HOME/elasticsearch/docs/ --resource=$GIT_HOME/kibana/docs/ --resource=$GIT_HOME/beats/libbeat/docs/ --resource=$GIT_HOME/observability-docs/docs/en/observability --resource=$GIT_HOME/logstash/docs/ --resource=$GIT_HOME/elasticsearch-hadoop/docs/src/reference/asciidoc/ --resource=$GIT_HOME/security-docs/docs/ --chunk 1'
@@ -128,6 +143,9 @@ alias docbldcr='$GIT_HOME/docs/build_docs --doc $GIT_HOME/curator/docs/asciidoc/
 # Cloud
 alias docbldec='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --resource=$GIT_HOME/cloud/docs/shared --chunk 1'
 
+# Cloud Release Notes
+alias docbldecrn='$GIT_HOME/docs/build_docs --doc $GIT_HOME/cloud/docs/saas/index.asciidoc --chunk 1'
+
 alias docbldess=docbldec
 
 # Cloud - Elastic Cloud Enterprise
@@ -177,7 +195,7 @@ alias docbldim='$GIT_HOME/docs/build_docs --doc $GIT_HOME/ingest-docs/docs/en/in
 alias docbldidg='$GIT_HOME/docs/build_docs --doc $GIT_HOME/observability-docs/docs/en/integrations/index.asciidoc --resource=$GIT_HOME/package-spec/versions --chunk 1'
 
 # APM Guide (7.16-8.11)
-alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/observability/docs/en/apm-server/integrations-index.asciidoc --resource=$GIT_HOME/apm-server/ --resource=$GIT_HOME/ingest-docs/ --chunk 2 --open'
+alias docbldapm=' $GIT_HOME/docs/build_docs --doc $GIT_HOME/observability/docs/en/apm-server/integrations-index.asciidoc --resource=$GIT_HOME/apm-server/ --resource=$GIT_HOME/ingest-docs/ --chunk 2'
 
 # APM Agents
 alias docbldama='$GIT_HOME/docs/build_docs --doc $GIT_HOME/apm-agent-android/docs/index.asciidoc --chunk 1'
@@ -293,3 +311,6 @@ alias docbldall='$GIT_HOME/docs/build_docs --all --target_repo git@github.com:el
 
 # Machine learning
 alias docbldml='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/stack/ml/index.asciidoc --resource $GIT_HOME/elasticsearch/docs --chunk 1'
+
+# Reference Architectures
+alias docbldrefarch='$GIT_HOME/docs/build_docs --doc $GIT_HOME/stack-docs/docs/en/reference-architectures/index.asciidoc --chunk 1'
