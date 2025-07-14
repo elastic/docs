@@ -953,7 +953,7 @@ sub init_env {
     chomp($gid);
     print $override "docker:x:$uid:$gid:docker:/tmp:/bin/bash\n";
     close $override;
-    $ENV{LD_PRELOAD} = '/usr/lib/libnss_wrapper.so';
+    $ENV{LD_PRELOAD} = 'libnss_wrapper.so';
     $ENV{NSS_WRAPPER_PASSWD} = '/tmp/passwd';
     $ENV{NSS_WRAPPER_GROUP} = '/etc/group';
 }
