@@ -20,7 +20,7 @@ COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages \
   build-essential python-is-python3 \
     # needed for compiling native modules on ARM
-  nodejs ruby \
+  nodejs rbenv ruby-build \
     # Used both to install dependencies and at run time
   bash less \
     # Just in case you have to shell into the image
@@ -32,21 +32,31 @@ RUN echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
+ENV RBENV_ROOT /root/.rbenv
+ENV PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:$PATH
+RUN rbenv init -
 
 
 FROM base AS ruby_deps
-RUN install_packages \
-  bundler \
+ENV RUBY_VERSION 2.5.8
+RUN eval "$(rbenv init -)" && \
+    rbenv install $RUBY_VERSION && \
+    rbenv global $RUBY_VERSION && \
+    gem install bundler -v 1.17.3 --no-document && \
+    rbenv rehash
+#RUN install_packages \
+#  ruby-build bundler \
     # Fetches ruby dependencies
-  ruby-dev make cmake gcc libc-dev patch
+#  ruby-dev make cmake gcc libc-dev patch \
     # Required to compile some of the native dependencies
+#    libssl-dev libnss-dev
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 # --frozen forces us to regenerate Gemfile.lock locally before using it in
 # docker which lets us lock the versions in place.
 RUN bundle install --binstubs --system --frozen --without test
 COPY .docker/asciidoctor_2_0_10.patch /
-RUN cd /var/lib/gems/3.1.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
+RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
 
 
 FROM base AS node_deps
@@ -59,6 +69,7 @@ COPY yarn.lock /
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 # --frozen-lockfile forces us to regenerate yarn.lock locally before using it
 # in docker which lets us lock the versions in place.
+RUN yarn global add node-gyp
 RUN yarn install --frozen-lockfile --production
 
 
@@ -66,6 +77,9 @@ RUN yarn install --frozen-lockfile --production
 # Dockerfiles to make the images to serve previews and air gapped docs.
 FROM base AS build
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
+
+COPY --from=ruby_deps /root/.rbenv /root/.rbenv
+
 RUN install_packages \
   git \
     # Clone source repositories and commit to destination repositories
@@ -103,9 +117,9 @@ RUN rm -rf /var/log/nginx && rm -rf /run/nginx
 FROM base AS py_test
 # There's not a published wheel for yamale, so we need setuptools and wheel
 RUN install_packages python3 python3-pip python3-setuptools python3-wheel python3-dev libxml2-dev libxslt-dev zlib1g-dev
-RUN pip3 install \
+RUN pip3 install --break-system-packages \
   beautifulsoup4==4.8.1 \
-  lxml==4.4.2 \
+  lxml==4.9.4 \
   pycodestyle==2.5.0 \
   yamale==3.0.1 \
   pyyaml==5.3.1
@@ -117,6 +131,7 @@ FROM ruby_deps AS ruby_test
 RUN bundle install --binstubs --system --frozen --with test
 
 FROM build AS integ_test
+COPY --from=ruby_test /root/.rbenv /root/.rbenv
 COPY --from=node_test /node_modules /node_modules
 COPY --from=ruby_test /var/lib/gems /var/lib/gems
 COPY --from=ruby_test /usr/local/bin/rspec /usr/local/bin/rspec
