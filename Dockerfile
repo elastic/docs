@@ -18,7 +18,7 @@ COPY .docker/apt/keys/nodesource.gpg /
 RUN apt-key add /nodesource.gpg
 COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages \
-  build-essential python2 \
+  build-essential python-is-python3 \
     # needed for compiling native modules on ARM
   nodejs ruby \
     # Used both to install dependencies and at run time
@@ -46,7 +46,7 @@ COPY Gemfile* /
 # docker which lets us lock the versions in place.
 RUN bundle install --binstubs --system --frozen --without test
 COPY .docker/asciidoctor_2_0_10.patch /
-RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
+RUN cd /var/lib/gems/3.1.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
 
 
 FROM base AS node_deps
