@@ -47,7 +47,7 @@ RUN install_packages \
 #  ruby-dev \
   make cmake gcc libc-dev patch \
     # Required to compile some of the native dependencies
-    libssl-dev libnss-dev
+    libssl-dev libnss-wrapper
 RUN rbenv install $RUBY_VERSION && \
     rbenv global $RUBY_VERSION && \
     gem install bundler -v 1.17.3 --no-document && \
