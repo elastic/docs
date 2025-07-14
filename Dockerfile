@@ -39,11 +39,8 @@ RUN rbenv init -
 
 FROM base AS ruby_deps
 ENV RUBY_VERSION 2.5.8
-RUN eval "$(rbenv init -)" && \
-    rbenv install $RUBY_VERSION && \
-    rbenv global $RUBY_VERSION && \
-    gem install bundler -v 1.17.3 --no-document && \
-    rbenv rehash
+RUN eval "$(rbenv init -)"
+
 RUN install_packages \
 #  ruby-build bundler \
     # Fetches ruby dependencies
@@ -51,6 +48,10 @@ RUN install_packages \
   make cmake gcc libc-dev patch \
     # Required to compile some of the native dependencies
     libssl-dev libnss-dev
+RUN rbenv install $RUBY_VERSION && \
+    rbenv global $RUBY_VERSION && \
+    gem install bundler -v 1.17.3 --no-document && \
+    rbenv rehash
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 # --frozen forces us to regenerate Gemfile.lock locally before using it in
