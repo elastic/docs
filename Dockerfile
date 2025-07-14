@@ -8,7 +8,7 @@
 
 # Debian builds the docs about 20% faster than alpine. The image is larger
 # and takes longer to build but that is worth it.
-FROM bitnami/minideb:buster AS base
+FROM bitnami/minideb:bookworm AS base
 
 # TODO install_packages calls apt-get update and then nukes the list files after. We should avoid multiple calls to apt-get update.....
 # We could probably fix this by running the update and installs ourself with `RUN --mount type=cache` but that is "experimental"
