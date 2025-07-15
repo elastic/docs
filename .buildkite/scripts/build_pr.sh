@@ -247,17 +247,20 @@ build_cmd="./build_docs --all \
 echo "The following build command will be used"
 echo $build_cmd
 
+diag_cmd="echo \"which ruby -> \$(which ruby)\" && \
+echo \"which asciidoctor -> \$(which asciidoctor)\" && \
+echo \"ruby -v -> \$(ruby -v || echo 'ruby not found')\" && \
+echo \"asciidoctor --version -> \$(asciidoctor --version || echo 'asciidoctor not found')\" && \
+echo \"GEM_PATH is: $GEM_PATH\""
+
 # Temporary workaround until we can move to HTTPS auth
 vault read -field=private-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa"
 vault read -field=public-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa.pub"
 ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 chmod 600 "$HOME/.ssh/id_rsa"
-export RBENV_ROOT /root/.rbenv
-export PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:$PATH
-export GEM_PATH /var/lib/gems:/usr/local/bin:$GEM_PATH
 
 # Kick off the build
-ssh-agent bash -c "ssh-add && export RBENV_ROOT /root/.rbenv && export PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:$PATH export GEM_PATH /var/lib/gems:/usr/local/bin:$GEM_PATH && $build_cmd"
+ssh-agent bash -c "ssh-add && export RBENV_ROOT /root/.rbenv && export PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:$PATH export GEM_PATH /var/lib/gems:/usr/local/bin:$GEM_PATH && $diag_cmd && $build_cmd"
 
 buildkite-agent annotate \
   --style "success" \
