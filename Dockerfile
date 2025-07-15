@@ -68,6 +68,9 @@ COPY .docker/asciidoctor_2_0_10.patch /
 RUN cd $RBENV_ROOT/versions/$RUBY_VERSION/lib/ruby/gems/2.5.0/gems/asciidoctor-2.0.10 && \
     patch -p1 < /asciidoctor_2_0_10.patch
 
+RUN mkdir -p /var/lib/gems && \
+    cp -R $RBENV_ROOT/versions/$RUBY_VERSION/lib/ruby/gems/* /var/lib/gems/ && \
+    cp $RBENV_ROOT/versions/$RUBY_VERSION/bin/* /usr/local/bin/
 
 FROM base AS node_deps
 COPY .docker/apt/keys/yarn.gpg /
