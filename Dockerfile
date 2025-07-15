@@ -34,7 +34,7 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV RBENV_ROOT /root/.rbenv
 ENV PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:$PATH
-ENV GEM_PATH /var/lib/gems:$GEM_PATH
+ENV GEM_PATH /var/lib/gems:/usr/local/bin:$GEM_PATH
 RUN rbenv init -
 
 
@@ -150,6 +150,7 @@ COPY --from=node_test /node_modules /node_modules
 COPY --from=ruby_test /var/lib/gems /var/lib/gems
 COPY --from=ruby_test /usr/local/bin/rspec /usr/local/bin/rspec
 COPY --from=ruby_test /usr/local/bin/rubocop /usr/local/bin/rubocop
+COPY --from=ruby_test /usr/local/bin/asciidoctor /usr/local/bin/asciidoctor
 
 FROM py_test AS diff_tool
 RUN install_packages git

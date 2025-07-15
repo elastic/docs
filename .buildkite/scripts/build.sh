@@ -9,7 +9,6 @@ export GIT_AUTHOR_EMAIL='docs-status+buildkite@elastic.co'
 export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
 export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 
-
 build_args=""
 rebuild_opt=""
 broken_links_opt=""
@@ -39,6 +38,7 @@ chmod 600 "$HOME/.ssh/id_rsa"
 
 ssh-agent bash -c "
   ssh-add &&
+  export GEM_PATH=/var/lib/gems${GEM_PATH:+:$GEM_PATH} &&
   ./build_docs --all \
     --target_repo git@github.com:elastic/built-docs \
     --reference /opt/git-mirrors/ \

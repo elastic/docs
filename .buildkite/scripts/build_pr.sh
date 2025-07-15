@@ -254,7 +254,7 @@ ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 chmod 600 "$HOME/.ssh/id_rsa"
 
 # Kick off the build
-ssh-agent bash -c "ssh-add && $build_cmd"
+ssh-agent bash -c "ssh-add && export GEM_PATH=/var/lib/gems${GEM_PATH:+:$GEM_PATH} && $build_cmd"
 
 buildkite-agent annotate \
   --style "success" \
