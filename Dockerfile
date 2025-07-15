@@ -65,7 +65,8 @@ COPY Gemfile* /
 # docker which lets us lock the versions in place.
 RUN bundle install --binstubs --system --frozen --without test
 COPY .docker/asciidoctor_2_0_10.patch /
-RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
+RUN cd $RBENV_ROOT/versions/$RUBY_VERSION/lib/ruby/gems/2.5.0/gems/asciidoctor-2.0.10 && \
+    patch -p1 < /asciidoctor_2_0_10.patch
 
 
 FROM base AS node_deps
