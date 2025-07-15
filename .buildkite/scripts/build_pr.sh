@@ -260,7 +260,7 @@ ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 chmod 600 "$HOME/.ssh/id_rsa"
 
 # Kick off the build
-ssh-agent bash -c "ssh-add && export RBENV_ROOT /root/.rbenv && export PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:$PATH export GEM_PATH /var/lib/gems:/usr/local/bin:$GEM_PATH && $diag_cmd && $build_cmd"
+ssh-agent bash -c "ssh-add && eval \"\$(rbenv init -)\" && export RBENV_ROOT /root/.rbenv && export PATH \$RBENV_ROOT/bin:\$RBENV_ROOT/shims:\$PATH export GEM_PATH /var/lib/gems:/usr/local/bin:\$GEM_PATH && $diag_cmd && $build_cmd"
 
 buildkite-agent annotate \
   --style "success" \
