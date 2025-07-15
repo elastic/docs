@@ -37,8 +37,8 @@ ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
 chmod 600 "$HOME/.ssh/id_rsa"
 
 ssh-agent bash -c "
-  ssh-add &&
-  export GEM_PATH=/var/lib/gems${GEM_PATH:+:$GEM_PATH} &&
+  ssh-add && 
+  eval \"\$(rbenv init -)\" &&
   ./build_docs --all \
     --target_repo git@github.com:elastic/built-docs \
     --reference /opt/git-mirrors/ \

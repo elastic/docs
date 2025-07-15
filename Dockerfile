@@ -52,7 +52,7 @@ RUN install_packages \
 
 ENV RUBY_CFLAGS="-O3 -fno-fast-math -g3 -Wall -Wno-error=deprecated-declarations"
 RUN ls
-COPY ruby_openssl.patch /tmp/
+COPY .docker/ruby_openssl.patch /tmp/
 RUN rbenv install $RUBY_VERSION --patch < /tmp/ruby_openssl.patch || (cat /tmp/ruby-build.*.log && exit 1) && \
     rbenv global $RUBY_VERSION && \
     gem install bundler -v 1.17.3 --no-document && \
