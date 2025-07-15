@@ -251,7 +251,7 @@ diag_cmd="echo \"which ruby -> \$(which ruby)\" && \
 echo \"which asciidoctor -> \$(which asciidoctor)\" && \
 echo \"ruby -v -> \$(ruby -v || echo 'ruby not found')\" && \
 echo \"asciidoctor --version -> \$(asciidoctor --version || echo 'asciidoctor not found')\" && \
-echo \"GEM_PATH is: $GEM_PATH\""
+echo \"GEM_PATH is: \$GEM_PATH\""
 
 # Temporary workaround until we can move to HTTPS auth
 vault read -field=private-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa"
