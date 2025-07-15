@@ -34,6 +34,7 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV RBENV_ROOT /root/.rbenv
 ENV PATH $RBENV_ROOT/bin:$RBENV_ROOT/shims:$PATH
+ENV GEM_PATH /var/lib/gems:$GEM_PATH
 RUN rbenv init -
 
 
