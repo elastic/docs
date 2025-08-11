@@ -691,7 +691,7 @@ sub start_web_resources_watcher {
 
     close STDIN;
     open( STDIN, "</dev/null" );
-    exec( qw(/node_modules/parcel/lib/cli.js serve
+    exec( qw(npx parcel serve
              --public-url /guide/static/
              --hmr-port 8001
              --dist-dir /tmp/parcel/
@@ -731,9 +731,9 @@ sub build_web_resources {
         # when you run the integration tests and saves about 1.5 seconds on
         # every docs build.
         say "Compiling web resources";
-        run '/node_modules/parcel/lib/cli.js', 'build',
+        run 'npx', 'parcel' 'build',
             '--public-url', '/guide/static/',
-            '--experimental-scope-hoisting', '--no-source-maps',
+            '--no-source-maps',
             '--dist-dir', $parcel_out,
             'resources/web/docs_js/index-v1.js', 'resources/web/styles-v1.pcss';
         die "Parcel didn't make $compiled_js" unless -e $compiled_js;
