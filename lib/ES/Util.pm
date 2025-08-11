@@ -691,10 +691,10 @@ sub start_web_resources_watcher {
 
     close STDIN;
     open( STDIN, "</dev/null" );
-    exec( qw(/node_modules/parcel/bin/cli.js serve
+    exec( qw(/node_modules/parcel/lib/cli.js serve
              --public-url /guide/static/
              --hmr-port 8001
-             -d /tmp/parcel/
+             --dist-dir /tmp/parcel/
              resources/web/docs_js/index-v1.js resources/web/styles-v1.pcss) );
 }
 
@@ -731,10 +731,10 @@ sub build_web_resources {
         # when you run the integration tests and saves about 1.5 seconds on
         # every docs build.
         say "Compiling web resources";
-        run '/node_modules/parcel/bin/cli.js', 'build',
+        run '/node_modules/parcel/lib/cli.js', 'build',
             '--public-url', '/guide/static/',
             '--experimental-scope-hoisting', '--no-source-maps',
-            '-d', $parcel_out,
+            '--dist-dir', $parcel_out,
             'resources/web/docs_js/index-v1.js', 'resources/web/styles-v1.pcss';
         die "Parcel didn't make $compiled_js" unless -e $compiled_js;
         die "Parcel didn't make $compiled_css" unless -e $compiled_css;
