@@ -255,7 +255,7 @@ const toStringHandler = (resolve, reject, onMissing) => (err, stdout) => {
     if (err.message.includes("Not a valid object name")) {
       onMissing("missing");
     } else if (err.message.includes("does not exist in")) {
-        onMissing("missing");
+      onMissing("missing");
     } else {
       reject(err);
     }

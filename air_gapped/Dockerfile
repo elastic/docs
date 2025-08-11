@@ -2,17 +2,22 @@ FROM docker.elastic.co/docs/preview:latest AS build
 
 COPY air_gapped/work/target_repo.git /docs_build/.repos/target_repo.git
 
-FROM perl:5.42-bookworm
+FROM debian:trixie-slim
+#FROM perl:5.42-bookworm
 
-#RUN apt-get install libxml2 libxml2-dev
-RUN cpan install -T XML::LibXML
-RUN cpan install -T File::Copy::Recursive
-RUN cpan install -T Path::Class
-RUN cpan install -T Parallel::ForkManager
-RUN cpan install -T YAML
 RUN apt update -y
+RUN apt-get install -y perl
 RUN apt-get install -y nginx
 RUN apt-get install -y nodejs
+RUN apt-get install -y git
+
+RUN apt-get install -y libxml-simple-perl
+RUN apt-get install -y libfile-copy-recursive-perl
+RUN apt-get install -y libpath-class-perl
+RUN apt-get install -y libcapture-tiny-perl
+RUN apt-get install -y libparallel-forkmanager-perl
+RUN apt-get install -y libyaml-perl
+
 COPY --from=build /docs_build /docs_build
 COPY --from=build /node_modules /node_modules
 
