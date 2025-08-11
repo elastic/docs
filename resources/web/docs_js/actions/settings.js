@@ -1,5 +1,5 @@
-import Cookies from "../../../../../node_modules/js-cookie";
-import {omit, merge, toPairs, forEach} from "../../../../../node_modules/ramda";
+import Cookies from "../../../../node_modules/js-cookie";
+import {omit, merge, toPairs, forEach} from "../../../../node_modules/ramda";
 import {closeModal} from "./modal";
 
 const SAVE_SETTING = "SAVE_SETTING";

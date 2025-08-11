@@ -1,4 +1,4 @@
-import {curry} from "../../../../../node_modules/ramda";
+import {curry} from "../../../../node_modules/ramda";
 
 /*
  * Widget to switch the displayed alternative langauge when the configured

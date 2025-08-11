@@ -1,4 +1,4 @@
-import { h, Component } from '../../../../../../node_modules/preact';
+import { h, Component } from 'preact';
 
 export default class FeedbackWidget extends Component {
   render() {

@@ -1,4 +1,4 @@
-import { h, Component } from '../../../../../../node_modules/preact';
+import { h, Component } from 'preact';
 
 const FEEDBACK_URL = 'https://docs.elastic.co/api/feedback'
 const MAX_COMMENT_LENGTH = 1000;

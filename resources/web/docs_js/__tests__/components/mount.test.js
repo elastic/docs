@@ -1,7 +1,8 @@
-import {h} from "../../../../../../node_modules/preact";
-import {connect} from "../../../../../../node_modules/preact-redux";
+import {h} from "preact";
+import {connect} from "preact-redux";
 import {newStore} from "../../store";
 import {mount} from "../../components/mount";
+import {describe} from "yargs";
 
 const Component = connect(state => ({
   msg: state.settings.msg

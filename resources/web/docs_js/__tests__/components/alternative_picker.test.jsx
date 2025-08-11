@@ -1,4 +1,4 @@
-import {h, render} from "../../../../../../node_modules/preact";
+import {h, render} from "preact";
 import {_AlternativePicker} from "../../components/alternative_picker";
 
 describe(_AlternativePicker, () => {

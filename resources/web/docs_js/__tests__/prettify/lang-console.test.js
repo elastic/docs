@@ -1,6 +1,6 @@
 import PR from "../../../lib/prettify/prettify";
 import "../../prettify/lang-console";
-import dedent from "../../../../../../node_modules/dedent";
+import dedent from "../../../../../node_modules/dedent";
 
 const prettyConsole = str => PR.prettyPrintOne(str, "console");
 const prettyJs = str => PR.prettyPrintOne(str, "js");

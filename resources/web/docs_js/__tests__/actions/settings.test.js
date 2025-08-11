@@ -1,4 +1,4 @@
-import Cookies from "../../../../../../node_modules/js-cookie";
+import Cookies from "../../../../../node_modules/js-cookie";
 import * as actions from "../../actions/settings";
 import store from "../../store";
 

@@ -10,4 +10,4 @@ jest: tests
 .PHONY: tests
 tests:
 	rm -rf tests
-	$(DOCKER) node_test npx parcel build ./docs_js/__tests__/**/* ./docs_js/__tests__/* --dist-dir ./tests/ --no-optimize --no-source-maps
+	$(DOCKER) node_test npx parcel build ./docs_js/__tests__/**/*.j{s,sx} ./docs_js/__tests__/*.j{s,sx} --dist-dir ./tests/ --no-optimize --no-source-maps
