@@ -10,4 +10,4 @@ jest: tests
 .PHONY: tests
 tests:
 	rm -rf tests
-	$(DOCKER) node_test /node_modules/parcel/bin/cli.js build ./docs_js/__tests__/**/* ./docs_js/__tests__/* -d ./tests/ --target node --no-minify --no-source-maps
+	$(DOCKER) node_test /node_modules/parcel/lib/cli.js build ./docs_js/__tests__/**/* ./docs_js/__tests__/* -d ./tests/ --target node --no-minify --no-source-maps
