@@ -731,7 +731,7 @@ sub build_web_resources {
         # when you run the integration tests and saves about 1.5 seconds on
         # every docs build.
         say "Compiling web resources";
-        run 'npx', 'parcel' 'build',
+        run 'npx', 'parcel', 'build',
             '--public-url', '/guide/static/',
             '--no-source-maps',
             '--dist-dir', $parcel_out,
