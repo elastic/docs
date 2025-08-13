@@ -1,5 +1,5 @@
-import thunk from '../../../../node_modules/redux-thunk';
-import { createStore, applyMiddleware } from '../../../../node_modules/redux';
+import thunk from '../../../node_modules/redux-thunk';
+import { createStore, applyMiddleware } from 'redux';
 import reducer from "./actions";
 
 export const newStore = initialState =>

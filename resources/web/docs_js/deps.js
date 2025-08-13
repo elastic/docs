@@ -1,4 +1,4 @@
-import _Cookies from "../../../../node_modules/js-cookie";
+import _Cookies from "../../../node_modules/js-cookie";
 
 export const jQuery = window.jQuery;
 export const $ = window.jQuery;

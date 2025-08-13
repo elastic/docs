@@ -1,8 +1,8 @@
 import * as utils from "../utils";
-import {prop, pick, merge, omit} from "../../../../../node_modules/ramda";
-import {h, Component} from "../../../../../node_modules/preact";
-import linkState from "../../../../../node_modules/linkstate";
-import {connect} from "../../../../../node_modules/preact-redux";
+import {prop, pick, merge, omit} from "../../../../node_modules/ramda";
+import {h, Component} from "preact";
+import linkState from "../../../../node_modules/linkstate";
+import {connect} from "preact-redux";
 import {openModal} from "../actions/modal";
 import {saveSettings} from "../actions/settings";
 import AlternativePicker from "./alternative_picker";

@@ -17,10 +17,10 @@ import "../lib/prettify/lang-sql.js";
 import "../lib/prettify/lang-yaml.js";
 
 // Add support for <details> in IE and the like
-import "../../../../../node_modules/details-polyfill";
+import "../../../node_modules/details-polyfill";
 
 // Add support for URLSearchParams Web API in IE
-import "../../../../../node_modules/url-search-params-polyfill";
+import "../../../node_modules/url-search-params-polyfill";
 
 export function init_landing_page() {
   // Because of the nature of the injected links, we need to adjust the layout to

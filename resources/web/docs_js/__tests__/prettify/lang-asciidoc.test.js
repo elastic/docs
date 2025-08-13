@@ -1,6 +1,6 @@
 import PR from "../../../lib/prettify/prettify";
 import "../../prettify/lang-asciidoc";
-import dedent from "../../../../../../node_modules/dedent";
+import dedent from "../../../../../node_modules/dedent";
 
 const prettyAsciidoc = str => PR.prettyPrintOne(str, "asciidoc");
 const tag = str => `<span class="tag">${str}</span>`;

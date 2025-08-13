@@ -46,3 +46,4 @@ RUN adduser -D nginx
 RUN mkdir -p /var/lib/nginx/tmp/
 
 CMD ["/docs_build/build_docs.pl", "--in_standard_docker", "--gapped", "--preview"]
+

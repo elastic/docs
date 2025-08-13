@@ -1,5 +1,5 @@
 import {jQuery} from "../deps";
-import dedent from "../../../../../node_modules/dedent";
+import dedent from "../../../../node_modules/dedent";
 import {init_console_widgets, init_headers} from "../index-v1";
 import * as utils from "../utils";
 import * as l from "../localization";
