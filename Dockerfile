@@ -10,10 +10,10 @@
 # and takes longer to build but that is worth it.
 FROM bitnami/minideb:buster AS base
 
-RUN install_packages apt-transport-https gnupg2 ca-certificates
-
 RUN echo "deb https://archive.debian.org/debian/ buster main" > /etc/apt/sources.list && \
     echo "deb https://archive.debian.org/debian-security/ buster/updates main" >> /etc/apt/sources.list
+
+RUN install_packages apt-transport-https gnupg2 ca-certificates
 
 # TODO install_packages calls apt-get update and then nukes the list files after. We should avoid multiple calls to apt-get update.....
 # We could probably fix this by running the update and installs ourself with `RUN --mount type=cache` but that is "experimental"
