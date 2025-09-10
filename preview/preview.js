@@ -188,8 +188,12 @@ const checkRedirects = async (core, path) => {
 
 module.exports = Core => {
   const server = http.createServer((request, response) => {
-    //const parsedUrl = url.parse(request.url);
-    const parsedUrl = new URL(`http://${process.env.HOST ?? 'localhost'}${request.url}`);
+    let host = process.env.HOST;
+    if (host == null || host === "") {
+      host = "localhost";
+    }
+
+    const parsedUrl = new URL(`http://${host}${request.url}`);
     const prefix = hostPrefix(request.headers['host']);
     const core = Core(prefix);
     requestHandler(core, parsedUrl, response)
