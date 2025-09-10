@@ -3,9 +3,6 @@
 # Build the docker image for the air gapped docs.
 
 set -eo pipefail
-
-export AIR_GAPPED=docker.elastic.co/docs-private/bk_air_gapped:latest
-
 cd $(git rev-parse --show-toplevel)
 
 if [[ ! -d /opt/git-mirrors/built-docs.git ]]; then
@@ -22,4 +19,5 @@ git clone --reference /opt/git-mirrors/built-docs.git --dissociate \
 GIT_DIR=air_gapped/work/target_repo.git git fetch
 
 # Build the images
+source preview/build.sh
 DOCKER_BUILDKIT=1 docker build -t "$AIR_GAPPED" -f air_gapped/Dockerfile .
