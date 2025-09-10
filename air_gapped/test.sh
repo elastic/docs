@@ -10,12 +10,10 @@ set -e
 cd $(git rev-parse --show-toplevel)
 
 source ./air_gapped/build.sh
-id=$(docker run --rm \
-          --publish 8000:8000/tcp \
-          -d \
-          $AIR_GAPPED)
+id=$(docker run --rm --publish 3000:3000 -d $AIR_GAPPED)
+
 echo "Started the air gapped docs. Some useful commands:"
 echo "   docker kill $id"
 echo "   docker logs -tf $id"
 echo "You should eventually be able to access:"
-echo "   http://master.localhost:8000/guide/index.html"
+echo "   http://master.localhost:3000/guide/index.html"
