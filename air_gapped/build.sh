@@ -23,4 +23,4 @@ git clone --reference ~/.git-references/built-docs.git --dissociate \
 GIT_DIR=air_gapped/work/target_repo.git git fetch
 
 # Build the images
-DOCKER_BUILDKIT=1 docker build -t $AIR_GAPPED -f air_gapped/Dockerfile .
+DOCKER_BUILDKIT=1 docker build -t "$AIR_GAPPED" -f air_gapped/Dockerfile .
