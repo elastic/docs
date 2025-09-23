@@ -898,17 +898,9 @@ sub init_env {
         print "Found ssh auth\n";
     }
 
-    # Configure git to use GITHUB_TOKEN for OAuth2 HTTPS authentication if available
+    # GITHUB_TOKEN is embedded directly in URLs, so no additional git configuration needed
     if ( $ENV{GITHUB_TOKEN} ) {
-        print "Configuring git to use GITHUB_TOKEN for OAuth2 authentication\n";
-        # Set up git credential helper to use the token
-        run qw(git config --global credential.helper store);
-        # Create a credential file with the OAuth2 token
-        my $credential_file = $ENV{HOME} . '/.git-credentials';
-        open(my $fh, '>', $credential_file) or die "Couldn't create credential file: $!";
-        print $fh "https://oauth2:$ENV{GITHUB_TOKEN}@github.com\n";
-        close($fh);
-        chmod(0600, $credential_file);
+        print "Using GITHUB_TOKEN for OAuth2 authentication via embedded URLs\n";
     }
 
     if ( $Opts->{preview} ) {
