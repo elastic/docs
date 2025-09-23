@@ -265,7 +265,7 @@ sub _guess_repo_name {
 #===================================
 sub build_all {
 #===================================
-    $Opts->{target_repo} = 'git@github.com:elastic/built-docs.git' unless ( $Opts->{target_repo} );
+    $Opts->{target_repo} = 'https://github.com/elastic/built-docs.git' unless ( $Opts->{target_repo} );
 
     my ( $repos_dir, $temp_dir, $reference_dir ) = init_dirs();
 
@@ -694,9 +694,16 @@ sub init_target_repo {
 #===================================
     my ( $repos_dir, $temp_dir, $reference_dir ) = @_;
 
+    my $target_url = $Opts->{target_repo};
+    # Add OAuth2 authentication for HTTPS GitHub URLs
+    # OAuth2 format: https://oauth2:token@github.com/owner/repo.git
+    if ( $ENV{GITHUB_TOKEN} && $target_url =~ m|^https://github\.com/| ) {
+        $target_url =~ s|^https://|https://oauth2:$ENV{GITHUB_TOKEN}@|;
+    }
+
     my $target_repo = ES::TargetRepo->new(
         git_dir     => $repos_dir->subdir('target_repo.git'),
-        url         => $Opts->{target_repo},
+        url         => $target_url,
         reference   => $reference_dir,
         destination => dir( "$temp_dir/target_repo" ),
         branch      => $Opts->{target_branch} || 'master',
@@ -737,9 +744,13 @@ sub init_repos {
         next if $name eq 'docs';
 
         my $url = $conf->{$name};
-        # We always use ssh-style urls regardless of conf.yaml so we can use
-        # our ssh key for the cloning.
-        $url =~ s|https://([^/]+)/|git\@$1:|;
+        # Convert HTTPS URLs to use OAuth2 authentication with GITHUB_TOKEN if available
+        # OAuth2 format: https://oauth2:token@github.com/owner/repo.git
+        if ( $ENV{GITHUB_TOKEN} && $url =~ m|^https://github\.com/| ) {
+            $url =~ s|^https://|https://oauth2:$ENV{GITHUB_TOKEN}@|;
+        }
+        # Keep SSH URLs as-is for backward compatibility
+        # $url =~ s|https://([^/]+)/|git\@$1:|;
         my $repo = ES::Repo->new(
             name      => $name,
             git_dir   => $repos_dir->subdir("$name.git"),
@@ -793,7 +804,7 @@ sub init_repos {
 #===================================
 sub preview {
 #===================================
-    $Opts->{target_repo} = 'git@github.com:elastic/built-docs.git' unless ( $Opts->{target_repo} );
+    $Opts->{target_repo} = 'https://github.com/elastic/built-docs.git' unless ( $Opts->{target_repo} );
 
     my $nginx_config = file('/tmp/nginx.conf');
     write_nginx_preview_config( $nginx_config );
@@ -885,6 +896,19 @@ sub init_env {
         }
         die '/tmp/forwarded_ssh_auth is missing' unless (-e '/tmp/forwarded_ssh_auth');
         print "Found ssh auth\n";
+    }
+
+    # Configure git to use GITHUB_TOKEN for OAuth2 HTTPS authentication if available
+    if ( $ENV{GITHUB_TOKEN} ) {
+        print "Configuring git to use GITHUB_TOKEN for OAuth2 authentication\n";
+        # Set up git credential helper to use the token
+        run qw(git config --global credential.helper store);
+        # Create a credential file with the OAuth2 token
+        my $credential_file = $ENV{HOME} . '/.git-credentials';
+        open(my $fh, '>', $credential_file) or die "Couldn't create credential file: $!";
+        print $fh "https://oauth2:$ENV{GITHUB_TOKEN}@github.com\n";
+        close($fh);
+        chmod(0600, $credential_file);
     }
 
     if ( $Opts->{preview} ) {
@@ -1120,6 +1144,13 @@ sub usage {
           --target_repo     Repository to which to commit docs
           --target_branch   Branch to which to commit docs
           --user            Specify which GitHub user to use, if not your own
+
+    Environment Variables:
+          GITHUB_TOKEN      GitHub personal access token for OAuth2 HTTPS authentication.
+                            When set, the script will use HTTPS URLs with OAuth2
+                            authentication (oauth2:token format) instead of SSH for
+                            GitHub repositories and configure git to use the token
+                            for authentication.
 
     General Opts:
           --asciidoctor     Emit a happy message.
