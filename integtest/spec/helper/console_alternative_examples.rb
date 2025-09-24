@@ -47,7 +47,7 @@ RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
     it 'contains the js listing followed by the csharp listing' do
       expect(body).to include(<<~HTML.strip)
         <div class="pre_wrapper lang-js alternative">
-        <div class="console_code_copy" title="Copy to clipboard"></div>
+        <div class="console_code_copy" title="Copy to clipboard" data-track="cta"><span class="visually-hidden">Copy to clipboard</span></div>
         <pre class="programlisting prettyprint lang-js alternative">const result = await client.search({
           body: { query: 'foo bar' } <a id="A0-CO1-1"></a><i class="conum" data-value="1"></i>
         })</pre>
@@ -58,7 +58,7 @@ RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
     it 'contains the csharp listing followed by the default listing' do
       expect(body).to include(<<~HTML.strip)
         <div class="pre_wrapper lang-csharp alternative">
-        <div class="console_code_copy" title="Copy to clipboard"></div>
+        <div class="console_code_copy" title="Copy to clipboard" data-track="cta"><span class="visually-hidden">Copy to clipboard</span></div>
         <pre class="programlisting prettyprint lang-csharp alternative">var searchResponse = _client.Search&lt;Project&gt;(s =&gt; s
             .Query(q =&gt; q
                 .QueryString(m =&gt; m
@@ -74,7 +74,7 @@ RSpec.shared_examples 'README-like console alternatives' do |raw_path, path|
     it 'contains the default listing followed by the console widget' do
       expect(body).to include(<<~HTML.strip)
         <div class="pre_wrapper lang-console default #{has_classes}">
-        <div class="console_code_copy" title="Copy to clipboard"></div>
+        <div class="console_code_copy" title="Copy to clipboard" data-track="cta"><span class="visually-hidden">Copy to clipboard</span></div>
         <pre class="programlisting prettyprint lang-console default #{has_classes}">GET /_search
         {
             "query": "foo bar" <a id="CO1-1"></a><i class="conum" data-value="1"></i>
