@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-
+system("echo '====== Demo successful ======'");
 # Flush on every print even if we're writing to a pipe (like docker).
 $| = 1;
 
