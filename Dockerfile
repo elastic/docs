@@ -16,6 +16,11 @@ RUN echo "deb http://archive.debian.org/debian/ buster main" > /etc/apt/sources.
 # TODO install_packages calls apt-get update and then nukes the list files after. We should avoid multiple calls to apt-get update.....
 # We could probably fix this by running the update and installs ourself with `RUN --mount type=cache` but that is "experimental"
 
+# Fix for Debian Buster EOL - point to archive repositories
+RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
+    sed -i 's/security.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
+    sed -i '/buster-updates/d' /etc/apt/sources.list
+
 RUN install_packages apt-transport-https gnupg2 ca-certificates
 COPY .docker/apt/keys/nodesource.gpg /
 RUN apt-key add /nodesource.gpg
