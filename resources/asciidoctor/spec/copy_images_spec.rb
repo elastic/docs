@@ -173,7 +173,7 @@ RSpec.describe CopyImages do
       it 'logs an error' do
         expect(logs).to include(
           "ERROR: <stdin>: line #{log_line}: Error loading [resources]: " \
-          'Unclosed quoted field on line 1.'
+          'Unclosed quoted field in line 1.'
         )
       end
     end

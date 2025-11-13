@@ -29,7 +29,7 @@ RSpec.describe 'building all books' do
     end
 
     def extra
-      @extra = proc
+      @extra = proc {}
     end
   end
   describe 'change detection' do

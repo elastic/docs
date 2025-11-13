@@ -383,7 +383,8 @@ sub _update_title_and_version_drop_downs {
     }
     $title .= '</span></li>';
     for ( 'toc.html', 'index.html' ) {
-        my $file = $version_dir->file($_);
+        my $f = $_;
+        my $file = $version_dir->file($f);
         # Ignore missing files because the books haven't been built yet. This
         # can happen after a new branch is added to the config and then we use
         # --keep_hash to prevent building new books, like for PR tests.
@@ -393,7 +394,7 @@ sub _update_title_and_version_drop_downs {
 
         # If a book uses a custom index page, it may not include the TOC. The
         # substitution below will fail, so we abort early in this case.
-        next unless ($_ == 'index.html' && ($html =~ /ul class="toc"/));
+        next unless ($f eq 'index.html' && ($html =~ /ul class="toc"/));
 
         my $success = ($html =~ s/<ul class="toc">(?:<li id="book_title">.+?<\/li>)?\n?<li>/<ul class="toc">${title}<li>/);
         die "couldn't update version" unless $success;

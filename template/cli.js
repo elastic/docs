@@ -42,8 +42,8 @@ const argv = yargs
 
 (async () => {
   const template = await Template(() => fs.createReadStream(argv.template, {
-    encoding: 'UTF-8',
-    autoDestroy: true,
+    encoding: 'utf-8',
+    autoClose: true,
   }));
   await template.applyToDir(argv.source, argv.dest, argv.tocmode);
 })();

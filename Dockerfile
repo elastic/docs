@@ -8,7 +8,7 @@
 
 # Debian builds the docs about 20% faster than alpine. The image is larger
 # and takes longer to build but that is worth it.
-FROM bitnami/minideb:buster AS base
+FROM bitnami/minideb:bookworm AS base
 
 RUN echo "deb http://archive.debian.org/debian/ buster main" > /etc/apt/sources.list && \
     echo "deb http://archive.debian.org/debian-security/ buster/updates main" >> /etc/apt/sources.list
@@ -26,7 +26,7 @@ COPY .docker/apt/keys/nodesource.gpg /
 RUN apt-key add /nodesource.gpg
 COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages \
-  build-essential python2 \
+  build-essential python-is-python3 \
     # needed for compiling native modules on ARM
   nodejs ruby \
     # Used both to install dependencies and at run time
@@ -41,32 +41,36 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-
 FROM base AS ruby_deps
 RUN install_packages \
-  bundler \
+  ruby-build bundler \
     # Fetches ruby dependencies
-  ruby-dev make cmake gcc libc-dev patch
+  ruby-dev make cmake gcc libc-dev patch \
     # Required to compile some of the native dependencies
+  libssl-dev libnss-wrapper
+
+# RUN ruby-build 2.7.6 /usr/local/ruby-2.7.6
+
 RUN bundle config --global silence_root_warning 1
 COPY Gemfile* /
 # --frozen forces us to regenerate Gemfile.lock locally before using it in
 # docker which lets us lock the versions in place.
 RUN bundle install --binstubs --system --frozen --without test
 COPY .docker/asciidoctor_2_0_10.patch /
-RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
+RUN cd /var/lib/gems/3.1.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2_0_10.patch
 
 
 FROM base AS node_deps
 COPY .docker/apt/keys/yarn.gpg /
 RUN apt-key add /yarn.gpg
 COPY .docker/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/
-RUN install_packages yarn=1.22.19-1
+RUN install_packages yarn=1.22.22-1
 COPY package.json /
 COPY yarn.lock /
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 # --frozen-lockfile forces us to regenerate yarn.lock locally before using it
-# in docker which lets us lock the versions in place.
+# in docker which lets us lock the versions in place
+RUN yarn global add node-gyp
 RUN yarn install --frozen-lockfile --production
 
 
@@ -111,9 +115,10 @@ RUN rm -rf /var/log/nginx && rm -rf /run/nginx
 FROM base AS py_test
 # There's not a published wheel for yamale, so we need setuptools and wheel
 RUN install_packages python3 python3-pip python3-setuptools python3-wheel python3-dev libxml2-dev libxslt-dev zlib1g-dev
-RUN pip3 install \
+# --break-system-packages since we don't use venv
+RUN pip3 install --break-system-packages \
   beautifulsoup4==4.8.1 \
-  lxml==4.4.2 \
+  lxml==4.9.4 \
   pycodestyle==2.5.0 \
   yamale==3.0.1 \
   pyyaml==5.3.1
