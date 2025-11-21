@@ -995,7 +995,7 @@ RSpec.describe DocbookCompat do
       # It is important that there isn't any extra space around the <pre> tags
       expect(converted).to include(<<~HTML)
         <div class="pre_wrapper lang-sh">
-        <div class="console_code_copy" title="Copy to clipboard"></div>
+        <div class="console_code_copy" title="Copy to clipboard" data-track="cta"><span class="visually-hidden">Copy to clipboard</span></div>
         <pre class="programlisting prettyprint lang-sh">cpanm Search::Elasticsearch</pre>
         </div>
       HTML
@@ -1184,7 +1184,7 @@ RSpec.describe DocbookCompat do
       it 'the role is included as a class' do
         expect(converted).to include(<<~HTML)
           <div class="pre_wrapper lang-sh foo">
-          <div class="console_code_copy" title="Copy to clipboard"></div>
+          <div class="console_code_copy" title="Copy to clipboard" data-track="cta"><span class="visually-hidden">Copy to clipboard</span></div>
           <pre class="programlisting prettyprint lang-sh foo">cpanm Search::Elasticsearch</pre>
           </div>
         HTML
