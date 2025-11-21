@@ -15,17 +15,19 @@ RUN echo "deb http://archive.debian.org/debian/ buster main" > /etc/apt/sources.
 
 # TODO install_packages calls apt-get update and then nukes the list files after. We should avoid multiple calls to apt-get update.....
 # We could probably fix this by running the update and installs ourself with `RUN --mount type=cache` but that is "experimental"
+COPY install_packages.sh /usr/local/bin/
+RUN chmod 755 /usr/local/bin/install_packages.sh
 
 # Fix for Debian Buster EOL - point to archive repositories
 RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
     sed -i 's/security.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
     sed -i '/buster-updates/d' /etc/apt/sources.list
 
-RUN install_packages apt-transport-https gnupg2 ca-certificates
+RUN install_packages.sh apt-transport-https gnupg2 ca-certificates
 COPY .docker/apt/keys/nodesource.gpg /
 RUN apt-key add /nodesource.gpg
 COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
-RUN install_packages \
+RUN install_packages.sh \
   build-essential python2 \
     # needed for compiling native modules on ARM
   nodejs ruby \
@@ -43,7 +45,7 @@ ENV LC_ALL en_US.UTF-8
 
 
 FROM base AS ruby_deps
-RUN install_packages \
+RUN install_packages.sh \
   bundler \
     # Fetches ruby dependencies
   ruby-dev make cmake gcc libc-dev patch
@@ -61,7 +63,7 @@ FROM base AS node_deps
 COPY .docker/apt/keys/yarn.gpg /
 RUN apt-key add /yarn.gpg
 COPY .docker/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/
-RUN install_packages yarn=1.22.19-1
+RUN install_packages.sh yarn=1.22.19-1
 COPY package.json /
 COPY yarn.lock /
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
@@ -74,7 +76,7 @@ RUN yarn install --frozen-lockfile --production
 # Dockerfiles to make the images to serve previews and air gapped docs.
 FROM base AS build
 LABEL MAINTAINERS="Nik Everett <nik@elastic.co>"
-RUN install_packages \
+RUN install_packages.sh \
   git \
     # Clone source repositories and commit to destination repositories
   libnss-wrapper \
@@ -110,7 +112,7 @@ RUN rm -rf /var/log/nginx && rm -rf /run/nginx
 ##### Everything below this run tests
 FROM base AS py_test
 # There's not a published wheel for yamale, so we need setuptools and wheel
-RUN install_packages python3 python3-pip python3-setuptools python3-wheel python3-dev libxml2-dev libxslt-dev zlib1g-dev
+RUN install_packages.sh python3 python3-pip python3-setuptools python3-wheel python3-dev libxml2-dev libxslt-dev zlib1g-dev
 RUN pip3 install \
   beautifulsoup4==4.8.1 \
   lxml==4.4.2 \
@@ -131,4 +133,4 @@ COPY --from=ruby_test /usr/local/bin/rspec /usr/local/bin/rspec
 COPY --from=ruby_test /usr/local/bin/rubocop /usr/local/bin/rubocop
 
 FROM py_test AS diff_tool
-RUN install_packages git
+RUN install_packages.sh git
