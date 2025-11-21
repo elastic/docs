@@ -28,7 +28,7 @@ COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages \
   build-essential python2 \
     # needed for compiling native modules on ARM
-  nodejs ruby \
+  curl ruby \
     # Used both to install dependencies and at run time
   bash less \
     # Just in case you have to shell into the image
@@ -41,6 +41,8 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+RUN curl -sL https://deb.nodesource.com/setup_22.x | bash -
+RUN install_packages nodejs
 
 FROM base AS ruby_deps
 RUN install_packages \
