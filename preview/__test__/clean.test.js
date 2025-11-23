@@ -88,6 +88,9 @@ describe('Cleaner.is_pr_closed', () => {
     token = Math.random().toString();
     cleaner = new Cleaner(token, 'repo', null, null);
   });
+  afterEach(() => {
+    nock.cleanAll();
+  });
   test('returns true if github returns true', async () => {
     mock_github().reply(200, github_result(true));
     await expect(cleaner.is_pr_closed({repo: 'r', number: 1})).resolves.toBe(true);
@@ -114,15 +117,16 @@ describe('Cleaner.is_pr_closed', () => {
       }
     }));
     await expect(cleaner.is_pr_closed({repo: 'r', number: 1})).rejects
-      .toThrow(/Cannot read property 'closed' of undefined/);
+      .toThrow(/Cannot read propert(?:y|ies) of undefined.*closed/);
   });
   test("backs off if there aren't many requests remaining", async () => {
     // Mock setTimeout to immediately run. We don't use jest.useFakeTimers
     // because that needs to be manually advanced which is complex for this
     // test and not worth it.
+    const originalSetTimeout = global.setTimeout;
     global.setTimeout = jest.fn((callback) => callback());
     const oldNow = Date.now;
-    Date.now = jest.fn(() => new Date(0));
+    Date.now = jest.fn(() => 0);
     try {
       mock_github().reply(200, github_result(true), {
         'x-ratelimit-remaining': 50,
@@ -134,6 +138,7 @@ describe('Cleaner.is_pr_closed', () => {
       expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), 1000);
     } finally {
       Date.now = oldNow;
+      global.setTimeout = originalSetTimeout;
     }
   });
 });

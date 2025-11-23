@@ -155,7 +155,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
             }
             if (res.headers['x-ratelimit-remaining'] < 100) {
               const until = res.headers['x-ratelimit-reset'];
-              const millis = until * 1000 - Date.now().getTime();
+              const millis = until * 1000 - Date.now();
               console.info('Rate limited for', millis, 'milliseconds');
               setTimeout(() => resolve(closed), millis);
             } else {
