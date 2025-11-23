@@ -694,7 +694,7 @@ sub start_web_resources_watcher {
     exec( qw(/node_modules/parcel/bin/cli.js serve
              --public-url /guide/static/
              --hmr-port 8001
-             -d /tmp/parcel/
+             --dist-dir /tmp/parcel/
              resources/web/docs_js/index-v1.js resources/web/styles-v1.pcss) );
 }
 
@@ -733,8 +733,8 @@ sub build_web_resources {
         say "Compiling web resources";
         run '/node_modules/parcel/bin/cli.js', 'build',
             '--public-url', '/guide/static/',
-            '--experimental-scope-hoisting', '--no-source-maps',
-            '-d', $parcel_out,
+            '--no-source-maps',
+            '--dist-dir', $parcel_out,
             'resources/web/docs_js/index-v1.js', 'resources/web/styles-v1.pcss';
         die "Parcel didn't make $compiled_js" unless -e $compiled_js;
         die "Parcel didn't make $compiled_css" unless -e $compiled_css;
