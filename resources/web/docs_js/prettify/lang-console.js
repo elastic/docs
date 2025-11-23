@@ -25,7 +25,7 @@ const basic = PR.createSimpleLexer(
     [PR.PR_PUNCTUATION, /^[/?=&]/, null, '/?=&'],
     [PR.PR_PLAIN, /^\s+/, null, ' \t\r\n'],
     [PR.PR_KEYWORD, /^DELETE|HEAD|GET|PATCH|POST|PUT/, null, 'DHGP'],
-    ["lang-js", /^(\{.+?\})(?=\s*(DELETE|HEAD|GET|PATCH|POST|PUT|$))/s, null, '{'],
+    ["lang-js", /^(\{[^]*?\})(?=\s*(?:DELETE|HEAD|GET|PATCH|POST|PUT|$))/s, null, '{'],
   ],
   [
     [PR.PR_STRING,  /^[^ \s/?=&]+/],
