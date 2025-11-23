@@ -691,7 +691,7 @@ sub start_web_resources_watcher {
 
     close STDIN;
     open( STDIN, "</dev/null" );
-    exec( qw(/node_modules/parcel/bin/cli.js serve
+    exec( qw(/node_modules/parcel/lib/bin.js serve
              --public-url /guide/static/
              --hmr-port 8001
              --dist-dir /tmp/parcel/
@@ -731,7 +731,7 @@ sub build_web_resources {
         # when you run the integration tests and saves about 1.5 seconds on
         # every docs build.
         say "Compiling web resources";
-        run '/node_modules/parcel/bin/cli.js', 'build',
+        run '/node_modules/parcel/lib/bin.js', 'build',
             '--public-url', '/guide/static/',
             '--no-source-maps',
             '--dist-dir', $parcel_out,
