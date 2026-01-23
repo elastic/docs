@@ -15,6 +15,7 @@ mkdir air_gapped/work
 git clone --reference /opt/git-mirrors/built-docs.git --dissociate \
   --depth 2 --branch master --bare \
   git@github.com:elastic/built-docs.git air_gapped/work/target_repo.git
+
 GIT_DIR=air_gapped/work/target_repo.git git fetch
 
 # Build the images

@@ -82,7 +82,7 @@ module Dsl
       file_context 'html/static/jquery.js' do
         it 'is minified' do
           expect(contents).to include(<<~JS.strip)
-            /*! jQuery v1.12.4 | (c) jQuery Foundation | jquery.org/license */
+            /*! jQuery v3.5.1 | (c) JS Foundation and other contributors | jquery.org/license */
           JS
         end
         it "doesn't include a source map" do
