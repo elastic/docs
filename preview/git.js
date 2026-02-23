@@ -131,7 +131,7 @@ const streamChild = (child) => {
        * Normalize some "not found" style errors from git so the caller can
        * 404 on them.
        */
-      let missing = stderrBuffer.includes("Not a valid object name");
+      let missing = stderrBuffer.toLowerCase().includes("not a valid object name");
       missing |= stderrBuffer.includes("fatal: bad revision");
       if (missing) {
         flushCallback("missing");
@@ -252,7 +252,7 @@ const parseDiffTreeZ = async function* (itr) {
 
 const toStringHandler = (resolve, reject, onMissing) => (err, stdout) => {
   if (err) {
-    if (err.message.includes("Not a valid object name")) {
+    if (err.message.toLowerCase().includes("not a valid object name")) {
       onMissing("missing");
     } else if (err.message.includes("does not exist in")) {
       onMissing("missing");
