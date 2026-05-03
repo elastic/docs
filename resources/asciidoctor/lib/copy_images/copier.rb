@@ -60,8 +60,7 @@ module CopyImages
         return
       end
 
-      destination_dir = File.dirname destination
-      FileUtils.mkdir_p destination_dir
+      FileUtils.mkdir_p(File.dirname(destination))
       FileUtils.cp source, destination
     end
 
