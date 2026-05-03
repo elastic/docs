@@ -17,7 +17,7 @@
 
 import errno
 import logging
-from os import environ, getgid, getuid
+from os import environ, getgid, getuid, makedirs
 from os.path import basename, dirname, exists, expanduser, isdir
 from os.path import join, normpath, realpath
 import re
@@ -601,9 +601,13 @@ if __name__ == '__main__':
             cmd.extend(standard_docker_args())
             # The web test suite writes parcel output into resources/web/tests/
             # before jest reads it; shadow the ro parent for this path only.
+            # Ensure the directory exists before mounting so Docker doesn't
+            # auto-create it as root, which would deny writes to the container
+            # user.
+            web_tests_dir = '%s/resources/web/tests' % DIR
+            makedirs(web_tests_dir, exist_ok=True)
             cmd.extend(['-v', (
-                '%s/resources/web/tests'
-                ':/docs_build/resources/web/tests' % DIR
+                '%s:/docs_build/resources/web/tests' % web_tests_dir
             )])
             cmd.extend(['--workdir', docker_cwd])
             if stdout.isatty():
