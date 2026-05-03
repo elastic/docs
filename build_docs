@@ -555,7 +555,10 @@ def standard_docker_args():
         raise ArgError("This process isn't likely to suceed if run as root")
     docker_args.extend(['--user', '%d:%d' % (uid, getgid())])
     # Mount the docs build code so we can run it!
-    docker_args.extend(['-v', '%s:/docs_build:ro,cached' % DIR])
+    docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
+    # Shadow .buildkite/hooks with an empty tmpfs so any code running inside
+    # the container cannot plant Buildkite hooks that execute on the host.
+    docker_args.extend(['--tmpfs', '/docs_build/.buildkite/hooks'])
     # Seccomp adds a *devestating* performance overhead if you happen
     # to have it installed.
     docker_args.extend(['--security-opt', 'seccomp=unconfined'])
@@ -573,9 +576,6 @@ def standard_docker_args():
                         '--tmpfs', '/var/lib/nginx/proxy',
                         '--tmpfs', '/var/lib/nginx/uwsgi',
                         '--tmpfs', '/var/lib/nginx/scgi'])
-    # Parcel writes build caches here; use tmpfs so the ro source stays clean.
-    docker_args.extend(['--tmpfs', '/docs_build/.cache',
-                        '--tmpfs', '/docs_build/resources/web/.cache'])
     # Mount in a custom gitconfig that treats all directories as safe
     docker_args.extend(['-v', '%s/gitconfig:/.gitconfig' % DIR])
     return docker_args
@@ -602,19 +602,6 @@ if __name__ == '__main__':
             build_docker_image(image)
             cmd = ['docker', 'run']
             cmd.extend(standard_docker_args())
-            # The web test suite writes parcel output into resources/web/tests/
-            # before jest reads it; shadow the ro parent for this path only.
-            # Ensure the directory exists before mounting so Docker doesn't
-            # auto-create it as root, which would deny writes to the container
-            # user.
-            web_tests_dir = '%s/resources/web/tests' % DIR
-            makedirs(web_tests_dir, exist_ok=True)
-            cmd.extend(['-v', (
-                '%s:/docs_build/resources/web/tests' % web_tests_dir
-            )])
-            # The integration tests write to /docs_build/.repos/ (air-gapped
-            # preview setup). Shadow it with a tmpfs so the source stays ro.
-            cmd.extend(['--tmpfs', '/docs_build/.repos'])
             cmd.extend(['--workdir', docker_cwd])
             if stdout.isatty():
                 cmd.append('-t')
