@@ -17,7 +17,7 @@
 
 import errno
 import logging
-from os import environ, getgid, getuid
+from os import environ, getgid, getuid, makedirs
 from os.path import basename, dirname, exists, expanduser, isdir
 from os.path import join, normpath, realpath
 import re
@@ -556,6 +556,9 @@ def standard_docker_args():
     docker_args.extend(['--user', '%d:%d' % (uid, getgid())])
     # Mount the docs build code so we can run it!
     docker_args.extend(['-v', '%s:/docs_build:cached' % DIR])
+    # Shadow .buildkite/hooks with an empty tmpfs so any code running inside
+    # the container cannot plant Buildkite hooks that execute on the host.
+    docker_args.extend(['--tmpfs', '/docs_build/.buildkite/hooks'])
     # Seccomp adds a *devestating* performance overhead if you happen
     # to have it installed.
     docker_args.extend(['--security-opt', 'seccomp=unconfined'])
