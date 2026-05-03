@@ -12,6 +12,8 @@ module CopyImages
   class Copier
     include LogUtil
 
+    ALLOWED_IMAGE_EXTENSIONS = %w[.png .jpg .jpeg .gif .svg .webp].freeze
+
     def initialize
       # TODO: store this set on the document so we don't duplicate copies
       # for sub-documents caused by alternative examples
@@ -35,9 +37,30 @@ module CopyImages
     end
 
     def perform_copy(block, uri, source)
-      destination = File.join block.document.options[:to_dir], uri
-      destination_dir = File.dirname destination
-      FileUtils.mkdir_p destination_dir
+      unless ALLOWED_IMAGE_EXTENSIONS.include?(File.extname(uri).downcase)
+        warn block: block, message: "Refusing to copy non-image file: #{uri}"
+        return
+      end
+
+      if File.symlink?(source)
+        warn block: block, message: "Refusing to copy symlink: #{source}"
+        return
+      end
+
+      to_dir = File.expand_path(block.document.options[:to_dir])
+      destination = File.expand_path(File.join(to_dir, uri))
+
+      unless destination.start_with?("#{to_dir}/")
+        warn block: block, message: "Image path escapes output dir: #{uri}"
+        return
+      end
+
+      if File.symlink?(destination)
+        warn block: block, message: "Destination is a symlink: #{destination}"
+        return
+      end
+
+      FileUtils.mkdir_p(File.dirname(destination))
       FileUtils.cp source, destination
     end
 
