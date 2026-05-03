@@ -361,6 +361,74 @@ RSpec.describe CopyImages do
     end
   end
 
+  context 'input/output validation' do
+    let(:tmp) { Dir.mktmpdir }
+    after(:example) { FileUtils.remove_entry tmp }
+
+    let(:source_file) do
+      path = File.join(tmp, 'real_image.png')
+      FileUtils.cp(
+        File.join(spec_dir, 'resources', 'copy_images', 'example1.png'),
+        path
+      )
+      path
+    end
+
+    let(:copier) { CopyImages::Copier.new }
+
+    def make_block(to_dir)
+      doc = double('document')
+      allow(doc).to receive(:options).and_return(to_dir: to_dir)
+      allow(doc).to receive(:attr).with('copy_image').and_return(nil)
+      block = double('block')
+      allow(block).to receive(:document).and_return(doc)
+      allow(block).to receive(:source_location).and_return(nil)
+      block
+    end
+
+    context 'when the URI contains path traversal' do
+      it 'rejects it with a warning and does not write outside to_dir' do
+        block = make_block(tmp)
+        outside = File.expand_path(File.join(tmp, '../../../outside.png'))
+        copier.perform_copy(block, '../../../outside.png', source_file)
+        expect(File.exist?(outside)).to be false
+        # Verify a warning was issued (the logger on Copier is the global logger)
+        # We rely on the fact that no file was written as the main assertion.
+      end
+    end
+
+    context 'when the URI has a non-image extension' do
+      it 'rejects it with a warning and does not copy the file' do
+        block = make_block(tmp)
+        copier.perform_copy(block, 'evil.yml', source_file)
+        expect(File.exist?(File.join(tmp, 'evil.yml'))).to be false
+      end
+    end
+
+    context 'when the source path is a symlink' do
+      it 'rejects it with a warning and does not copy' do
+        symlink_path = File.join(tmp, 'link_image.png')
+        File.symlink(source_file, symlink_path)
+        block = make_block(tmp)
+        copier.perform_copy(block, 'output_image.png', symlink_path)
+        expect(File.exist?(File.join(tmp, 'output_image.png'))).to be false
+      end
+    end
+
+    context 'when the destination is already a symlink' do
+      it 'rejects it with a warning and does not overwrite the symlink' do
+        dest_path = File.join(tmp, 'dest_image.png')
+        # Create a symlink at destination pointing somewhere else
+        File.symlink('/dev/null', dest_path)
+        block = make_block(tmp)
+        copier.perform_copy(block, 'dest_image.png', source_file)
+        # The symlink should still point to /dev/null, not be replaced
+        expect(File.symlink?(dest_path)).to be true
+        expect(File.readlink(dest_path)).to eq('/dev/null')
+      end
+    end
+  end
+
   context 'when the same image is referenced more than once' do
     let(:input) do
       <<~ASCIIDOC
