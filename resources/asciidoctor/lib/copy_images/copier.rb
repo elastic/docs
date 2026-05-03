@@ -50,7 +50,7 @@ module CopyImages
       to_dir = File.expand_path(block.document.options[:to_dir])
       destination = File.expand_path(File.join(to_dir, uri))
 
-      unless destination.start_with?(to_dir + File::SEPARATOR)
+      unless destination.start_with?("#{to_dir}/")
         warn block: block, message: "Refusing to copy image outside output dir: #{uri}"
         return
       end
