@@ -392,8 +392,6 @@ RSpec.describe CopyImages do
         outside = File.expand_path(File.join(tmp, '../../../outside.png'))
         copier.perform_copy(block, '../../../outside.png', source_file)
         expect(File.exist?(outside)).to be false
-        # Verify a warning was issued (the logger on Copier is the global logger)
-        # We rely on the fact that no file was written as the main assertion.
       end
     end
 

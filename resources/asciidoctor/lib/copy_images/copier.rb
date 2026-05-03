@@ -51,12 +51,14 @@ module CopyImages
       destination = File.expand_path(File.join(to_dir, uri))
 
       unless destination.start_with?("#{to_dir}/")
-        warn block: block, message: "Refusing to copy image outside output dir: #{uri}"
+        warn block: block,
+             message: "Refusing to copy image outside output dir: #{uri}"
         return
       end
 
       if File.symlink?(destination)
-        warn block: block, message: "Refusing to overwrite symlink at destination: #{destination}"
+        warn block: block,
+             message: "Refusing to overwrite symlink at dest: #{destination}"
         return
       end
 
