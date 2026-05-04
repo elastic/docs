@@ -12,7 +12,7 @@ module CopyImages
   class Copier
     include LogUtil
 
-    ALLOWED_IMAGE_EXTENSIONS = %w[.png .jpg .jpeg .gif .svg .webp].freeze
+    ALLOWED_IMAGE_EXTENSIONS = %w[.png .jpg .jpeg .gif .svg .ico .webp].freeze
 
     def initialize
       # TODO: store this set on the document so we don't duplicate copies
@@ -38,30 +38,27 @@ module CopyImages
 
     def perform_copy(block, uri, source)
       unless ALLOWED_IMAGE_EXTENSIONS.include?(File.extname(uri).downcase)
-        warn block: block, message: "Refusing to copy non-image file: #{uri}"
-        return
+        return warn block: block, message: "Non-image extension: #{uri}"
       end
 
       if File.symlink?(source)
-        warn block: block, message: "Refusing to copy symlink: #{source}"
-        return
+        return warn block: block, message: "Refusing to copy symlink: #{source}"
       end
 
-      to_dir = File.expand_path(block.document.options[:to_dir])
-      destination = File.expand_path(File.join(to_dir, uri))
+      doc = block.document
+      outdir = book_outdir doc
+      dest = File.expand_path(uri, doc.options[:to_dir])
 
-      unless destination.start_with?("#{to_dir}/")
-        warn block: block, message: "Image path escapes output dir: #{uri}"
-        return
+      unless dest.start_with?("#{outdir}/")
+        return warn block: block, message: "Image outside output dir: #{uri}"
       end
 
-      if File.symlink?(destination)
-        warn block: block, message: "Destination is a symlink: #{destination}"
-        return
+      if File.symlink?(dest)
+        return warn block: block, message: "Destination is a symlink: #{dest}"
       end
 
-      FileUtils.mkdir_p(File.dirname(destination))
-      FileUtils.cp source, destination
+      FileUtils.mkdir_p(File.dirname(dest))
+      FileUtils.cp source, dest
     end
 
     ##
@@ -122,6 +119,13 @@ module CopyImages
       end
       warn block: block,
            message: "can't read image [#{uri}] at any of #{checked}"
+    end
+
+    private
+
+    def book_outdir(doc)
+      raw = doc.attr('outdir') || doc.options[:to_dir]
+      File.expand_path(File.dirname(raw))
     end
   end
 end
