@@ -38,13 +38,11 @@ module CopyImages
 
     def perform_copy(block, uri, source)
       unless ALLOWED_IMAGE_EXTENSIONS.include?(File.extname(uri).downcase)
-        return warn block: block,
-                    message: "Refusing to copy non-image file: #{uri}"
+        return warn block: block, message: "Non-image extension: #{uri}"
       end
 
       if File.symlink?(source)
-        return warn block: block,
-                    message: "Refusing to copy symlink: #{source}"
+        return warn block: block, message: "Refusing to copy symlink: #{source}"
       end
 
       doc = block.document
@@ -52,13 +50,11 @@ module CopyImages
       dest = File.expand_path(uri, doc.options[:to_dir])
 
       unless dest.start_with?("#{outdir}/")
-        return warn block: block,
-                    message: "Image path escapes output dir: #{uri}"
+        return warn block: block, message: "Image outside output dir: #{uri}"
       end
 
       if File.symlink?(dest)
-        return warn block: block,
-                    message: "Destination is a symlink: #{dest}"
+        return warn block: block, message: "Destination is a symlink: #{dest}"
       end
 
       FileUtils.mkdir_p(File.dirname(dest))
