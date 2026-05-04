@@ -124,7 +124,8 @@ module CopyImages
     private
 
     def book_outdir(doc)
-      File.expand_path(doc.attr('outdir') || doc.options[:to_dir])
+      raw = doc.attr('outdir') || doc.options[:to_dir]
+      File.expand_path(File.dirname(raw))
     end
   end
 end
