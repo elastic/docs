@@ -61,11 +61,6 @@ module CopyImages
       FileUtils.cp source, dest
     end
 
-    def book_outdir(doc)
-      File.expand_path(doc.attr('outdir') || doc.options[:to_dir])
-    end
-    private :book_outdir
-
     ##
     # Does a breadth first search starting at the base_dir of the document and
     # any referenced resources. This isn't super efficient but it is how a2x
@@ -124,6 +119,12 @@ module CopyImages
       end
       warn block: block,
            message: "can't read image [#{uri}] at any of #{checked}"
+    end
+
+    private
+
+    def book_outdir(doc)
+      File.expand_path(doc.attr('outdir') || doc.options[:to_dir])
     end
   end
 end
