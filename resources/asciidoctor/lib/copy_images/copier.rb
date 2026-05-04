@@ -46,7 +46,7 @@ module CopyImages
       end
 
       doc = block.document
-      outdir = File.expand_path(doc.attr('outdir') || doc.options[:to_dir])
+      outdir = book_outdir doc
       dest = File.expand_path(uri, doc.options[:to_dir])
 
       unless dest.start_with?("#{outdir}/")
@@ -60,6 +60,11 @@ module CopyImages
       FileUtils.mkdir_p(File.dirname(dest))
       FileUtils.cp source, dest
     end
+
+    def book_outdir(doc)
+      File.expand_path(doc.attr('outdir') || doc.options[:to_dir])
+    end
+    private :book_outdir
 
     ##
     # Does a breadth first search starting at the base_dir of the document and
