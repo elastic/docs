@@ -457,4 +457,35 @@ RSpec.describe CopyImages do
       expect(logs).to eq(expected_logs.strip)
     end
   end
+
+  context 'input/output validation' do
+    let(:tmp) { Dir.mktmpdir }
+    let(:source_file) do
+      path = File.join(tmp, 'example.png')
+      FileUtils.touch(path)
+      path
+    end
+    let(:copier) { CopyImages::Copier.new }
+
+    after(:example) { FileUtils.remove_entry tmp }
+
+    def make_block(to_dir)
+      doc = double('document')
+      allow(doc).to receive(:options).and_return(to_dir: to_dir)
+      allow(doc).to receive(:attr).with('copy_image').and_return(nil)
+      allow(doc).to receive(:attr).with('outdir').and_return(to_dir)
+      block = double('block')
+      allow(block).to receive(:document).and_return(doc)
+      allow(block).to receive(:source_location).and_return(nil)
+      block
+    end
+
+    context 'when the URI uses path traversal with a non-image extension' do
+      it 'rejects it via the extension check' do
+        block = make_block(tmp)
+        copier.perform_copy(block, '../../../evil.yml', source_file)
+        expect(File.exist?(File.join(tmp, '../../../evil.yml'))).to be false
+      end
+    end
+  end
 end

@@ -228,6 +228,9 @@ sub build_single {
             $page_header ? ('-a' => "page-header=$page_header") : (),
             # Turn on asciidoctor's table of contents generation if we want a TOC
             $toc ? ('-a' => 'toc') : (),
+            # Asciidoctor doesn't pass the destination directory down to
+            # the converter so we do so here explicitly
+            '-a' => 'outdir=' . $raw_dest,
             '--destination-dir=' . $raw_dest,
             docinfo($index),
             $index
