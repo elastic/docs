@@ -41,6 +41,18 @@ buildkite-agent \
 
 
 if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
+  # Skip the build but report success when the PR targets a branch that no longer carries
+  # legacy AsciiDoc docs (per conf.yaml). docs-build-pr is a required check, so we exit 0
+  # to keep it green rather than failing or leaving it pending.
+  # The helper exits non-zero on a parse error or unknown repo, which short-circuits the
+  # condition below so we build as today — i.e. fail open, never block a real build.
+  if legacy_branches=$(perl "$(dirname "$0")/legacy_branches.pl" "$GITHUB_PR_BASE_REPO") \
+       && [[ -n "${legacy_branches}" ]] \
+       && ! grep -qxF "${GITHUB_PR_TARGET_BRANCH}" <<< "${legacy_branches}"; then
+    echo "Target branch '${GITHUB_PR_TARGET_BRANCH}' has no legacy AsciiDoc docs in conf.yaml for ${GITHUB_PR_BASE_REPO} — skipping build (reporting success)."
+    exit 0
+  fi
+
   # Buildkite PR bot for repositories other than the `elastic/docs` repo are configured to
   # always checkout the master branch of the `elastic/docs` repo (where the build logic resides).
   # We first need to checkout the product repo / branch in a sub directory, that we'll reference
