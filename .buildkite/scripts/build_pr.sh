@@ -41,15 +41,22 @@ buildkite-agent \
 
 
 if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
-  # Skip the build but report success when the PR targets a branch that no longer carries
-  # legacy AsciiDoc docs (per conf.yaml). docs-build-pr is a required check, so we exit 0
-  # to keep it green rather than failing or leaving it pending.
-  # The helper exits non-zero on a parse error or unknown repo, which short-circuits the
-  # condition below so we build as today — i.e. fail open, never block a real build.
+  # main/master are hardcoded to always skip the build, without needing conf.yaml/YAML at all:
+  # we no longer build legacy AsciiDoc docs against these branches.
+  if [[ "${GITHUB_PR_TARGET_BRANCH}" == "main" || "${GITHUB_PR_TARGET_BRANCH}" == "master" ]]; then
+    echo "Target branch '${GITHUB_PR_TARGET_BRANCH}' is main/master — skipping build (reporting success)."
+    exit 0
+  fi
+
+  # Build only if conf.yaml lists the target branch as a legacy AsciiDoc branch
+  # for this repo — otherwise skip but report success, since docs-build-pr is a
+  # required check and we want it green rather than failing or left pending.
+  # The helper exits non-zero only when conf.yaml itself couldn't be read (e.g.
+  # the perl YAML module is missing), which short-circuits the condition below
+  # so we fail open and build as today, rather than silently going green.
   if legacy_branches=$(perl "$(dirname "$0")/legacy_branches.pl" "$GITHUB_PR_BASE_REPO") \
-       && [[ -n "${legacy_branches}" ]] \
        && ! grep -qxF "${GITHUB_PR_TARGET_BRANCH}" <<< "${legacy_branches}"; then
-    echo "Target branch '${GITHUB_PR_TARGET_BRANCH}' has no legacy AsciiDoc docs in conf.yaml for ${GITHUB_PR_BASE_REPO} — skipping build (reporting success)."
+    echo "Target branch '${GITHUB_PR_TARGET_BRANCH}' is not a legacy AsciiDoc branch in conf.yaml for ${GITHUB_PR_BASE_REPO} — skipping build (reporting success)."
     exit 0
   fi
 

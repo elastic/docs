@@ -6,9 +6,11 @@ use YAML qw(LoadFile);
 # Usage: legacy_branches.pl <github-repo-name>
 # Prints one legacy (AsciiDoc) branch per line that the given repo still carries in conf.yaml.
 #
-# Exit 0: repo found; list may be empty if fully migrated to docs-builder.
-# Exit 2: repo not found in conf.yaml — caller should build as today (fail open).
-# Exit 1: YAML parse / load error — caller should build as today (fail open).
+# Exit 0: conf.yaml was read successfully. The list is empty if the repo is
+#         fully migrated to docs-builder or isn't in conf.yaml at all — either
+#         way it has no legacy branches, so the caller should skip the build.
+# Exit 1: conf.yaml couldn't be loaded (e.g. missing YAML module, parse error)
+#         — caller should build as today (fail open), since we can't tell.
 
 my ($github_repo) = @ARGV
     or die "Usage: $0 <github-repo-name>\n";
@@ -21,18 +23,23 @@ if ($@) {
     exit 1;
 }
 
-# Build a map: GitHub repo name (URL basename minus .git) -> conf repo key.
-# Sources in conf.yaml reference the conf key (e.g. "esf"), not the GitHub name
-# (e.g. "elastic-serverless-forwarder"), so we need this translation.
-my %github_to_key;
-while ( my ( $key, $url ) = each %{ $conf->{repos} } ) {
-    ( my $name = $url ) =~ s{.*/|\.git$}{}g;    # URL -> repo name (strip path and .git)
-    $github_to_key{$name} = $key;
+# Sources in conf.yaml reference the conf key (e.g. "esf"), which for most repos
+# is already the GitHub repo name but for some (e.g. "elastic-serverless-forwarder")
+# differs from it. Try the GitHub name as a conf key directly first, then fall back
+# to matching it against each repo's URL basename.
+my $conf_key = exists $conf->{repos}{$github_repo} ? $github_repo : undef;
+unless ( defined $conf_key ) {
+    while ( my ( $key, $url ) = each %{ $conf->{repos} } ) {
+        ( my $name = $url ) =~ s{.*/|\.git$}{}g;    # URL -> repo name (strip path and .git)
+        if ( $name eq $github_repo ) {
+            $conf_key = $key;
+            last;
+        }
+    }
 }
 
-my $conf_key = $github_to_key{$github_repo};
 unless ( defined $conf_key ) {
-    exit 2;    # repo not in conf — caller builds as today
+    exit 0;    # repo not in conf — no legacy branches, caller should skip
 }
 
 # Walk conf.yaml contents and collect every git branch for which this repo still
