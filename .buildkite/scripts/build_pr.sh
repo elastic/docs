@@ -2,6 +2,9 @@
 set -euo pipefail
 set +x
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DOCS_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
 # This script should only be invoked by the Buildkite PR bot
 if [ -z ${GITHUB_PR_TARGET_BRANCH+set} ] || [ -z ${GITHUB_PR_NUMBER+set} ] || [ -z ${GITHUB_PR_BASE_REPO+set} ];then
   echo "One of the following env. variable GITHUB_PR_TARGET_BRANCH, GITHUB_PR_NUMBER, GITHUB_PR_BASE_REPO is missing - exiting."
@@ -54,7 +57,7 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
   # The helper exits non-zero only when conf.yaml itself couldn't be read (e.g.
   # the perl YAML module is missing), which short-circuits the condition below
   # so we fail open and build as today, rather than silently going green.
-  if legacy_branches=$(perl "$(dirname "$0")/legacy_branches.pl" "$GITHUB_PR_BASE_REPO") \
+  if legacy_branches=$(perl "${SCRIPT_DIR}/legacy_branches.pl" "$GITHUB_PR_BASE_REPO") \
        && ! grep -qxF "${GITHUB_PR_TARGET_BRANCH}" <<< "${legacy_branches}"; then
     echo "Target branch '${GITHUB_PR_TARGET_BRANCH}' is not a legacy AsciiDoc branch in conf.yaml for ${GITHUB_PR_BASE_REPO} — skipping build (reporting success)."
     exit 0
@@ -218,9 +221,19 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
       docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- ./docs/en ./docs/kr ./docs/jp)
       ;;
 
-    # All other repos will always build
+    # Repos without a specialized arm: derive doc paths from conf.yaml
     *)
-      docs_diff="always build"
+      git fetch origin "$GITHUB_PR_TARGET_BRANCH"
+      if docs_paths=$(perl "${SCRIPT_DIR}/docs_paths.pl" "$GITHUB_PR_BASE_REPO" "${DOCS_ROOT}/conf.yaml" 2>/dev/null); then
+        if [[ -z "$docs_paths" ]]; then
+          docs_diff=""
+        else
+          mapfile -t paths <<< "$docs_paths"
+          docs_diff=$(git diff --stat "origin/$GITHUB_PR_TARGET_BRANCH"...HEAD -- "${paths[@]}")
+        fi
+      else
+        docs_diff="always build"
+      fi
       ;;
   esac
 
