@@ -24,6 +24,14 @@ for my $repo (qw(kibana-cn swiftype esf elastic-serverless-forwarder)) {
     isnt( $out, '', "$repo: has at least one legacy branch (conf key resolved)" );
 }
 
+{
+    my ( $exit, $out ) = run('kibana');
+    is( $exit, 0, 'kibana: exits 0' );
+    isnt( $out, '', 'kibana: has at least one legacy branch' );
+    like( $out, qr{^8\.19$}m, 'kibana: includes 8.19 legacy branch' );
+    unlike( $out, qr{^9\.}m, 'kibana: has no 9.x legacy branches' );
+}
+
 my ( $exit, $out ) = run('some-repo-not-in-conf-yaml');
 is( $exit, 0, 'unknown repo: exits 0' );
 is( $out, '', 'unknown repo: no legacy branches' );
