@@ -31,11 +31,8 @@ fi
 # The docs build can use the ssh agent's authentication socket
 # but can't use ssh keys directly so we start an ssh-agent.
 
-# Temporary workaround until we can move to HTTPS auth
-vault read -field=private-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa"
-vault read -field=public-key secret/ci/elastic-docs/elasticmachine-ssh-key > "$HOME/.ssh/id_rsa.pub"
+# SSH keys are fetched from Vault in .buildkite/hooks/pre-command.
 ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
-chmod 600 "$HOME/.ssh/id_rsa"
 
 ssh-agent bash -c "
   ssh-add &&
