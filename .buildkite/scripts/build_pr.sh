@@ -51,6 +51,15 @@ if [[ "${GITHUB_PR_BASE_REPO}" != 'docs' ]]; then
     exit 0
   fi
 
+  # legacy_branches.pl needs YAML.pm on the host agent (not the Docker build
+  # image). Install it when missing so a stale docs-ubuntu image does not
+  # fail open and force a full clone/build for non-legacy branches.
+  if ! perl -MYAML -e1 >/dev/null 2>&1; then
+    echo "Perl YAML module missing on agent; installing libyaml-perl"
+    sudo apt-get update -qq
+    sudo apt-get install -y -qq libyaml-perl
+  fi
+
   # Build only if conf.yaml lists the target branch as a legacy AsciiDoc branch
   # for this repo — otherwise skip but report success, since docs-build-pr is a
   # required check and we want it green rather than failing or left pending.
