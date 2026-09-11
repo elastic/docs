@@ -155,7 +155,7 @@ sub _guess_opts {
     my $toplevel = _find_toplevel( $index->parent );
     my $remote = _pick_best_remote( $toplevel );
     my $branch = _guess_branch( $toplevel );
-    my $repo_name = _guess_repo_name( $remote );
+    my $repo_name = _guess_repo_name( $remote, $toplevel );
     # We couldn't find the top level so lets make a wild guess.
     $toplevel = $index->parent unless $toplevel;
     printf "Guessed toplevel=[%s] remote=[%s] branch=[%s] repo=[%s]\n", $toplevel, $remote, $branch, $repo_name;
@@ -169,7 +169,7 @@ sub _guess_opts {
         $toplevel = _find_toplevel( $resource );
         $remote = _pick_best_remote( $toplevel );
         $branch = _guess_branch( $toplevel );
-        $repo_name = _guess_repo_name( $remote );
+        $repo_name = _guess_repo_name( $remote, $toplevel );
         # We couldn't find the top level so lets make a wild guess.
         $toplevel = $resource unless $toplevel;
         $Opts->{roots}{ $repo_name } = $toplevel;
@@ -188,6 +188,23 @@ sub _find_toplevel {
     chdir $docpath;
     my $toplevel = eval { run qw(git rev-parse --show-toplevel) };
     chdir $original_pwd;
+    return $toplevel if $toplevel;
+
+    my $d = $docpath;
+    while ($d) {
+        printf "Checking for .git directory (or file) in '%s'\n", $d;
+        my $git = $d->file(".git");
+        my $git_stat = $git->stat();
+        return $git->parent if $git_stat;
+        my $p = $d->parent;
+        if ($p eq $d) {
+            # Root of this filesystem
+            $d = undef;
+        } else {
+            $d = $p;
+        }
+    }
+
     say "Couldn't find repo toplevel for $docpath" unless $toplevel;
     return $toplevel || 0;
 }
@@ -252,9 +269,12 @@ sub _guess_branch {
 #===================================
 sub _guess_repo_name {
 #===================================
-    my ( $remote ) = @_;
+    my ( $remote, $toplevel ) = @_;
 
-    return 'repo' unless $remote;
+    if ( not $remote ) {
+        return 'repo' unless $toplevel;
+        return dir($toplevel)->basename;
+    }
 
     $remote = dir( $remote )->basename;
     $remote =~ s/\.git$//;
