@@ -24,10 +24,11 @@ githubPublishStatus="https://api.github.com/repos/${GITHUB_PR_BASE_OWNER}/${GITH
 data='{"state":"'$status_state'","target_url":"'$BUILDKITE_BUILD_URL'","description":"'$description'","context":"buildkite/'$BUILDKITE_PIPELINE_SLUG'"}'
 
 echo "Setting commit status: buildkite/${BUILDKITE_PIPELINE_SLUG} - ${status_state}"
-curl -s -L \
+curl --fail -sS -L \
   -X POST \
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${VAULT_GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   "${githubPublishStatus}" \
   -d "${data}"
+echo
