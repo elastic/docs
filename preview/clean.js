@@ -22,6 +22,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
       'clone',
       '--bare',
       '--reference', `${cache_dir}/${repo_name}`,
+      '--',
       repo, local_path])
   }
 
@@ -29,11 +30,12 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
     return exec_git(['show-ref', '--heads'], { cwd: local_path });
   }
 
+
   const heads_to_prs = (heads) => {
     return heads
       .split('\n')
       .reduce((acc, line) => {
-        const found = line.match(/^.+ refs\/heads\/((.+)_(\d+))$/);
+        const found = line.match(/^[a-f0-9]+\s+refs\/heads\/((?!-)([a-zA-Z0-9_.-]+)_(\d+))$/);
         if (found) {
           acc.push({
             branch: found[1],
@@ -77,7 +79,7 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
   const prAge = async function (pr) {
     return parseInt(await exec_git(
       [
-        "show", "--pretty=%ad", "--no-notes", "--no-patch", "--date=unix",
+        "show", "--pretty=%ad", "--no-notes", "--no-patch", "--date=unix","--",
         pr.branch
       ],
       { cwd: local_path }
@@ -88,6 +90,9 @@ function Cleaner(token, repo, cache_dir, tmp_dir) {
     if (pr.branch === 'master' || pr.branch === 'staging') {
       // Just for super double ultra paranoia.
       throw "Can't delete master!";
+    }
+    if (pr.branch.startsWith('-')) {
+      throw new Error(`Invalid branch name detected, possible argument injection: ${pr.branch}`);
     }
     await exec_git(
       ['push', 'origin', '--delete', pr.branch],
