@@ -2,10 +2,23 @@
 
 set -euo pipefail
 
-if [[ "$BUILDKITE_PIPELINE_SLUG" == "docs-build-pr" ]] && [[ "$BUILDKITE_STEP_KEY" == "build-pr" ]]; then
+# Do not call GitHub from this hook. build-pr can run longer than the
+# ephemeral VAULT_GITHUB_TOKEN TTL. Upload a short follow-up step instead
+# so the environment hook mints a fresh token for the status POST.
+if [[ "${BUILDKITE_PIPELINE_SLUG:-}" == "docs-build-pr" ]] && [[ "${BUILDKITE_STEP_KEY:-}" == "build-pr" ]]; then
     status_state=failure
     if [[ "${BUILDKITE_COMMAND_EXIT_STATUS:-1}" -eq 0 ]]; then
         status_state=success
     fi
-    "${BUILDKITE_BUILD_CHECKOUT_PATH}/.buildkite/scripts/build_pr_commit_status.sh" "$status_state" || true
+
+    echo "Uploading GitHub status step (${status_state})"
+
+    # Checkout is required so build_pr_commit_status.sh is on disk. The job
+    # is short; the environment hook mints a fresh VAULT_GITHUB_TOKEN.
+    cat <<YAML | buildkite-agent pipeline upload
+steps:
+  - key: "github-status-${BUILDKITE_JOB_ID}"
+    label: "GitHub status"
+    command: ".buildkite/scripts/build_pr_commit_status.sh ${status_state}"
+YAML
 fi
