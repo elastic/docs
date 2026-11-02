@@ -279,7 +279,7 @@ sub _extract_from_ref {
     die "File <$tar> already exists" if -e $tar;
     run qw(git archive --format=tar -o), $tar, $ref, $path;
 
-    run qw(tar -x -C), $dest, '-f', $tar;
+    run qw(tar -xv -C), $dest, '-f', $tar;
     $tar->remove;
 }
 
