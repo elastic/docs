@@ -1,4 +1,4 @@
-import {combineReducers} from "../../../../../node_modules/redux";
+import {combineReducers} from "redux";
 import {reducer as settingsReducer} from "./settings";
 import {reducer as modalReducer} from "./modal";
 

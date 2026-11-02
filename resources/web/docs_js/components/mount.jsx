@@ -1,5 +1,5 @@
-import { Provider } from '../../../../../node_modules/preact-redux';
-import { h, render } from '../../../../../node_modules/preact';
+import { Provider } from 'preact-redux';
+import { h, render } from 'preact';
 import store from "../store";
 
 export const mount = ({el, Component, props = {}, store}) =>
