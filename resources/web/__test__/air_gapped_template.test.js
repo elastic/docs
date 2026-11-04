@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * @license
  * Licensed to Elasticsearch under one or more contributor

@@ -16,6 +16,6 @@ class OpenedDocs < ServingDocs
     return unless uses_preview
 
     wait_for_logs(/^preview server is listening on 3000$/, 60)
-    wait_for_logs(/  Built in /, 60) # Wait for parcel as well
+    wait_for_logs(/built in /, 60) # Wait for vite as well
   end
 end

@@ -1,4 +1,4 @@
-import {dissoc} from "../../../../../node_modules/ramda";
+import dissoc from "ramda/src/dissoc";
 
 const initialState = {isOpen: false, Component: null, props: null};
 

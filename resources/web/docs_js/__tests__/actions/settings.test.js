@@ -1,4 +1,4 @@
-import Cookies from "../../../../../../node_modules/js-cookie";
+import Cookies from "js-cookie";
 import * as actions from "../../actions/settings";
 import store from "../../store";
 
@@ -10,7 +10,7 @@ describe("saveSettings", () => {
   });
 
   test("it converts a map to list of tuples", () => {
-    const setCookies = jest.fn();
+    const setCookies = vi.fn();
     const saveSettings = actions._saveSettings(setCookies);
     db.dispatch(saveSettings({
       console_url: "c",
