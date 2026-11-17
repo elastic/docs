@@ -81,18 +81,19 @@ def build_docker_image(name):
 class OpenBrowserState:
     def __init__(self):
         self.need_nginx = True
-        self.need_parcel = False
+        self.need_web_resources = False
         self.need_preview = False
         self.opened = False
 
     def building_single_book(self):
         """
-        If we're building a single book we need to wait for Parcel to finish
-        building the CSS and JS for the first time so we can be sure its server
-        is up and running. If we're building all books we run parcel as part
-        of the build before starting nginx so we don't have to wait for it.
+        If we're building a single book we need to wait for Vite to finish
+        building the CSS and JS for the first time so we can be sure nginx
+        has something to serve. If we're building all books we run vite as
+        part of the build before starting nginx so we don't have to wait for
+        it.
         """
-        self.need_parcel = True
+        self.need_web_resources = True
         self.need_preview = True
 
     def handle_line(self, line):
@@ -102,16 +103,16 @@ class OpenBrowserState:
         if 'start worker processes' in line:
             # Wait for nginx or nothing will be listening
             self.need_nginx = False
-        if '✨  Built in ' in line:
-            # Wait for parcel to finish building for the first time or the
-            # server might not yet be up and nginx will fail to proxy to it.
-            self.need_parcel = False
+        if 'built in ' in line:
+            # Wait for vite to finish building for the first time or there
+            # won't be any css or js for nginx to serve yet.
+            self.need_web_resources = False
             show = False
         if 'preview server is listening on 3000' in line:
             self.need_preview = False
             show = False
         if not self.need_nginx and \
-                not self.need_parcel and \
+                not self.need_web_resources and \
                 not self.need_preview:
             if platform == "darwin" and 'BROWSER' not in environ:
                 # On mac webbrowser seeem to want to default to safari which
@@ -265,7 +266,6 @@ def run_build_docs(args):
             saw_doc = True
         elif arg == '--open':
             docker_args.extend(['--publish', '8000:8000/tcp'])
-            docker_args.extend(['--publish', '8001:8001/tcp'])
             open_browser = OpenBrowserState()
         elif arg == '--out':
             out_dir = realpath(args.next_arg_or_err())
@@ -325,11 +325,11 @@ def run_build_docs(args):
 
     if platform == "darwin" and saw_doc and open_browser:
         # Docker for Mac has trouble watching filesystem events on a mounted
-        # volume, so Parcel's watcher was not triggering rebuilds. Using
+        # volume, so Vite's watcher was not triggering rebuilds. Using
         # polling is more expensive and requires a higher ulimit, but
         # resolves the issue. See:
         # - https://github.com/docker/for-mac/issues/2216
-        # - https://github.com/parcel-bundler/parcel/issues/2539
+        # (vite.config.mjs turns CHOKIDAR_USEPOLLING into polling.)
         docker_args.extend([
             "-e", "CHOKIDAR_USEPOLLING=1",
             "--ulimit", "nofile=90000:90000"
@@ -347,7 +347,7 @@ def run_build_docs(args):
 
     def handle_line(line):
         show = True
-        if 'Server running at http://localhost:1234' in line:
+        if 'watching for file changes' in line:
             show = False
         if open_browser:
             show = show and open_browser.handle_line(line)

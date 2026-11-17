@@ -23,8 +23,7 @@ RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
     sed -i '/buster-updates/d' /etc/apt/sources.list
 
 RUN install_packages.sh apt-transport-https gnupg2 ca-certificates
-COPY .docker/apt/keys/nodesource.gpg /
-RUN apt-key add /nodesource.gpg
+COPY .docker/apt/keys/nodesource.gpg /etc/apt/keyrings/nodesource.gpg
 COPY .docker/apt/sources.list.d/nodesource.list /etc/apt/sources.list.d/
 RUN install_packages.sh \
   build-essential python2 \
@@ -38,9 +37,9 @@ RUN install_packages.sh \
   dumb-init
     # Reap zombie git gc processes
 RUN echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 
 FROM base AS ruby_deps
@@ -59,8 +58,7 @@ RUN cd /var/lib/gems/2.5.0/gems/asciidoctor-2.0.10 && patch -p1 < /asciidoctor_2
 
 
 FROM base AS node_deps
-COPY .docker/apt/keys/yarn.gpg /
-RUN apt-key add /yarn.gpg
+COPY .docker/apt/keys/yarn.gpg /etc/apt/keyrings/yarn.gpg
 COPY .docker/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/
 RUN install_packages.sh yarn=1.22.19-1
 COPY package.json /

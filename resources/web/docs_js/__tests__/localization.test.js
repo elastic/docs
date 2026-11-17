@@ -1,10 +1,11 @@
 import * as l from "../localization";
-import * as R from "../../../../../node_modules/ramda";
+import toPairs from "ramda/src/toPairs";
+import forEach from "ramda/src/forEach";
 
 describe("Localization of strings", () => {
-  const specs = R.toPairs(l.lang_spec);
+  const specs = toPairs(l.lang_spec);
 
-  R.forEach(([phrase, {zh_cn, en}]) => {
+  forEach(([phrase, {zh_cn, en}]) => {
     const expectedEn = en ? en : phrase;
 
     test(`Correct Chinese translation of the phrase ${phrase}`, () => {

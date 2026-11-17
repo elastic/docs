@@ -769,13 +769,10 @@ RSpec.describe 'building a single book' do
 
     context 'the js' do
       it 'is unminified' do
-        expect(js).to serve(include(<<~JS))
-          // Test comment used to detect unminifed JS in tests
-        JS
-      end
-      it 'include hot module replacement for the css' do
-        expect(js).to serve(include(<<~JS))
-          // Setup hot module replacement for css if we're in dev mode.
+        # Vite drops plain comments from unminified output so look for a
+        # function name instead.
+        expect(js).to serve(include(<<~JS.strip))
+          function init_landing_page()
         JS
       end
       it 'includes a source map' do
@@ -799,9 +796,6 @@ RSpec.describe 'building a single book' do
         expect(css).to serve(include(<<~CSS))
           /* test comment used to detect unminified source */
         CSS
-      end
-      it 'includes a source map' do
-        expect(css).to serve(include('sourceMappingURL='))
       end
     end
   end

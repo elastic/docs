@@ -496,7 +496,6 @@ sub write_nginx_test_config {
     my $web_conf;
     if ( $watching_web ) {
         $web_conf = <<"CONF"
-    rewrite ^/guide/static/docs-v1\\.js(.*)\$ /guide/static/docs_js/index-v1.js\$1 last;
     location ^~ /guide/static/jquery.js {
       alias /node_modules/jquery/dist/jquery.js;
       types {
@@ -504,7 +503,8 @@ sub write_nginx_test_config {
       }
     }
     location ^~ /guide/static/ {
-      proxy_pass http://0.0.0.0:1234;
+      alias /tmp/web_resources_watch/;
+      add_header Cache-Control 'no-cache';
     }
 CONF
     } else {
@@ -689,16 +689,17 @@ sub timestamp {
 #===================================
 sub start_web_resources_watcher {
 #===================================
-    my $parcel_pid = fork;
-    return $parcel_pid if $parcel_pid;
+    my $vite_pid = fork;
+    return $vite_pid if $vite_pid;
 
     close STDIN;
     open( STDIN, "</dev/null" );
-    exec( qw(/node_modules/parcel/bin/cli.js serve
-             --public-url /guide/static/
-             --hmr-port 8001
-             -d /tmp/parcel/
-             resources/web/docs_js/index-v1.js resources/web/styles-v1.pcss) );
+    # Rebuilds the js and css whenever they change. nginx serves the result.
+    exec( qw(/node_modules/vite/bin/vite.js build --watch
+             --configLoader native
+             --config resources/web/vite.config.mjs
+             --minify false --sourcemap
+             --outDir /tmp/web_resources_watch/) );
 }
 
 #===================================
@@ -723,9 +724,9 @@ sub build_web_resources {
 #===================================
     my ( $dest ) = @_;
 
-    my $parcel_out = dir('/tmp/parcel');
-    my $compiled_js = $parcel_out->file('docs_js/index-v1.js');
-    my $compiled_css = $parcel_out->file('styles-v1.css');
+    my $vite_out = dir('/tmp/web_resources');
+    my $compiled_js = $vite_out->file('docs-v1.js');
+    my $compiled_css = $vite_out->file('styles-v1.css');
 
     unless ( -e $compiled_js && -e $compiled_css ) {
         # We write the compiled js and css to /tmp so we can use them on
@@ -734,13 +735,12 @@ sub build_web_resources {
         # when you run the integration tests and saves about 1.5 seconds on
         # every docs build.
         say "Compiling web resources";
-        run '/node_modules/parcel/bin/cli.js', 'build',
-            '--public-url', '/guide/static/',
-            '--experimental-scope-hoisting', '--no-source-maps',
-            '-d', $parcel_out,
-            'resources/web/docs_js/index-v1.js', 'resources/web/styles-v1.pcss';
-        die "Parcel didn't make $compiled_js" unless -e $compiled_js;
-        die "Parcel didn't make $compiled_css" unless -e $compiled_css;
+        run '/node_modules/vite/bin/vite.js', 'build',
+            '--configLoader', 'native',
+            '--config', 'resources/web/vite.config.mjs',
+            '--outDir', $vite_out;
+        die "Vite didn't make $compiled_js" unless -e $compiled_js;
+        die "Vite didn't make $compiled_css" unless -e $compiled_css;
     }
 
     my $static_dir = $dest->subdir( 'raw' )->subdir( 'static' );
@@ -758,8 +758,9 @@ sub build_web_resources {
         $css_licenses->slurp( iomode => '<:encoding(UTF-8)' ) . $compiled_css->slurp( iomode => '<:encoding(UTF-8)' )
     );
 
-    for ( $parcel_out->children ) {
-        next unless /.+\.woff2?/;
+    # The fonts that the css refers to.
+    for ( $vite_out->children ) {
+        next if $_->basename eq 'docs-v1.js' || $_->basename eq 'styles-v1.css';
         rcopy( $_, $static_dir );
     }
 

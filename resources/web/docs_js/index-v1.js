@@ -2,8 +2,8 @@ import AlternativeSwitcher from "./components/alternative_switcher.js";
 import ConsoleWidget from "./components/console_widget.jsx";
 import FeedbackModal from './components/feedback_modal.jsx';
 import FeedbackWidget from './components/feedback_widget.jsx';
-import Modal from "./components/modal.js";
-import mount from "./components/mount.js";
+import Modal from "./components/modal.jsx";
+import mount from "./components/mount.jsx";
 import {switchTabs} from "./components/tabbed_widget.js";
 import {Cookies, $} from "./deps.js";
 import {lang_strings} from "./localization.js";
@@ -16,11 +16,8 @@ import "../lib/prettify/lang-esql.js";
 import "../lib/prettify/lang-sql.js";
 import "../lib/prettify/lang-yaml.js";
 
-// Add support for <details> in IE and the like
-import "../../../../../node_modules/details-polyfill";
-
-// Add support for URLSearchParams Web API in IE
-import "../../../../../node_modules/url-search-params-polyfill";
+// Vite emits the CSS as styles-v1.css next to the built script
+import "../styles-v1.pcss";
 
 export function init_landing_page() {
   // Because of the nature of the injected links, we need to adjust the layout to
@@ -571,8 +568,6 @@ $(function() {
     ...getUtm()
   };
   dataLayer.push(pageViewData);
-
-  // Test comment used to detect unminifed JS in tests
 });
 
 // Tabbed widgets

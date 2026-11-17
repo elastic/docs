@@ -995,7 +995,7 @@ sub serve_local_preview {
                 wait;
             }
             if ( $web_resources_pid ) {
-                say 'Terminating preview services...parcel';
+                say 'Terminating preview services...web resources';
                 kill 'TERM', $web_resources_pid;
                 wait;
             }

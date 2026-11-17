@@ -1,5 +1,5 @@
 import {jQuery} from "../deps";
-import dedent from "../../../../../node_modules/dedent";
+import dedent from "dedent";
 import {init_console_widgets, init_headers} from "../index-v1";
 import * as utils from "../utils";
 import * as l from "../localization";
@@ -41,7 +41,7 @@ function pageWithConsole(name, consoleText, extraTextAssertions) {
     });
     describe('when clicked', () => {
       beforeEach(() => {
-        document.execCommand = jest.fn(() => {
+        document.execCommand = vi.fn(() => {
           document.copied = jQuery('textarea').val();
           return true;
         });

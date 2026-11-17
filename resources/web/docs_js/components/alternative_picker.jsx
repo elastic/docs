@@ -3,9 +3,10 @@
  * instead of "Console".
  */
 
-import {h, Component} from "../../../../../../node_modules/preact";
-import {pick, merge} from "../../../../../node_modules/ramda";
-import {connect} from "../../../../../node_modules/preact-redux";
+import {h, Component} from "preact";
+import pick from "ramda/src/pick";
+import merge from "ramda/src/merge";
+import {connect} from "preact-redux";
 import {saveSettings} from "../actions/settings";
 
 const alternativePrettyName = rawName => {
