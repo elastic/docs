@@ -639,7 +639,7 @@ http {
 $preview_conf
     }
     location / {
-      alias /docs_build/resources/web/static/;
+      root /docs_build/resources/web/static;
       try_files \$uri \@preview;
       autoindex off;
     }
