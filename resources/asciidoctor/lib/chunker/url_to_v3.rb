@@ -3,6 +3,10 @@
 module Chunker
   # Add a warning to the page with a link to docs v3
   class UrlToV3
+    # Versioned rule pages, like prebuilt-rule-8-19-14-<rule>.html
+    PREBUILT_RULE = %r{\A/en/security/\*/prebuilt-rule-\d+-\d+-\d+-(.+)\z}
+    PREBUILT_RULES_HUB = '/docs/reference/security/prebuilt-rules'
+
     attr_reader :url
 
     def initialize(doc)
@@ -16,6 +20,8 @@ module Chunker
       actual_url = get_actual_url(outdir, current_url)
       new_url = if m.key?(actual_url)
                   m[actual_url]
+                elsif (rule = actual_url[PREBUILT_RULE, 1])
+                  m.fetch("/en/security/*/#{rule}", PREBUILT_RULES_HUB)
                 else
                   '/docs'
                 end
